@@ -1,0 +1,260 @@
+ordoro aplicacion
+
+NLAuth nlauth_account=3367613_SB1,nlauth_email=omar.ortiz@ofi2.com,nlauth_signature=Mexico2019,nlauth_role=14
+
+
+NLAuth nlauth_account=3367613_SB1,nlauth_email=webshopclient@yopmail.com,nlauth_signature=webshopclient1.,nlauth_role=1034
+
+presentadora jefa
+https://3367613-sb1.app.netsuite.com/app/common/entity/employee.nl?id=11512&whence=&e=T&selectedtab=address
+
+
+
+presentador 
+https://3367613-sb1.app.netsuite.com/app/common/entity/employee.nl?id=12907&whence=
+
+
+
+//img1 : https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRyTTIbrrIoyoLJbAua5D_hgi_9wJqGE37SGejBmbT3F6Ok6lVg2g
+
+login
+BODY: 
+{
+	"email":"omar.ortiz@ofi.com",
+	"type":"login"
+}
+
+BODY: 
+{
+	"rfc":"oile900812a42",
+	"type":"login"
+} 
+BODY: 
+{
+	"custentity_curp":"oile900812hdfabc42",
+	"type":"login"
+}
+
+
+
+//img2 : 
+employee: create
+{	
+	"type":"createSalesRep",
+	"firstname": "Omar 42 ",
+	"lastname":"Sevicce SR 42",
+	"mobilephone": "5522997744",
+	"email": "omarofi_service_test42@yopmail.com",
+	"mobilephone": "5522997745",
+	"custentity_promocion":"1",
+	"custentity_tipo_ingreso":"2",
+	"custentity_curp":"oile900812hdfabc42",
+	"custentity_ce_rfc":"oile900812a42",
+	"custentity60":"5",
+	"custentity_foto":"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRyTTIbrrIoyoLJbAua5D_hgi_9wJqGE37SGejBmbT3F6Ok6lVg2g",
+	"custentity_numcta":"1234567812345678",
+	"custentity123":1,
+	"custentity_terminos_condiciones":true,
+	"custentity107":true,
+	"custentity_fcha_solicitud":"3/10/2019",
+	"custentity_foto_ine_anverso":"https://www.ine.mx/wp-content/uploads/2018/07/renovacion-credencial-frente.jpg",
+	"custentity_foto_ine_reverso":"https://www.ine.mx/wp-content/uploads/2018/07/renovacion-credencial-reverso.jpg",
+	"custentity_foto_comprobante_dom":"https://d31dn7nfpuwjnm.cloudfront.net/images/valoraciones/0032/6903/Comprobante_de_domicilio.jpg?1545942486",
+	"custentity_foto_comprobante_banco":"https://www.ine.mx/wp-content/uploads/2018/07/renovacion-credencial-frente.jpg",
+	"custentity_nombre_banco":72,
+	"custentity_como_obtuviste_tm":"como obtuvuste",
+	"custentity_num_serie_tm":"Ingresa No. Serie",
+	"custentity_estatus_candidato":1,
+	"address":[{
+		"id":"2222221",
+		"country":"MX",
+		"addressee":"direccion1",
+		"addrphone":"5522997745",
+		"addr1":"add1",
+		"addr2":"addr2",
+		"city":"mexico",
+		"state":"MEX",
+		"zip":"11590"
+	}]
+}
+
+
+
+EDIT
+{	
+	"type":"updateSalesRep",
+	"internalid":"92424",
+	"firstname": "Omar 2424 ",
+	"lastname":"Sevicce SR 2424",
+	"mobilephone": "5522997744",
+	"email": "omarofi_service_test2424@yopmail.com",
+	"mobilephone": "5522997745",
+	"custentity_promocion":"1",
+	"custentity_tipo_ingreso":"2",
+	"custentity_curp":"oile900812hdfabc42",
+	"custentity_ce_rfc":"oile900812a42",
+	"custentity60":"5",
+	"custentity_foto":"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRyTTIbrrIoyoLJbAua5D_hgi_9wJqGE37SGejBmbT3F6Ok6lVg2g",
+	"custentity_numcta":"1234567812345678",
+	"custentity123":1,
+	"custentity_terminos_condiciones":true,
+	"custentity107":true,
+	"custentity_fcha_solicitud":"3/10/2019",
+	"custentity_foto_ine_anverso":"https://www.ine.mx/wp-content/uploads/2018/07/renovacion-credencial-frente.jpg",
+	"custentity_foto_ine_reverso":"https://www.ine.mx/wp-content/uploads/2018/07/renovacion-credencial-reverso.jpg",
+	"custentity_foto_comprobante_dom":"https://d31dn7nfpuwjnm.cloudfront.net/images/valoraciones/0032/6903/Comprobante_de_domicilio.jpg?1545942486",
+	"custentity_foto_comprobante_banco":"https://www.ine.mx/wp-content/uploads/2018/07/renovacion-credencial-frente.jpg",
+	"custentity_nombre_banco":72,
+	"custentity_como_obtuviste_tm":"como obtuvuste",
+	"custentity_num_serie_tm":"Ingresa No. Serie",
+	"custentity_estatus_candidato":1,
+	"address":[{
+	    "newID":"nuevoID001",
+		"id":"2222221",
+		"country":"MX",
+		"addressee":"direccion1",
+		"addrphone":"5522997745",
+		"addr1":"add1",
+		"addr2":"addr2",
+		"city":"mexico",
+		"state":"MEX",
+		"zip":"11590"
+	}]
+}
+
+
+
+
+
+//type createCustomer
+customer:{	
+	"type":"createCustomer",
+	"firstname": "Omar ",
+	"lastname":"Sevicce Test 19",
+	"companyname": "Omar Ofi service Test 19",
+	"salesrep": "11512",
+	"password": "12345678",
+	"password2": "12345678",
+	"accessrole": "14",
+	"email": "omarofi_service_test19@yopmail.com",
+	"mobilephone": "5522997745",
+	"custentity_razon_social":"oile988993abc",
+	"vatregnumber":"oile988993abc",
+	"custentity_fe_sf_se_destinatario":"oile988993abc",
+	"address":[{
+		"id":"111111",
+		"country":"MX",
+		"addrphone":"9999999999",
+		"addr1":"add1",
+		"addr2":"addr2 test",
+		"city":"mexico",
+		"state":"MEX",
+		"zip":"11590",
+		"defaultbilling":true,
+		"defaultshipping":true,
+	},{
+		"id":"111112",
+		"country":"MX",
+		"addrphone":"9999999999",
+		"addr1":"add1",
+		"addr2":"addr2 test",
+		"city":"mexico",
+		"state":"MEX",
+		"zip":"11590",
+		"defaultbilling":false,
+		"defaultshipping":false,
+	}]	
+}
+//EDIT
+customer:{	
+	"type":"updateCustomer",
+	"internalid":"92416",
+	"firstname": "Omar ",
+	"lastname":"Sevicce Test 19",
+	"companyname": "Omar Ofi service Test 19",
+	"salesrep": "11512",
+	"password": "12345678",
+	"password2": "12345678",
+	"accessrole": "14",
+	"email": "omarofi_service_test19@yopmail.com",
+	"mobilephone": "5522997745",
+	"custentity_razon_social":"oile988993abc",
+	"vatregnumber":"oile988993abc",
+	"custentity_fe_sf_se_destinatario":"oile988993abc",
+	"address":[{
+		"id":"111111",
+		"country":"MX",
+		"addrphone":"9999999999",
+		"addr1":"add1",
+		"addr2":"addr2 test",
+		"city":"mexico",
+		"state":"MEX",
+		"zip":"11590",
+		"defaultbilling":true,
+		"defaultshipping":true,
+	},{
+		"id":"111112",
+		"country":"MX",
+		"addrphone":"9999999999",
+		"addr1":"add1",
+		"addr2":"addr2 test",
+		"city":"mexico",
+		"state":"MEX",
+		"zip":"11590",
+		"defaultbilling":false,
+		"defaultshipping":false,
+	}]	
+}
+//Create
+salesorder: 
+{
+	"type":"createSalesOrder",
+	"entity":92404,
+	"tranid":"WMX002",
+	"orderstatus":"A",
+	"custbody_tipo_venta":18,
+	"discountrate":0,
+	"custbody_cfdi_metododepago":7,
+	"items":[
+		{
+			"item_id":"1276",
+			"quantity":"1",
+			"amount":700
+		},
+		{
+			"item_id":"1276",
+			"quantity":"1",
+			"amount":800
+		}
+	],
+	"multipago":[
+		{
+			"custbody_forma_tipo_de_pago":"5",
+			"custbody_num_cuenta":"1234",
+			"ccexpiredate":"02/2021",
+			"custbody_numero_autorizacion":"123456",
+			"payment":100,
+			"custbody_metodo_de_pago":102
+
+		}
+
+	]
+}
+
+
+
+//Update 
+salesorder
+{
+	"type":"updateSalesOrder",
+	"internalid":622122,
+	"custbody46":"numero de guia",
+	"custbody_estatus_envio":1,
+	"custbody_url_one_aclogistics":"https:\/\/aclogistics.mx\/smartship\/tracking.php?id=9720",
+	"custbody_url_two_aclogistics":"https:\/\/www.aclogistics.mx\/smartship\/test_guide.pdf"
+}
+
+
+
+
+

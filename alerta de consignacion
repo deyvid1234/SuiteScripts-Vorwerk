@@ -1,0 +1,28 @@
+function consigna(request, response)
+{
+var filters = new Array();
+filters[0] = new nlobjSearchFilter('salesrep', null, 'is', '0824');;
+
+var columns = new Array();
+columns[0] = new nlobjSearchColumn( 'internalId' );
+columns[1] = new nlobjSearchColumn( 'entity' );
+
+var searchresults = nlapiSearchRecord( 'salesorder', 634, filters, columns );
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

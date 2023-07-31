@@ -1,0 +1,119 @@
+function FE_SF_EL_FORM(request, response)
+{
+	var Base64		= new MainBase64();
+	var titleForm	= 'F.E. En Línea';
+	try
+	{
+      //var empty = " ";
+      //var s = JSON.parse(null);
+      getIds();
+	}
+	catch(e)
+    {
+    	var tituloFallo		= new String();
+    	var mensajeFallo	= new String();
+    	var data			= new Object();
+    	var identacion		= '<td>&nbsp;</td><td>&nbsp;</td><td>ᐅ</td>';
+        if ( e instanceof nlobjError )
+        {
+        	var ecode 		 = returnBlank(e.getCode());
+        	var edetails 	 = returnBlank(e.getDetails());
+        	var eid 		 = returnBlank(e.getId());
+        	var einternalid	 = returnBlank(e.getInternalId());
+        	var estacktrace	 = returnBlank(e.getStackTrace());
+        		estacktrace	 = estacktrace.join();
+        	var euserevent 	 = returnBlank(e.getUserEvent());
+        	tituloFallo		+= "<b>Ha ocurrido un error, debido a las siguientes razones:</b>";
+        	mensajeFallo 	+= "<p>&nbsp;</p>";
+        	mensajeFallo 	+= '<table class=\"text\">';
+	    		mensajeFallo	+= "<tr>" + identacion + "<td>" + '<b>Error Code: </b>' 		+ "</td><td>" + ecode		+"</td></tr>";
+	    		mensajeFallo 	+= "<tr>" + identacion + "<td>" + '<b>Error Details: </b>' 		+ "</td><td>" + edetails	+"</td></tr>";
+	    		mensajeFallo 	+= "<tr>" + identacion + "<td>" + '<b>Error ID: </b>'			+ "</td><td>" + eid			+"</td></tr>";
+	    		mensajeFallo 	+= "<tr>" + identacion + "<td>" + '<b>Error Internal ID: </b>'	+ "</td><td>" + einternalid	+"</td></tr>";
+	    		mensajeFallo 	+= "<tr>" + identacion + "<td>" + '<b>Error Stacktrace: </b>'	+ "</td><td>" + estacktrace	+"</td></tr>";
+	    		mensajeFallo 	+= "<tr>" + identacion + "<td>" + '<b>Error User Event: </b>' 	+ "</td><td>" + euserevent 	+"</td></tr>";
+        	mensajeFallo 	+= '</table>';
+            nlapiLogExecution( 'ERROR', 'Error Code',ecode);
+            nlapiLogExecution( 'ERROR', 'Error Detail',edetails);
+            nlapiLogExecution( 'ERROR', 'Error ID',eid);
+            nlapiLogExecution( 'ERROR', 'Error Internal ID',einternalid);
+            nlapiLogExecution( 'ERROR', 'Error Stacktrace',estacktrace);
+            nlapiLogExecution( 'ERROR', 'Error User Event',euserevent);
+        }
+        else
+        {
+        	var errorString	 	= e.toString();
+          	tituloFallo			= "<h2 style='font-size: 16px'><b>Error inesperado<br/><br/>Consulte a Soporte T&eacute;cnico y mueste este mensaje.<b></h2><br/>";
+        	//tituloFallo			= '<b>Ha ocurrido un error, debido a la siguiente raz&oacute;n:</b>';
+        	mensajeFallo 		+= "<p>&nbsp;</p>";
+        	mensajeFallo 		+= '<table class=\"text\">';
+        		mensajeFallo 		+= "<tr>" + identacion + "<td>" + '<b>Unexpected Error: </b>' + "</td><td>" + errorString +"</td></tr>";
+        	mensajeFallo 		+= '</table>';
+            nlapiLogExecution( 'ERROR', 'Unexpected Error',errorString );
+        }
+		data.titleForm 						= titleForm;
+		data.exito		 					= 'F';
+		data.tituloFallo					= tituloFallo;
+		data.mensajeFallo 					= mensajeFallo;
+		data								= JSON.stringify(data);
+		data   		 						= Base64.encode(data);
+        var params_handler_error			= new Array();
+	    	params_handler_error['data']	= data;
+    	nlapiSetRedirectURL('SUITELET','customscript_fe_sf_he', 'customdeploy_fe_sf_he', true, params_handler_error);
+		nlapiLogExecution('ERROR', "redireccionado", "redireccionado");
+  	}
+}
+
+function changeFiscalFields(client,transactionRec,submit)
+{
+	var filters = new Array();
+		filters.push(new nlobjSearchFilter('internalid', null, 'is', client));
+		var columns	= new Array();
+		columns.push(new nlobjSearchColumn('address1', 'billingAddress'));
+		columns.push(new nlobjSearchColumn('address2', 'billingAddress'));
+		columns.push(new nlobjSearchColumn('address3', 'billingAddress'));
+		columns.push(new nlobjSearchColumn('state', 'billingAddress'));
+		columns.push(new nlobjSearchColumn('city', 'billingAddress'));
+		columns.push(new nlobjSearchColumn('country', 'billingAddress'));
+		//columns.push(new nlobjSearchColumn('custrecord_fe_numero_exterior', 'billingAddress'));
+		//columns.push(new nlobjSearchColumn('custrecord_fe_numero_interior', 'billingAddress'));
+		columns.push(new nlobjSearchColumn('zipcode', 'billingAddress'));
+		columns.push(new nlobjSearchColumn('custentity_razon_social'));
+		columns.push(new nlobjSearchColumn('vatregnumber'));
+		columns.push(new nlobjSearchColumn('custentity_fe_sf_se_destinatario'));
+		var result = returnBlank(nlapiSearchRecord('customer', null, filters, columns));
+	if(result != '')
+	{
+		var addressclient	= result[0];
+		var address1		= addressclient.getValue('address1', 'billingAddress');
+		var address2		= addressclient.getValue('address2', 'billingAddress');
+		var address3		= addressclient.getValue('address3', 'billingAddress');
+		var city			= addressclient.getValue('city', 'billingAddress');
+		var country			= addressclient.getValue('country','billingAddress')
+		//var n_ext			= addressclient.getValue('custrecord_fe_numero_exterior', 'billingAddress');
+		//var n_int			= addressclient.getValue('custrecord_fe_numero_interior', 'billingAddress');
+		var zip				= addressclient.getValue('zipcode', 'billingAddress');
+		var state			= addressclient.getValue('state', 'billingAddress');
+		var razon_social	= addressclient.getValue('custentity_razon_social');
+		var rfc				= addressclient.getValue('vatregnumber' );
+		var email			= addressclient.getValue('custentity_fe_sf_se_destinatario');
+		var billingaddress	= transactionRec.editSubrecord('billingaddress');	
+			billingaddress.setFieldValue('addr1',address1);
+			billingaddress.setFieldValue('addr2',address2);
+			billingaddress.setFieldValue('addr3',address3);
+			billingaddress.setFieldValue('city',city);
+			billingaddress.setFieldValue('country',country);
+			//billingaddress.setFieldValue('custrecord_fe_numero_exterior',n_ext);
+			//billingaddress.setFieldValue('custrecord_fe_numero_interior',n_int);
+			billingaddress.setFieldValue('zip',zip);
+			billingaddress.setFieldValue('state',state);
+			billingaddress.commit();
+		transactionRec.setFieldValue('vatregnum',rfc);
+		transactionRec.setFieldValue('custbody_fe_razon_social',razon_social);
+		nlapiSubmitField('customer', transactionRec.getFieldValue('entity'), 'custentity_fe_sf_se_destinatario', email, true);
+		if(submit)
+		{
+			nlapiSubmitRecord(transactionRec);
+		}
+	}			
+}

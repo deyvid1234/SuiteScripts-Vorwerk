@@ -1,0 +1,67 @@
+function afterSubmit(type){
+	  
+	  if(type =='create')
+	  {	  	
+	 
+		  var nume =  nlapiGetFieldValue('custrecord_imr_identificador');
+		  
+		  if (nume !='' ) // busqueda por numero de serie en Ciclo Clientes: Ventas con numeros de Series
+			 {
+		var filters			= new Array();
+	     	filters.push(new nlobjSearchFilter('custrecord_cont_ciclo_num', null, 'is', nume));
+		 
+ 	       var resultado = returnBlank(nlapiSearchRecord(null,'customsearch670',filters,null)); // busqueda
+ 	      
+ 	      var recordId      =  resultado[0].getId(); // @@ pendiente
+ 		  var recordType    =  resultado[0].getRecordType(); // @@ pendiente 
+
+	  var value = 'T';
+	  var fecha =  nlapiGetFieldValue('custrecord_imr_fecha');
+	  var conta =  nlapiGetFieldValue('custrecord_imr_contacto');
+	  
+	  var array = new Array('','','custrecord_cont_ciclo_seg','custrecord_cont_ciclo_asi', 'custrecord_cont_ciclo_2vi','custrecord_cont_ciclo_pro','custrecord_cont_ciclo_eds');
+	  var campos_fecha = new Array('','','custrecord_cont_ciclo_f1s','custrecord_cont_ciclo_fcc','custrecord_cont_ciclo_f2v','custrecord_cont_ciclo_fpr','custrecord_cont_ciclo_fes');
+	  var nombre_conta = new Array('','','custrecord_cont_ciclo_c1s','custrecord_cont_ciclo_ccc','custrecord_cont_ciclo_c2v','custrecord_cont_ciclo_cpr','custrecord_cont_ciclo_ces');
+	 	  
+	  
+	  var flag = nlapiGetFieldValue('custrecord_imr_tipociclo');
+
+	  
+	  //nlapiLogExecution('debug', 'Prueba','flag '+flag+':recordId '+recordId);
+	  
+	  var name = array[flag -1]; 
+      var eman = campos_fecha[flag -1];
+      var nomb = nombre_conta[flag -1];
+	  
+
+	   nlapiSubmitField(recordType,recordId,name,value);
+	   nlapiSubmitField(recordType,recordId,eman,fecha);
+	   nlapiSubmitField(recordType,recordId,nomb,conta);
+	   
+         }	   
+	 }
+}
+//------------------  Validaciones / Elimina duplicados    ---------------//
+
+function returnBlank(cad)
+{
+	return cad == null || cad== undefined?'':cad;
+}
+Array.prototype.deleteDuplicateElements=function(a)
+{	
+	return this.filter(
+		function(elm, i, array)
+			{
+				return (array.indexOf(elm, i + 1) < 0);
+			});
+		return this.filter(
+			function(elm, i, array)
+			{
+				if(this.indexOf(elm) < 0)
+				{
+					this.push(elm);
+					return true;
+	          }
+	          return false;
+	        }, []);
+};
