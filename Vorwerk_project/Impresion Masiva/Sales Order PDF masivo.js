@@ -301,8 +301,8 @@ function Orden_Venta_PDF(request,response)
 							xml += "<head>";
 								xml += "<style>";
 									xml += ".AvisoFac{border: 1px solid red; font-size:10px;corner-radius: 10px;} ";
-									xml += ".FondoColorOscuro{color:#FFFFFF; background-color:#0070AD;} ";
-							        xml += ".FondoColorClaro{color:#000000; background-color:#CFE7F5;} ";
+									xml += ".FondoColorOscuro{color:#FFFFFF; background-color:#919394;} ";
+							        xml += ".FondoColorClaro{color:#000000; background-color:#DCDFDC;} ";
 							        xml += ".FondoBlanco{background-color:#FFFFFF;} ";
 							        xml += ".Tabla{border: 1 px;}";
 							        xml += ".Tabla2{border: 0.1 px; corner-radius: 10px;}";

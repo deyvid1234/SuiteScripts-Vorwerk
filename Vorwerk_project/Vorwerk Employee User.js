@@ -90,7 +90,7 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 		                type: 'employee',
 		                columns: ['custentity59','internalid','entityid','firstname','email','mobilephone','lastname',
 		                         'isinactive','employeetype','custentity_oficina','location',
-		                         'custentity_delegada','supervisor','custentityregional_manager','custentity_area_manager',
+		                         'custentity_delegada','supervisor','custentityregional_manager','custentity_area_manager','custentity_estructura_virtual',
 		                         {name : 'custentity_mostrador',join : 'custentity_delegada'},
 		                        ],
 		                filters: [
@@ -115,6 +115,7 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 								correo : result.getValue('email'),
 								telefono : result.getValue('mobilephone'),
 								inactivo: result.getValue('isinactive'),
+								virtual: result.getValue('custentity_estructura_virtual'),
 								rol :[{text:result.getText('employeetype'),value:result.getValue('employeetype')}],
 								gerencia: result.getText('custentity_gerencia'),
 								sucursal:{name:result.getText('custentity_oficina'),value:result.getValue('custentity_oficina')},
@@ -165,9 +166,14 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 
 			    	if(cumpleFiltros){
 			    		log.debug('JSON send',obj_detail)
-
+			    		if(runtime.envType != 'PRODUCTION'){ 
+		                    urlAD = 'https://dev-apiagenda.mxthermomix.com/users/postUserNetsuite'
+		                }else{//prod
+		                    urlAD = 'https://apiagenda.mxthermomix.com/users/postUserNetsuite'
+		                }
+		                log.debug('urlAD',urlAD)
 				    	var responseService = https.post({
-						    url: 'https://apiagenda.mxthermomix.com/users/postUserNetsuite',
+						    url: urlAD,
 							body : JSON.stringify(obj_detail[0]),
 							headers: {
 				     			"Content-Type": "application/json"

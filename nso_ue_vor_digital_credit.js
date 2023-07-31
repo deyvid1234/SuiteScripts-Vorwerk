@@ -208,16 +208,19 @@ define(["N/record", "N/search", "N/error", "N/format", "N/runtime", "N/https", "
                 log.debug("dataEmployee", dataEmployee);
                 //------------------------------------- ENVIAR JSON A Digital Credit -----------------------------------
                 let token = null, urlServer = null;
-                token     = runtime.envType == 'PRODUCTION' ? setupDigital.tokenProduccion : setupDigital.tokenSandbox;
+                /*token     = runtime.envType == 'PRODUCTION' ? setupDigital.tokenProduccion : setupDigital.tokenSandbox;*/
+                token = "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhY3RvcnQiOiI0MDQiLCJ1bmlxdWVfbmFtZSI6IkFwaSBJbnRlZ3JhdGlvbiIsInJvbGUiOiI3IiwiaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNS8wNS9pZGVudGl0eS9jbGFpbXMvc3lzdGVtIjoiOTMiLCJuYW1laWQiOiJkaWdpdGFsY3JlZGl0Lm14IiwiaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNS8wNS9pZGVudGl0eS9jbGFpbXMvdXJpIjoiYXBpLmRpZ2l0YWxjcmVkaXRsYWIuY29tIiwiaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNS8wNS9pZGVudGl0eS9jbGFpbXMvYXV0aG9yaXphdGlvbmRlY2lzaW9uIjoiMSIsIm5iZiI6MTY3NjUwNjc4OSwiZXhwIjoxNzA4MDQyNzg5LCJpYXQiOjE2NzY1MDY3ODl9.I_jrYE9lEWUF-cJ8muf9aXSVG700CS1YECluC6v6tpcw-cCIpr9F76ytHanIe2kevPTpOSaBp684JlCfEmJteQ" 
                 if(employee.getValue('isinactive')){
                     urlServer = runtime.envType == 'PRODUCTION' ? setupDigital.urlBajaProduccion : setupDigital.urlBajaSandbox;
                 }
                 else{
                     urlServer = runtime.envType == 'PRODUCTION' ? setupDigital.urlAltaProduccion : setupDigital.urlAltaSandbox;
                 }
-              log.debug('token',token)
-                let headerEmployee = { "Content-Type": "application/json", Accept: "application/json", Authorization: "Bearer " + token, Header1: 'a97145b6cee9d6ec9138847649e4379354d36a6e', Header2:'2face66268e0e6a0efd8094cc2e6f0caab07b1c1' };
+                let headerEmployee = { "Content-Type": "application/json", Accept: "application/json", Authorization: "Bearer " + token,Header1: '090d0fc16045ece86947664c91db3d2a8b6f588c', Header2:'af70fbfef1504f69a2153aafa201142dd22ddc64'};
                 //log.audit('DATA_ENDPOINT', {urlServer, token});
+                log.debug('urlServer',urlServer)
+                log.debug('header',headerEmployee)
+                log.debug('Json body',JSON.stringify(dataEmployee))
                 let customResponse = https.post({ url: urlServer, body: JSON.stringify(dataEmployee), headers: headerEmployee });
                 log.debug(`DIGITAL_CREDIT_RESPONSE_FOR_EMPLOYEE: ${employee.id}`, JSON.stringify(customResponse));
                 let bodyResponse   = JSON.parse(customResponse.body);

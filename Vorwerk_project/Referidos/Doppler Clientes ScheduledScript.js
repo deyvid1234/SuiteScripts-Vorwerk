@@ -170,7 +170,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
             log.debug('objRequestDOPPLER',objRequestDOPPLER)
 
             //Envio de json inicial a cuenta de Ezequiel
-            var idLista = 28608338
+            /*var idLista = 28608338
             var apiKeyDoppler = '62AE8124B6180E8735AB20BB03933167'
             var responseService = https.post({
                 url: 'https://restapi.fromdoppler.com/accounts/ezequiel.olguin%40thermomix.mx/lists/'+idLista+'/subscribers/import?api_key='+apiKeyDoppler,
@@ -180,7 +180,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                     "Authorization": "token "+apiKeyDoppler
                 }
             }).body;
-            log.debug('responseService Doppler Ezequiel',responseService)
+            log.debug('responseService Doppler Ezequiel',responseService)*/
 
 
 

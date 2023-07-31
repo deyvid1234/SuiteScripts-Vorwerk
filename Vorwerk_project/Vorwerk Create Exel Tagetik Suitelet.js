@@ -19,18 +19,17 @@ function(file, encode, email) {
 
         if (context.request.method == 'POST') {
           try{
-            var request = context.request;
+        	  var request = context.request;
               var body = JSON.parse(context.request.body);
               var data=body.data;
               var header = body.head;
-              log.debug('data',data); 
+              log.debug('data',data);
               log.debug('header',header);
 
               var type = body.type;
 
               if(type=='EXCEL')
               {
-
                 var xmlStr = '<?xml version="1.0"?><?mso-application progid="Excel.Sheet"?>';
                 xmlStr += '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" ';
                 xmlStr += 'xmlns:o="urn:schemas-microsoft-com:office:office" ';
@@ -78,7 +77,6 @@ function(file, encode, email) {
                     folder: 384956
                 });
               }
-
               else if(type == 'CSV')
               {
                 var str = "";
@@ -94,35 +92,32 @@ function(file, encode, email) {
                                 str +=';';
                         }       
                 }
-
-                    var objXlsFile = file.create({
+                var objXlsFile = file.create({
                     name : 'MX_Daily_sales_VI.csv',
                     fileType : file.Type.CSV,
                     contents : str,
                     folder: 384956
-                    });
+                });
               }
               var intFileId = objXlsFile.save();
               log.debug('fileTXT',intFileId);
               //var fileValue = file.getValue();
-              log.debug('archivo generado' , intFileId );
+              log.debug('archivo generado' , 'archivo generado' );
               try{
-
-            email.send({
-              author: '344096',
-              recipients: 'reportemxvi@thermomix.mx',
-              cc: ['pilar.torres@thermomix.mx'],
-              bcc: ['923581', 'griselrdz@gmail.com'],
-              subject: 'MX_Daily_sales_VI',
-              body: 'MX_Daily_sales_VI',
-              attachments: [objXlsFile]
-            }); 
+        		email.send({
+            		author: '344096',
+        			recipients: 'deyvid8uriel@gmail.com',
+                    cc: ['923581'],
+        			subject: 'MX_Daily_sales_VI',
+        			body: 'Data',
+                    attachments: [objXlsFile]
+        		}); 
             }catch(e){
                 log.error("Email error",e)
             }
               context.response.write(JSON.stringify({id:intFileId}));
           }catch(e){
-            log.error("err",e)
+          	log.error("err",e)
           }
        }
     }

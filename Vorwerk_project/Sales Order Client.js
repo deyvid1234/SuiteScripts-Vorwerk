@@ -575,8 +575,9 @@ function(record,search,https,runtime,currentRecord,dialog) {
                   objEmployee.setValue('custentity_promocion','2')
                   objEmployee.setValue('custentity_pedido_tm_ganada',numOrder)
                   objEmployee.save();
-                  
+                  console.log('internals',internals)
                   for(var inter in internals){
+                    
                       record.submitFields({
                           type: 'salesorder',
                           id: internals[inter].internalodv,

@@ -40,7 +40,7 @@ function(email,record,render, file, search, https, runtime,format,Dictionary,Ema
             var levelText = registeInfo.levelText;
             var folder;
             if(runtime.envType != 'PRODUCTION'){ 
-                folder = 377148
+                folder = 289209
             }else{
                 folder = 377148
             }
@@ -62,8 +62,7 @@ function(email,record,render, file, search, https, runtime,format,Dictionary,Ema
             }else{
                 print_url_base = 'https://3367613.extforms.netsuite.com/app/site/hosting/scriptlet.nl?script=570&deploy=1&compid=3367613&h=d48ce6f5d7c69a79c66c';
             }
-            var url = print_url_base+'&employee='+idemp[config_fields.empleado[type_rec]][0]['value']+'&periodo='+period+'&comp='+idReg+'&level='+type_rec+'&massive=true-pdf';
-            log.debug('url',url)
+            var url = print_url_base+'&employee='+idemp[config_fields.empleado[type_rec]][0]['value']+'&periodo='+period+'&comp='+idReg+'&level='+type_rec+'&massive=true';
             var headers = {'Content-Type': 'application/json'};
             var response = https.get({
                 url: url,
@@ -116,7 +115,7 @@ function(email,record,render, file, search, https, runtime,format,Dictionary,Ema
                 folder: folderId
             });
             fileid = my_file.save();
-            log.debug('my_file',my_file)
+            log.debug('file',file)
         }catch(err){
             log.error("Error map",err);
         }

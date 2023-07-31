@@ -3,9 +3,9 @@
  * @NScriptType Suitelet
  * @NModuleScope SameAccount
  */
-define(['N/render','N/email','N/file','N/record','N/search','N/format'],
+define(['N/render','N/email','N/file','N/record','N/search','N/format','N/runtime'],
 
-function(render,email,file,record,search,format) {
+function(render,email,file,record,search,format,runtime) {
    
     /**
      * Definition of the Suitelet script trigger point.
@@ -54,8 +54,17 @@ function(render,email,file,record,search,format) {
 	        
 	        
 	    	//obtiene imagen de logo
-	        var logodURL = getImage('1636737');//sb1510040
-	        //obtiene imagen de check false
+            var logodURL 
+
+            if(runtime.envType  == "SANDBOX"){
+                logodURL = getImage('2461144') //id imagen vorwerk tm s green sandbox  
+            }else{
+                logodURL = getImage('2576941') //id imagen vorwerk tm s green prod
+            }
+
+	        //sb1510040
+	        //obtiene imagen de check false 
+
 	        var checkfieldURL = getImage('1636738');//sb1510039
 	        //obtiene imagen check true
 	        var checkfieldURL_true = getImage('1636741');//1510241
@@ -182,19 +191,10 @@ function(render,email,file,record,search,format) {
     	try{
     		var xml = "<?xml version='1.0' encoding='UTF-8'?>\n<!DOCTYPE pdf PUBLIC '-//big.faceless.org//report' 'report-1.1.dtd'>\n"
     		    + "<pdf>"
-    		    + '<head><style>'
-    			+'.linea{'
-    			+'border-bottom:1px;'
-    			+'margin-left:-10px;;'
-    			+'}'
-    			+'.date{'
-    			+'top:27px;'
-    			+'}'
-    			+'</style>'
-    			+'<macrolist>'
-    			+'<macro id="nlheader">'
-    			+'<img height="30" width="140" align="center" ' + logodURL +'>'
-    			+'<span style="font-size=14pt; font-weight: bold;">ORDEN DE SERVICIO T&Eacute;CNICO</span>'
+    		    + '<head></head>'
+                + '<body footer-height="20pt" padding="0.5in 0.5in 0in 0.5in" margin= "0in 0in 0.5in 0in" size="Letter">'
+    			+'<img height="70" width="160" align="center" ' + logodURL +'>'
+    			+'<p align="center" style="font-size:14pt; font-weight: bold;">ORDEN SERVICIO</p>'
     			+'<table border="0" cellpadding="1" cellspacing="1" style="width: 663px;">'
     			+'<tbody>'
     			+'<tr>'
@@ -213,18 +213,9 @@ function(render,email,file,record,search,format) {
     			+'<td style="width: 120px; font-size: 12px;"><b>Fecha:</b></td>'
     			+'<td style="width: 107px; font-size: 12px;"><b>'+date+'</b></td>'
     			+'</tr>'
-    			+'<tr>'
-    			+'<td style="width: 120px;"></td>'
-    			+'<td style="width: 107px;"></td>'
-    			+'</tr>'
     			+'</tbody>'
     			+'</table>'
-    			+'    </macro>'
-    			+'    <macro id="nlfooter">'
-    			+'        <p>&nbsp;</p>'
-    			+'    </macro>'
-    			+'</macrolist></head>'
-                + '<body header="nlheader" header-height="7%" footer="nlfooter" footer-height="20pt" padding="0.5in 0.5in 0.5in 0.5in" margin= "0in 0in 0.5in 0in" size="Letter">'
+    			
                 + emailBody
                 + '</body>'
                 + '</pdf>'
@@ -260,7 +251,7 @@ function(render,email,file,record,search,format) {
     			+'</style>'
     			+'<macrolist>'
     			+'    <macro id="nlheader">'
-    			+t_space+'<img class="IMAGELOGO" height="30" width="140" align="center" ' + logodURL +'>'
+    			+t_space+'<img class="IMAGELOGO" height="80" width="100" align="center" ' + logodURL +'>'
     			+'<p>ORDEN DE SERVICIO T&Eacute;CNICO</p>'
     			+'<table border="0" cellpadding="1" cellspacing="1" style="width: 1000px;">'
     			+'<tbody>'

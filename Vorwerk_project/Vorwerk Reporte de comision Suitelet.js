@@ -228,8 +228,8 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                      },
                      {
                          name: 'trandate',
-                         operator: 'ONORAFTER',
-                         values: startDate
+                         operator: 'within',
+                         values: [startDate, endDate]
                      }
                  ],
            columns: [
@@ -274,8 +274,8 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                      },
                      {
                          name: 'trandate',
-                         operator: 'ONORAFTER',
-                         values: startDate
+                         operator: 'within',
+                         values: [startDate, endDate]
                      }
                  ],
            columns: [
@@ -798,11 +798,11 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
              });
              venta_equipo.updateDisplayType({displayType : serverWidget.FieldDisplayType.READONLY});
 
-             //3+2 y 5+2 EQUIPO ESPECIAL - DEBEN PERTENECER AL EQUIPO Y APARTE DEBIERON SER RECLUTADAS POR LA LIDER DE EQUIPO 
+             //3+2 y 5+2
             var odv_rec_del_periodo = sublist.addField({
               id : 'custentity_odv_rec_del_periodo',
               type : serverWidget.FieldType.TEXTAREA,
-              label : 'Reclutas y ODV del periodo mismo equipo'//2134324:56645653
+              label : 'Reclutas y ODV del periodo mismo equipo'
             });
             odv_rec_del_periodo.updateDisplayType({displayType : serverWidget.FieldDisplayType.READONLY});
 
@@ -1234,7 +1234,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                            for(i in infoODVPromo[arrKeys[e]]){
                              log.debug('fecha odv -',infoODVPromo[arrKeys[e]][i][1]['trandate'][2]+infoODVPromo[arrKeys[e]][i][1]['trandate'][1]+infoODVPromo[arrKeys[e]][i][1]['trandate'][0])
                              f_odv = new Date(infoODVPromo[arrKeys[e]][i][1]['trandate'][2],infoODVPromo[arrKeys[e]][i][1]['trandate'][1]-1,infoODVPromo[arrKeys[e]][i][1]['trandate'][0])
-                             if (f_odv >= f_filtro && infoODVPromo[arrKeys[e]][i][1]['comission_status'] != 2){ // Filtro para no considerar como comisionable la orden con la que gana su TM 
+                             if (f_odv >= f_filtro ){
                                odv_propias_filtrado[infoODVPromo[arrKeys[e]][i][1]['id']] = infoODVPromo[arrKeys[e]][i][1]['trandate']
                              }
                            }
@@ -1697,7 +1697,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
               var v_total = odvPNumber+(odvTMpagada>0?odvTMpagada:0)+(odvTMganada>0?odvTMganada:0)
               try{
                 var bono_tres_dos = 0
-                if(Object.keys(odv_reclutas_tres_dos).length >=2 && v_total > 2 && Object.keys(recluta_LE).length >=1){//Reclutas juntan almenos 2 ventas y el LE tiene al menos 3 ventas 
+                if(Object.keys(odv_reclutas_tres_dos).length >=2 && v_total > 2 && Object.keys(recluta_LE).length >=1){
                     
                     bono_tres_dos = 5000
                 }
@@ -2220,7 +2220,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
            mySearch.filters.push(search.createFilter({
                    name: 'trandate',
                    operator: 'within',
-                   values: ['01/05/2023',period['startDate']]
+                   values: ['01/11/2022',period['startDate']]
                }));
            var pagedResults = mySearch.runPaged();
            pagedResults.pageRanges.forEach(function (pageRange){
@@ -2271,7 +2271,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
            mySearch.filters.push(search.createFilter({
                    name: 'trandate',
                    operator: 'within',
-                   values: ['01/05/2023',period['startDate']]
+                   values: ['01/11/2022',period['startDate']]
                }));
            var pagedResults = mySearch.runPaged();
            pagedResults.pageRanges.forEach(function (pageRange){

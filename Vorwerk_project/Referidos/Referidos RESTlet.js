@@ -136,18 +136,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                 var dd = today.getDate();
                 var mm = today.getMonth() + 1; //January is 0!
                 var yyyy = today.getFullYear();
-                
-               
-                log.debug('mm',mm.length )
-                if(mm <  10){
-                    log.debug('mm',mm )
-                    mm = '0'+mm
-                }
-                if(dd < 10 ){
-                     log.debug('dd',dd )
-                    dd = '0'+dd
-                }
-                var fdate = yyyy + '-' +mm + '-' + dd;
+                var fdate = yyyy + '-' + '0'+mm + '-' + dd;
 
                 var objRequest = {
                     "IdCliente": req_info.id,
@@ -291,7 +280,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                     urlAD = 'https://dev-apiagenda.mxthermomix.com/users/registerUserExternoNetsuite'
                 }else{
                     idSearch = 'customsearch1996';
-                    urlAD = 'https://apiagenda.mxthermomix.com/users/registerUserExternoNetsuite'
+                    urlAD = 'https://dev-apiagenda.mxthermomix.com/users/registerUserExternoNetsuite'
                 }
                 
            var mySearch = search.load({
@@ -371,7 +360,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
             //Datos usuario que recomienda 
             var nombreQuienRecomienda = ''
             var correoQuienRecomienda = ''
-            if(req_info.idRecomendador){ // Posible cambio Para enviar semilla 
+            if(req_info.idRecomendador){
                 log.debug('objRecomendador 1')   
                 var objRecomendador = search.lookupFields({
                     type: 'customer',
@@ -441,7 +430,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
     }
 
     function quitarAcentos(cadena){
-    const acentos = {'á':'a','é':'e','í':'i','ó':'o','ú':'u','Á':'A','É':'E','Í':'I','Ó':'O','Ú':'U','Ñ':'N','ñ':'n'};
+    const acentos = {'á':'a','é':'e','í':'i','ó':'o','ú':'u','Á':'A','É':'E','Í':'I','Ó':'O','Ú':'U'};
     var cadenasplit = cadena.split('')
     var sinAcentos = cadenasplit.map(function(x) {
         if(acentos[x]){

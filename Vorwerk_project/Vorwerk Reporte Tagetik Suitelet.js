@@ -146,7 +146,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
 
            var btnCSV = form.addButton({
             id : 'custpage_create_CSV',
-            label : 'Crear CSV y Enviar',
+            label : 'Crear CSV',
             functionName : 'createExcel("CSV")'
           });
 //         var btnSave = form.addButton({
@@ -416,10 +416,9 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
 
         //Llenado de tabla
         var numFormatter2 = format.getNumberFormatter({
-            groupSeparator: "",
+                groupSeparator: "",
             decimalSeparator: ",",
-            precision: 0
-        });
+            precision: 2});
         var line = 0
         for(i in data){
             var v = {}
@@ -448,10 +447,8 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 line : line,
                 value : v?v:'-'
             });
-
             v = data[i]['fecha'].split('.')
-            var mes = v[1].length === 1 ? '0' + v[1] : v[1];
-            v = v[2] + '-' + mes;
+            v = v[2]+'-'+v[1]
             result.setSublistValue({
                 id : 'custpage_booking_period',
                 line : line,
@@ -466,8 +463,6 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             });
 
             v = data[i]['item']
-            //Añadir funcion para retirar acentos
-            v = quitarAcentos(v)
             result.setSublistValue({
                 id : 'custpage_product',
                 line : line,
@@ -502,15 +497,11 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             });
             
             
-            v = isTM == false?data[i]['suma']:'0'
-            v = redondearNumero(v)
-            if(v >=1){
-                log.debug('custpage_out_noo',v)
-            }
+            v = isTM == false?data[i]['suma']:0 
             result.setSublistValue({
                 id : 'custpage_out_noo',
                 line : line,
-                value : v.toString() 
+                value : v
             });
             
 
@@ -521,7 +512,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 result.setSublistValue({ //unidades canceladas
                 id : 'custpage_mont_canc',//out_UNITS_INVOICED_CANC
                 line : line,
-                value : v?v:'0'
+                value : v?v:'0.00'
                 });
 
                 var resta = data_cancelacion[i]['suma']
@@ -534,12 +525,12 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 result.setSublistValue({ //unidades canceladas
                 id : 'custpage_mont_canc',//out_UNITS_INVOICED_CANC
                 line : line,
-                value : '0'
+                value : '0.00'
                 });
 
-                v = isTM == true?data[i]['suma']:'0'//monto total sin restar
-                //log.debug('v 0',v)
-                v = v > 1 ? numFormatter2.format({number:parseInt(v)}):'0'
+                v = isTM == true?data[i]['suma']:'0.00'//monto total sin restar
+                log.debug('v 0',v)
+                v = v > 1 ? numFormatter2.format({number:parseInt(v)}):'0.00'
             }
             result.setSublistValue({
                 id : 'custpage_out_nmo',//out_NETSALES_MAIN_ORDERS
@@ -555,29 +546,6 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
     }   
    }
 
-
-    function redondearNumero(num) {
-      if (num >= 1) {
-        return Math.round(num);
-      } else {
-        return num;
-      }
-    }
-    function quitarAcentos(cadena){
-    const acentos = {'á':'a','é':'e','í':'i','ó':'o','ú':'u','Á':'A','É':'E','Í':'I','Ó':'O','Ú':'U'};
-    var cadenasplit = cadena.split('')
-    var sinAcentos = cadenasplit.map(function(x) {
-        if(acentos[x]){
-            return acentos[x];
-        }else{
-            return x;
-        }
-       
-    });
-    var joinsinacentos = sinAcentos.join('').toString(); 
-    log.debug('joinsinacentos',joinsinacentos)
-    return joinsinacentos; 
-    }
    
     return {
         onRequest: onRequest

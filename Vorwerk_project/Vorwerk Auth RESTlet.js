@@ -244,7 +244,7 @@ function(record,search,https,file,http,format,encode,email) {
 					//sandbox 58 //production 53
 					if(values['inventoryLocation.internalid'].length > 0){
 						
-						if(values['inventoryLocation.internalid'][0].value=="53" || values['inventoryLocation.internalid'][0].value==""){
+						if(values['inventoryLocation.internalid'][0].value=="82" || values['inventoryLocation.internalid'][0].value==""){
 							data.push(obj_aux);
 						}
 					}else{
@@ -277,27 +277,28 @@ function(record,search,https,file,http,format,encode,email) {
 				currentPage.data.forEach(function (r) {
 					
 					var values = r.getAllValues();
+					if(values['itemid'] = 'TL5544'){
+						log.debug('values',values)
+					}
 					
 					var obj_aux = {
 							internalid: values['formulatext'],
-							stock: parseInt(values['locationquantityavailable'])||0,
+							stock: parseInt(values['custitem_disponible_eshop'])||0,//parseInt(values['locationquantityavailable'])||0,
 							sku: values['itemid'],
 							name: values['displayname']
 					}
-					//sandbox 58 //production 53
-					if(values['inventoryLocation.internalid'].length > 0){
-						
-						if(values['inventoryLocation.internalid'][0].value=="53" || values['inventoryLocation.internalid'][0].value==""){
-							data.push(obj_aux);
-						}
-					}else{
-						data.push(obj_aux);
+					if(values['formulatext'] = '2544'){
+						log.debug('values',values)
+						log.debug('obj_aux',obj_aux)
 					}
+					//sandbox 58 //production 53
+					data.push(obj_aux);
+					
 				})
 			});
 			
 			email.send({
-        		author: '317077',
+        		author: '923581',
 				recipients: 'pilar.torres@vorwerk.de',//'pilar.torres@vorwerk.de',
 				subject: 'Información de Items',
 				body: JSON.stringify(data)
@@ -507,7 +508,7 @@ function(record,search,https,file,http,format,encode,email) {
 					    fieldId:'addressbookaddress'
 					})
 					addRec.setValue({fieldId:'country',value:address_info.country})
-					if(type_user == "employee"){
+					if(type_user = "employee"){
 						addRec.setValue({fieldId:'addressee',value:req_info["firstname"]+" "+req_info["lastname"]})	
 					}
 					else {
@@ -589,13 +590,26 @@ function(record,search,https,file,http,format,encode,email) {
 			}
 			
 			log.debug('Info SAT',req_info['custbody_cfdi_metododepago']);
-			
+			var locationValidado 
 			for(var x in req_info){
-				if(x != "items" && x != "multipago" && x != "discountrate" && x != "discountitem" && x!= 'custbody_estatus_envio' && x != 'custbody46' && x != 'custbody_url_one_aclogistics' && x != 'custbody_url_two_aclogistics'){
+				if(x != "location" && x != "items" && x != "multipago" && x != "discountrate" && x != "discountitem" && x!= 'custbody_estatus_envio' && x != 'custbody46' && x != 'custbody_url_one_aclogistics' && x != 'custbody_url_two_aclogistics'){
 					obj_sales_order.setValue(x,req_info[x]) 
+				}
+				log.debug(x,req_info[x])
+				if((x == "location" || x == "Location")&& req_info[x] == 53){
+					locationValidado = 82
+					log.debug('primer if',locationValidado)
+					obj_sales_order.setValue('location',locationValidado)
+					obj_sales_order.setValue('custbody_so_eshop',true)
+				}
+				if(x == "location" || x == "Location"){
+					locationValidado = req_info[x]
+					log.debug('segundo if',locationValidado)
+					obj_sales_order.setValue('location',locationValidado)
 				}
 			}
 			obj_sales_order.setValue('custbody_cfdi_metpago_sat',req_info.custbody_cfdi_metododepago)
+			
 			var  salesorder_items = req_info.items;
 			for(var x in salesorder_items){
 				var item_mine = salesorder_items[x];
@@ -638,7 +652,7 @@ function(record,search,https,file,http,format,encode,email) {
 				obj_sales_order.setCurrentSublistValue({
 			        sublistId: 'item',
 			        fieldId: 'location',
-			        value: 53
+			        value: locationValidado
 				});
 				obj_sales_order.commitLine({
 			        sublistId: 'item'
@@ -1275,8 +1289,8 @@ function(record,search,https,file,http,format,encode,email) {
             });
 
             itemSearch.filters.push(search.createFilter({
-                name: 'serialnumber',
-                operator: 'is',
+                name: 'serialnumbers',
+                operator: 'contains',
                 values: req_info['serialnumber']
             }));
 

@@ -29,8 +29,7 @@ function(record, search, runtime, format) {
                     { name: 'trandate'},
                     { name: 'custbody_fcha_entrega_tm5_cliente'},
                     { name: 'custbody_vw_recruiter'},
-                    { name: 'item'},
-                    { name: 'custbody_vw_comission_status'}
+                    { name: 'item'}
                     
                 ]
             });
@@ -45,17 +44,16 @@ function(record, search, runtime, format) {
                         reclutadora = r.getValue('custbody_vw_recruiter');
                         trandate = r.getValue('trandate').split("/");
                         item = r.getValue('item');
-                        comission_status = r.getValue('custbody_vw_comission_status');
                         
                     if(r.getValue('item') != 1749 && r.getValue('item') != 2040 ){
                         if(objSOResult.hasOwnProperty(salesrep)){
                             if(!objSOResult[salesrep].hasOwnProperty(thisInternalId)){
-                                objSOResult[salesrep][thisInternalId] = [{type:custbody_tipo_venta},{entrega:entrega,reclutadora:reclutadora,id:thisInternalId,trandate:trandate,comission_status:comission_status}]
+                                objSOResult[salesrep][thisInternalId] = [{type:custbody_tipo_venta},{entrega:entrega,reclutadora:reclutadora,id:thisInternalId,trandate:trandate}]
                             }
                         }
                         else{
                                 objSOResult[salesrep] = {};
-                                objSOResult[salesrep][thisInternalId] = [{type:custbody_tipo_venta},{entrega:entrega,reclutadora:reclutadora,id:thisInternalId,trandate:trandate,comission_status:comission_status}]
+                                objSOResult[salesrep][thisInternalId] = [{type:custbody_tipo_venta},{entrega:entrega,reclutadora:reclutadora,id:thisInternalId,trandate:trandate}]
                         }
                     }   
                        
@@ -107,12 +105,12 @@ function(record, search, runtime, format) {
             
             arrFilters.pop();
             //var arrReturn = [['recordtype', 'is', 'salesorder'],'and',['trandate', 'within', [startDate, endDate]],'and',arrFilters];
-            var tipo_venta = 2;//Ventas TM
-            if(tm_pagada){//Filtros para SO de tipo TM pagada 
-                tipo_venta = 19;//TM Pagada
+            var tipo_venta = 2;
+            if(tm_pagada){
+                tipo_venta = 19;
             }
-            if(tm_pagada == 3){// En algun lugar se manda 3 para pedir busquedas de TM Ganada 
-                tipo_venta = 1;//TM Ganada
+            if(tm_pagada == 3){
+                tipo_venta = 1;
             }
             if (historico){
                 if(h_ingreso == true){
@@ -134,10 +132,10 @@ function(record, search, runtime, format) {
 
                 }
                 
-            }else if(tm_pagada == 3){//TMGanada
+            }else if(tm_pagada == 3){
                 var arrReturn = [['recordtype', 'is', 'salesorder'],'and',['custbody_tipo_venta','is',tipo_venta],'and',['custbody_vw_comission_status','NONEOF',2],'and',['trandate', 'within', [startDate, endDate]],'and',arrFilters];
 
-            }else {//Filtros para busqueda de Ventas TM y TM Pagada 
+            }else {
                 var arrReturn = [['recordtype', 'is', 'salesorder'],'and',['custbody_tipo_venta','is',tipo_venta],'and',['trandate', 'within', [startDate, endDate]],'and',arrFilters];
 
             }

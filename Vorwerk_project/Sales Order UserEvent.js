@@ -487,9 +487,10 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 	                ]
 	            	});
 	            	log.debug('objPresentadora',objPresentadora)
+	            	log.debug('objPresentadora',objPresentadora)
 
 	            	
-		    		if( type == 'create' || salesrep != old_salesrep){
+		    		if( type == 'create' || salesrep != old_salesrep ){
 
 		    			if(runtime.envType != 'PRODUCTION'){ 
 		                    urlLMS = 'http://api-referidos-thrmx.lms-la.com/api/venta'
@@ -521,7 +522,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 		    				"Importe": importe,
 		    				"salesrep": salesrep,
 		    				"IDUsalesRep":objsalesrep.entityid,
-		    				"Order": ""+recordid+""
+		    				"Order": recordid
 		    			}
 		    			log.debug('objRequest LMS',objRequest)
 		    			var responseService = http.post({
@@ -536,7 +537,17 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 
 			            log.debug('pre actualizacion customer',objcustomer.custentity_first_so[0].value)
 			            if(objcustomer.custentity_first_so[0].value == false || objcustomer.custentity_first_so[0].value == ''){
-			            	
+			            	//Actualizar Customer
+				            var submitFields = record.submitFields({
+				                type: 'customer',
+				                id: customer,
+				                values: {
+				                //'custentityidu_presentador':objsalesrep.entityid,
+				                'custentity_first_so':recordid,
+				            	'custentity_date_first_so':fdate,
+				            	'custentitysales_rep_first_so':salesrep,
+				            	}
+				            });
 
 
 			    			//Ajuste AD
@@ -559,29 +570,18 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 		                    }).body;
 		                    log.debug('responseService AD',responseService)
 
-		                    //Actualizar Customer
-				            var submitFields = record.submitFields({
-				                type: 'customer',
-				                id: customer,
-				                values: {
-				                //'custentityidu_presentador':objsalesrep.entityid,
-				                'custentity_first_so':recordid,
-				            	//'custentity_date_first_so':fdate,
-				            	'custentitysales_rep_first_so':salesrep,
-				            	}
-				            });
-
 			            }
 			            
 			    	
 			    	}
 
-			    	//Campos para validar si es cancelacion 
+			    	//Campos para validar si es cancelacion LMS
 			    	var op1 = rec.getValue('custbody_otro_financiamiento')
 		    		var op1old = oldrec.getValue('custbody_otro_financiamiento')
 		    		var op2 = rec.getValue('custbody_tipo_venta')
 		    		var op2old = oldrec.getValue('custbody_tipo_venta')
-		    		if( type == 'edit' && ( (op1 == 4 && op1!=op1old) || (op2 == 16 && op2 != op2old) )){
+		    		
+		    		if( type == 'edit' && ( (op1 == 4 && op1!=op1old) || (op2 == 16 && op2 != op2old)) ){
 		    			log.debug('Es cancelacion')
 		    			
 		    			var urlLMSCancel
@@ -612,7 +612,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 		    				"FechaCancelacion":fdate,
 		    				"salesrep": salesrep,
 		    				"IDUsalesRep":objsalesrep.entityid,
-		    				"Order": ""+recordid+""
+		    				"Order": recordid
 		    			}
 		    			log.debug('objRequest LMS',objRequest)
 		    			log.debug('objRequest.length',JSON.stringify(objRequest).length)
@@ -685,11 +685,120 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 		            });
 	    		}
 
-	    	}catch(e){
-	    		log.debug('Error afterSubmit',e)
-	    	}
+		    	}catch(e){
+		    		log.debug('Error Forma de pago',e)
+		    	}
         }catch(err){
     		log.error("error after submit",err);
+    	}
+
+    	try{//Actualizacion Inventario ficticio eshop
+    		if(type == 'create'){
+    			var numLines = salesorder.getLineCount({//Toma las lineas de la SO
+	                sublistId: 'item'
+	            });
+	            log.debug('numLines',numLines)
+	    		for(var e =0; e<numLines; e++){	//Se recorre cada linea
+	    			log.debug('e',e)
+					var tmp_id = rec.getSublistValue({//ID del item
+	                    sublistId: 'item',
+	                    fieldId: 'item',
+	                    line: e
+	                })
+	                var locationSO = rec.getValue('location')
+	                var custbody_so_eshop = rec.getValue('custbody_so_eshop') //Check del restlet que indica que viene de tienda en linea
+
+	                var dataItem = search.lookupFields({// Busqueda de Invdentory Item
+		                type: 'item',
+		                id: tmp_id,
+		                columns: ['custitem_disponible_eshop','recordtype']//Stock disponible en el campo para eshop, tipo de registro
+		            });
+
+	    			log.debug('dataItem',dataItem)
+	    			var disponible_eshop = parseInt(dataItem['custitem_disponible_eshop']) //Stock dedicado a eshop
+		    		log.debug('disponible_eshop',disponible_eshop)
+		    		var itemType = dataItem['recordtype']
+		    		log.debug('itemType',itemType)
+		    		if(disponible_eshop > 0 && locationSO == 82 && custbody_so_eshop == true){
+		    			//Restar quantity del stock eshop
+		    			var quantitySalesOrder = rec.getSublistValue({
+		                    sublistId: 'item',
+		                    fieldId: 'quantity',
+		                    line: e
+		                })
+		                log.debug('quantitySalesOrder',quantitySalesOrder)
+		    			var stockAfter = disponible_eshop - quantitySalesOrder //Nuevo stock de Eshop, Disponibler eshop menos lo que acabamos de vender
+		    			log.debug('stockAfter',stockAfter)
+		    			record.submitFields({
+		                type: itemType,
+		                id: tmp_id,
+		                values: { custitem_disponible_eshop: stockAfter}
+		            	})
+		    		}
+	    		}
+    		}
+    		//Proceso de cancelacion Reserva ficticia
+    		var op1 = rec.getValue('custbody_otro_financiamiento')
+    		var op1old = oldrec.getValue('custbody_otro_financiamiento')
+    		var op2 = rec.getValue('custbody_tipo_venta')
+    		var op2old = oldrec.getValue('custbody_tipo_venta')
+
+    		var so_first_canc = rec.getValue('custbody_so_first_canc')
+
+		    if( type == 'edit' && ( (op1 == 4 && op1!=op1old) || (op2 == 16 && op2 != op2old) ) && !so_first_canc){
+                log.debug('so_first_canc', so_first_canc)
+                var numLines = salesorder.getLineCount({//Toma las lineas de la SO
+                    sublistId: 'item'
+                });
+                log.debug('numLines',numLines)
+                for(var e =0; e<numLines; e++){ //Se recorre cada linea
+                    log.debug('e',e)
+                    var tmp_id = rec.getSublistValue({//ID del item
+                        sublistId: 'item',
+                        fieldId: 'item',
+                        line: e
+                    })
+                    var locationSO = rec.getValue('location')
+                    var custbody_so_eshop = rec.getValue('custbody_so_eshop') //Check del restlet que indica que viene de tienda en linea
+                    var dataItem = search.lookupFields({// Busqueda de Invdentory Item
+                        type: 'item',
+                        id: tmp_id,
+                        columns: ['custitem_disponible_eshop','recordtype']//Stock disponible en el campo para eshop, tipo de registro
+                    });
+
+                    log.debug('dataItem',dataItem)
+                    var disponible_eshop = parseInt(dataItem['custitem_disponible_eshop']) //Stock dedicado a eshop
+                    log.debug('disponible_eshop',disponible_eshop)
+                    var itemType = dataItem['recordtype']
+                    log.debug('itemType',itemType)
+                    if(disponible_eshop > 0 && locationSO == 82 && custbody_so_eshop == true){
+                        //Restar quantity del stock eshop
+                        var quantitySalesOrder = rec.getSublistValue({
+                            sublistId: 'item',
+                            fieldId: 'quantity',
+                            line: e
+                        })
+                        log.debug('quantitySalesOrder',quantitySalesOrder)
+                        var stockAfter = disponible_eshop + quantitySalesOrder //Nuevo stock de Eshop, Disponibler eshop menos lo que acabamos de vender
+                        log.debug('stockAfter',stockAfter)
+                        record.submitFields({
+                        type: itemType,
+                        id: tmp_id,
+                        values: { custitem_disponible_eshop: stockAfter}
+                        })
+
+                        var submitFieldsSalesOrder = record.submitFields({
+            			    type: record.Type.SALES_ORDER,
+            			    id: recordid,
+            			    values: {'custbody_so_first_canc':true}
+            			});
+                    }
+                }
+            
+		    }
+    		
+    	}catch(e){
+    		log.debug('Error en Actualizacion Inventario ficticio eshop',e)
     	}
 
     	//Actualizar campo RECLUTADORA
@@ -978,7 +1087,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 	   	               })	
 	      			});
 	      		});
-	      		//log.debug('numOrders',numOrders);
+	      		log.debug('numOrders',numOrders);
 	           if(numOrders.length > 10){
 	        	   return false;
 	           }
