@@ -5,8 +5,8 @@
  */
 // This sample shows how to render search results into a PDF file.
 // Note that this sample is a Suitelet, so it cannot be run in the debugger.
-define(['N/email','N/record','N/render', 'N/search','N/xml','N/config','N/file','N/url','./Vorwerk Utils.js','./Vorwerk Dictionary Script.js'],
-    function(email,record,render,search,xml,config,file,url,Utils,Dictionary) {
+define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/config','N/file','N/url','./Vorwerk Utils.js','./Vorwerk Dictionary Script.js'],
+    function(runtime,email,record,render,search,xml,config,file,url,Utils,Dictionary) {
     	var config_fields = Dictionary.getDictionayFields();
 
 		//creacion del body 
@@ -488,7 +488,7 @@ define(['N/email','N/record','N/render', 'N/search','N/xml','N/config','N/file',
 		}
 		//creacion de encabeazado
 		function createHeader(name_employee,type_emp_text,period_name){
-			var configRecObj = config.load({
+			/*var configRecObj = config.load({
     		    type: config.Type.COMPANY_INFORMATION
     		});
 			var companyInfoLogoId = 	configRecObj.getValue('formlogo');
@@ -508,29 +508,45 @@ define(['N/email','N/record','N/render', 'N/search','N/xml','N/config','N/file',
 			
 			log.debug('companyInfoLogoURL',companyInfoLogoURL);
 			
-			log.debug('fileObj',fileObj);
+			log.debug('fileObj',fileObj);*/
+			function getImage(idImg){
+	    	try{
+	    		var host = "https://3367613-sb1.app.netsuite.com";
+	    		//obtiene imagen de chekc false
+		        var fileObj = file.load({
+		            id: idImg//'1510039'
+		        });
+	    		var url_img = fileObj.url
+	    		url_img = stringToArray(url_img,38);
+	    		url_img   = url_img.join('&amp;');
+	    		url_img   = "src='" + host + url_img + "'/";
+	    		
+	    		return url_img;
+	    	}catch(err){
+	    		log.error("error getImage",err)
+	    	}
+    	}
+   			 var logodURL 
+
+	            if(runtime.envType  == "SANDBOX"){
+	                logodURL = getImage('2461144') //id imagen vorwerk tm s green sandbox  
+	            }else{
+	                logodURL = getImage('2576941') //id imagen vorwerk tm s green prod
+	            }
 			
 			var  jdg_name_employee= name_employee;
 			var fc =period_name;
 			
 			var strTable = "";
-			strTable += "<table width='100%' align=\"center\" style='table-layout: fixed;'>";
-			strTable += "<tr>";
-			strTable += "<td align='center' width='30%' rowspan='4'><img width=\"100%\" height=\"100%\" " + companyInfoLogoURL + "></td>";
-			strTable += "<td align='center' width='40%'><p color=\"#14904A\" font-size=\"12\"><b>REPORTE DE COMPENSACIONES</b></p></td>";
-			strTable += "<td align='center' width='30%' rowspan='4'><img width='80%' height='80%' src='/core/media/media.nl?id=911573&amp;c=3367613&amp;h=ba7b026e2315ffefe9a2'/></td>";
-			strTable += "</tr>";
-			strTable += "<tr>";
+			strTable += "<p align='center'><img width=\"100%\" height=\"100%\" " + logodURL + "></p>";
+			strTable += "<p align=\"center\" color=\"#23282*\" font-size=\"12\"><b>REPORTE DE COMPENSACIONES</b></p>";
 			if(type_emp_text == 'Jefa de Grupo'){type_emp_text='Lider de equipo'}
-			strTable += "<td align=\"center\"><h4><b>"+ type_emp_text.toUpperCase() +"</b></h4></td>";
-			strTable += "</tr>";
-			strTable += "<tr>";
-			strTable += "<td align=\"center\">" + fecha_letras(fc) + "</td>";
-			strTable += "</tr>";
-			strTable += "<tr>";
-			strTable += "<td align=\"center\">"+jdg_name_employee + "</td>";
-			strTable += "</tr>";
-			strTable += "</table>";
+			strTable += "<p align=\"center\"><h4><b>"+ type_emp_text.toUpperCase() +"</b></h4></p>";
+			strTable += "<p align=\"center\">" + fecha_letras(fc) + "</p>";
+			strTable += "<p align=\"center\">"+jdg_name_employee + "</p>";
+
+
+			
 			return strTable;
 		}
 		//creacion del pdf
