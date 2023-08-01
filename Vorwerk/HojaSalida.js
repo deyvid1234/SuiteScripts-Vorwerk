@@ -1,3 +1,4 @@
+//hoja salida LISTO
 /*/
 	var ov = returnBlank(nlapiGetFieldValue('createdfrom'));
 	if(ov!='')
@@ -163,23 +164,32 @@ function HojaSalidaPDF(request, response)
 	}
 	otros 	= otros.length;
 
-	var imagen = nlapiLoadFile(144011);
+	 var internalIdimage
+
+	if (nlapiGetContext().getEnvironment() == "SANDBOX") {
+		internalIdimage = 2461144 //sandbox
+	}
+	else {
+		internalIdimage = 2576941 //prod
+	}
+
+	var imagen = nlapiLoadFile(internalIdimage);
 	var url = imagen.getURL();
 	var urls = url.split('&');
 	var urlAux = '';
-	urlAux = urls.join('&amp;');
+	urlAux = urls.join('&amp;'); 
+	
 
+	
 	var Encabezado = new String();
-		Encabezado += "<table width='95%'>";
-		Encabezado += "<tr><td align='right' font-size=\"8\"><b>"+fecha_letras(returnBlank(hsRec.getFieldValue('trandate')),parseInt(1))+"</b></td></tr>";
-		Encabezado += "</table>";
+		
 		Encabezado += "<table align='center'>";
 		//Encabezado += "<tr><td align='center'><img width=\"50.2mm\" height=\"18.6mm\" src=\"https://system.netsuite.com/core/media/media.nl?id=144011&amp;c=3367613&amp;h=be6d4a25f183718f701c\" /></td></tr>";
-		Encabezado += "<tr><td align='center'><img width=\"50.2mm\" height=\"18.6mm\" src=\"" + urlAux + "\" /></td></tr>";
+		Encabezado += "<tr><td align='center'><img width=\"100%\" height=\"100%\" src=\"" + urlAux + "\" /></td></tr>";
 		Encabezado += "</table>";
 		Encabezado += "<p font-family=\"Helvetica\" font-size=\"9\"></p>";
 		Encabezado += "<table align='center'>";
-		Encabezado += "<tr><td align='center' color='#15994E' font-size=\"12\"><b>"+"HOJA DE SALIDA"+"</b></td></tr>";
+		Encabezado += "<tr><td align='center' font-size=\"12\"><b>"+"HOJA DE SALIDA"+"</b></td></tr>";
 		Encabezado += "</table>";
 	var entityText 	= nlapiEscapeXML(returnBlank(hsRec.getFieldText('entity')));
 	var numc		= nlapiEscapeXML(returnBlank(hsRec.getFieldValue('custbody_numc')));
@@ -190,7 +200,7 @@ function HojaSalidaPDF(request, response)
 	for(var i=1;i<itemcount + 1;i++){
 				var tmp_item = hsRec.getLineItemValue('item', 'item', i);
 				nlapiLogExecution('debug', 'tmp_item', tmp_item);
-				if(tmp_item == 2001 || tmp_item == 2170 || tmp_item == 2490 || tmp_item == 2280 ){
+				if(tmp_item == 2001 || tmp_item == 2170 || tmp_item == 2490|| tmp_item == 2280){
 					 var subrecord = hsRec.viewLineItemSubrecord('item', 'inventorydetail',i);
 					 nlapiLogExecution('debug', 'subrecord', JSON.stringify(subrecord));
 					 if(subrecord != null) {
@@ -303,13 +313,11 @@ function HojaSalidaPDF(request, response)
 		pie += "<table width ='100%'>";
 		pie += "<tr><td align=\"center\" font-size=\"9\">"+companyInfoCity+", "+companyInfoCountry.toUpperCase()+" A "+ fecha_letras(returnBlank(hsRec.getFieldValue('trandate')),parseInt(2)).toUpperCase() +"</td></tr>";
 		pie += "</table>";
-		pie += "<table align=\"center\"  width ='100%'>";
-		pie += "<tr><td align=\"center\" font-size=\"8\">"+companyInfoAddress1+", "+companyInfoAddress2+", "+companyInfoState+", C.P. "+companyInfoZip+"</td></tr>";
-		pie += "<tr><td align=\"center\" font-size=\"8\">ATENCION A CLIENTES: "+companyInfoPhone+", FAX: "+companyInfoFax+"</td></tr>";
-		pie += "</table>";
+		pie += "<p align='center' font-size='8pt' margin-bottom='10pt'> Vorwerk México S de RL de CV | Vito Alessio Robles 38 Col. Florida, Álvaro Obregón C.P. 01030 CDMX, México. RFC: VME060622GL2 <br/> SERVICIO AL CLIENTE: 800 200 1121</p>";
+		
 		pie += "<table width ='100%'>";
 		//pie += "<tr><td align=\"center\"><img width=\"29.0mm\" height=\"5.2mm\" src=\"https://system.netsuite.com/core/media/media.nl?id=144012&amp;c=3367613&amp;h=29d6e1966bbe9981ac85\" /></td></tr>";
-		pie += "<tr><td align=\"center\"><img width=\"29.0mm\" height=\"5.2mm\" src=\"" + urlAux + "\" /></td></tr>";
+		
 		pie += "</table>";
 
 	var strName = new String();
@@ -323,7 +331,7 @@ function HojaSalidaPDF(request, response)
 					xml += "<macro id=\"paginas\">"		+ pie 			+ "</macro>";
 				xml += "</macrolist>";
 			xml += "</head>";
-			xml += "<body font='helvetica' font-size='10' size='215.6mm x 279mm' header=\"myheader\" header-height=\"100pt\" footer=\"paginas\" footer-height='120pt'>";
+			xml += "<body font='helvetica' font-size='10' size='215.6mm x 279mm' header=\"myheader\" header-height=\"130pt\" footer=\"paginas\" footer-height='120pt'>";
 				xml += strName;
 			xml += "</body>\n";
 		xml += "</pdf>";
