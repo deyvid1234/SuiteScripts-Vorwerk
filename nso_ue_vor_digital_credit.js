@@ -11,7 +11,7 @@
  * idDeploy: customdeploy_nso_ue_vor_employee_json
  * Fecha: 25/08/2022
  */
-
+/*Token digital credit*/
 define(["N/record", "N/search", "N/error", "N/format", "N/runtime", "N/https", "N/file", "N/url"], function (record, search, error, format, runtime, https, file, url) {
 
     let handler = {}, executionScript = null, AMBIENTE = null;
@@ -208,16 +208,19 @@ define(["N/record", "N/search", "N/error", "N/format", "N/runtime", "N/https", "
                 log.debug("dataEmployee", dataEmployee);
                 //------------------------------------- ENVIAR JSON A Digital Credit -----------------------------------
                 let token = null, urlServer = null;
-                token     = runtime.envType == 'PRODUCTION' ? setupDigital.tokenProduccion : setupDigital.tokenSandbox;
+                /*token     = runtime.envType == 'PRODUCTION' ? setupDigital.tokenProduccion : setupDigital.tokenSandbox;*/
+                token = "aa" 
                 if(employee.getValue('isinactive')){
                     urlServer = runtime.envType == 'PRODUCTION' ? setupDigital.urlBajaProduccion : setupDigital.urlBajaSandbox;
                 }
                 else{
                     urlServer = runtime.envType == 'PRODUCTION' ? setupDigital.urlAltaProduccion : setupDigital.urlAltaSandbox;
                 }
-              log.debug('token',token)
-                let headerEmployee = { "Content-Type": "application/json", Accept: "application/json", Authorization: "Bearer " + token, Header1: 'a97145b6cee9d6ec9138847649e4379354d36a6e', Header2:'2face66268e0e6a0efd8094cc2e6f0caab07b1c1' };
+                let headerEmployee = { "Content-Type": "application/json", Accept: "application/json", Authorization: "Bearer " + token,Header1: '090d0fc16045ece86947664c91db3d2a8b6f588c', Header2:'af70fbfef1504f69a2153aafa201142dd22ddc64'};
                 //log.audit('DATA_ENDPOINT', {urlServer, token});
+                log.debug('urlServer',urlServer)
+                log.debug('header',headerEmployee)
+                log.debug('Json body',JSON.stringify(dataEmployee))
                 let customResponse = https.post({ url: urlServer, body: JSON.stringify(dataEmployee), headers: headerEmployee });
                 log.debug(`DIGITAL_CREDIT_RESPONSE_FOR_EMPLOYEE: ${employee.id}`, JSON.stringify(customResponse));
                 let bodyResponse   = JSON.parse(customResponse.body);
