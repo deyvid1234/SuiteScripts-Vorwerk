@@ -3,9 +3,9 @@
  * @NScriptType MapReduceScript
  * @NModuleScope SameAccount
  */
-define(['N/search','N/https'],
+define(['N/search','N/https', 'N/runtime'],
 
-function(search,https) {
+function(search,https,runtime) {
    
     /**
      * Marks the beginning of the Map/Reduce process and generates input data.
@@ -68,9 +68,14 @@ function(search,https) {
 	    	delete obj_detail.gerente
 	    	delete obj_detail.mostrador
 	    	log.debug('JSON send',obj_detail)
-
+	    	if(runtime.envType != 'PRODUCTION'){ 
+		        urlAD = 'https://dev-apiagenda.mxthermomix.com/users/registerUserNetsuite'
+		    }else{//prod
+		        urlAD = 'https://apiagenda.mxthermomix.com/users/registerUserNetsuite'
+		    }
+		     log.debug('urlAD',urlAD)
 	    	var responseService = https.post({
-			    url: 'https://apiagenda.mxthermomix.com/users/registerUserNetsuite',
+			    url: urlAD,
 				body : JSON.stringify(obj_detail),
 				headers: {
 	     			"Content-Type": "application/json"
@@ -116,7 +121,7 @@ function(search,https) {
                 type: 'employee',
                 columns: ['internalid','entityid','firstname','email','mobilephone','lastname',
                          'isinactive','employeetype','custentity_oficina','location',
-                         'custentity_delegada','supervisor','custentityregional_manager','custentity_area_manager',
+                         'custentity_delegada','supervisor','custentityregional_manager','custentity_area_manager','custentity_estructura_virtual',
                          {name : 'custentity_mostrador',join : 'custentity_delegada'},
                         ],
                 filters: [
@@ -154,6 +159,7 @@ function(search,https) {
 						correo : result.getValue('email'),
 						telefono : result.getValue('mobilephone'),
 						inactivo: result.getValue('isinactive'),
+						virtual: result.getValue('custentity_estructura_virtual'),
 						rol :[{text:result.getText('employeetype'),value:result.getValue('employeetype')}],
 						gerencia: result.getText('custentity_gerencia'),
 						sucursal:{name:result.getText('custentity_oficina'),value:result.getValue('custentity_oficina')},
