@@ -102,13 +102,13 @@ function Orden_Venta_PDF(request,response)
         }
         nlapiLogExecution('debug', 'serie 2', serie);
         var Encabezado  = '';
+
+
+        Encabezado += "<p align='center'><img width=\"100%\" height=\"100%\" " + companyInfoLogoURL + "></p>";
         Encabezado += "<table width='100%'>";
         Encabezado += "<tr>";
         Encabezado += "<td width='50%'>";
-        Encabezado +="<table width='100%'>";
-        Encabezado += "<tr><td colspan='3' align='left'><img width=\"100%\" height=\"100%\" " + companyInfoLogoURL + "></td><td></td></tr>";
-        Encabezado += "<tr><td>&nbsp;</td></tr>";
-        Encabezado += "</table>";
+        
         Encabezado += "</td>";
         Encabezado += "</tr>";
         Encabezado += "</table>";
@@ -305,37 +305,20 @@ function Orden_Venta_PDF(request,response)
         }
 
         var Pie = '';
-/*
-        Pie +='<table>';
-        Pie += '<tr width="100%">';
-        Pie += '<td width="100%" align="center">';
-        Pie += "<table class='Tabla2' width='100%' align='center' padding='1' margin='1'>";
-        Pie += "<tr><td width='300px' height='110px' font-size=\"60pt\">&nbsp;</td></tr>";
-        Pie += "</table>";
-        Pie += "<table width='40%' align='center'>";
-        Pie += "<tr><td font-size=\"7pt\" align='center'>Sello</td></tr>";
-        Pie += "</table>";
-        Pie += '</td>';
-        Pie += '<td>';
-        Pie += "<table  align='left'>";
-        Pie += "<tr><td width='300px' height='115px' class='AvisoFac'><u><b>IMPORTANTE</b></u> Si requiere CFDi (Factura Electrónica) "+
-            " cuenta con 10 días para solicitarla, siempre que se encuentre dentro del mes de compra. "+
-            "Si la compra la realizó  dentro de los últimos 5 días del mes, deberá solicitar su CFDi (Factura Electrónica) a más tardar "+
-            "el último día hábil del mes de compra. No se realizarán Facturas en meses posteriores a la compra.</td></tr>";
-        Pie += '</table>';
-        Pie += '</td>';
-        Pie += '</tr>';
-        Pie +='</table>';*/
+
+       
+        Pie += "<p align='center' font-size='8pt' margin-bottom='10pt'> Vorwerk México S de RL de CV | Vito Alessio Robles 38 Col. Florida, Álvaro Obregón C.P. 01030 CDMX, México. <br/> RFC: VME060622GL2 Tel: 800 200 1121</p>";
+
 
         var xml = "<?xml version='1.0' encoding='UTF-8'?>\n<!DOCTYPE pdf PUBLIC '-//big.faceless.org//report' 'report-1.1.dtd'>\n";
         xml += "<pdf>";
         xml += "<head>";
         xml += "<style>";
-        xml += ".AvisoFac{border: 1px solid red; font-size:10px;corner-radius: 10px;} ";
-        xml += ".FondoColorOscuro{color:#FFFFFF; background-color:#0070AD;} ";
-        xml += ".FondoColorClaro{color:#000000; background-color:#CFE7F5;} ";
+      
+        xml += ".FondoColorOscuro{color:#FFFFFF; background-color:#919394;} ";//Gris oscuro
+        xml += ".FondoColorClaro{color:#000000; background-color:#DCDFDC;} ";// gris medio
         xml += ".FondoBlanco{background-color:#FFFFFF;} ";
-        xml += ".Tabla{border: 1 px;}";
+        xml += ".Tabla{border: 1 px;}"; 
         xml += ".Tabla2{border: 0.1 px; corner-radius: 10px;}";
         xml += "</style>";
         xml += "<macrolist>";
@@ -343,7 +326,7 @@ function Orden_Venta_PDF(request,response)
         xml += "<macro id=\"paginas\">"     + Pie           + "</macro>";
         xml += "</macrolist>";
         xml += "</head>";
-        xml += "<body font='helvetica' font-size='8' size='letter'  header=\"myheader\" header-height=\"190pt\" footer=\"paginas\" footer-height='80pt'>";
+        xml += "<body font='helvetica' font-size='8' size='letter'  header=\"myheader\" header-height=\"190pt\" footer=\"paginas\" footer-height='40pt'>";
         xml += strName;
         xml += "</body>\n";
         xml += "</pdf>";
