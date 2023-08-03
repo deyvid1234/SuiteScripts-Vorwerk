@@ -1120,8 +1120,8 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
               var objInfo = info_data[arrKeys[e]];  //extrae la información por presentador arrKeys[e]= [1234,1112] e= 1  info_data[arrKeys[e]] = {1234:{:name,id,type,data...etc}}
                   //proceso para llenar la informacion de la tabla
           
-            if(arrKeys[e] == 92303){
-                log.debug('92303',objInfo)
+            if(arrKeys[e] == 3464510){
+                log.debug('3464510',objInfo)
             }  
               //Se asigna la configuracion 
             var  numero_para_comisionar = 6
@@ -1183,7 +1183,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
             var Supercomision = 0
               try{
               //ODV DE LA JEFA DE GRUPO
-                if(arrKeys[e] == 92303){
+                if(arrKeys[e] == 3464510){
                     log.debug('infoODVPromo.hasOwnProperty(arrKeys[e])',infoODVPromo.hasOwnProperty(arrKeys[e]))
                     log.debug('parseInt(Object.keys(infoODVPromo[arrKeys[e]]).length) ', infoODVPromo[arrKeys[e]])
                     //log.debug(' Object.keys(infoODVPromo[arrKeys[e]]).join(',')', Object.keys(infoODVPromo[arrKeys[e]]).join(','))
@@ -1229,17 +1229,17 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                        if(cust_type == 1 && cust_promo == 2 && result_odv_pre){
                      if(result_odv_pre.hasOwnProperty(arrKeys[e])){
                            comisiona_desde = result_odv_pre[arrKeys[e]]['trandate']
-                           log.debug('fecha',comisiona_desde[2]+comisiona_desde[1]+comisiona_desde[0])
+                           //log.debug('fecha',comisiona_desde[2]+comisiona_desde[1]+comisiona_desde[0])
                            f_filtro = new Date(comisiona_desde[2],comisiona_desde[1]-1,comisiona_desde[0])
                            for(i in infoODVPromo[arrKeys[e]]){
-                             log.debug('fecha odv -',infoODVPromo[arrKeys[e]][i][1]['trandate'][2]+infoODVPromo[arrKeys[e]][i][1]['trandate'][1]+infoODVPromo[arrKeys[e]][i][1]['trandate'][0])
+                             //log.debug('fecha odv -',infoODVPromo[arrKeys[e]][i][1]['trandate'][2]+infoODVPromo[arrKeys[e]][i][1]['trandate'][1]+infoODVPromo[arrKeys[e]][i][1]['trandate'][0])
                              f_odv = new Date(infoODVPromo[arrKeys[e]][i][1]['trandate'][2],infoODVPromo[arrKeys[e]][i][1]['trandate'][1]-1,infoODVPromo[arrKeys[e]][i][1]['trandate'][0])
                              if (f_odv >= f_filtro && infoODVPromo[arrKeys[e]][i][1]['comission_status'] != 2){ // Filtro para no considerar como comisionable la orden con la que gana su TM 
                                odv_propias_filtrado[infoODVPromo[arrKeys[e]][i][1]['id']] = infoODVPromo[arrKeys[e]][i][1]['trandate']
                              }
                            }
-                           log.debug('numero de odv filtradas',Object.keys(odv_propias_filtrado).length)
-                           log.debug('odv_propias_filtrado',odv_propias_filtrado)
+                           //log.debug('numero de odv filtradas',Object.keys(odv_propias_filtrado).length)
+                           //log.debug('odv_propias_filtrado',odv_propias_filtrado)
                            odvPNumber=Object.keys(odv_propias_filtrado).length
                            odvPIds=Object.keys(odv_propias_filtrado).join(',')
                          }else if(cust_type == 1 && cust_promo == 2 &&  structure_tipo_ingreso.hasOwnProperty(arrKeys[e])){
@@ -1247,7 +1247,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                                  if(Object.keys(infoODVPromo_historico_pre[arrKeys[e]]).length < 7){
                                  cont_pre = Object.keys(infoODVPromo_historico_pre[arrKeys[e]]).length
                                  
-                                 log.debug('se hara resta: '+arrKeys[e]+' campo: '+objInfo.tipo_ingreso+' numero de casos: '+cont_pre,Object.keys(infoODVPromo_historico_pre[arrKeys[e]]).length)
+                                 //log.debug('se hara resta: '+arrKeys[e]+' campo: '+objInfo.tipo_ingreso+' numero de casos: '+cont_pre,Object.keys(infoODVPromo_historico_pre[arrKeys[e]]).length)
                                  if(cont_pre <=numero_para_comisionar){
                                    cont_pre = numero_para_comisionar - cont_pre
                                  }else{cont_pre = 0}
@@ -1264,8 +1264,8 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                   
                   
                  
-                  if(arrKeys[e] == 92303){
-                      log.debug('92303','odvPNumber '+odvPNumber+' odvTMpagada  '+odvTMpagada+' cust_promo '+cust_promo+' objInfo.e_virtual '+objInfo.e_virtual+' cont_pre '+cont_pre+' venta total propia '+(odvPNumber+odvTMpagada-cont_pre))
+                  if(arrKeys[e] == 3464510){
+                      log.debug('3464510','odvPNumber '+odvPNumber+' odvTMpagada  '+odvTMpagada+' cust_promo '+cust_promo+' objInfo.e_virtual '+objInfo.e_virtual+' cont_pre '+cont_pre+' venta total propia '+(odvPNumber+odvTMpagada-cont_pre))
                   }  
                   if(odvPNumber+odvTMpagada > 0 && cust_promo !=1 && objInfo.e_virtual == false){
                    var total_venta_p =(odvPNumber+odvTMpagada-cont_pre)>0?(odvPNumber+odvTMpagada-cont_pre):0
@@ -1732,7 +1732,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                 Supercomision = 0
               }
               subtotal = (parseInt(venta_propia)+parseInt(entrega)+parseInt(venta_equipo)+parseInt(bono_productividad)+parseInt(bono_emerald)+parseInt(bono_talento)+parseInt(bono_reclutadora)+parseInt(comision_ck)+parseInt(comisionGarantia)+parseInt(bono_tres_dos)+parseInt(bono_cinco_dos)+parseInt(Supercomision*500))
-              if(arrKeys[e] == 92303){
+              if(arrKeys[e] == 3464510){
                 log.debug('venta_propia',venta_propia
                 +' entrega: '+entrega
                 +' venta_equipo: '+venta_equipo
@@ -2233,7 +2233,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                 tmR = parseInt(values['GROUP(salesRep.custentity_conf_rec)'][0]['value'])
                 var comisionan = 0
                 var falta = 0
-                if(tmR == 11 ){//Si su TM es R solo comisiona 4 ventas
+                if(tmR == 11 || tmR == 12){//Si su TM es R o CC12 solo comisiona 4 ventas
                     tmR = true
                     comisionan = 4
                     falta = comisionan - num_h
