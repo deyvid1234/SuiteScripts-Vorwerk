@@ -21,7 +21,7 @@ function(runtime,url,https) {
     		var record = scriptContext.newRecord;
     		var form = scriptContext.
     		form;
-    		form.clientScriptFileId = (runtime.envType != 'PRODUCTION') ? '1510041' : '1585973';
+    		form.clientScriptFileId = (runtime.envType != 'PRODUCTION') ? '1585973' : '1585973';
        	 	form.addButton({
                 id: 'custpage_btn_order_repar',
                 label: 'Imprimir Orden',
