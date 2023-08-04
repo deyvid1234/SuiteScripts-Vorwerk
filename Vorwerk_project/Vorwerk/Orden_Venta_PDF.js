@@ -60,7 +60,12 @@ function Orden_Venta_PDF(request,response)
             var NO_LOGO_ID      = searchFile[0].getId();
             companyInfoLogoObj  = nlapiLoadFile(NO_LOGO_ID);
         }
-        companyInfoLogoURL  = companyInfoLogoObj.getURL();
+        if (nlapiGetContext().getEnvironment() == "SANDBOX") {
+            companyInfoLogoURL = '/core/media/media.nl?id=2461144&c=3367613_SB1&h=eEB3Zn7T6vRFsbPljmmuN0ORPNQ5jSQGt3ys437w_kszrBvh'
+        }
+        else {
+            companyInfoLogoURL = '/core/media/media.nl?id=2576941&c=3367613&h=EVQpFOUkyARO0Xup5ue_KhGuik1V9R-xb--eYG7FiF_7YPaV'
+        }
         companyInfoLogoURL  = stringToArray(companyInfoLogoURL,38);
         companyInfoLogoURL  = companyInfoLogoURL.join('&amp;');
         companyInfoLogoURL  = "src='" + host + companyInfoLogoURL + "'/";
