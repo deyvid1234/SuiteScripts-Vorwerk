@@ -662,257 +662,263 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
         //Fin Campos Compartidos
         
         //Campos Tm Propia - Gris
-        if(cust_promo != 1){
-           var venta_propia = sublist.addField({
-               id: 'custentity_venta_propia',
-               type: serverWidget.FieldType.CURRENCY,
-               label: 'Venta Propia'
-           });
-           venta_propia.updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
+      if(cust_promo != 1){
+        var venta_propia = sublist.addField({
+            id: 'custentity_venta_propia',
+            type: serverWidget.FieldType.CURRENCY,
+            label: 'Venta Propia'
+        });
+        venta_propia.updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
            
-           var tm_ganadas_num = sublist.addField({
-               id: 'custentity_tm_ganadas_num',
-               type: serverWidget.FieldType.TEXT,
-               label: 'TM Ganadas'
-           });
-           tm_ganadas_num.updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
+        var tm_ganadas_num = sublist.addField({
+            id: 'custentity_tm_ganadas_num',
+            type: serverWidget.FieldType.TEXT,
+            label: 'TM Ganadas'
+        });
+        tm_ganadas_num.updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
 
-           var suma_ventas_total = sublist.addField({
-               id: 'custentity_suma_ventas_total',
-               type: serverWidget.FieldType.TEXT,
-               label: 'Acumulado de ventas'
-           });
-           suma_ventas_total.updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
-           var venta_num_entrega = sublist.addField({
-               id: 'custentity_num_entrega',
-               type: serverWidget.FieldType.TEXT,
-               label: 'Número de Entregas'
-           });
-           venta_num_entrega.updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
-           var odv_entrega = sublist.addField({
-               id: 'custentity_odv_entrega',
-               type: serverWidget.FieldType.TEXT,
-               label: 'ODV Entrega'
-           });
-           odv_entrega.updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
-           var venta_entrega = sublist.addField({
-               id: 'custentity_entrega',
-               type: serverWidget.FieldType.TEXT,
-               label: 'Entrega'
-           });
-           venta_entrega.updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
-             var bono_productividad = sublist.addField({
-                   id: 'custentity_bono_productividad',
-                   type: serverWidget.FieldType.CURRENCY,
-                   label: 'Bono de Productividad'
-               });
-               bono_productividad.updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
-               var bono_emerald = sublist.addField({
-                   id: 'custentity_bono_emerald',
-                   type: serverWidget.FieldType.CURRENCY,
-                   label: 'Bono EMERALD'
-               });
-               bono_emerald.updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
-               //El DD
-               //Garantia Num
-               var garantia_num = sublist.addField({
-                   id: 'custentity_garantia_num',
-                   type: serverWidget.FieldType.TEXT,
-                   label: 'Garantia Num'
-               });
-               garantia_num.updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
-               //Garantia Monto
-               var garantia_monto = sublist.addField({
-                   id: 'custentity_garantia_monto',
-                   type: serverWidget.FieldType.CURRENCY,
-                   label: 'Garantia Monto'
-               });
-               garantia_monto.updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
-               //Garantia ids
-               var bono_garantia_ids = sublist.addField({
-                   id: 'custentity_bono_garantia_ids',
-                   type: serverWidget.FieldType.TEXT,
-                   label: 'Garantia ids'
-               });
-               bono_garantia_ids.updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
-        }//Fin Campos Tm Propia
+        var suma_ventas_total = sublist.addField({
+            id: 'custentity_suma_ventas_total',
+            type: serverWidget.FieldType.TEXT,
+            label: 'Acumulado de ventas'
+        });
+        suma_ventas_total.updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
+           
+        var venta_num_entrega = sublist.addField({
+            id: 'custentity_num_entrega',
+            type: serverWidget.FieldType.TEXT,
+            label: 'Número de Entregas'
+        });
+        venta_num_entrega.updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
+           
+        var odv_entrega = sublist.addField({
+            id: 'custentity_odv_entrega',
+            type: serverWidget.FieldType.TEXT,
+            label: 'ODV Entrega'
+        });
+        odv_entrega.updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
+           
+        var venta_entrega = sublist.addField({
+            id: 'custentity_entrega',
+            type: serverWidget.FieldType.TEXT,
+            label: 'Entrega'
+        });
+        venta_entrega.updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
+             
+        var bono_productividad = sublist.addField({
+            id: 'custentity_bono_productividad',
+            type: serverWidget.FieldType.CURRENCY,
+            label: 'Bono de Productividad'
+        });
+        bono_productividad.updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
+               
+        var bono_emerald = sublist.addField({
+            id: 'custentity_bono_emerald',
+            type: serverWidget.FieldType.CURRENCY,
+            label: 'Bono EMERALD'
+        });
+        bono_emerald.updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
+        //El DD
+         //Garantia Num
+        var garantia_num = sublist.addField({
+            id: 'custentity_garantia_num',
+            type: serverWidget.FieldType.TEXT,
+            label: 'Garantia Num'
+        });
+        garantia_num.updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
+        //Garantia Monto
+        var garantia_monto = sublist.addField({
+            id: 'custentity_garantia_monto',
+            type: serverWidget.FieldType.CURRENCY,
+            label: 'Garantia Monto'
+        });
+        garantia_monto.updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
+        //Garantia ids
+        var bono_garantia_ids = sublist.addField({
+            id: 'custentity_bono_garantia_ids',
+            type: serverWidget.FieldType.TEXT,
+            label: 'Garantia ids'
+        });
+        bono_garantia_ids.updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
+      }//Fin Campos Tm Propia
            
            //Campos compartidos
-           var reclut = sublist.addField({
-               id: 'custentity_reclutas',
-               type: serverWidget.FieldType.TEXT,
-               label: 'Reclutas'
-           });
-           reclut.updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
-           var odv_rec = sublist.addField({
-               id: 'custentity_odv_rec',
-               type: serverWidget.FieldType.TEXT,
-               label: 'ODV de las Reclutas'
-           });
-           odv_rec.updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
-           var tmpagada_rec = sublist.addField({
-               id: 'custentity_tmpagada_rec',
-               type: serverWidget.FieldType.TEXT,
-               label: 'TM Pagadas Rec'
-           });
-           tmpagada_rec.updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
-           var odv_comisionables_rec = sublist.addField({
-               id: 'custentity_odv_comisionables_rec',
-               type: serverWidget.FieldType.TEXTAREA,
-               label: 'ODV comisionables'
-           });
-           odv_comisionables_rec.updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
+        var reclut = sublist.addField({
+            id: 'custentity_reclutas',
+            type: serverWidget.FieldType.TEXT,
+            label: 'Reclutas'
+        });
+        reclut.updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
+           
+        var odv_rec = sublist.addField({
+            id: 'custentity_odv_rec',
+            type: serverWidget.FieldType.TEXT,
+            label: 'ODV de las Reclutas'
+        });
+        odv_rec.updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
+           
+        var tmpagada_rec = sublist.addField({
+            id: 'custentity_tmpagada_rec',
+            type: serverWidget.FieldType.TEXT,
+            label: 'TM Pagadas Rec'
+        });
+        tmpagada_rec.updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
+           
+        var odv_comisionables_rec = sublist.addField({
+            id: 'custentity_odv_comisionables_rec',
+            type: serverWidget.FieldType.TEXTAREA,
+            label: 'ODV comisionables'
+        });
+        odv_comisionables_rec.updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
          
-           var bono_rec = sublist.addField({
-               id: 'custentity_bono_rec',
-               type: serverWidget.FieldType.CURRENCY,
-               label: 'Bono Reclutadora'
-           });
-           bono_rec.updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
+        var bono_rec = sublist.addField({
+            id: 'custentity_bono_rec',
+            type: serverWidget.FieldType.CURRENCY,
+            label: 'Bono Reclutadora'
+        });
+        bono_rec.updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
            //Fin campos compartidos
         
         //Campos Trabaja x TM
-        if(cust_promo == 1){
-             var ck = sublist.addField({
-                   id: 'custentity_ck',
-                   type: serverWidget.FieldType.CURRENCY,
-                   label: 'CK'
-               });
-               ck.updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
-        }
+      if(cust_promo == 1){
+        var ck = sublist.addField({
+            id: 'custentity_ck',
+            type: serverWidget.FieldType.CURRENCY,
+            label: 'CK'
+        });
+        ck.updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
+      }
            
            
-         //Campos JDG - Lideres de equipo
-         if (cust_type == 3) {
-             var total_ventas_p = sublist.addField({
-                 id: 'custentity_total_ventas_p',
-                 type: serverWidget.FieldType.TEXT,
-                 label: 'Ventas TM o CK y TM Pagadas'
-             });
-             total_ventas_p.updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
-            var bono_talento = sublist.addField({
-              id : 'custentity_bono_talento',
-              type : serverWidget.FieldType.CURRENCY,
-              label : 'Bono Talento'
-            });
-            bono_talento.updateDisplayType({
-              displayType : serverWidget.FieldDisplayType.READONLY
-            });
-            var supervi = sublist.addField({
-              id : 'custentity_presentadoras',
-              type : serverWidget.FieldType.TEXTAREA,
-              label : 'Presentadoras Equipo'
-            });
-            supervi.updateDisplayType({
-              displayType : serverWidget.FieldDisplayType.READONLY
-            });
-            var odv_pre = sublist.addField({
-              id : 'custentity_odv_pre',
-              type : serverWidget.FieldType.TEXT,
-              label : 'ODV de las Presentadoras'
-            });
-            odv_pre.updateDisplayType({
-              displayType : serverWidget.FieldDisplayType.READONLY
-            });
-            var tmpagada_pre = sublist.addField({
-              id : 'custentity_tmpagada_pre',
-              type : serverWidget.FieldType.TEXT,
-              label : 'TM Pagadas equipo'
-            });
-            tmpagada_pre.updateDisplayType({displayType : serverWidget.FieldDisplayType.READONLY});
-            var odv_comisionables_pre = sublist.addField({
-               id: 'custentity_odv_comisionables_pre',
-               type: serverWidget.FieldType.TEXTAREA,
-               label: 'ODV comisionables'
-            });
-            odv_comisionables_pre.updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
-                   var porcentaje = sublist.addField({
-                       id : 'custentity_porcentaje',
-                       type : serverWidget.FieldType.TEXT,
-                       label : '%'
-                       });
-                       porcentaje.updateDisplayType({displayType : serverWidget.FieldDisplayType.READONLY});
-             var venta_equipo = sublist.addField({
-             id : 'custentity_venta_equipo',
-             type : serverWidget.FieldType.CURRENCY,
-             label : 'Venta Equipo'
-             });
-             venta_equipo.updateDisplayType({displayType : serverWidget.FieldDisplayType.READONLY});
+      //Campos JDG - Lideres de equipo
+      if (cust_type == 3) {
+        var total_ventas_p = sublist.addField({
+            id: 'custentity_total_ventas_p',
+            type: serverWidget.FieldType.TEXT,
+            label: 'Ventas TM o CK y TM Pagadas'
+        });
+        total_ventas_p.updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
+            
+        var bono_talento = sublist.addField({
+            id : 'custentity_bono_talento',
+            type : serverWidget.FieldType.CURRENCY,
+            label : 'Bono Talento'
+        });
+        bono_talento.updateDisplayType({displayType : serverWidget.FieldDisplayType.READONLY});
+            
+        var supervi = sublist.addField({
+            id : 'custentity_presentadoras',
+            type : serverWidget.FieldType.TEXTAREA,
+            label : 'Presentadoras Equipo'
+        });
+        supervi.updateDisplayType({displayType : serverWidget.FieldDisplayType.READONLY});
+            
+        var odv_pre = sublist.addField({
+            id : 'custentity_odv_pre',
+            type : serverWidget.FieldType.TEXT,
+            label : 'ODV de las Presentadoras'
+        });
+        odv_pre.updateDisplayType({displayType : serverWidget.FieldDisplayType.READONLY});
+            
+        var tmpagada_pre = sublist.addField({
+            id : 'custentity_tmpagada_pre',
+            type : serverWidget.FieldType.TEXT,
+            label : 'TM Pagadas equipo'
+        });
+        tmpagada_pre.updateDisplayType({displayType : serverWidget.FieldDisplayType.READONLY});
+            
+        var odv_comisionables_pre = sublist.addField({
+            id: 'custentity_odv_comisionables_pre',
+            type: serverWidget.FieldType.TEXTAREA,
+            label: 'ODV comisionables'
+        });
+        odv_comisionables_pre.updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
+                   
+        var porcentaje = sublist.addField({
+            id : 'custentity_porcentaje',
+            type : serverWidget.FieldType.TEXT,
+            label : '%'
+        });
+        porcentaje.updateDisplayType({displayType : serverWidget.FieldDisplayType.READONLY});
+             
+        var venta_equipo = sublist.addField({
+            id : 'custentity_venta_equipo',
+            type : serverWidget.FieldType.CURRENCY,
+            label : 'Venta Equipo'
+        });
+        venta_equipo.updateDisplayType({displayType : serverWidget.FieldDisplayType.READONLY});
 
-             //3+2 y 5+2 EQUIPO ESPECIAL - DEBEN PERTENECER AL EQUIPO Y APARTE DEBIERON SER RECLUTADAS POR LA LIDER DE EQUIPO 
-            var odv_rec_del_periodo = sublist.addField({
-              id : 'custentity_odv_rec_del_periodo',
-              type : serverWidget.FieldType.TEXTAREA,
-              label : 'Reclutas y ODV del periodo mismo equipo'//2134324:56645653
-            });
-            odv_rec_del_periodo.updateDisplayType({displayType : serverWidget.FieldDisplayType.READONLY});
+        //3+2 y 5+2 EQUIPO ESPECIAL - DEBEN PERTENECER AL EQUIPO Y APARTE DEBIERON SER RECLUTADAS POR LA LIDER DE EQUIPO 
+        var odv_rec_del_periodo = sublist.addField({
+            id : 'custentity_odv_rec_del_periodo',
+            type : serverWidget.FieldType.TEXTAREA,
+            label : 'Reclutas y ODV del periodo mismo equipo'//2134324:56645653
+        });
+        odv_rec_del_periodo.updateDisplayType({displayType : serverWidget.FieldDisplayType.READONLY});
 
-           var odv_rec_de_le_del_periodo = sublist.addField({
-              id : 'custentity_odv_rec_de_le_del_periodo',
-              type : serverWidget.FieldType.TEXTAREA,
-              label : 'Reclutas y ODV Por recluta del LE del periodo'
+        var odv_rec_de_le_del_periodo = sublist.addField({
+            id : 'custentity_odv_rec_de_le_del_periodo',
+            type : serverWidget.FieldType.TEXTAREA,
+            label : 'Reclutas y ODV Por recluta del LE del periodo'
+        });
+        odv_rec_de_le_del_periodo.updateDisplayType({displayType : serverWidget.FieldDisplayType.READONLY});
 
-            });
-            odv_rec_de_le_del_periodo.updateDisplayType({displayType : serverWidget.FieldDisplayType.READONLY});
+        var rec_con_ventas = sublist.addField({
+            id: 'custentity_rec_con_ventas',
+            type: serverWidget.FieldType.TEXT,
+            label: 'Reclutas con ventas'
+        });
+        rec_con_ventas.updateDisplayType({displayType : serverWidget.FieldDisplayType.READONLY});
 
-            var rec_con_ventas = sublist.addField({
-               id: 'custentity_rec_con_ventas',
-               type: serverWidget.FieldType.TEXT,
-               label: 'Reclutas con ventas'
-            });
-            rec_con_ventas.updateDisplayType({displayType : serverWidget.FieldDisplayType.READONLY});
-
-            var bono_32 = sublist.addField({
+        var bono_32 = sublist.addField({
             id : 'custentity_bono_tres_dos',
             type : serverWidget.FieldType.CURRENCY,
             label : 'Bono 3 + 2'
-            });
-            bono_32.updateDisplayType({displayType : serverWidget.FieldDisplayType.READONLY});
+        });
+        bono_32.updateDisplayType({displayType : serverWidget.FieldDisplayType.READONLY});
 
-            var bono_52 = sublist.addField({
+        var bono_52 = sublist.addField({
             id : 'custentity_bono_cinco_dos',
             type : serverWidget.FieldType.CURRENCY,
             label : 'Bono 5 + 2'
-            });
-            bono_52.updateDisplayType({displayType : serverWidget.FieldDisplayType.READONLY});
+        });
+        bono_52.updateDisplayType({displayType : serverWidget.FieldDisplayType.READONLY});
             // Fin Campos 3+2 y 5+2
             
-            // Super Comision 
-            var odv_pre_supercomision = sublist.addField({
-              id : 'custentity_odv_pre_supercomision',
-              type : serverWidget.FieldType.TEXTAREA,
-              label : 'ODV Por recluta del mes del Equipo SC'
-
-            });
-            odv_pre_supercomision.updateDisplayType({
-              displayType : serverWidget.FieldDisplayType.READONLY
-            });
+        // Super Comision 
+        var odv_pre_supercomision = sublist.addField({
+            id : 'custentity_odv_pre_supercomision',
+            type : serverWidget.FieldType.TEXTAREA,
+            label : 'ODV Por recluta del mes del Equipo SC'
+        });
+        odv_pre_supercomision.updateDisplayType({displayType : serverWidget.FieldDisplayType.READONLY});
            
-            var ventas_sc = sublist.addField({
-               id: 'custentity_ventas_sc',
-               type: serverWidget.FieldType.TEXT,
-               label: 'Numero de ventas SC'
-            });
-            ventas_sc.updateDisplayType({displayType : serverWidget.FieldDisplayType.READONLY});
-            var bono_supercomision = sublist.addField({
+        var ventas_sc = sublist.addField({
+            id: 'custentity_ventas_sc',
+            type: serverWidget.FieldType.TEXT,
+            label: 'Numero de ventas SC'
+        });
+        ventas_sc.updateDisplayType({displayType : serverWidget.FieldDisplayType.READONLY});
+            
+        var bono_supercomision = sublist.addField({
             id : 'custentity_bono_sc',
             type : serverWidget.FieldType.CURRENCY,
             label : 'Bono SUPERCOMISIÓN'
-            });
-            bono_supercomision .updateDisplayType({displayType : serverWidget.FieldDisplayType.READONLY});
+        });
+        bono_supercomision .updateDisplayType({displayType : serverWidget.FieldDisplayType.READONLY});
             //Fin Campos Super Comision
             
-          }
-           // Campos Compartidos
+      }
+        // Campos Compartidos
           
-           var total = sublist.addField({
-               id: 'custentity_total',
-               type: serverWidget.FieldType.CURRENCY,
-               label: 'Total'
-           });
-           total.updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
+        var total = sublist.addField({
+            id: 'custentity_total',
+            type: serverWidget.FieldType.CURRENCY,
+            label: 'Total'
+        });
+        total.updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
 
-           sublist.addMarkAllButtons();
+        sublist.addMarkAllButtons();
            
            //Fin gris
            
