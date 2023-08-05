@@ -23,7 +23,7 @@ function(render,email,file,record,search,format,runtime) {
             log.debug('method',method);
             
              
-            var idTpl = 268;
+            var idTpl = 269;
             var sendEmail = params.emailSend;
             log.debug('params',params);
             //se carga el record de oportuniddad
@@ -54,14 +54,9 @@ function(render,email,file,record,search,format,runtime) {
             
             
             //obtiene imagen de logo
-            var logodURL 
+            var logodURL = getImage()
 
-            if(runtime.envType  == "SANDBOX"){
-                logodURL = getImage('2461144') //id imagen vorwerk tm s green sandbox  
-            }else{
-                logodURL = getImage('2576941') //id imagen vorwerk tm s green prod
-            }
-
+            
             //sb1510040
             //obtiene imagen de check false 
 
@@ -74,7 +69,7 @@ function(render,email,file,record,search,format,runtime) {
                 //proceso para retornar PDF
                 mainCreateXML(context,objOP,idTpl,idUSer,entity,recordid,checkfieldURL,checkfieldURL_true,date,order,logodURL);
             }
-            if(method == 'PUT'){
+            if(method == 'GET'){
                 //proceso para enviar Email
                 mainCreateEmailtoSend(objOP,idTpl,idUSer,entity,recordid,logodURL,date,order,checkfieldURL,checkfieldURL_true,email_customer);
             }
@@ -131,24 +126,39 @@ function(render,email,file,record,search,format,runtime) {
         }
     }
     
-    
+
     function getImage(idImg){
-        try{
-            var host = "https://3367613-sb1.app.netsuite.com";
-            //obtiene imagen de chekc false
-            var fileObj = file.load({
-                id: idImg//'1510039'
-            });
-            var url_img = fileObj.url
-            url_img = stringToArray(url_img,38);
-            url_img   = url_img.join('&amp;');
-            url_img   = "src='" + host + url_img + "'/";
-            
-            return url_img;
-        }catch(err){
-            log.error("error getImage",err)
+            try{
+                var host 
+                var idImg 
+
+                if(runtime.envType  == "SANDBOX"){
+                    host = "https://3367613-sb1.app.netsuite.com";
+                    idImg = '2461144';
+                //id imagen vorwerk tm s green sandbox  
+                }else{
+                    host = "https://3367613.app.netsuite.com";
+                    idImg = '2576941';
+                    //id imagen vorwerk tm s green prod
+                }
+
+                
+                //obtiene imagen de chekc false
+                var fileObj = file.load({
+                    id: idImg//'1510039'
+                });
+                var url_img = fileObj.url
+                url_img = stringToArray(url_img,38);
+                url_img   = url_img.join('&amp;');
+                url_img   = "src='" + host + url_img + "'/";
+                
+                return url_img;
+            }catch(err){
+                log.error("error getImage",err)
+            }
         }
-    }
+    
+    
     function getTemplate(idTpl,idUSer,entity,recordid){
         try{
             var myMergeResult = render.mergeEmail({
@@ -252,7 +262,7 @@ function(render,email,file,record,search,format,runtime) {
                 +'<macrolist>'
                 +'    <macro id="nlheader">'
                 +t_space+'<img class="IMAGELOGO" height="80" width="100" align="center" ' + logodURL +'>'
-                +'<p>ORDEN DE SERVICIO T&Eacute;CNICO</p>'
+                +'<p>ORDEN DE SERVICIO</p>'
                 +'<table border="0" cellpadding="1" cellspacing="1" style="width: 1000px;">'
                 +'<tbody>'
                 +'<tr>'
@@ -377,7 +387,7 @@ function(render,email,file,record,search,format,runtime) {
             log.debug('client',client);
             email.send({
                 author: '344096',
-                recipients: [client],
+                recipients: [client,'griselrdz@gmail.com'],
                 subject: 'Garantia',
                 body: html
             }); 

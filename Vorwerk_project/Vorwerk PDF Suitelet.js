@@ -511,7 +511,20 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
 			log.debug('fileObj',fileObj);*/
 			function getImage(idImg){
 	    	try{
-	    		var host = "https://3367613-sb1.app.netsuite.com";
+	    		var host 
+	    		var idImg 
+
+	    		if(runtime.envType  == "SANDBOX"){
+	    			host = "https://3367613-sb1.app.netsuite.com";
+	    			idImg = '2461144';
+	            //id imagen vorwerk tm s green sandbox  
+	            }else{
+	            	host = "https://3367613.app.netsuite.com";
+	    			idImg = '2576941';
+	                //id imagen vorwerk tm s green prod
+	            }
+
+	    		
 	    		//obtiene imagen de chekc false
 		        var fileObj = file.load({
 		            id: idImg//'1510039'
@@ -526,13 +539,9 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
 	    		log.error("error getImage",err)
 	    	}
     	}
-   			 var logodURL 
+   			 var logodURL = getImage()
 
-	            if(runtime.envType  == "SANDBOX"){
-	                logodURL = getImage('2461144') //id imagen vorwerk tm s green sandbox  
-	            }else{
-	                logodURL = getImage('2576941') //id imagen vorwerk tm s green prod
-	            }
+	            
 			
 			var  jdg_name_employee= name_employee;
 			var fc =period_name;
