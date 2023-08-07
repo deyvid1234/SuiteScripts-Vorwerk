@@ -23,7 +23,7 @@ function(render,email,file,record,search,format,runtime) {
             log.debug('method',method);
             
              
-            var idTpl = 269;
+            var idTpl = 268;
             var sendEmail = params.emailSend;
             log.debug('params',params);
             //se carga el record de oportuniddad
@@ -69,7 +69,7 @@ function(render,email,file,record,search,format,runtime) {
                 //proceso para retornar PDF
                 mainCreateXML(context,objOP,idTpl,idUSer,entity,recordid,checkfieldURL,checkfieldURL_true,date,order,logodURL);
             }
-            if(method == 'GET'){
+            if(method == 'PUT'){
                 //proceso para enviar Email
                 mainCreateEmailtoSend(objOP,idTpl,idUSer,entity,recordid,logodURL,date,order,checkfieldURL,checkfieldURL_true,email_customer);
             }
@@ -261,7 +261,7 @@ function(render,email,file,record,search,format,runtime) {
                 +'</style>'
                 +'<macrolist>'
                 +'    <macro id="nlheader">'
-                +t_space+'<img class="IMAGELOGO" height="80" width="100" align="center" ' + logodURL +'>'
+                +t_space+'<img class="IMAGELOGO" height="80" width="150" align="center" ' + logodURL +'>'
                 +'<p>ORDEN DE SERVICIO</p>'
                 +'<table border="0" cellpadding="1" cellspacing="1" style="width: 1000px;">'
                 +'<tbody>'
@@ -387,7 +387,7 @@ function(render,email,file,record,search,format,runtime) {
             log.debug('client',client);
             email.send({
                 author: '344096',
-                recipients: [client,'griselrdz@gmail.com'],
+                recipients: [client],
                 subject: 'Garantia',
                 body: html
             }); 
