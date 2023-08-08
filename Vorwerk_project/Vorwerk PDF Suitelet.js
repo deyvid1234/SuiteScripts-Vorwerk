@@ -303,6 +303,7 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
 				log.debug("data.rec", data.rec)
 				ids_rec = JSON.parse(data.rec)
 				for(var i in v_rec){
+						//log.debug('v_rec[i]',v_rec[i])
 						lineaRec++
 						if( num_odv_por_recluta.hasOwnProperty(v_rec[i].employee)){
 							num_odv_por_recluta[v_rec[i].employee]++
@@ -311,6 +312,7 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
 								num_odv_por_recluta[v_rec[i].employee]=1
 							}
 						//Asignacion de configuracion por recluta 
+						var limiteVentasReclutamiento = 6
 						var configuracion_rec
 			            log.debug('Pre asignacion','data.id_presentadora '+data.id_presentadora+' conf_rec '+conf_rec)
 			            if(v_rec[i].id_rec in conf_rec ){
@@ -319,11 +321,16 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
                           if(configuracion_rec == 11){
                             configuracion_rec = 1
                           }
+                          if(configuracion_rec == 12){
+                          	limiteVentasReclutamiento = 4
+                          }
 			            }else{
 			                configuracion_rec = 1
 			            }
 						var cliente = v_rec[i].cliente.replace(/&/gi," ")
-						var monto_rec = CompConfigDetails[configuracion_rec]['esquemaVentasReclutamiento'][(ids_rec[v_rec[i].internalid])>6?0:(ids_rec[v_rec[i].internalid])]['compensacion']
+						//log.debug('cliente',cliente)
+						//log.debug('1ids_rec[v_rec[i].internalid]',ids_rec[v_rec[i].internalid])
+						var monto_rec = CompConfigDetails[configuracion_rec]['esquemaVentasReclutamiento'][(ids_rec[v_rec[i].internalid])>limiteVentasReclutamiento?0:(ids_rec[v_rec[i].internalid])]['compensacion']
 						strTable += "<tr>";
 						strTable += "<td border='0.5' border-style='dotted-narrow'>" + lineaRec 	+ "</td>";
 						strTable += "<td border='0.5' border-style='dotted-narrow'>" + commisionName 	+ "</td>";
