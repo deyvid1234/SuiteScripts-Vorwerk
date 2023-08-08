@@ -8,6 +8,7 @@ function(record, search, runtime, format) {
    
     return {
         doTheMagic: function(operand1, operand2) {
+            log.debug('script Vorwerk Commission CustomPlugin')
             return operand1 + operand2;
         },
       //Realiza búsqueda de ordenes de venta
