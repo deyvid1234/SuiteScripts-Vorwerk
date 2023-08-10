@@ -65,7 +65,6 @@ function(record,search,http,https,encode,runtime,serverWidget) {
      */
     function beforeSubmit(scriptContext) {
     	
-    	return true;
     }
 
     /**
