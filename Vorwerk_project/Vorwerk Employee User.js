@@ -64,7 +64,8 @@ function(record,search,http,https,encode,runtime,serverWidget) {
      * @Since 2015.2
      */
     function beforeSubmit(scriptContext) {
-
+    	
+    	return true;
     }
 
     /**
