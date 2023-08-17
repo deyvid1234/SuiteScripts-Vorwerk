@@ -10,11 +10,11 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
     	var config_fields = Dictionary.getDictionayFields();
 
 		//creacion del body 
-		function createTable(v_propia,v_equipo,data,v_rec,CompConfigDetails,id_entrega,type_emp_text,period_name,type_emp,conf_emp,promocion,rec_json,idPeriod,v_tres_dos,odv_tres_dos,odv_sc){
+		function createTable(v_propia,v_equipo,data,v_rec,CompConfigDetails,id_entrega,type_emp_text,period_name,type_emp,conf_emp,promocion,rec_json,idPeriod,v_tres_dos,odv_tres_dos,odv_sc,tmp_emp){
 			var bono32 = data.bono_m_8
 			var bono52 = data.bono_m_9
 			var bonosc = data.bono_m_10
-			var strTable =createHeader(data.emleado,type_emp_text,period_name); 
+			var strTable =createHeader(data.emleado,type_emp_text,period_name,tmp_emp); 
 			log.debug('id_entrega',id_entrega)
 			//datos de prueba 
 			var  lineaRec = 0,
@@ -494,7 +494,7 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
 			return strTable;
 		}
 		//creacion de encabeazado
-		function createHeader(name_employee,type_emp_text,period_name){
+		function createHeader(name_employee,type_emp_text,period_name,tmp_emp){
 			/*var configRecObj = config.load({
     		    type: config.Type.COMPANY_INFORMATION
     		});
@@ -548,8 +548,8 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
     	}
    			 var logodURL = getImage()
 
-	            
-			
+	        log.debug("club",tmp_emp.custentity_club[0].text)    
+			var club =  tmp_emp.custentity_club[0].text;
 			var  jdg_name_employee= name_employee;
 			var fc =period_name;
 			
@@ -560,6 +560,7 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
 			strTable += "<p align=\"center\"><h4><b>"+ type_emp_text.toUpperCase() +"</b></h4></p>";
 			strTable += "<p align=\"center\">" + fecha_letras(fc) + "</p>";
 			strTable += "<p align=\"center\">"+jdg_name_employee + "</p>";
+			strTable += "<p align=\"center\">"+club + "</p>";
 
 
 			
@@ -579,7 +580,7 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
                 var tmp_emp = search.lookupFields({
 			                        type: 'employee',
 			                        id: params.employee,
-			                        columns: ['employeetype','custentity123','custentity_promocion']
+			                        columns: ['employeetype','custentity123','custentity_promocion', 'custentity_club']//custentity123 en compensaciones de ingreso
 			                    });
                 log.debug('tmp_emp',tmp_emp);
                 var period_name = search.lookupFields({
@@ -647,7 +648,7 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
         				xml += "</macrolist>";
         			xml += "</head>";
         			xml += "<body font='helvetica' font-size='6' footer=\"paginas\" footer-height='2'>";
-        				xml += createTable(v_propia,v_equipo,c_record,v_rec,CompConfigDetails,id_entrega,type_emp_text,period_name.name,type_emp,conf_emp,promocion,c_record.rec,params.periodo,v_tres_dos,c_record.odv_tres_dos,c_record.sc);
+        				xml += createTable(v_propia,v_equipo,c_record,v_rec,CompConfigDetails,id_entrega,type_emp_text,period_name.name,type_emp,conf_emp,promocion,c_record.rec,params.periodo,v_tres_dos,c_record.odv_tres_dos,c_record.sc,tmp_emp);
         			xml += "</body>\n";
         		xml += "</pdf>";
         		
