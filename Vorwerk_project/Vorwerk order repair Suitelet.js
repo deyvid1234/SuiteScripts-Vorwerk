@@ -60,9 +60,9 @@ function(render,email,file,record,search,format,runtime) {
             //sb1510040
             //obtiene imagen de check false 
 
-            var checkfieldURL = getImage('1636738');//sb1510039
+            var checkfieldURL = getImageCheck('1636738');//sb1510039
             //obtiene imagen check true
-            var checkfieldURL_true = getImage('1636741');//1510241
+            var checkfieldURL_true = getImageCheck('1636741');//1510241
             //genera imagen de check false
            
             if(method == 'GET'){
@@ -125,7 +125,23 @@ function(render,email,file,record,search,format,runtime) {
             log.error('Error mainCreateEmailtoSend',err)
         }
     }
-    
+    function getImageCheck(idImg){
+        try{
+            var host = "https://3367613-sb1.app.netsuite.com";
+            //obtiene imagen de chekc false
+            var fileObj = file.load({
+                id: idImg//'1510039'
+            });
+            var url_img = fileObj.url
+            url_img = stringToArray(url_img,38);
+            url_img   = url_img.join('&amp;');
+            url_img   = "src='" + host + url_img + "'/";
+            
+            return url_img;
+        }catch(err){
+            log.error("error getImage",err)
+        }
+    }
 
     function getImage(idImg){
             try{
@@ -203,12 +219,12 @@ function(render,email,file,record,search,format,runtime) {
                 + "<pdf>"
                 + '<head></head>'
                 + '<body footer-height="20pt" padding="0.5in 0.5in 0in 0.5in" margin= "0in 0in 0.5in 0in" size="Letter">'
-                +'<img height="70" width="160" align="center" ' + logodURL +'>'
+                +'<img height="55" width="120" align="center" ' + logodURL +'>'
                 +'<p align="center" style="font-size:14pt; font-weight: bold;">ORDEN SERVICIO</p>'
                 +'<table border="0" cellpadding="1" cellspacing="1" style="width: 663px;">'
                 +'<tbody>'
                 +'<tr>'
-                +'<td rowspan="3" style="width: 367px; font-size: 12px;">Vorwerk M&eacute;xico, S. de R.L. de C.V.<br />'
+                +'<td rowspan="3" style="width: 367px; font-size: 12px; font-family: sans-serif; ">Vorwerk M&eacute;xico, S. de R.L. de C.V.<br />'
                 +'Vito Alessio Robles 38 Col. Florida, Del. &Aacute;lvaro Obreg&oacute;n<br />'
                 +'Cd. de M&eacute;xico, C.P.01030 Teléfono: 800 200 1121<br />'
                 +'www.thermomix.mx</td>'
@@ -216,7 +232,7 @@ function(render,email,file,record,search,format,runtime) {
                 +'<td style="width: 107px;"> </td>'
                 +'</tr>'
                 +'<tr>'
-                +'<td Colspan="1" style="width: 120px; font-size: 12px;"><b>Orden de Servicio:</b></td>'
+                +'<td Colspan="1" style="width: 120px; font-size: 12px; font-family: sans-serif;"><b>Orden de Servicio:</b></td>'
                 +'<td colspan="2"  style="width: 107px; font-size: 12px;"><b>'+order+'</b></td>'
                 +'</tr>'
                 +'<tr>'
