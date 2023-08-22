@@ -225,7 +225,12 @@ function(record,search,https,file,http,format,encode,email,runtime) {
 
                if(!idRecomendador){ //Si no tiene RECOMENDADOR es registro inicial
                 log.debug('Prospecto SIN Recomendador')
-                presentadorRecomendacion = presentadorAleatorio(req_info)
+                var idPresentador = req_info.idPresentador
+                if(!idPresentador || idPresentador == ''){ //Cliente nuevo sin recomendador pero mandan un presentador para asignar
+                    presentadorRecomendacion = presentadorAleatorio(req_info)
+                }else{
+                    presentadorRecomendacion = presentadorRecomendador(req_info,false) // Como la funciona da prioridad si viene con idPresentador nos funciona para asignarlo sin necesidad de tener un recomendador
+                }
                 log.debug('presentadorRecomendacion',presentadorRecomendacion)
                }else{ //Si tiene RECOMENDADOR pero no es cliente es un prospecto RECOMENDADO y se asigna el Presentador del RECOMENDADOR
                 log.debug('Prospecto CON Recomendador')
