@@ -136,7 +136,18 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                 var dd = today.getDate();
                 var mm = today.getMonth() + 1; //January is 0!
                 var yyyy = today.getFullYear();
-                var fdate = yyyy + '-' + '0'+mm + '-' + dd;
+                
+               
+                log.debug('mm',mm.length )
+                if(mm <  10){
+                    log.debug('mm',mm )
+                    mm = '0'+mm
+                }
+                if(dd < 10 ){
+                     log.debug('dd',dd )
+                    dd = '0'+dd
+                }
+                var fdate = yyyy + '-' +mm + '-' + dd;
 
                 var objRequest = {
                     "IdCliente": req_info.id,
@@ -214,7 +225,6 @@ function(record,search,https,file,http,format,encode,email,runtime) {
 
                if(!idRecomendador){ //Si no tiene RECOMENDADOR es registro inicial
                 log.debug('Prospecto SIN Recomendador')
-
                 var idPresentador = req_info.idPresentador
                 if(!idPresentador || idPresentador == ''){ //Cliente nuevo sin recomendador pero mandan un presentador para asignar
                     presentadorRecomendacion = presentadorAleatorio(req_info)
@@ -287,7 +297,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                     urlAD = 'https://dev-apiagenda.mxthermomix.com/users/registerUserExternoNetsuite'
                 }else{
                     idSearch = 'customsearch1996';
-                    urlAD = 'https://dev-apiagenda.mxthermomix.com/users/registerUserExternoNetsuite'
+                    urlAD = 'https://apiagenda.mxthermomix.com/users/registerUserExternoNetsuite'
                 }
                 
            var mySearch = search.load({
@@ -367,7 +377,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
             //Datos usuario que recomienda 
             var nombreQuienRecomienda = ''
             var correoQuienRecomienda = ''
-            if(req_info.idRecomendador){
+            if(req_info.idRecomendador){ // Posible cambio Para enviar semilla 
                 log.debug('objRecomendador 1')   
                 var objRecomendador = search.lookupFields({
                     type: 'customer',
@@ -457,7 +467,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
     }
 
     function quitarAcentos(cadena){
-    const acentos = {'á':'a','é':'e','í':'i','ó':'o','ú':'u','Á':'A','É':'E','Í':'I','Ó':'O','Ú':'U'};
+    const acentos = {'á':'a','é':'e','í':'i','ó':'o','ú':'u','Á':'A','É':'E','Í':'I','Ó':'O','Ú':'U','Ñ':'N','ñ':'n'};
     var cadenasplit = cadena.split('')
     var sinAcentos = cadenasplit.map(function(x) {
         if(acentos[x]){
@@ -627,7 +637,8 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                 log.debug('Error Agenda digital Referidos restlet',e)
                }
             }
-        //Busqueda valida si el cliente tiene una TM 
+            
+            //Busqueda valida si el cliente tiene una TM 
         
 
             var mySearch = search.load({
@@ -641,7 +652,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
             }));
 
             var clienteTM = false
-            
+           
             var pagedResults = mySearch.runPaged();
             pagedResults.pageRanges.forEach(function (pageRange){
             var currentPage = pagedResults.fetch({index: pageRange.index});
