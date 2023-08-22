@@ -254,6 +254,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                     obj_ret.presentador = respuestaProceso.presentador
                     obj_ret.namePresentadora = respuestaProceso.namePresentadora
                     obj_ret.emailPresentadora = respuestaProceso.emailPresentadora
+                    obj_ret.clienteTM = respuestaProceso.clienteTM
                     obj_ret.mensaje = ''
                 }else{
                     return respuestaProceso.respuesta
@@ -422,10 +423,30 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                    }catch(e){
                     log.debug('Error Agenda digital Referidos restlet',e)
                    }
-                   return {respuesta:id_cliente, err:false,idPresentadora:internalid_p,iduPresentadora:idu_p,idRecomendador:req_info.idRecomendador,presentador:false,namePresentadora:altname,emailPresentadora:email_p};
+                   return {
+                        respuesta:id_cliente, 
+                        err:false,
+                        idPresentadora:internalid_p,
+                        iduPresentadora:idu_p,
+                        idRecomendador:req_info.idRecomendador,
+                        presentador:false,
+                        namePresentadora:altname,
+                        emailPresentadora:email_p,
+                        clienteTM:false
+                    };
             }else{
                 var id_cliente = null
-                return {respuesta:id_cliente, err:false,idPresentadora:internalid_p,iduPresentadora:idu_p,idRecomendador:req_info.idRecomendador,presentador:true,namePresentadora:altname,emailPresentadora:email_p};
+                return {
+                    respuesta:id_cliente, 
+                    err:false,
+                    idPresentadora:internalid_p,
+                    iduPresentadora:idu_p,
+                    idRecomendador:req_info.idRecomendador,
+                    presentador:true,
+                    namePresentadora:altname,
+                    emailPresentadora:email_p,
+                    clienteTM:false
+                };
             }
             
             
@@ -465,11 +486,13 @@ function(record,search,https,file,http,format,encode,email,runtime) {
             var idSearch
            var urlAD
                 if(runtime.envType != 'PRODUCTION'){ 
-                    idSearch = 'customsearch1980';
+                    idSearch = 'customsearch1996';
                     urlAD = 'https://dev-apiagenda.mxthermomix.com/users/registerUserExternoNetsuite'
+                    idSearchClienteTM = 'customsearch_tm_cliente';
                 }else{
                     idSearch = 'customsearch1996';
                     urlAD = 'https://apiagenda.mxthermomix.com/users/registerUserExternoNetsuite'
+                    idSearchClienteTM = 'customsearch_tm_cliente';
                 }
                 
            var mySearch = search.load({
@@ -604,9 +627,45 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                 log.debug('Error Agenda digital Referidos restlet',e)
                }
             }
+        //Busqueda valida si el cliente tiene una TM 
+        
+
+            var mySearch = search.load({
+                id: idSearchClienteTM
+            });
+
+            mySearch.filters.push(search.createFilter({
+               name: 'entity',
+               operator: 'is',
+               values: id_cliente
+            }));
+
+            var clienteTM = false
             
-           
-        return {respuesta:id_cliente, err:false,idPresentadora:internalid_p,iduPresentadora:idu_p,idRecomendador:req_info.idRecomendador,presentador:presentador,namePresentadora:altname,emailPresentadora:email_p};
+            var pagedResults = mySearch.runPaged();
+            pagedResults.pageRanges.forEach(function (pageRange){
+            var currentPage = pagedResults.fetch({index: pageRange.index});
+                currentPage.data.forEach(function (r) {
+                
+                    var values = r.getAllValues();
+                    clienteTM = true
+                    return true; 
+
+                });
+
+            });
+
+        return {
+            respuesta:id_cliente, 
+            err:false,
+            idPresentadora:internalid_p,
+            iduPresentadora:idu_p,
+            idRecomendador:req_info.idRecomendador,
+            presentador:presentador,
+            namePresentadora:altname,
+            emailPresentadora:email_p,
+            clienteTM:clienteTM
+        };
             
         }catch(err){
             log.error("error actualizarCliente",err)
