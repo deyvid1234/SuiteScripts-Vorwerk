@@ -264,7 +264,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                     obj_ret.presentador = respuestaProceso.presentador
                     obj_ret.namePresentadora = respuestaProceso.namePresentadora
                     obj_ret.emailPresentadora = respuestaProceso.emailPresentadora
-                    obj_ret.clienteTM = respuestaProceso.clienteTM
+                    //obj_ret.clienteTM = respuestaProceso.clienteTM
                     obj_ret.mensaje = ''
                 }else{
                     return respuestaProceso.respuesta
