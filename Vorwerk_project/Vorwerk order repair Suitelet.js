@@ -219,7 +219,7 @@ function(render,email,file,record,search,format,runtime) {
                 + "<pdf>"
                 + '<head></head>'
                 + '<body footer-height="20pt" padding="0.5in 0.5in 0in 0.5in" margin= "0in 0in 0.5in 0in" size="Letter">'
-                +'<img height="55" width="120" align="center" ' + logodURL +'>'
+                +'<img height="70%" width="70%" align="center" ' + logodURL +'>'
                 +'<p align="center" style="font-size:14pt; font-weight: bold; font-family: sans-serif;">ORDEN SERVICIO</p>'
                 +'<table border="0" cellpadding="1" cellspacing="1" style="width: 663px;">'
                 +'<tbody>'
