@@ -575,13 +575,12 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 			    	
 			    	}
 
-			    	//Campos para validar si es cancelacion LMS
+			    	//Campos para validar si es cancelacion 
 			    	var op1 = rec.getValue('custbody_otro_financiamiento')
 		    		var op1old = oldrec.getValue('custbody_otro_financiamiento')
 		    		var op2 = rec.getValue('custbody_tipo_venta')
 		    		var op2old = oldrec.getValue('custbody_tipo_venta')
-		    		
-		    		if( type == 'edit' && ( (op1 == 4 && op1!=op1old) || (op2 == 16 && op2 != op2old)) ){
+		    		if( type == 'edit' && ( (op1 == 4 && op1!=op1old) || (op2 == 16 && op2 != op2old) )){
 		    			log.debug('Es cancelacion')
 		    			
 		    			var urlLMSCancel
@@ -719,8 +718,9 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 		    		log.debug('disponible_eshop',disponible_eshop)
 		    		var itemType = dataItem['recordtype']
 		    		log.debug('itemType',itemType)
-		    		if(disponible_eshop > 0 && locationSO == 82 && custbody_so_eshop == true){
+		    		if(disponible_eshop > 0  && custbody_so_eshop == true){//Cambiar Ermita 82 && locationSO == 53
 		    			//Restar quantity del stock eshop
+		    			log.debug('entra if')
 		    			var quantitySalesOrder = rec.getSublistValue({
 		                    sublistId: 'item',
 		                    fieldId: 'quantity',
@@ -737,69 +737,77 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 		    		}
 	    		}
     		}
-    		//Proceso de cancelacion Reserva ficticia
-    		var op1 = rec.getValue('custbody_otro_financiamiento')
-    		var op1old = oldrec.getValue('custbody_otro_financiamiento')
-    		var op2 = rec.getValue('custbody_tipo_venta')
-    		var op2old = oldrec.getValue('custbody_tipo_venta')
-
-    		var so_first_canc = rec.getValue('custbody_so_first_canc')
-
-		    if( type == 'edit' && ( (op1 == 4 && op1!=op1old) || (op2 == 16 && op2 != op2old) ) && !so_first_canc){
-                log.debug('so_first_canc', so_first_canc)
-                var numLines = salesorder.getLineCount({//Toma las lineas de la SO
-                    sublistId: 'item'
-                });
-                log.debug('numLines',numLines)
-                for(var e =0; e<numLines; e++){ //Se recorre cada linea
-                    log.debug('e',e)
-                    var tmp_id = rec.getSublistValue({//ID del item
-                        sublistId: 'item',
-                        fieldId: 'item',
-                        line: e
-                    })
-                    var locationSO = rec.getValue('location')
-                    var custbody_so_eshop = rec.getValue('custbody_so_eshop') //Check del restlet que indica que viene de tienda en linea
-                    var dataItem = search.lookupFields({// Busqueda de Invdentory Item
-                        type: 'item',
-                        id: tmp_id,
-                        columns: ['custitem_disponible_eshop','recordtype']//Stock disponible en el campo para eshop, tipo de registro
-                    });
-
-                    log.debug('dataItem',dataItem)
-                    var disponible_eshop = parseInt(dataItem['custitem_disponible_eshop']) //Stock dedicado a eshop
-                    log.debug('disponible_eshop',disponible_eshop)
-                    var itemType = dataItem['recordtype']
-                    log.debug('itemType',itemType)
-                    if(disponible_eshop > 0 && locationSO == 82 && custbody_so_eshop == true){
-                        //Restar quantity del stock eshop
-                        var quantitySalesOrder = rec.getSublistValue({
-                            sublistId: 'item',
-                            fieldId: 'quantity',
-                            line: e
-                        })
-                        log.debug('quantitySalesOrder',quantitySalesOrder)
-                        var stockAfter = disponible_eshop + quantitySalesOrder //Nuevo stock de Eshop, Disponibler eshop menos lo que acabamos de vender
-                        log.debug('stockAfter',stockAfter)
-                        record.submitFields({
-                        type: itemType,
-                        id: tmp_id,
-                        values: { custitem_disponible_eshop: stockAfter}
-                        })
-
-                        var submitFieldsSalesOrder = record.submitFields({
-            			    type: record.Type.SALES_ORDER,
-            			    id: recordid,
-            			    values: {'custbody_so_first_canc':true}
-            			});
-                    }
-                }
-            
-		    }
-    		
     	}catch(e){
-    		log.debug('Error en Actualizacion Inventario ficticio eshop',e)
+    		log.debug('Error en Actualizacion Inventario ficticio eshop - Creacion',e)
     	}
+    	try{
+    		if(type == 'edit'){
+    			//Proceso de cancelacion Reserva ficticia
+	    		var op1 = rec.getValue('custbody_otro_financiamiento')
+	    		var op1old = oldrec.getValue('custbody_otro_financiamiento')
+	    		var op2 = rec.getValue('custbody_tipo_venta')
+	    		var op2old = oldrec.getValue('custbody_tipo_venta')
+
+	    		var so_first_canc = rec.getValue('custbody_so_first_canc')
+
+			    if( type == 'edit' && ( (op1 == 4 && op1!=op1old) || (op2 == 16 && op2 != op2old) ) && !so_first_canc){
+	                log.debug('so_first_canc', so_first_canc)
+	                var numLines = salesorder.getLineCount({//Toma las lineas de la SO
+	                    sublistId: 'item'
+	                });
+	                log.debug('numLines',numLines)
+	                for(var e =0; e<numLines; e++){ //Se recorre cada linea
+	                    log.debug('e',e)
+	                    var tmp_id = rec.getSublistValue({//ID del item
+	                        sublistId: 'item',
+	                        fieldId: 'item',
+	                        line: e
+	                    })
+	                    var locationSO = rec.getValue('location')
+	                    var custbody_so_eshop = rec.getValue('custbody_so_eshop') //Check del restlet que indica que viene de tienda en linea
+	                    var dataItem = search.lookupFields({// Busqueda de Invdentory Item
+	                        type: 'item',
+	                        id: tmp_id,
+	                        columns: ['custitem_disponible_eshop','recordtype']//Stock disponible en el campo para eshop, tipo de registro
+	                    });
+
+	                    log.debug('dataItem',dataItem)
+	                    var disponible_eshop = parseInt(dataItem['custitem_disponible_eshop']) //Stock dedicado a eshop
+	                    log.debug('disponible_eshop',disponible_eshop)
+	                    var itemType = dataItem['recordtype']
+	                    log.debug('itemType',itemType)
+	                    if(disponible_eshop > 0 && custbody_so_eshop == true){//Cambiar a Ermita 82  && locationSO == 53 
+	                        //Restar quantity del stock eshop
+	                        var quantitySalesOrder = rec.getSublistValue({
+	                            sublistId: 'item',
+	                            fieldId: 'quantity',
+	                            line: e
+	                        })
+	                        log.debug('quantitySalesOrder',quantitySalesOrder)
+	                        var stockAfter = disponible_eshop + quantitySalesOrder //Nuevo stock de Eshop, Disponibler eshop menos lo que acabamos de vender
+	                        log.debug('stockAfter',stockAfter)
+	                        record.submitFields({
+	                        type: itemType,
+	                        id: tmp_id,
+	                        values: { custitem_disponible_eshop: stockAfter}
+	                        })
+
+	                        var submitFieldsSalesOrder = record.submitFields({
+	            			    type: record.Type.SALES_ORDER,
+	            			    id: recordid,
+	            			    values: {'custbody_so_first_canc':true}
+	            			});
+	                    }
+	                }
+	            
+			    }
+    		}
+    	}catch(e){
+    		log.debug('Error en Actualizacion Inventario ficticio eshop - Cancelacion',e)
+    	}
+    		
+    		
+    	
 
     	//Actualizar campo RECLUTADORA
     	if(type == 'edit'){
