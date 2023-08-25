@@ -2242,6 +2242,9 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                     comisionan = 6
                     falta = comisionan - num_h
                 }
+                if(falta < 0){
+                    falta=0
+                }
                 historico_pre_sc[presentadora] = {
                     num_h:num_h, //ODV historico
                     presentadora:presentadora,
@@ -2284,7 +2287,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                 tmR = parseInt(values['GROUP(salesRep.custentity_conf_rec)'][0]['value'])
                 var comisionan = 0
                 var falta = 0
-                if(tmR == 11 ){//Si su TM es R solo comisiona 4 ventas
+                if(tmR == 11 || tmR == 12){//Si su TM es R o CC12 solo comisiona 4 ventas
                     tmR = true
                     comisionan = 4
                     falta = comisionan - num_h
@@ -2292,6 +2295,9 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                     tmR = false
                     comisionan = 6
                     falta = comisionan - num_h
+                }
+                if(falta < 0){
+                    falta=0
                 }
                 historico_pre_sc[presentadora] = {
                     num_h:num_h, //ODV historico
