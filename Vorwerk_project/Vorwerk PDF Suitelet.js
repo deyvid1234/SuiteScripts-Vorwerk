@@ -383,7 +383,7 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
 			
 			log.debug('data.total',data.total)
 			strTable +="<br/><h3 align='center'>Movimientos Manuales</h3>";
-			strTable += "<table width='670px'>";
+			strTable += "<table width='670px' page-break-inside='avoid'>";
 			strTable += "<tr>";
 			strTable += "<td border='0.5'><b>" + escapexml(obj_bonos.bono1.label) + "</b></td>";
 			strTable += "<td border='0.5'><b>" + escapexml(obj_bonos.bono2.label) + "</b></td>";
@@ -401,7 +401,7 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
 			strTable += "</table>";
 
 			strTable +="<br/>";
-			strTable += "<table width='670px'>";
+			strTable += "<table width='670px' >";
 			strTable += "<tr>";
 			strTable += "<td border='0.5'><b>" + escapexml(obj_bonos.bono6.label) + "</b></td>";
 			strTable += "<td border='0.5'><b>" + escapexml(obj_bonos.bono7.label) + "</b></td>";
@@ -425,7 +425,7 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
 			
 			//resumen
 			strTable +="<br/><h3>Resumen</h3>";
-        	strTable += "<table width='50%'>";
+        	strTable += "<table width='50%' page-break-inside='avoid'>";
         	strTable += "<tr>";
         	strTable += "<td border='0.5'><b>Concepto</b></td>";
         	strTable += "<td border='0.5'><b>Importe</b></td>";
