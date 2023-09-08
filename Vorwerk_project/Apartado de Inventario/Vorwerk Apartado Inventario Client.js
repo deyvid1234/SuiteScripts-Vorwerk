@@ -96,14 +96,19 @@ function(record,dialog,http,https,search) {
                                 locationquantityonhand = parseInt(result.getValue('locationquantityonhand'));
                                 disponibleEshopComponente = parseInt(result.getValue('custitem_disponible_eshop'));
 
-                                var internalidArt = result.getValue('internalid')
-                                var nameArtSearch = result.getText('name')
+                                var nameArtSearch = result.getValue('name')
+                                console.log('nameArtSearch',nameArtSearch)
 
+                                var internalidArt = values.internalid[0].value
+                                
+
+                                console.log('internalidArt',internalidArt)
+                                
                                 if (!disponibleEshopComponente) {
                                     disponibleEshopComponente = 0
                                 }
                                 disponibleItemComponente = locationquantityonhand-disponibleEshopComponente;
-                                var art
+                                var art = []
                                 art.idArt = internalidArt
                                 art.nameArt = nameArtSearch
                                 art.onHand = locationquantityonhand
@@ -116,13 +121,6 @@ function(record,dialog,http,https,search) {
                                 console.log('locationquantityonhand', locationquantityonhand)
                                 console.log('disponibleItemComponente', disponibleItemComponente)
 
-                             var datosApartado = thisRecord.setValue('custrecord_datos_apartado','type ' + type );
-                                    /*thisRecord.setValue('custrecord_datos_apartado','Location ' + fromLocation );
-                                    thisRecord.setValue('custrecord_datos_apartado','Cantidad Apartada ' + cantidadApartada );
-                                    
-                                    thisRecord.setValue('custrecord_datos_apartado','Cantidad maxima que se puede apartar ' + cantidadDisponibleField );
-                                    */
-                                    
                                
                                 if(inv_disponible == false ){
                                     inv_disponible = locationquantityonhand
@@ -151,7 +149,7 @@ function(record,dialog,http,https,search) {
                         };
                         dialog.alert(options);
                     }
-                    info.articulos = arts
+                    info.articulos = 'arts'
                 }else{//Item Regular 
                     var busqueda = search.create({
                         type: 'item',
@@ -349,10 +347,11 @@ function(record,dialog,http,https,search) {
     function saveRecord(xde) {
     	try{
             var type = xde.mode
-            console.log('type',type)
+            log.debug('type',type)
+            log.debug('info',info)
             var currentRecord = xde.currentRecord;
             if(type == 'create' || true){
-                thisRecord.setValue('custrecord_datos_apartado','Test Json' );
+                currentRecord.setValue('custrecord_datos_apartado',info );
             }
     	   
     	}catch(err){
