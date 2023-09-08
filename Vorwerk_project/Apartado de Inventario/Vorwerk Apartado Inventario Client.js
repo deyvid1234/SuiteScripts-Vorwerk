@@ -41,6 +41,7 @@ function(record,dialog,http,https,search) {
             var fieldValue = thisRecord.getValue(scriptContext.fieldId);
 
             var fromLocation = thisRecord.getValue('custrecord_from_location');
+            console.log('Location',fromLocation)
 
             var inv_disponible
             var apartadoItem
@@ -53,7 +54,7 @@ function(record,dialog,http,https,search) {
                     filters: [
                             ['internalid', 'is', fieldValue],
                         ],
-                        columns: ['custitem_disponible_eshop','memberitem','type']
+                        columns: ['custitem_disponible_eshop','memberitem','type',]
                     });
                       
                     busqueda.run().each(function(result){
@@ -63,6 +64,7 @@ function(record,dialog,http,https,search) {
                         idsKit.push(memberitem)
                         type = result.getValue('type');
                         apartadoItem = result.getValue('custitem_disponible_eshop');
+                        
                         return true;
                     }); 
                 if(type == "Kit"){
@@ -84,8 +86,27 @@ function(record,dialog,http,https,search) {
                         pagedResults.pageRanges.forEach(function (pageRange){
                             var currentPage = pagedResults.fetch({index: pageRange.index});
                             currentPage.data.forEach(function (result) {
-                                console.log('busqueda')
+                                
                                 locationquantityonhand = parseInt(result.getValue('locationquantityonhand'));
+                                disponibleEshopComponente = parseInt(result.getValue('custitem_disponible_eshop'));
+
+                                if (!disponibleEshopComponente) {
+                                    disponibleEshopComponente = 0
+                                }
+                                disponibleItemComponente = locationquantityonhand-disponibleEshopComponente;
+                                
+                                console.log('disponibleEshopComponente',disponibleEshopComponente)
+                                console.log('locationquantityonhand', locationquantityonhand)
+                                console.log('disponibleItemComponente', disponibleItemComponente)
+
+                             var datosApartado = thisRecord.setValue('custrecord_datos_apartado','type ' + type );
+                                    /*thisRecord.setValue('custrecord_datos_apartado','Location ' + fromLocation );
+                                    thisRecord.setValue('custrecord_datos_apartado','Cantidad Apartada ' + cantidadApartada );
+                                    
+                                    thisRecord.setValue('custrecord_datos_apartado','Cantidad maxima que se puede apartar ' + cantidadDisponibleField );
+                                    */
+                                    
+                               
                                 if(inv_disponible == false ){
                                     inv_disponible = locationquantityonhand
                                 }else if(locationquantityonhand < inv_disponible){
@@ -160,8 +181,14 @@ function(record,dialog,http,https,search) {
 
             if(fieldID=='custrecord_cantidad_apartada' && fieldValue){
 
+                var cantidadApartada = thisRecord.getValue('custrecord_cantidad_apartada');
+                console.log('cantidadApartada', cantidadApartada)
+
                 var cantidadDisponibleField = thisRecord.getValue('custrecord_cantidad_disponible');
                 console.log('cantidadDisponibleField',cantidadDisponibleField)
+
+               
+
                 if(fieldValue > cantidadDisponibleField){
 
                     thisRecord.setValue('custrecord_cantidad_apartada', '');
@@ -292,6 +319,8 @@ function(record,dialog,http,https,search) {
      */
     function saveRecord(scriptContext) {
     	try{
+
+
     	   
     	}catch(err){
     		log.error('error saverecord',err);
