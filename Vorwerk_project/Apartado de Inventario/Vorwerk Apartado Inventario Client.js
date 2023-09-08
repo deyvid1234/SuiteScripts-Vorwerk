@@ -6,6 +6,7 @@
 define(['N/record','N/ui/dialog','N/http','N/https','N/search'],
 
 function(record,dialog,http,https,search) {
+    var info = []
     
     /**
      * Function to be executed after page is initialized.
@@ -41,12 +42,14 @@ function(record,dialog,http,https,search) {
             var fieldValue = thisRecord.getValue(scriptContext.fieldId);
 
             var fromLocation = thisRecord.getValue('custrecord_from_location');
+            var fromLocationEtiqueta = thisRecord.getText('custrecord_from_location');
             console.log('Location',fromLocation)
 
             var inv_disponible
             var apartadoItem
 
     		if(fieldID=='custrecord_item_apartado' && fieldValue){
+                var itemApartadoEtiqueta = thisRecord.getText('custrecord_item_apartado');
 	    		console.log('fieldValue 1',fieldValue)
                 var idsKit = []
                 var busqueda = search.create({
@@ -54,7 +57,7 @@ function(record,dialog,http,https,search) {
                     filters: [
                             ['internalid', 'is', fieldValue],
                         ],
-                        columns: ['custitem_disponible_eshop','memberitem','type',]
+                        columns: ['custitem_disponible_eshop','memberitem','type']
                     });
                       
                     busqueda.run().each(function(result){
@@ -67,6 +70,7 @@ function(record,dialog,http,https,search) {
                         
                         return true;
                     }); 
+                var disponibleParaApartar = 0
                 if(type == "Kit"){
                     
                     console.log('Es un kit',idsKit)
@@ -79,22 +83,35 @@ function(record,dialog,http,https,search) {
                                 'AND',
                                 ['internalid', 'anyof', idsKit],
                             ],
-                        columns: ['locationquantityonhand','custitem_disponible_eshop']
+                        columns: ['locationquantityonhand','custitem_disponible_eshop','internalid','name']
                     });
                     inv_disponible = false
+                    var arts = []
                     var pagedResults = busqueda.runPaged();
                         pagedResults.pageRanges.forEach(function (pageRange){
                             var currentPage = pagedResults.fetch({index: pageRange.index});
                             currentPage.data.forEach(function (result) {
-                                
+                                var values = result.getAllValues();
+                                console.log('values search articulos del kit',values)
                                 locationquantityonhand = parseInt(result.getValue('locationquantityonhand'));
                                 disponibleEshopComponente = parseInt(result.getValue('custitem_disponible_eshop'));
+
+                                var internalidArt = result.getValue('internalid')
+                                var nameArtSearch = result.getText('name')
 
                                 if (!disponibleEshopComponente) {
                                     disponibleEshopComponente = 0
                                 }
                                 disponibleItemComponente = locationquantityonhand-disponibleEshopComponente;
-                                
+                                var art
+                                art.idArt = internalidArt
+                                art.nameArt = nameArtSearch
+                                art.onHand = locationquantityonhand
+                                art.disponibleEshopArticulo = disponibleEshopComponente
+                                art.limiteApartadoArt = disponibleItemComponente
+
+                                arts.push(art)
+
                                 console.log('disponibleEshopComponente',disponibleEshopComponente)
                                 console.log('locationquantityonhand', locationquantityonhand)
                                 console.log('disponibleItemComponente', disponibleItemComponente)
@@ -121,7 +138,8 @@ function(record,dialog,http,https,search) {
                     if(inv_disponible){
                         
                         console.log('apartadoItem',apartadoItem)
-                        thisRecord.setValue('custrecord_cantidad_disponible', inv_disponible-apartadoItem);
+                        disponibleParaApartar = inv_disponible-apartadoItem
+                        thisRecord.setValue('custrecord_cantidad_disponible', disponibleParaApartar);
                         thisRecord.getField('custrecord_cantidad_apartada').isDisabled = false;
                     }else{
                         thisRecord.setValue('custrecord_cantidad_apartada', '');
@@ -133,7 +151,7 @@ function(record,dialog,http,https,search) {
                         };
                         dialog.alert(options);
                     }
-
+                    info.articulos = arts
                 }else{//Item Regular 
                     var busqueda = search.create({
                         type: 'item',
@@ -160,7 +178,8 @@ function(record,dialog,http,https,search) {
                     if(inv_disponible){
                         
                         console.log('apartadoItem',apartadoItem)
-                        thisRecord.setValue('custrecord_cantidad_disponible', inv_disponible-apartadoItem);
+                        disponibleParaApartar = inv_disponible-apartadoItem
+                        thisRecord.setValue('custrecord_cantidad_disponible', disponibleParaApartar);
                         thisRecord.getField('custrecord_cantidad_apartada').isDisabled = false;
                     }else{
                         thisRecord.setValue('custrecord_cantidad_apartada', '');
@@ -174,7 +193,15 @@ function(record,dialog,http,https,search) {
                     }
                 }
 
+                info.item = fieldValue
+                info.location = fromLocation
+                info.cantidadDisponible = disponibleParaApartar
+                info.itemApartadoEtiqueta = itemApartadoEtiqueta
+                info.locationEtiqueta = fromLocationEtiqueta
 
+                
+                
+                console.log('info item ingresado',info)
                 
 
     		}
@@ -198,6 +225,8 @@ function(record,dialog,http,https,search) {
                     };
                     dialog.alert(options);
                 }
+                info.cantidadApartada = fieldValue
+                console.log('info cantidad apartada',info)
             }
     		
     	}catch(err){
@@ -317,10 +346,14 @@ function(record,dialog,http,https,search) {
      *
      * @since 2015.2
      */
-    function saveRecord(scriptContext) {
+    function saveRecord(xde) {
     	try{
-
-
+            var type = xde.mode
+            console.log('type',type)
+            var currentRecord = xde.currentRecord;
+            if(type == 'create' || true){
+                thisRecord.setValue('custrecord_datos_apartado','Test Json' );
+            }
     	   
     	}catch(err){
     		log.error('error saverecord',err);
