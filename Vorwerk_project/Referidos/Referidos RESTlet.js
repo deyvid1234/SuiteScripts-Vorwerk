@@ -60,6 +60,12 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                 case "ProspectoExperiencia":
                     res = getInProspectoExperiencia(req_info)
                 break;
+                case "ActualizaSalesRep":
+                    res = getActualizaSalesRep(req_info)
+                break;
+                case "FuerzaVentas":
+                    res = getFuerzaVentas(req_info)
+                break;
             }
         }catch(err){
             log.error("error request",err);
@@ -69,6 +75,136 @@ function(record,search,https,file,http,format,encode,email,runtime) {
         log.debug("proceso funcional",res);
         return res;
 
+    }
+    function getActualizaSalesRep(req_info){
+        try{
+            log.debug('getActualizaSalesRep',req_info)
+            /*
+            {
+
+                "IdCliente": 1234,
+
+                "salesrepActual": 123,
+
+                "IDUsalesRepActual": 234,
+
+                "salesrepNuevo": 3434, - si 'Sales Rep Solicitud'
+
+                "IDUsalesRepNuevo": 3455,
+
+                "Evaluacion": {
+
+                    "0": "si", _evaluacion0
+
+                    "1": "si",
+
+                    "2": "no",
+
+                    "3": "si",
+
+                    "4": "no",
+
+                    "5": "si",
+
+                    "6": "si",
+
+                    "7": "no"
+
+                },
+
+                "MotivoCambio": 1, - si - crear lista - crear el campo de tipo lista 
+
+                "EsPresentadorAleatorio": 0,- Si - check
+
+                "FechaInicio": "2023-09-01", - si
+
+                "FechaFin": "2023-09-08",- si
+
+                "EstatusSolicitud": 3 - Lista 
+
+            }
+            1   vacía
+            2   Iniciada
+            3   En proceso
+            4   Cerrada
+            5   Cancelada
+            6   Completada
+
+            */
+            log.debug('IdCliente',req_info.IdCliente)
+            log.debug('FechaInicio',req_info.FechaInicio)
+            log.debug('Evaluacion',req_info.Evaluacion)
+            log.debug('Evaluacion 0',req_info.Evaluacion[0])
+
+            if(req_info.IdCliente){
+               var mySearch = search.load({
+                   id: 'customsearch_clientes_activos'
+                });
+
+                mySearch.filters.push(search.createFilter({
+                       name: 'internalid',
+                       operator: 'is',
+                       values: req_info.IdCliente
+                }));
+
+                var obj_client = false
+                var idpresentadora_referido
+                var stage
+                var id_cliente
+                var pagedResults = mySearch.runPaged();
+                pagedResults.pageRanges.forEach(function (pageRange){
+                var currentPage = pagedResults.fetch({index: pageRange.index});
+                    currentPage.data.forEach(function (r) {
+                        var values = r.getAllValues();
+                        obj_client = values
+                        idpresentadora_referido = r.getValue('custentity_presentadora_referido')
+                        stage = r.getValue('formulatext')
+                        id_cliente = r.getValue('internalid')
+                        log.debug('id_cliente', id_cliente)
+                        log.debug('idpresentadora_referido', idpresentadora_referido)
+                        log.debug('stage', stage)
+                        log.debug('valuesSEARCH', values)
+                        return true; 
+                    });
+
+                });
+            }
+
+
+            if(req_info.IdCliente != null && req_info.IdCliente != '' && obj_client){
+                var cliente_record = record.load({
+                    type: stage,
+                    id: req_info.IdCliente,
+                    isDynamic: false,
+                });
+                cliente_record.setValue({
+                    fieldId: 'firstname',
+                    value: req_info.nombre
+                });
+                
+
+                var id_cliente = cliente_record.save({ 
+                    enableSourcing: true,
+                    ignoreMandatoryFields: true
+                });
+                log.debug('id_cliente',id_cliente)
+            }
+
+            
+
+
+
+            var statusSolicitud = req_info.EstatusSolicitud
+            if(statusSolicitud == 6){
+                log.debug('llamar cambio presentador')
+
+                //log.debug('llamara a presentador aleatorio')
+           
+            }
+
+        }catch(e){
+            log.debug('Error getActualizaSalesRep',e)
+        }
     }
     function getInProspectoExperiencia(req_info){
         try{
