@@ -160,6 +160,13 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                         idpresentadora_referido = r.getValue('custentity_presentadora_referido')
                         stage = r.getValue('formulatext')
                         id_cliente = r.getValue('internalid')
+
+                        salesrepActual = r.getValue('salesrep')
+                        IDUsalesRepActual = r.getText('salesrep')
+
+                        log.debug('salesrepActual', salesrepActual)
+                        log.debug('IDUsalesRepActual', IDUsalesRepActual)
+
                         log.debug('id_cliente', id_cliente)
                         log.debug('idpresentadora_referido', idpresentadora_referido)
                         log.debug('stage', stage)
@@ -172,58 +179,73 @@ function(record,search,https,file,http,format,encode,email,runtime) {
 
 
             if(req_info.IdCliente != null && req_info.IdCliente != '' && obj_client){
+
+
+                var v
+
                 var cliente_record = record.load({
                     type: stage,
                     id: req_info.IdCliente,
                     isDynamic: false,
                 });
-                cliente_record.setValue({
-                    fieldId: 'firstname',
-                    value: req_info.nombre
-                });
+                
                 cliente_record.setValue({
                     fieldId: 'custentity_salesrep_nuevo',
                     value: req_info.salesrepNuevo
                 });
                 cliente_record.setValue({
                     fieldId: 'custentity_evaluacion_1',
-                    value: req_info.evaluacion1
-                });
-                cliente_record.setValue({
-                    fieldId: 'custentity_evaluacion_1',
-                    value: req_info.evaluacion1
+                    value: req_info.Evaluacion[0]
                 });
                 cliente_record.setValue({
                     fieldId: 'custentity_evaluacion_2',
-                    value: req_info.evaluacion2
+                    value: req_info.Evaluacion[1]
                 });
                 cliente_record.setValue({
                     fieldId: 'custentity_evaluacion_3',
-                    value: req_info.evaluacion3
+                    value: req_info.Evaluacion[2]
                 });
                 cliente_record.setValue({
                     fieldId: 'custentity_evaluacion_4',
-                    value: req_info.evaluacion4
+                    value: req_info.Evaluacion[3]
                 });
                 cliente_record.setValue({
                     fieldId: 'custentity_evaluacion_5',
-                    value: req_info.evaluacion5
+                    value: req_info.Evaluacion[4]
                 });
                 cliente_record.setValue({
+                    fieldId: 'custentity_evaluacion_6',
+                    value: req_info.Evaluacion[5]
+                });
+                cliente_record.setValue({
+                    fieldId: 'custentity_evaluacion_7',
+                    value: req_info.Evaluacion[6]
+                });
+                
+                v = parseInt(req_info.MotivoCambio)
+                log.debug('v motivo',v)
+                cliente_record.setValue({
                     fieldId: 'custentity_motivo_cambio',
-                    value: req_info.motivoCambio
+                    value: v
                 });
                 cliente_record.setValue({
                     fieldId: 'custentity_fecha_inicio',
-                    value: req_info.fechaInicio
+                    value: req_info.FechaInicio
                 });
                 cliente_record.setValue({
                     fieldId: 'custentity_fecha_fin',
-                    value: req_info.fechaFin
+                    value: req_info.FechaFin
                 });
                 cliente_record.setValue({
                     fieldId: 'custentity_estatus_solicitud',
                     value: req_info.EstatusSolicitud
+                });
+
+                v = parseInt(req_info.EsPresentadorAleatorio)==1?true:false
+                log.debug('v aleatorio',v)
+                cliente_record.setValue({
+                    fieldId: 'custentity_pre_aleatorio',
+                    value: v 
                 });
 
 
@@ -245,6 +267,25 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                 //log.debug('llamara a presentador aleatorio')
            
             }
+
+            var objRequestCP = {
+                    
+
+                    "IdCliente": id_cliente,
+
+                    "salesrepActual": salesrepActual,
+
+                    "IDUsalesRepActual": IDUsalesRepActual,
+
+                    "salesrepNuevo": req_info.salesrepNuevo,
+
+                    "IDUsalesRepNuevo": req_info.IDUsalesRepNuevo,
+
+                    "MotivoCambio": req_info.MotivoCambio
+
+
+                }
+                log.debug('objRequestCP', objRequestCP)
 
         }catch(e){
             log.debug('Error getActualizaSalesRep',e)
