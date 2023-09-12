@@ -235,9 +235,11 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                     fieldId: 'custentity_fecha_fin',
                     value: req_info.FechaFin
                 });
+                v = parseInt(req_info.EstatusSolicitud)
+                log.debug('v estatusSolicitud',v)
                 cliente_record.setValue({
                     fieldId: 'custentity_estatus_solicitud',
-                    value: req_info.EstatusSolicitud
+                    value: v
                 });
 
                 v = parseInt(req_info.EsPresentadorAleatorio)==1?true:false
