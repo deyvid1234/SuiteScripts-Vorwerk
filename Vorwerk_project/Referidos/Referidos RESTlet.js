@@ -78,7 +78,6 @@ function(record,search,https,file,http,format,encode,email,runtime) {
     }
     function getActualizaSalesRep(req_info){
         try{
-            log.debug('getActualizaSalesRep',req_info)
             /*
             {
 
@@ -131,6 +130,12 @@ function(record,search,https,file,http,format,encode,email,runtime) {
             6   Completada
 
             */
+            //Variables para Response 
+            var salesrepNuevoResponse = req_info.salesrepNuevo
+            var idusalesRepNuevoResponse = req_info.IDUsalesRepNuevo
+            var salesrepActual = req_info.salesrepActual
+            var IDUsalesRepActual = req_info.IDUsalesRepActual
+            var obj_ret = {}
 
             if(req_info.IdCliente){
                var mySearch = search.load({
@@ -164,13 +169,10 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                     });
 
                 });
-            }else{
-
             }
 
 
             if(req_info.IdCliente != null && req_info.IdCliente != '' && obj_client){
-
 
                 var v
 
@@ -214,7 +216,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                 });
                 
                 v = parseInt(req_info.MotivoCambio)
-                log.debug('v motivo',v)
+                
                 cliente_record.setValue({
                     fieldId: 'custentity_motivo_cambio',
                     value: v
@@ -228,14 +230,14 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                     value: req_info.FechaFin
                 });
                 v = parseInt(req_info.EstatusSolicitud)
-                log.debug('v estatusSolicitud',v)
+                
                 cliente_record.setValue({
                     fieldId: 'custentity_estatus_solicitud',
                     value: v
                 });
 
                 v = parseInt(req_info.EsPresentadorAleatorio)==1?true:false
-                log.debug('v aleatorio',v)
+                
                 cliente_record.setValue({
                     fieldId: 'custentity_pre_aleatorio',
                     value: v 
@@ -243,91 +245,88 @@ function(record,search,https,file,http,format,encode,email,runtime) {
 
 
                 var statusSolicitud = req_info.EstatusSolicitud
-                if(statusSolicitud == 6){
+                if(statusSolicitud == 6){//Proceso finalizado - actualizar sales Rep
 
-                    if(req_info.EsPresentadorAleatorio == 1){
-                        log.debug('llamar  presentador aleatorio')
+                    if(req_info.EsPresentadorAleatorio == 1){ //Nos piden Sales Rep Aleatorio 
+                        
                         var presentadorNuevo = presentadorAleatorio(req_info)
-                        log.debug('llamar  actualizar cliente ') 
                         
                         cliente_record.setValue({
-                            fieldId: 'salesRep',
-                            value: v 
+                            fieldId: 'salesrep',
+                            value: presentadorNuevo.internalid_p
                         });
                         cliente_record.setValue({
                             fieldId: 'custentity_presentadora_referido',
-                            value: v 
+                            value: presentadorNuevo.internalid_p
                         });
                         cliente_record.setValue({
                             fieldId: 'custentityidu_presentador',
-                            value: v 
+                            value: presentadorNuevo.idu_p
                         });
 
-                    }else if(req_info.EsPresentadorAleatorio == 0){
+                        salesrepNuevoResponse = presentadorNuevo.internalid_p
+                        idusalesRepNuevoResponse = presentadorNuevo.idu_p
+                    }else if(req_info.EsPresentadorAleatorio == 0){ //Nos mandan el Sales Rep a asignar
                         var objAux = {
                             "idPresentador":req_info.salesrepNuevo
                         }
                         var presentadorNuevo = presentadorRecomendador(objAux,false) //Busqueda del Presentador a asignar
-                        log.debug('llamar  actualizar cliente ') 
-
+                        
                         cliente_record.setValue({
-                            fieldId: 'salesRep',
-                            value: v 
+                            fieldId: 'salesrep',
+                            value: presentadorNuevo.internalid_p
                         });
                         cliente_record.setValue({
                             fieldId: 'custentity_presentadora_referido',
-                            value: v 
+                            value: presentadorNuevo.internalid_p
                         });
                         cliente_record.setValue({
                             fieldId: 'custentityidu_presentador',
-                            value: v 
+                            value: presentadorNuevo.idu_p
                         });
 
-                        
+                        salesrepNuevoResponse = presentadorNuevo.internalid_p
+                        idusalesRepNuevoResponse = presentadorNuevo.idu_p
+
                     }else{
+                        obj_ret.StatusCode = 400
+                        obj_ret.mensaje = 'Campo EsPresentadorAleatorio no defindo'
                         log.debug('Campo EsPresentadorAleatorio no defindo')
+
                     }
                
-                }else{
-
-                }
-
+                } //Solicitud en proceso - Solo actualizar datos (NO actualizar Sales rep)
 
                 var id_cliente = cliente_record.save({ 
                     enableSourcing: true,
                     ignoreMandatoryFields: true
                 });
                 log.debug('id_cliente',id_cliente)
-            }else{
+                
 
+            }else{
+                obj_ret.StatusCode = 424
+                obj_ret.mensaje = 'No existe el Cliente o está inactivo'
             }
 
-            
+            //Data aAgenda Digital
 
 
 
-            
-
-            var objRequestCP = {
-                    
-
-                    "IdCliente": id_cliente,
-
-                    "salesrepActual": salesrepActual,
-
-                    "IDUsalesRepActual": IDUsalesRepActual,
-
-                    "salesrepNuevo": req_info.salesrepNuevo,
-
-                    "IDUsalesRepNuevo": req_info.IDUsalesRepNuevo,
-
-                    "MotivoCambio": req_info.MotivoCambio
 
 
-                }
-                log.debug('objRequestCP', objRequestCP)
-            return objRequestCP
+            //Response LMS
+            obj_ret.IdCliente = id_cliente
+            obj_ret.salesrepActual = salesrepActual
+            obj_ret.IDUsalesRepActual = IDUsalesRepActual
+            obj_ret.salesrepNuevo = salesrepNuevoResponse
+            obj_ret.IDUsalesRepNuevo = idusalesRepNuevoResponse
+            obj_ret.MotivoCambio = req_info.MotivoCambio
+
+            log.debug('obj_ret', obj_ret)
+            return obj_ret
         }catch(e){
+            return e
             log.debug('Error getActualizaSalesRep',e)
         }
     }
