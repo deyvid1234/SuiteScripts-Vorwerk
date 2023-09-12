@@ -131,10 +131,6 @@ function(record,search,https,file,http,format,encode,email,runtime) {
             6   Completada
 
             */
-            log.debug('IdCliente',req_info.IdCliente)
-            log.debug('FechaInicio',req_info.FechaInicio)
-            log.debug('Evaluacion',req_info.Evaluacion)
-            log.debug('Evaluacion 0',req_info.Evaluacion[0])
 
             if(req_info.IdCliente){
                var mySearch = search.load({
@@ -163,17 +159,13 @@ function(record,search,https,file,http,format,encode,email,runtime) {
 
                         salesrepActual = r.getValue('salesrep')
                         IDUsalesRepActual = r.getText('salesrep').split(' ')[0]
-                        log.debug('salesrepActual', salesrepActual)
-                        log.debug('IDUsalesRepActual', IDUsalesRepActual)
-
-                        log.debug('id_cliente', id_cliente)
-                        log.debug('idpresentadora_referido', idpresentadora_referido)
-                        log.debug('stage', stage)
-                        log.debug('valuesSEARCH', values)
+                        
                         return true; 
                     });
 
                 });
+            }else{
+
             }
 
 
@@ -252,10 +244,52 @@ function(record,search,https,file,http,format,encode,email,runtime) {
 
                 var statusSolicitud = req_info.EstatusSolicitud
                 if(statusSolicitud == 6){
-                    log.debug('llamar cambio presentador')
 
-                    //log.debug('llamara a presentador aleatorio')
+                    if(req_info.EsPresentadorAleatorio == 1){
+                        log.debug('llamar  presentador aleatorio')
+                        var presentadorNuevo = presentadorAleatorio(req_info)
+                        log.debug('llamar  actualizar cliente ') 
+                        
+                        cliente_record.setValue({
+                            fieldId: 'salesRep',
+                            value: v 
+                        });
+                        cliente_record.setValue({
+                            fieldId: 'custentity_presentadora_referido',
+                            value: v 
+                        });
+                        cliente_record.setValue({
+                            fieldId: 'custentityidu_presentador',
+                            value: v 
+                        });
+
+                    }else if(req_info.EsPresentadorAleatorio == 0){
+                        var objAux = {
+                            "idPresentador":req_info.salesrepNuevo
+                        }
+                        var presentadorNuevo = presentadorRecomendador(objAux,false) //Busqueda del Presentador a asignar
+                        log.debug('llamar  actualizar cliente ') 
+
+                        cliente_record.setValue({
+                            fieldId: 'salesRep',
+                            value: v 
+                        });
+                        cliente_record.setValue({
+                            fieldId: 'custentity_presentadora_referido',
+                            value: v 
+                        });
+                        cliente_record.setValue({
+                            fieldId: 'custentityidu_presentador',
+                            value: v 
+                        });
+
+                        
+                    }else{
+                        log.debug('Campo EsPresentadorAleatorio no defindo')
+                    }
                
+                }else{
+
                 }
 
 
@@ -264,6 +298,8 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                     ignoreMandatoryFields: true
                 });
                 log.debug('id_cliente',id_cliente)
+            }else{
+
             }
 
             
@@ -290,7 +326,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
 
                 }
                 log.debug('objRequestCP', objRequestCP)
-
+            return objRequestCP
         }catch(e){
             log.debug('Error getActualizaSalesRep',e)
         }
