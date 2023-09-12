@@ -165,7 +165,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
 
                 });
             }else{
-
+                log.debug('El cliente no existe o no esta activo')
             }
 
 
@@ -289,7 +289,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                     }
                
                 }else{
-
+                    
                 }
 
 
