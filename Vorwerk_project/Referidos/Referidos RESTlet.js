@@ -162,8 +162,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                         id_cliente = r.getValue('internalid')
 
                         salesrepActual = r.getValue('salesrep')
-                        IDUsalesRepActual = r.getText('salesrep')
-
+                        IDUsalesRepActual = r.getText('salesrep').split(' ')[0]
                         log.debug('salesrepActual', salesrepActual)
                         log.debug('IDUsalesRepActual', IDUsalesRepActual)
 
@@ -249,6 +248,15 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                 });
 
 
+                var statusSolicitud = req_info.EstatusSolicitud
+                if(statusSolicitud == 6){
+                    log.debug('llamar cambio presentador')
+
+                    //log.debug('llamara a presentador aleatorio')
+               
+                }
+
+
                 var id_cliente = cliente_record.save({ 
                     enableSourcing: true,
                     ignoreMandatoryFields: true
@@ -260,13 +268,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
 
 
 
-            var statusSolicitud = req_info.EstatusSolicitud
-            if(statusSolicitud == 6){
-                log.debug('llamar cambio presentador')
-
-                //log.debug('llamara a presentador aleatorio')
-           
-            }
+            
 
             var objRequestCP = {
                     
