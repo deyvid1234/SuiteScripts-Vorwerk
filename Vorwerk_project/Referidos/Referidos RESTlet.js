@@ -169,6 +169,8 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                     });
 
                 });
+            }else{
+                log.debug('El cliente no existe o no esta activo')
             }
 
 
@@ -295,7 +297,9 @@ function(record,search,https,file,http,format,encode,email,runtime) {
 
                     }
                
+
                 } //Solicitud en proceso - Solo actualizar datos (NO actualizar Sales rep)
+
 
                 var id_cliente = cliente_record.save({ 
                     enableSourcing: true,
