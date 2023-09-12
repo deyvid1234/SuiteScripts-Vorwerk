@@ -181,7 +181,51 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                     fieldId: 'firstname',
                     value: req_info.nombre
                 });
-                
+                cliente_record.setValue({
+                    fieldId: 'custentity_salesrep_nuevo',
+                    value: req_info.salesrepNuevo
+                });
+                cliente_record.setValue({
+                    fieldId: 'custentity_evaluacion_1',
+                    value: req_info.evaluacion1
+                });
+                cliente_record.setValue({
+                    fieldId: 'custentity_evaluacion_1',
+                    value: req_info.evaluacion1
+                });
+                cliente_record.setValue({
+                    fieldId: 'custentity_evaluacion_2',
+                    value: req_info.evaluacion2
+                });
+                cliente_record.setValue({
+                    fieldId: 'custentity_evaluacion_3',
+                    value: req_info.evaluacion3
+                });
+                cliente_record.setValue({
+                    fieldId: 'custentity_evaluacion_4',
+                    value: req_info.evaluacion4
+                });
+                cliente_record.setValue({
+                    fieldId: 'custentity_evaluacion_5',
+                    value: req_info.evaluacion5
+                });
+                cliente_record.setValue({
+                    fieldId: 'custentity_motivo_cambio',
+                    value: req_info.motivoCambio
+                });
+                cliente_record.setValue({
+                    fieldId: 'custentity_fecha_inicio',
+                    value: req_info.fechaInicio
+                });
+                cliente_record.setValue({
+                    fieldId: 'custentity_fecha_fin',
+                    value: req_info.fechaFin
+                });
+                cliente_record.setValue({
+                    fieldId: 'custentity_estatus_solicitud',
+                    value: req_info.EstatusSolicitud
+                });
+
 
                 var id_cliente = cliente_record.save({ 
                     enableSourcing: true,
