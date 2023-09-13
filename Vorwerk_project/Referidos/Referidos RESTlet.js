@@ -252,6 +252,29 @@ function(record,search,https,file,http,format,encode,email,runtime) {
 
                     if(req_info.EsPresentadorAleatorio == 1){ //Nos piden Sales Rep Aleatorio 
                         
+                        //Logica para validar y/o asignar Supervisor (lider de equipo) o Delegada (Gerente de Ventas)
+                            /*
+                            1 Hacer lookupfield de sales rep con los campos supervisor y delegada 
+                            2 Hacer lookupfield del supervisor con los campos isInactive y type 
+                            2.1 validar que el supervisor sea activo (inactive = false) y type sea Lider de equipo  yyyy custentity_promocion no es en litigio  -> 
+                                2.1.1 actualizar los campos salesrepNuevoResponse, idusalesRepNuevoResponse 
+                            3 crear else donde hagamos lookupfield del delegado con los campos isInactive, type
+                            3.1 validar que la delegada sea activa (inactive = false) y type sea Gerente de Ventas yyy custentity_promocion no es en litigio  -> 
+                                3.1.1 actualizar los campos salesrepNuevoResponse, idusalesRepNuevoResponse 
+                            4 else llamar a presentador aleatorio - fin 
+                            */
+                        //
+
+
+                        var empFields = search.lookupFields({
+                            type: 'employee',
+                            id: carId,
+                            columns: ["custitem_kv_car_sku", "custitem_kv_car_make", "custitem_kv_car_year", "custitem_kv_item_minerva_stock_id", "custitem_kv_car_version"]
+                        });
+
+                        var carUpccode = empFields.custitem_kv_car_sku;
+
+
                         var presentadorNuevo = presentadorAleatorio(req_info)
                         
                         cliente_record.setValue({
@@ -1033,7 +1056,9 @@ function(record,search,https,file,http,format,encode,email,runtime) {
 
 
             log.debug('Buscar presentador aleatorio de la lista completa de presentadores activos Elegibles a presentadora Referido')
-            
+            //1 buscar la busqueda customsearch1994 y quitar el filtro de Elegibles a presentadora Referido
+            // 2 añadir los filtros de type = lider de equipo, presentador o Gerente de Ventas y verificar que sea activo
+            // custentity_promocion no es en litigio 
             var mySearch = search.load({
                 id: 'customsearch1994'
             });
