@@ -1,4 +1,4 @@
-/**
+   /**
  * @NApiVersion 2.x
  * @NScriptType Restlet
  * @NModuleScope SameAccount
@@ -982,6 +982,56 @@ function(record,search,https,file,http,format,encode,email,runtime) {
 
     function presentadorAleatorio(req_info){
         try{
+
+            if(req_info.IdCliente){
+               var mySearch = search.load({
+                   id: 'customsearch_clientes_activos'
+                });
+
+                mySearch.filters.push(search.createFilter({
+                       name: 'internalid',
+                       operator: 'is',
+                       values: req_info.IdCliente
+                }));
+            var client = false
+                var idSalesRep
+                var stage
+                var id_cliente
+                var pagedResults = mySearch.runPaged();
+                pagedResults.pageRanges.forEach(function (pageRange){
+                var currentPage = pagedResults.fetch({index: pageRange.index});
+                    currentPage.data.forEach(function (r) {
+                        var values = r.getAllValues();
+                        client = values
+
+                        idSalesRep = r.getValue('salesrep')
+                        stage = r.getValue('formulatext')
+                        id_cliente = r.getValue('internalid')
+
+                        log.debug('idSalesRep', idSalesRep)
+
+
+                var salesRep_record = record.load({
+                            type: "employee",
+                            id: idSalesRep,
+                            isDynamic: false,   
+                        });
+
+                         delegada = salesRep_record.getText('custentity_delegada')
+                         log.debug('delegada', delegada)
+
+                         reclutadora = salesRep_record.getText('custentity_reclutadora')
+                         log.debug('reclutadora', reclutadora)
+
+                                return true; 
+                    });
+
+                });
+
+                
+            }
+
+
             log.debug('Buscar presentador aleatorio de la lista completa de presentadores activos Elegibles a presentadora Referido')
             
             var mySearch = search.load({
