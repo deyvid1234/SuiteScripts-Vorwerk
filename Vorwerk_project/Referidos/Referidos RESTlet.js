@@ -136,6 +136,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
             var salesrepActual = req_info.salesrepActual
             var IDUsalesRepActual = req_info.IDUsalesRepActual
             var obj_ret = {}
+            var error = false
 
             if(req_info.IdCliente){
                var mySearch = search.load({
@@ -291,6 +292,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                         idusalesRepNuevoResponse = presentadorNuevo.idu_p
 
                     }else{
+                        error = true
                         obj_ret.StatusCode = 400
                         obj_ret.mensaje = 'Campo EsPresentadorAleatorio no defindo'
                         log.debug('Campo EsPresentadorAleatorio no defindo')
@@ -300,12 +302,43 @@ function(record,search,https,file,http,format,encode,email,runtime) {
 
                 } //Solicitud en proceso - Solo actualizar datos (NO actualizar Sales rep)
 
+                if(error == false){
+                    var id_cliente = cliente_record.save({ 
+                        enableSourcing: true,
+                        ignoreMandatoryFields: true
+                    });
+                     
+                     //Data a Agenda Digital
+                    var objAD = {}
+                    objAD.IdCliente                 =   req_info.IdCliente
+                    objAD.salesrepActual            =   salesrepActual
+                    objAD.IDUsalesRepActual         =   IDUsalesRepActual
+                    objAD.salesrepNuevo             =   salesrepNuevoResponse
+                    objAD.IDUsalesRepNuevo          =   idusalesRepNuevoResponse
+                    objAD.Evaluacion                =   req_info.Evaluacion
+                    objAD.MotivoCambio              =   req_info.MotivoCambio
+                    objAD.EsPresentadorAleatorio    =   req_info.EsPresentadorAleatorio
+                    objAD.FechaInicio               =   req_info.FechaInicio
+                    objAD.FechaFin                  =   req_info.FechaFin
+                    objAD.EstatusSolicitud          =   req_info.EstatusSolicitud
+                    
+                    var urlAD
 
-                var id_cliente = cliente_record.save({ 
-                    enableSourcing: true,
-                    ignoreMandatoryFields: true
-                });
-                log.debug('id_cliente',id_cliente)
+                    if(runtime.envType != 'PRODUCTION'){ 
+                        urlAD = 'https://dev-apiagenda.mxthermomix.com/users/CambioPresentador'
+                    }else{
+                        urlAD = ''
+                    }
+                    var responseService = https.post({
+                        url: urlAD,
+                        body : objAD,
+                        headers: {
+                            "Content-Type": "application/x-www-form-urlencoded",
+                            "User-Agent": "NetSuite/2019.2(SuiteScript)",
+                        }
+                    }).body;
+                    log.debug('responseService AD Cambio presentador',responseService)
+                }
                 
 
             }else{
@@ -313,11 +346,10 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                 obj_ret.mensaje = 'No existe el Cliente o está inactivo'
             }
 
-            //Data aAgenda Digital
+           
+ 
 
-
-
-
+            log.debug('objAD Cambio presentador',objAD)
 
             //Response LMS
             obj_ret.IdCliente = id_cliente
