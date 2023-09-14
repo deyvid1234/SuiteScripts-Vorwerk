@@ -263,35 +263,147 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                                 3.1.1 actualizar los campos salesrepNuevoResponse, idusalesRepNuevoResponse 
                             4 else llamar a presentador aleatorio - fin 
                             */
+
+
+
+            /*if(req_info.IdCliente){
+               var mySearch = search.load({
+                   id: 'customsearch_clientes_activos'
+                });
+
+                mySearch.filters.push(search.createFilter({
+                       name: 'internalid',
+                       operator: 'is',
+                       values: req_info.IdCliente
+                }));
+            var client = false
+                var idSalesRep
+                var stage
+                var id_cliente
+                var pagedResults = mySearch.runPaged();
+                pagedResults.pageRanges.forEach(function (pageRange){
+                var currentPage = pagedResults.fetch({index: pageRange.index});
+                    currentPage.data.forEach(function (r) {
+                        var values = r.getAllValues();
+                        client = values
+
+                        idSalesRep = r.getValue('salesrep')
+                        stage = r.getValue('formulatext')
+                        id_cliente = r.getValue('internalid')
+
+                        log.debug('idSalesRep', idSalesRep)
+
+
+                var salesRep_record = record.load({
+                            type: "employee",
+                            id: idSalesRep,
+                            isDynamic: false,   
+                        });
+
+                         delegada = salesRep_record.getText('custentity_delegada')
+                         log.debug('delegada', delegada)
+
+                         supervisor = salesRep_record.getText('custentity_supervisor')
+                         log.debug('supervisor', supervisor)
+
+                                return true; 
+                    });
+
+                });
+
+                
+            }*/
+
                         //
 
 
                         var empFields = search.lookupFields({
                             type: 'employee',
-                            id: carId,
-                            columns: ["custitem_kv_car_sku", "custitem_kv_car_make", "custitem_kv_car_year", "custitem_kv_item_minerva_stock_id", "custitem_kv_car_version"]
+                            id: salesrepActual,
+                            columns: ["custentity_delegada", "supervisor"]
                         });
 
-                        var carUpccode = empFields.custitem_kv_car_sku;
+                        
+                        var liderEquipo = empFields.supervisor[0].value;
+                        var liderEquipoName = empFields.supervisor[0].text;
+                        var liderEquipoIDU = liderEquipoName.split(' ')[0]
+                        
+                        log.debug('liderEquipo', liderEquipo)
+                        log.debug('liderEquipoName', liderEquipoName)
+                        log.debug('liderEquipoIDU',liderEquipoIDU)
 
+                        var leFields = search.lookupFields({
+                            type: 'employee',
+                            id: liderEquipo,
+                            columns: ["employeetype", "custentity_promocion", "isinactive"]
+                        });
+
+                            var typele = leFields.employeetype[0].value;
+                            log.debug('typele', typele)
+
+                            var promole = leFields.custentity_promocion[0].value;
+                            log.debug('promole', promole)
+
+                            var inactivele =leFields.isinactive;
+                            log.debug('inactivele', inactivele)
+
+
+                        var  gerenteVentas= empFields.custentity_delegada[0].value;
+                        var gerenteVentasName= empFields.custentity_delegada[0].text;
+                        var gerenteVentasIDU = gerenteVentasName.split(' ')[0]
+                        log.debug('gerenteVentas', gerenteVentas)
+                        log.debug('gerenteVentasName', gerenteVentasName)
+                        log.debug('gerenteVentasIDU', gerenteVentasIDU)
+
+                        var gvFields = search.lookupFields({
+                            type: 'employee',
+                            id: gerenteVentas,
+                            columns: ["employeetype", "custentity_promocion", "isinactive"]
+                        });
+
+                            var typeGV = gvFields.employeetype[0].value;
+                            log.debug('typeGV', typeGV)
+
+                            var promoGV = gvFields.custentity_promocion[0].value;
+                            log.debug('promoGV', promoGV)
+
+                            var inactiveGV =gvFields.isinactive;
+                            log.debug('inactiveGV', inactiveGV)
+
+                        if(typele == 3 && promole != 3 && inactivele == false){
+                            log.debug('entra if liderEquipo')
+                            salesrepNuevoResponse = liderEquipo
+                            idusalesRepNuevoResponse = liderEquipoIDU
+                            log.debug('nuevo le',salesrepNuevoResponse)
+                            log.debug('nuevo le',idusalesRepNuevoResponse)
+                        } else if (typeGV == 5 && promoGV != 3 && inactiveGV == false) {
+                            log.debug('entra if gerenteVentas')
+                            salesrepNuevoResponse = gerenteVentas
+                            idusalesRepNuevoResponse = gerenteVentasIDU
+                            log.debug('nuevo gv',salesrepNuevoResponse)
+                            log.debug('nuevo gv',idusalesRepNuevoResponse)
+                        } else {
 
                         var presentadorNuevo = presentadorAleatorio(req_info)
                         
-                        cliente_record.setValue({
-                            fieldId: 'salesrep',
-                            value: presentadorNuevo.internalid_p
-                        });
-                        cliente_record.setValue({
-                            fieldId: 'custentity_presentadora_referido',
-                            value: presentadorNuevo.internalid_p
-                        });
-                        cliente_record.setValue({
-                            fieldId: 'custentityidu_presentador',
-                            value: presentadorNuevo.idu_p
-                        });
 
                         salesrepNuevoResponse = presentadorNuevo.internalid_p
                         idusalesRepNuevoResponse = presentadorNuevo.idu_p
+                        }
+
+                        cliente_record.setValue({
+                            fieldId: 'salesrep',
+                            value: salesrepNuevoResponse
+                        });
+                        cliente_record.setValue({
+                            fieldId: 'custentity_presentadora_referido',
+                            value: salesrepNuevoResponse
+                        });
+                        cliente_record.setValue({
+                            fieldId: 'custentityidu_presentador',
+                            value: idusalesRepNuevoResponse
+                        });
+
                     }else if(req_info.EsPresentadorAleatorio == 0){ //Nos mandan el Sales Rep a asignar
                         var objAux = {
                             "idPresentador":req_info.salesrepNuevo
@@ -1005,54 +1117,6 @@ function(record,search,https,file,http,format,encode,email,runtime) {
 
     function presentadorAleatorio(req_info){
         try{
-
-            if(req_info.IdCliente){
-               var mySearch = search.load({
-                   id: 'customsearch_clientes_activos'
-                });
-
-                mySearch.filters.push(search.createFilter({
-                       name: 'internalid',
-                       operator: 'is',
-                       values: req_info.IdCliente
-                }));
-            var client = false
-                var idSalesRep
-                var stage
-                var id_cliente
-                var pagedResults = mySearch.runPaged();
-                pagedResults.pageRanges.forEach(function (pageRange){
-                var currentPage = pagedResults.fetch({index: pageRange.index});
-                    currentPage.data.forEach(function (r) {
-                        var values = r.getAllValues();
-                        client = values
-
-                        idSalesRep = r.getValue('salesrep')
-                        stage = r.getValue('formulatext')
-                        id_cliente = r.getValue('internalid')
-
-                        log.debug('idSalesRep', idSalesRep)
-
-
-                var salesRep_record = record.load({
-                            type: "employee",
-                            id: idSalesRep,
-                            isDynamic: false,   
-                        });
-
-                         delegada = salesRep_record.getText('custentity_delegada')
-                         log.debug('delegada', delegada)
-
-                         reclutadora = salesRep_record.getText('custentity_reclutadora')
-                         log.debug('reclutadora', reclutadora)
-
-                                return true; 
-                    });
-
-                });
-
-                
-            }
 
 
             log.debug('Buscar presentador aleatorio de la lista completa de presentadores activos Elegibles a presentadora Referido')
