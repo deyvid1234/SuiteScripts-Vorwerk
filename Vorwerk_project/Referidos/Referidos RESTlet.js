@@ -190,32 +190,36 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                     value: req_info.salesrepNuevo
                 });
                 cliente_record.setValue({
-                    fieldId: 'custentity_evaluacion_1',
+                    fieldId: 'custentity_evaluacion_0',
                     value: req_info.Evaluacion[0]
                 });
                 cliente_record.setValue({
-                    fieldId: 'custentity_evaluacion_2',
+                    fieldId: 'custentity_evaluacion_1',
                     value: req_info.Evaluacion[1]
                 });
                 cliente_record.setValue({
-                    fieldId: 'custentity_evaluacion_3',
+                    fieldId: 'custentity_evaluacion_2',
                     value: req_info.Evaluacion[2]
                 });
                 cliente_record.setValue({
-                    fieldId: 'custentity_evaluacion_4',
+                    fieldId: 'custentity_evaluacion_3',
                     value: req_info.Evaluacion[3]
                 });
                 cliente_record.setValue({
-                    fieldId: 'custentity_evaluacion_5',
+                    fieldId: 'custentity_evaluacion_4',
                     value: req_info.Evaluacion[4]
                 });
                 cliente_record.setValue({
-                    fieldId: 'custentity_evaluacion_6',
+                    fieldId: 'custentity_evaluacion_5',
                     value: req_info.Evaluacion[5]
                 });
                 cliente_record.setValue({
-                    fieldId: 'custentity_evaluacion_7',
+                    fieldId: 'custentity_evaluacion_6',
                     value: req_info.Evaluacion[6]
+                });
+                cliente_record.setValue({
+                    fieldId: 'custentity_evaluacion_7',
+                    value: req_info.Evaluacion[7]
                 });
                 
                 v = parseInt(req_info.MotivoCambio)
@@ -314,7 +318,6 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                 
             }*/
 
-                        //
 
 
                         var empFields = search.lookupFields({
@@ -324,10 +327,11 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                         });
 
                         
+                        if (empFields.supervisor != "") {
                         var liderEquipo = empFields.supervisor[0].value;
                         var liderEquipoName = empFields.supervisor[0].text;
                         var liderEquipoIDU = liderEquipoName.split(' ')[0]
-                        
+
                         log.debug('liderEquipo', liderEquipo)
                         log.debug('liderEquipoName', liderEquipoName)
                         log.debug('liderEquipoIDU',liderEquipoIDU)
@@ -348,9 +352,11 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                             log.debug('inactivele', inactivele)
 
 
+                        } else {
                         var  gerenteVentas= empFields.custentity_delegada[0].value;
                         var gerenteVentasName= empFields.custentity_delegada[0].text;
                         var gerenteVentasIDU = gerenteVentasName.split(' ')[0]
+
                         log.debug('gerenteVentas', gerenteVentas)
                         log.debug('gerenteVentasName', gerenteVentasName)
                         log.debug('gerenteVentasIDU', gerenteVentasIDU)
@@ -370,6 +376,9 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                             var inactiveGV =gvFields.isinactive;
                             log.debug('inactiveGV', inactiveGV)
 
+                        }
+                        
+                       
                         if(typele == 3 && promole != 3 && inactivele == false){
                             log.debug('entra if liderEquipo')
                             salesrepNuevoResponse = liderEquipo
@@ -450,7 +459,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                     objAD.IDUsalesRepActual         =   IDUsalesRepActual
                     objAD.salesrepNuevo             =   salesrepNuevoResponse
                     objAD.IDUsalesRepNuevo          =   idusalesRepNuevoResponse
-                    objAD.Evaluacion                =   req_info.Evaluacion
+                    //objAD.Evaluacion                =   req_info.Evaluacion
                     objAD.MotivoCambio              =   req_info.MotivoCambio
                     objAD.EsPresentadorAleatorio    =   req_info.EsPresentadorAleatorio
                     objAD.FechaInicio               =   req_info.FechaInicio
