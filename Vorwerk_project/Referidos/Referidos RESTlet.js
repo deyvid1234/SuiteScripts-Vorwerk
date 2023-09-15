@@ -128,6 +128,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
             4   Cerrada
             5   Cancelada
             6   Completada
+            7   Inviable
 
             */
             //Variables para Response 
@@ -414,27 +415,46 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                         });
 
                     }else if(req_info.EsPresentadorAleatorio == 0){ //Nos mandan el Sales Rep a asignar
-                        var objAux = {
+                        /*var objAux = {
                             "idPresentador":req_info.salesrepNuevo
                         }
                         var presentadorNuevo = presentadorRecomendador(objAux,false) //Busqueda del Presentador a asignar
+                        */
+                         var inactiveSRFields = search.lookupFields({
+                            type: 'employee',
+                            id: req_info.salesrepNuevo,
+                            columns: ["isinactive"]
+                        });
+
+                         var inactiveSRN = inactiveSRFields.isinactive
+                         log.debug('inactiveSRN',inactiveSRN)
+                             if (inactiveSRN == false) {
+
+                                cliente_record.setValue({
+                                fieldId: 'salesrep',
+                                value: req_info.salesrepNuevo
+                                });
+                                cliente_record.setValue({
+                                    fieldId: 'custentity_presentadora_referido',
+                                    value: req_info.salesrepNuevo
+                                });
+                                cliente_record.setValue({
+                                    fieldId: 'custentityidu_presentador',
+                                    value: req_info.IDUsalesRepActual
+                                });
+
+                                salesrepNuevoResponse = req_info.salesrepNuevo
+                                idusalesRepNuevoResponse = req_info.IDUsalesRepNuevo
+
+                             } else{
+                                error = true
+                                obj_ret.StatusCode = 409
+                                obj_ret.mensaje = 'El presentado elegido no esta disponible'
+                                log.debug('El presentado elegido no esta disponible')
+
+                             }
+                            
                         
-                        cliente_record.setValue({
-                            fieldId: 'salesrep',
-                            value: presentadorNuevo.internalid_p
-                        });
-                        cliente_record.setValue({
-                            fieldId: 'custentity_presentadora_referido',
-                            value: presentadorNuevo.internalid_p
-                        });
-                        cliente_record.setValue({
-                            fieldId: 'custentityidu_presentador',
-                            value: presentadorNuevo.idu_p
-                        });
-
-                        salesrepNuevoResponse = presentadorNuevo.internalid_p
-                        idusalesRepNuevoResponse = presentadorNuevo.idu_p
-
                     }else{
                         error = true
                         obj_ret.StatusCode = 400
