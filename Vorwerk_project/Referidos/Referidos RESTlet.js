@@ -185,6 +185,10 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                     id: req_info.IdCliente,
                     isDynamic: false,
                 });
+                cliente_record.setValue({
+                    fieldId: 'custentity_folio',
+                    value: "0"
+                });
                 
                 cliente_record.setValue({
                     fieldId: 'custentity_salesrep_nuevo',
@@ -449,6 +453,54 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                     if (success == false){
                          log.debug('error Agenda')
 
+                         var catch_record = record.create({
+                            type: 'customrecord_catch_recomendaciones',
+                            isDynamic: false,
+                        });
+                         var objHeaders = {}
+                         objHeaders.ContentType = "application/x-www-form-urlencoded"
+                         objHeaders.UserAgent   = "NetSuite/2019.2(SuiteScript)"
+
+                        catch_record.setValue({
+                        fieldId: 'custrecord_json_enviado',
+                        value: JSON.stringify(objAD)
+                        });
+                        catch_record.setValue({
+                        fieldId: 'custrecord_url',
+                        value: urlAD
+                        });
+                        catch_record.setValue({
+                        fieldId: 'custrecord_headers',
+                        value: JSON.stringify(objHeaders)
+                        });
+                        catch_record.setValue({
+                        fieldId: 'custrecord_type_pet',
+                        value: 'https'
+                        });
+                        catch_record.setValue({
+                        fieldId: 'custrecord_tokens',
+                        value: ""
+                        });
+                        catch_record.setValue({
+                        fieldId: 'custrecord_response',
+                        value: responseService
+                        });
+                        catch_record.setValue({
+                        fieldId: 'custrecord_response_reintento',
+                        value: ""
+                        });
+                        catch_record.setValue({
+                        fieldId: 'custrecord_procesado',
+                        value: false
+                        });
+
+                        var id_catch = catch_record.save({ 
+                            enableSourcing: true,
+                            ignoreMandatoryFields: true
+                        });
+                        log.debug('id_catch',id_catch)
+
+                          
                     }
                     
                 }
