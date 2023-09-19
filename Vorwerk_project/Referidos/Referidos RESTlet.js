@@ -237,12 +237,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                     fieldId: 'custentity_fecha_fin',
                     value: req_info.FechaFin
                 });
-                v = parseInt(req_info.EstatusSolicitud)
                 
-                cliente_record.setValue({
-                    fieldId: 'custentity_estatus_solicitud',
-                    value: v
-                });
 
                 v = parseInt(req_info.EsPresentadorAleatorio)==1?true:false
                 
@@ -252,75 +247,11 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                 });
 
 
-                var statusSolicitud = req_info.EstatusSolicitud
+                var statusSolicitud = parseInt(req_info.EstatusSolicitud)
                 if(statusSolicitud == 6){//Proceso finalizado - actualizar sales Rep
 
                     if(req_info.EsPresentadorAleatorio == 1){ //Nos piden Sales Rep Aleatorio 
-                        
-                        //Logica para validar y/o asignar Supervisor (lider de equipo) o Delegada (Gerente de Ventas)
-                            /*
-                            1 Hacer lookupfield de sales rep con los campos supervisor y delegada 
-                            2 Hacer lookupfield del supervisor con los campos isInactive y type 
-                            2.1 validar que el supervisor sea activo (inactive = false) y type sea Lider de equipo  yyyy custentity_promocion no es en litigio  -> 
-                                2.1.1 actualizar los campos salesrepNuevoResponse, idusalesRepNuevoResponse 
-                            3 crear else donde hagamos lookupfield del delegado con los campos isInactive, type
-                            3.1 validar que la delegada sea activa (inactive = false) y type sea Gerente de Ventas yyy custentity_promocion no es en litigio  -> 
-                                3.1.1 actualizar los campos salesrepNuevoResponse, idusalesRepNuevoResponse 
-                            4 else llamar a presentador aleatorio - fin 
-                            */
-
-
-
-            /*if(req_info.IdCliente){
-               var mySearch = search.load({
-                   id: 'customsearch_clientes_activos'
-                });
-
-                mySearch.filters.push(search.createFilter({
-                       name: 'internalid',
-                       operator: 'is',
-                       values: req_info.IdCliente
-                }));
-            var client = false
-                var idSalesRep
-                var stage
-                var id_cliente
-                var pagedResults = mySearch.runPaged();
-                pagedResults.pageRanges.forEach(function (pageRange){
-                var currentPage = pagedResults.fetch({index: pageRange.index});
-                    currentPage.data.forEach(function (r) {
-                        var values = r.getAllValues();
-                        client = values
-
-                        idSalesRep = r.getValue('salesrep')
-                        stage = r.getValue('formulatext')
-                        id_cliente = r.getValue('internalid')
-
-                        log.debug('idSalesRep', idSalesRep)
-
-
-                var salesRep_record = record.load({
-                            type: "employee",
-                            id: idSalesRep,
-                            isDynamic: false,   
-                        });
-
-                         delegada = salesRep_record.getText('custentity_delegada')
-                         log.debug('delegada', delegada)
-
-                         supervisor = salesRep_record.getText('custentity_supervisor')
-                         log.debug('supervisor', supervisor)
-
-                                return true; 
-                    });
-
-                });
-
-                
-            }*/
-
-
-
+  
                         var empFields = search.lookupFields({
                             type: 'employee',
                             id: salesrepActual,
@@ -354,19 +285,19 @@ function(record,search,https,file,http,format,encode,email,runtime) {
 
 
                         } else {
-                        var  gerenteVentas= empFields.custentity_delegada[0].value;
-                        var gerenteVentasName= empFields.custentity_delegada[0].text;
-                        var gerenteVentasIDU = gerenteVentasName.split(' ')[0]
+                            var  gerenteVentas= empFields.custentity_delegada[0].value;
+                            var gerenteVentasName= empFields.custentity_delegada[0].text;
+                            var gerenteVentasIDU = gerenteVentasName.split(' ')[0]
 
-                        log.debug('gerenteVentas', gerenteVentas)
-                        log.debug('gerenteVentasName', gerenteVentasName)
-                        log.debug('gerenteVentasIDU', gerenteVentasIDU)
+                            log.debug('gerenteVentas', gerenteVentas)
+                            log.debug('gerenteVentasName', gerenteVentasName)
+                            log.debug('gerenteVentasIDU', gerenteVentasIDU)
 
-                        var gvFields = search.lookupFields({
-                            type: 'employee',
-                            id: gerenteVentas,
-                            columns: ["employeetype", "custentity_promocion", "isinactive"]
-                        });
+                            var gvFields = search.lookupFields({
+                                type: 'employee',
+                                id: gerenteVentas,
+                                columns: ["employeetype", "custentity_promocion", "isinactive"]
+                            });
 
                             var typeGV = gvFields.employeetype[0].value;
                             log.debug('typeGV', typeGV)
@@ -380,25 +311,25 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                         }
                         
                        
-                        if(typele == 3 && promole != 3 && inactivele == false){
-                            log.debug('entra if liderEquipo')
+                        if(typele == 3 && promole != 3 && inactivele == false){// Lider de equipo / No es litigio / es activo
+                            
                             salesrepNuevoResponse = liderEquipo
                             idusalesRepNuevoResponse = liderEquipoIDU
                             log.debug('nuevo le',salesrepNuevoResponse)
                             log.debug('nuevo le',idusalesRepNuevoResponse)
-                        } else if (typeGV == 5 && promoGV != 3 && inactiveGV == false) {
-                            log.debug('entra if gerenteVentas')
+                        } else if (typeGV == 5 && promoGV != 3 && inactiveGV == false) { // Gerente de Ventas / No es litigio / es activo
+                           
                             salesrepNuevoResponse = gerenteVentas
                             idusalesRepNuevoResponse = gerenteVentasIDU
                             log.debug('nuevo gv',salesrepNuevoResponse)
                             log.debug('nuevo gv',idusalesRepNuevoResponse)
                         } else {
 
-                        var presentadorNuevo = presentadorAleatorio(req_info)
-                        
+                            var presentadorNuevo = presentadorAleatorio(req_info)
+                            
 
-                        salesrepNuevoResponse = presentadorNuevo.internalid_p
-                        idusalesRepNuevoResponse = presentadorNuevo.idu_p
+                            salesrepNuevoResponse = presentadorNuevo.internalid_p
+                            idusalesRepNuevoResponse = presentadorNuevo.idu_p
                         }
 
                         cliente_record.setValue({
@@ -427,7 +358,6 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                         });
 
                          var inactiveSRN = inactiveSRFields.isinactive
-                         log.debug('inactiveSRN',inactiveSRN)
                              if (inactiveSRN == false) {
 
                                 cliente_record.setValue({
@@ -447,12 +377,12 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                                 idusalesRepNuevoResponse = req_info.IDUsalesRepNuevo
 
                              } else{
-                                error = true
+                               
                                 obj_ret.StatusCode = 409
                                 obj_ret.mensaje = 'El presentado elegido no esta disponible'
                                 log.debug('El presentado elegido no esta disponible')
 
-                               statusSolicitud = 7 
+                                statusSolicitud = 7 
                                
                              }
                             
@@ -470,6 +400,12 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                 } //Solicitud en proceso - Solo actualizar datos (NO actualizar Sales rep)
 
                 if(error == false){
+
+                    cliente_record.setValue({
+                        fieldId: 'custentity_estatus_solicitud',
+                        value: statusSolicitud
+                    });
+
                     var id_cliente = cliente_record.save({ 
                         enableSourcing: true,
                         ignoreMandatoryFields: true
@@ -487,7 +423,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                     objAD.EsPresentadorAleatorio    =   req_info.EsPresentadorAleatorio
                     objAD.FechaInicio               =   req_info.FechaInicio
                     objAD.FechaFin                  =   req_info.FechaFin
-                    objAD.EstatusSolicitud          =   statusSolicitud //req_info.EstatusSolicitud
+                    objAD.EstatusSolicitud          =   statusSolicitud 
                     
                     var urlAD
 
@@ -505,16 +441,16 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                         }
                     }).body;
                     log.debug('responseService AD Cambio presentador',responseService)
-                   /* var responseAD = responseService
+                    var responseAD = JSON.stringify(responseService)
                     var success = responseAD.success
 
                     log.debug('sucessAD', success)
                     
                     if (success == false){
-                         
+                         log.debug('error Agenda')
 
                     }
-                    */
+                    
                 }
                 
 
