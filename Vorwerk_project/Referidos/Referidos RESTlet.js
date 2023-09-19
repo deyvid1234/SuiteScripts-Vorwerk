@@ -452,6 +452,8 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                                 obj_ret.mensaje = 'El presentado elegido no esta disponible'
                                 log.debug('El presentado elegido no esta disponible')
 
+                               statusSolicitud = 7 
+                               
                              }
                             
                         
@@ -459,6 +461,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                         error = true
                         obj_ret.StatusCode = 400
                         obj_ret.mensaje = 'Campo EsPresentadorAleatorio no defindo'
+
                         log.debug('Campo EsPresentadorAleatorio no defindo')
 
                     }
@@ -484,7 +487,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                     objAD.EsPresentadorAleatorio    =   req_info.EsPresentadorAleatorio
                     objAD.FechaInicio               =   req_info.FechaInicio
                     objAD.FechaFin                  =   req_info.FechaFin
-                    objAD.EstatusSolicitud          =   req_info.EstatusSolicitud
+                    objAD.EstatusSolicitud          =   statusSolicitud //req_info.EstatusSolicitud
                     
                     var urlAD
 
@@ -502,6 +505,16 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                         }
                     }).body;
                     log.debug('responseService AD Cambio presentador',responseService)
+                   /* var responseAD = responseService
+                    var success = responseAD.success
+
+                    log.debug('sucessAD', success)
+                    
+                    if (success == false){
+                         
+
+                    }
+                    */
                 }
                 
 
@@ -522,6 +535,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
             obj_ret.salesrepNuevo = salesrepNuevoResponse
             obj_ret.IDUsalesRepNuevo = idusalesRepNuevoResponse
             obj_ret.MotivoCambio = req_info.MotivoCambio
+            obj_ret.EstatusSolicitud = statusSolicitud
 
             log.debug('obj_ret', obj_ret)
             return obj_ret
