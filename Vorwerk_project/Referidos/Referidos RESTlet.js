@@ -441,7 +441,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                         }
                     }).body;
                     log.debug('responseService AD Cambio presentador',responseService)
-                    var responseAD = JSON.stringify(responseService)
+                    var responseAD = JSON.parse(responseService)
                     var success = responseAD.success
 
                     log.debug('sucessAD', success)
