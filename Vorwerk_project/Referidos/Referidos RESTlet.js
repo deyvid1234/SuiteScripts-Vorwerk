@@ -390,7 +390,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                                 statusSolicitud = 7 
 
                                 var objAD = {}
-                                objAD.Folio                     =   Folio
+                                objAD.CambioFolio               =   Folio
                                 objAD.IdCliente                 =   req_info.IdCliente
                                 objAD.salesrepActual            =   salesrepActual
                                 objAD.IDUsalesRepActual         =   IDUsalesRepActual
