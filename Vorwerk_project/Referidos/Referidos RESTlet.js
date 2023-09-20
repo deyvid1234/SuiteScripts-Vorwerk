@@ -136,7 +136,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
             var idusalesRepNuevoResponse = req_info.IDUsalesRepNuevo
             var salesrepActual = req_info.salesrepActual
             var IDUsalesRepActual = req_info.IDUsalesRepActual
-            var Folio = '0'//req_info.loquemanden
+            var Folio = '2'//req_info.loquemanden
             var obj_ret = {}
             var error = false
 
@@ -382,13 +382,46 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                                 idusalesRepNuevoResponse = req_info.IDUsalesRepNuevo
 
                              } else{
-                               
+                                error = true
                                 obj_ret.StatusCode = 409
                                 obj_ret.mensaje = 'El presentado elegido no esta disponible'
                                 log.debug('El presentado elegido no esta disponible')
 
                                 statusSolicitud = 7 
-                               
+
+                                var objAD = {}
+                                objAD.Folio                     =   Folio
+                                objAD.IdCliente                 =   req_info.IdCliente
+                                objAD.salesrepActual            =   salesrepActual
+                                objAD.IDUsalesRepActual         =   IDUsalesRepActual
+                                objAD.salesrepNuevo             =   salesrepNuevoResponse
+                                objAD.IDUsalesRepNuevo          =   idusalesRepNuevoResponse
+                                //objAD.Evaluacion                =   req_info.Evaluacion
+                                objAD.MotivoCambio              =   req_info.MotivoCambio
+                                objAD.EsPresentadorAleatorio    =   req_info.EsPresentadorAleatorio
+                                objAD.FechaInicio               =   req_info.FechaInicio
+                                objAD.FechaFin                  =   req_info.FechaFin
+                                objAD.EstatusSolicitud          =   statusSolicitud 
+                                objAD.Error                     =   409
+                                objAD.Mensaje                   =   'El presentado elegido no esta disponible'
+                                
+                                var urlAD
+
+                                if(runtime.envType != 'PRODUCTION'){ 
+                                    urlAD = 'https://dev-apiagenda.mxthermomix.com/users/CambioPresentador'
+                                }else{
+                                    urlAD = ''
+                                }
+                                var responseService = https.post({
+                                    url: urlAD,
+                                    body : objAD,
+                                    headers: {
+                                        "Content-Type": "application/x-www-form-urlencoded",
+                                        "User-Agent": "NetSuite/2019.2(SuiteScript)",
+                                    }
+                                }).body;
+                                log.debug('responseService AD Cambio presentador',responseService)
+                                           
                              }
                             
                         
