@@ -136,7 +136,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
             var idusalesRepNuevoResponse = req_info.IDUsalesRepNuevo
             var salesrepActual = req_info.salesrepActual
             var IDUsalesRepActual = req_info.IDUsalesRepActual
-            var Folio = '2'//req_info.loquemanden
+            var Folio = req_info.CambioFolio//req_info.loquemanden
             var obj_ret = {}
             var error = false
 
@@ -316,19 +316,19 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                         }
                         
                        
-                        if(typele == 3 && promole != 3 && inactivele == false){// Lider de equipo / No es litigio / es activo
+                        if(typele == 3 && promole != 3 && inactivele == false){// se asigna del lider de equipo si cumple con = Lider de equipo / No es litigio / es activo
                             
                             salesrepNuevoResponse = liderEquipo
                             idusalesRepNuevoResponse = liderEquipoIDU
                             log.debug('nuevo le',salesrepNuevoResponse)
                             log.debug('nuevo le',idusalesRepNuevoResponse)
-                        } else if (typeGV == 5 && promoGV != 3 && inactiveGV == false) { // Gerente de Ventas / No es litigio / es activo
+                        } else if (typeGV == 5 && promoGV != 3 && inactiveGV == false) { // se asigna el GV si cumple con = Gerente de Ventas / No es litigio / es activo
                            
                             salesrepNuevoResponse = gerenteVentas
                             idusalesRepNuevoResponse = gerenteVentasIDU
                             log.debug('nuevo gv',salesrepNuevoResponse)
                             log.debug('nuevo gv',idusalesRepNuevoResponse)
-                        } else {
+                        } else {// se asigna presentador de toda la fuerza de ventas
 
                             var presentadorNuevo = presentadorAleatorio(req_info)
                             
@@ -363,7 +363,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                         });
 
                          var inactiveSRN = inactiveSRFields.isinactive
-                             if (inactiveSRN == false) {
+                             if (inactiveSRN == false) {//si el sales rep que nos enviaron esta activo se asigna
 
                                 cliente_record.setValue({
                                 fieldId: 'salesrep',
@@ -381,7 +381,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                                 salesrepNuevoResponse = req_info.salesrepNuevo
                                 idusalesRepNuevoResponse = req_info.IDUsalesRepNuevo
 
-                             } else{
+                             } else{// si el sales rep qe nos enviaron esta inactivo se lanza el erro 409 y se da el resppnse a lms con el erro al igual que a 
                                 error = true
                                 obj_ret.StatusCode = 409
                                 obj_ret.mensaje = 'El presentado elegido no esta disponible'
@@ -451,7 +451,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                      
                      //Data a Agenda Digital
                     var objAD = {}
-                    objAD.Folio                     =   Folio
+                    objAD.CambioFolio               =   Folio
                     objAD.IdCliente                 =   req_info.IdCliente
                     objAD.salesrepActual            =   salesrepActual
                     objAD.IDUsalesRepActual         =   IDUsalesRepActual
@@ -552,7 +552,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
             log.debug('objAD Cambio presentador',objAD)
 
             //Response LMS
-            obj_ret.Folio = Folio
+            obj_ret.CambioFolio = Folio
             obj_ret.IdCliente = id_cliente
             obj_ret.salesrepActual = salesrepActual
             obj_ret.IDUsalesRepActual = IDUsalesRepActual
