@@ -3,9 +3,9 @@
  * @NScriptType MapReduceScript
  * @NModuleScope SameAccount
  */
-define(['N/search','N/https','N/runtime'],
+define(['N/record','N/search','N/https','N/file', 'N/http','N/format','N/encode','N/email','N/runtime'],
 
-function(search,https,runtime) {
+function(record,search,https,file,http,format,encode,email,runtime) {
    
     /**
      * Marks the beginning of the Map/Reduce process and generates input data.
@@ -24,6 +24,13 @@ function(search,https,runtime) {
           columns:[
                     'custrecord_response_reintento',
                     'custrecord_procesado',
+                    'custrecord_url',
+                    'custrecord_json_enviado',
+                    'custrecord_headers',
+                    'custrecord_type_pet',
+                    'custrecord_tokens',
+                    'custrecord_response',
+                    'internalid',
                   ],
                 filters: [
                     {
@@ -34,23 +41,20 @@ function(search,https,runtime) {
                   ]
 
           })
-          var info = {}
-          var pagedResults = busqueda.runPaged();
+          var info = []
+          var pagedResults = registrosCatch.runPaged();
                 pagedResults.pageRanges.forEach(function (pageRange){
                 var currentPage = pagedResults.fetch({index: pageRange.index});
                 currentPage.data.forEach(function (r){
-                  info.push({
-                    
-                    procesado: r.getValue('custrecord_procesado'),
-                    responseReintento: r.getValue('custrecord_response_reintento')
-                  });
+                  info.push(r.getAllValues());
                 });
+                  return true;
+                })
+                
+        log.debug('info',info)
+        return info
 
-
-
-        return info;
-      })
-    }catch(err){
+      }catch(err){
         log.error('getInputData',err)
       }
 
@@ -64,14 +68,70 @@ function(search,https,runtime) {
      */
     function map(context) {
       try{
-        //var registrosCatch = JSON.parse(context.value)
-        //log.debug('obj_detail',obj_detail)
-        //registrosCatch.estructura=[]
-
-        if(registrosCatch.procesado == false){
-            
+       
+        var registrosCatch = JSON.parse(context.value)
+        
 
 
+        if(registrosCatch.custrecord_procesado == false){
+
+            //Variables
+            var url = registrosCatch.custrecord_url
+            var json = registrosCatch.custrecord_json_enviado
+            var headersField = registrosCatch.custrecord_headers
+            var type = registrosCatch.custrecord_type_pet
+            var catchid = registrosCatch.internalid[0].value
+            var responseService
+            var requestSuccess = true
+
+            log.debug('type',type)
+            log.debug('url',url)
+            log.debug('json',json)
+            log.debug('headersField',headersField)
+
+            try{
+              if(type == 'https'){
+                responseService = https.post({
+                  url: url,
+                  body : JSON.parse(json),
+                  headers: headersField
+                }).body;
+
+              }else if(type == 'http'){
+
+                responseService = http.post({
+                  url: url,
+                  body : JSON.parse(json),
+                  headers: headersField
+                }).body;
+
+              }else{
+                log.debug('type indefinido')
+              }
+              
+
+              log.debug('responseService',responseService)
+              responseService = JSON.parse(responseService)
+              requestSuccess = responseService.success
+
+            }catch(e){
+              log.error('Error en send Request ',e)
+              responseService = 'Error al enviar request: '+e 
+              requestSuccess = false
+            }
+
+            log.debug('requestSuccess',requestSuccess)
+            log.debug('catchid',catchid)
+
+            record.submitFields({
+                id: catchid,
+                type: 'customrecord_catch_recomendaciones',
+                values: { 
+                  "custrecord_procesado": true,
+                  "custrecord_response_reintento": responseService,
+                  'custrecord_request_success':requestSuccess,
+                }
+            })
         }
         
 
