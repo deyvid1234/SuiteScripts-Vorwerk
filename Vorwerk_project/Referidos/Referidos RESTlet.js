@@ -136,6 +136,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
             var idusalesRepNuevoResponse = req_info.IDUsalesRepNuevo
             var salesrepActual = req_info.salesrepActual
             var IDUsalesRepActual = req_info.IDUsalesRepActual
+            var Folio = '0'//req_info.loquemanden
             var obj_ret = {}
             var error = false
 
@@ -187,7 +188,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                 });
                 cliente_record.setValue({
                     fieldId: 'custentity_folio',
-                    value: "0"
+                    value: Folio
                 });
                 
                 cliente_record.setValue({
@@ -417,6 +418,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                      
                      //Data a Agenda Digital
                     var objAD = {}
+                    objAD.Folio                     =   Folio
                     objAD.IdCliente                 =   req_info.IdCliente
                     objAD.salesrepActual            =   salesrepActual
                     objAD.IDUsalesRepActual         =   IDUsalesRepActual
@@ -517,6 +519,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
             log.debug('objAD Cambio presentador',objAD)
 
             //Response LMS
+            obj_ret.Folio = Folio
             obj_ret.IdCliente = id_cliente
             obj_ret.salesrepActual = salesrepActual
             obj_ret.IDUsalesRepActual = IDUsalesRepActual
