@@ -136,7 +136,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
             var idusalesRepNuevoResponse = req_info.IDUsalesRepNuevo
             var salesrepActual = req_info.salesrepActual
             var IDUsalesRepActual = req_info.IDUsalesRepActual
-            var Folio = req_info.CambioFolio//req_info.loquemanden
+            var Folio =  req_info.CambioFolio//req_info.loquemanden
             var obj_ret = {}
             var error = false
 
@@ -471,72 +471,75 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                     }else{
                         urlAD = ''
                     }
-                    var responseService = https.post({
-                        url: urlAD,
-                        body : objAD,
-                        headers: {
-                            "Content-Type": "application/x-www-form-urlencoded",
-                            "User-Agent": "NetSuite/2019.2(SuiteScript)",
+                    try{
+                        var responseService = https.post({
+                            url: urlAD,
+                            body : objAD,
+                            headers: {
+                                "Content-Type": "application/x-www-form-urlencoded",
+                                "User-Agent": "NetSuite/2019.2(SuiteScript)",
+                            }
+                        }).body;
+                        log.debug('responseService AD Cambio presentador',responseService)
+                        var responseAD = JSON.parse(responseService)
+                        var success = responseAD.success
+
+                        log.debug('sucessAD', success)
+                        
+                        if (success == false){
+                             log.debug('error Agenda')
+
+                             var catch_record = record.create({
+                                type: 'customrecord_catch_recomendaciones',
+                                isDynamic: false,
+                            });
+                             var objHeaders = {}
+                             objHeaders.ContentType = "application/x-www-form-urlencoded"
+                             objHeaders.UserAgent   = "NetSuite/2019.2(SuiteScript)"
+
+                            catch_record.setValue({
+                            fieldId: 'custrecord_json_enviado',
+                            value: JSON.stringify(objAD)
+                            });
+                            catch_record.setValue({
+                            fieldId: 'custrecord_url',
+                            value: urlAD
+                            });
+                            catch_record.setValue({
+                            fieldId: 'custrecord_headers',
+                            value: JSON.stringify(objHeaders)
+                            });
+                            catch_record.setValue({
+                            fieldId: 'custrecord_type_pet',
+                            value: 'https'
+                            });
+                            catch_record.setValue({
+                            fieldId: 'custrecord_tokens',
+                            value: ""
+                            });
+                            catch_record.setValue({
+                            fieldId: 'custrecord_response',
+                            value: responseService
+                            });
+                            catch_record.setValue({
+                            fieldId: 'custrecord_response_reintento',
+                            value: ""
+                            });
+                            catch_record.setValue({
+                            fieldId: 'custrecord_procesado',
+                            value: false
+                            });
+
+                            var id_catch = catch_record.save({ 
+                                enableSourcing: true,
+                                ignoreMandatoryFields: true
+                            });
+                            log.debug('id_catch',id_catch)
                         }
-                    }).body;
-                    log.debug('responseService AD Cambio presentador',responseService)
-                    var responseAD = JSON.parse(responseService)
-                    var success = responseAD.success
-
-                    log.debug('sucessAD', success)
-                    
-                    if (success == false){
-                         log.debug('error Agenda')
-
-                         var catch_record = record.create({
-                            type: 'customrecord_catch_recomendaciones',
-                            isDynamic: false,
-                        });
-                         var objHeaders = {}
-                         objHeaders.ContentType = "application/x-www-form-urlencoded"
-                         objHeaders.UserAgent   = "NetSuite/2019.2(SuiteScript)"
-
-                        catch_record.setValue({
-                        fieldId: 'custrecord_json_enviado',
-                        value: JSON.stringify(objAD)
-                        });
-                        catch_record.setValue({
-                        fieldId: 'custrecord_url',
-                        value: urlAD
-                        });
-                        catch_record.setValue({
-                        fieldId: 'custrecord_headers',
-                        value: JSON.stringify(objHeaders)
-                        });
-                        catch_record.setValue({
-                        fieldId: 'custrecord_type_pet',
-                        value: 'https'
-                        });
-                        catch_record.setValue({
-                        fieldId: 'custrecord_tokens',
-                        value: ""
-                        });
-                        catch_record.setValue({
-                        fieldId: 'custrecord_response',
-                        value: responseService
-                        });
-                        catch_record.setValue({
-                        fieldId: 'custrecord_response_reintento',
-                        value: ""
-                        });
-                        catch_record.setValue({
-                        fieldId: 'custrecord_procesado',
-                        value: false
-                        });
-
-                        var id_catch = catch_record.save({ 
-                            enableSourcing: true,
-                            ignoreMandatoryFields: true
-                        });
-                        log.debug('id_catch',id_catch)
-
-                          
+                    }catch(e){
+                        log.debug('Error objAD',e)
                     }
+                    
                     
                 }
                 
