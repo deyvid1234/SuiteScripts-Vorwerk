@@ -136,9 +136,10 @@ function(record,search,https,file,http,format,encode,email,runtime) {
             var idusalesRepNuevoResponse = req_info.IDUsalesRepNuevo
             var salesrepActual = req_info.salesrepActual
             var IDUsalesRepActual = req_info.IDUsalesRepActual
-            var Folio =  req_info.CambioFolio//req_info.loquemanden
+            var Folio =  req_info.CambioFolio
             var obj_ret = {}
             var error = false
+            var Evaluacion = JSON.parse(req_info.Evaluacion)
 
             if(req_info.IdCliente){
                var mySearch = search.load({
@@ -396,7 +397,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                                 objAD.IDUsalesRepActual         =   IDUsalesRepActual
                                 objAD.salesrepNuevo             =   salesrepNuevoResponse
                                 objAD.IDUsalesRepNuevo          =   idusalesRepNuevoResponse
-                                //objAD.Evaluacion                =   req_info.Evaluacion
+                                objAD.Evaluacion                =   Evaluacion
                                 objAD.MotivoCambio              =   req_info.MotivoCambio
                                 objAD.EsPresentadorAleatorio    =   req_info.EsPresentadorAleatorio
                                 objAD.FechaInicio               =   req_info.FechaInicio
@@ -457,7 +458,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                     objAD.IDUsalesRepActual         =   IDUsalesRepActual
                     objAD.salesrepNuevo             =   salesrepNuevoResponse
                     objAD.IDUsalesRepNuevo          =   idusalesRepNuevoResponse
-                    //objAD.Evaluacion                =   req_info.Evaluacion
+                    objAD.Evaluacion                =   Evaluacion
                     objAD.MotivoCambio              =   req_info.MotivoCambio
                     objAD.EsPresentadorAleatorio    =   req_info.EsPresentadorAleatorio
                     objAD.FechaInicio               =   req_info.FechaInicio
@@ -486,10 +487,10 @@ function(record,search,https,file,http,format,encode,email,runtime) {
 
                         log.debug('sucessAD', success)
                         
-                        if (success == false){
+                        if (success != true){
                              log.debug('error Agenda')
 
-                             var catch_record = record.create({
+                            var catch_record = record.create({
                                 type: 'customrecord_catch_recomendaciones',
                                 isDynamic: false,
                             });
@@ -538,8 +539,50 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                         }
                     }catch(e){
                         log.debug('Error objAD',e)
-                    }
-                    
+                        var objHeaders = {}
+                             objHeaders.ContentType = "application/x-www-form-urlencoded"
+                             objHeaders.UserAgent   = "NetSuite/2019.2(SuiteScript)"
+
+                            catch_record.setValue({
+                            fieldId: 'custrecord_json_enviado',
+                            value: JSON.stringify(objAD)
+                            });
+                            catch_record.setValue({
+                            fieldId: 'custrecord_url',
+                            value: urlAD
+                            });
+                            catch_record.setValue({
+                            fieldId: 'custrecord_headers',
+                            value: JSON.stringify(objHeaders)
+                            });
+                            catch_record.setValue({
+                            fieldId: 'custrecord_type_pet',
+                            value: 'https'
+                            });
+                            catch_record.setValue({
+                            fieldId: 'custrecord_tokens',
+                            value: ""
+                            });
+                            catch_record.setValue({
+                            fieldId: 'custrecord_response',
+                            value: responseService
+                            });
+                            catch_record.setValue({
+                            fieldId: 'custrecord_response_reintento',
+                            value: ""
+                            });
+                            catch_record.setValue({
+                            fieldId: 'custrecord_procesado',
+                            value: false
+                            });
+
+                            var id_catch = catch_record.save({ 
+                                enableSourcing: true,
+                                ignoreMandatoryFields: true
+                            });
+                            log.debug('id_catch',id_catch)   
+
+                    }   
                     
                 }
                 
@@ -548,9 +591,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                 obj_ret.StatusCode = 424
                 obj_ret.mensaje = 'No existe el Cliente o está inactivo'
             }
-
            
- 
 
             log.debug('objAD Cambio presentador',objAD)
 
