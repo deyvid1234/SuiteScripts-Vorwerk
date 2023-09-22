@@ -139,7 +139,10 @@ function(record,search,https,file,http,format,encode,email,runtime) {
             var Folio =  req_info.CambioFolio
             var obj_ret = {}
             var error = false
-            var Evaluacion = req_info.Evaluacion
+            var Evaluacion = {
+                '01':req_info.Evaluacion[0]
+            }
+            
             var objAD = {}
 
             log.debug('Evaluacion',Evaluacion)
@@ -451,7 +454,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                     var urlAD
 
                     if(runtime.envType != 'PRODUCTION'){ 
-                        urlAD = 'https://dev-apiagenda.mxthermomix.com/users/CambioPresentadorr'
+                        urlAD = 'https://dev-apiagenda.mxthermomix.com/users/CambioPresentador'
                     }else{
                         urlAD = ''
                     }
