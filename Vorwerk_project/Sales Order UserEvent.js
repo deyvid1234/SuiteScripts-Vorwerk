@@ -490,7 +490,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 	            	log.debug('objPresentadora',objPresentadora)
 
 	            	
-		    		if( type == 'create' || salesrep != old_salesrep ){
+		    		if( type == 'create' || salesrep != old_salesrep || true ){
 
 		    			if(runtime.envType != 'PRODUCTION'){ 
 		                    urlLMS = 'http://api-referidos-thrmx.lms-la.com/api/venta'
@@ -544,7 +544,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 				                values: {
 				                //'custentityidu_presentador':objsalesrep.entityid,
 				                'custentity_first_so':recordid,
-				            	'custentity_date_first_so':fdate,
+				            	//'custentity_date_first_so':fdate,
 				            	'custentitysales_rep_first_so':salesrep,
 				            	}
 				            });

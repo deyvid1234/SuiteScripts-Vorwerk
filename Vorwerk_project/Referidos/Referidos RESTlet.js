@@ -139,7 +139,12 @@ function(record,search,https,file,http,format,encode,email,runtime) {
             var Folio =  req_info.CambioFolio
             var obj_ret = {}
             var error = false
-            var Evaluacion = JSON.parse(req_info.Evaluacion)
+            var Evaluacion = req_info.Evaluacion
+            var objAD = {}
+
+            log.debug('Evaluacion',Evaluacion)
+
+
 
             if(req_info.IdCliente){
                var mySearch = search.load({
@@ -383,46 +388,24 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                                 idusalesRepNuevoResponse = req_info.IDUsalesRepNuevo
 
                              } else{// si el sales rep qe nos enviaron esta inactivo se lanza el erro 409 y se da el resppnse a lms con el erro al igual que a 
-                                error = true
+                                
                                 obj_ret.StatusCode = 409
                                 obj_ret.mensaje = 'El presentado elegido no esta disponible'
                                 log.debug('El presentado elegido no esta disponible')
 
+                                cliente_record.setValue({
+                                    fieldId: 'custentity_salesrep_nuevo',
+                                    value: ''
+                                });
+
+
                                 statusSolicitud = 7 
 
-                                var objAD = {}
-                                objAD.CambioFolio               =   Folio
-                                objAD.IdCliente                 =   req_info.IdCliente
-                                objAD.salesrepActual            =   salesrepActual
-                                objAD.IDUsalesRepActual         =   IDUsalesRepActual
-                                objAD.salesrepNuevo             =   salesrepNuevoResponse
-                                objAD.IDUsalesRepNuevo          =   idusalesRepNuevoResponse
-                                objAD.Evaluacion                =   Evaluacion
-                                objAD.MotivoCambio              =   req_info.MotivoCambio
-                                objAD.EsPresentadorAleatorio    =   req_info.EsPresentadorAleatorio
-                                objAD.FechaInicio               =   req_info.FechaInicio
-                                objAD.FechaFin                  =   req_info.FechaFin
                                 objAD.EstatusSolicitud          =   statusSolicitud 
                                 objAD.Error                     =   409
                                 objAD.Mensaje                   =   'El presentado elegido no esta disponible'
                                 
-                                var urlAD
-
-                                if(runtime.envType != 'PRODUCTION'){ 
-                                    urlAD = 'https://dev-apiagenda.mxthermomix.com/users/CambioPresentador'
-                                }else{
-                                    urlAD = ''
-                                }
-                                var responseService = https.post({
-                                    url: urlAD,
-                                    body : objAD,
-                                    headers: {
-                                        "Content-Type": "application/x-www-form-urlencoded",
-                                        "User-Agent": "NetSuite/2019.2(SuiteScript)",
-                                    }
-                                }).body;
-                                log.debug('responseService AD Cambio presentador',responseService)
-                                           
+                               
                              }
                             
                         
@@ -451,7 +434,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                     });
                      
                      //Data a Agenda Digital
-                    var objAD = {}
+                    
                     objAD.CambioFolio               =   Folio
                     objAD.IdCliente                 =   req_info.IdCliente
                     objAD.salesrepActual            =   salesrepActual
@@ -468,7 +451,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                     var urlAD
 
                     if(runtime.envType != 'PRODUCTION'){ 
-                        urlAD = 'https://dev-apiagenda.mxthermomix.com/users/CambioPresentador'
+                        urlAD = 'https://dev-apiagenda.mxthermomix.com/users/CambioPresentadorr'
                     }else{
                         urlAD = ''
                     }
@@ -605,7 +588,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
             obj_ret.MotivoCambio = req_info.MotivoCambio
             obj_ret.EstatusSolicitud = statusSolicitud
 
-            log.debug('obj_ret', obj_ret)
+            log.debug('obj_ret LMS', obj_ret)
             return obj_ret
         }catch(e){
             return e
