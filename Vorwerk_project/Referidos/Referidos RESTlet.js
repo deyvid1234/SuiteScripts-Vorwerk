@@ -140,9 +140,17 @@ function(record,search,https,file,http,format,encode,email,runtime) {
             var obj_ret = {}
             var error = false
             var Evaluacion = {
-                '01':req_info.Evaluacion[0]
+                '0':req_info.Evaluacion[0],
+                '1':req_info.Evaluacion[1],
+                '2':req_info.Evaluacion[2],
+                '3':req_info.Evaluacion[3],
+                '4':req_info.Evaluacion[4],
+                '5':req_info.Evaluacion[5],
+                '6':req_info.Evaluacion[6],
+                '7':req_info.Evaluacion[7]
+
             }
-            
+          
             var objAD = {}
 
             log.debug('Evaluacion',Evaluacion)
