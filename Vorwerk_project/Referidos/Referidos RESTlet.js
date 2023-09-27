@@ -100,7 +100,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                     "2": "no",
 
                     "3": "si",
-
+ 
                     "4": "no",
 
                     "5": "si",
@@ -139,23 +139,9 @@ function(record,search,https,file,http,format,encode,email,runtime) {
             var Folio =  req_info.CambioFolio
             var obj_ret = {}
             var error = false
-            var Evaluacion = {
-                '0':req_info.Evaluacion[0],
-                '1':req_info.Evaluacion[1],
-                '2':req_info.Evaluacion[2],
-                '3':req_info.Evaluacion[3],
-                '4':req_info.Evaluacion[4],
-                '5':req_info.Evaluacion[5],
-                '6':req_info.Evaluacion[6],
-                '7':req_info.Evaluacion[7]
+            
 
-            }
-          
             var objAD = {}
-
-            log.debug('Evaluacion',Evaluacion)
-
-
 
             if(req_info.IdCliente){
                var mySearch = search.load({
@@ -452,13 +438,21 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                     objAD.IDUsalesRepActual         =   IDUsalesRepActual
                     objAD.salesrepNuevo             =   salesrepNuevoResponse
                     objAD.IDUsalesRepNuevo          =   idusalesRepNuevoResponse
-                    objAD.Evaluacion                =   Evaluacion
+                    objAD.EvaluacionR0                =   req_info.Evaluacion[0]==''?'NA':req_info.Evaluacion[0]
+                    objAD.EvaluacionR1                =   req_info.Evaluacion[1]==''?'NA':req_info.Evaluacion[1]
+                    objAD.EvaluacionR2                =   req_info.Evaluacion[2]==''?'NA':req_info.Evaluacion[2]
+                    objAD.EvaluacionR3                =   req_info.Evaluacion[3]==''?'NA':req_info.Evaluacion[3]
+                    objAD.EvaluacionR4                =   req_info.Evaluacion[4]==''?'NA':req_info.Evaluacion[4]
+                    objAD.EvaluacionR5                =   req_info.Evaluacion[5]==''?'NA':req_info.Evaluacion[5]
+                    objAD.EvaluacionR6                =   req_info.Evaluacion[6]==''?'NA':req_info.Evaluacion[6]
+                    objAD.EvaluacionR7                =   req_info.Evaluacion[7]==''?'NA':req_info.Evaluacion[7]
                     objAD.MotivoCambio              =   req_info.MotivoCambio
                     objAD.EsPresentadorAleatorio    =   req_info.EsPresentadorAleatorio
                     objAD.FechaInicio               =   req_info.FechaInicio
                     objAD.FechaFin                  =   req_info.FechaFin
                     objAD.EstatusSolicitud          =   statusSolicitud 
                     
+                    log.debug('objAD',objAD)
                     var urlAD
 
                     if(runtime.envType != 'PRODUCTION'){ 
@@ -467,6 +461,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                         urlAD = ''
                     }
                     try{
+
                         var responseService = https.post({
                             url: urlAD,
                             body : objAD,
