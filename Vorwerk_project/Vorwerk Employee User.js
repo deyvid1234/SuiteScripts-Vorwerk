@@ -113,14 +113,6 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 								idu : result.getValue('entityid'),
 								nombre : result.getValue('firstname'),
 								apellido : result.getValue('lastname'),
-
-
-								fecha_nacimiento : result.getValue('birthdate'),
-								fecha_alta : result.getValue('hiredate'),
-								fecha_baja: result.getValue('custentity59'),
-								fecha_reactivacion : result.getValue('custentity72'),
-
-
 								correo : result.getValue('email'),
 								telefono : result.getValue('mobilephone'),
 								inactivo: result.getValue('isinactive'),
@@ -141,12 +133,10 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 								IDU : result.getValue('entityid'),
 								Nombre : result.getValue('firstname'),
 								Apellidos : result.getValue('lastname'),
-								FachaNacimineto : result.getValue('birthdate'),
-								FechaAlta : result.getValue('hiredate'),
-								FechaBaja: result.getValue('custentity59'),
-								FechaReactivacion : result.getValue('custentity72'),
-
-								//correo : result.getValue('email'),
+								FachaNacimineto : formatoFecha(result.getValue('birthdate')),
+								FechaAlta : formatoFecha(result.getValue('hiredate')),
+								FechaBaja: formatoFecha(result.getValue('custentity59')),
+								FechaReactivacion : formatoFecha(result.getValue('custentity72')),
 								inactivo: result.getValue('isinactive'),
 								
 							});
@@ -215,7 +205,6 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 			    	*/
 			    	try{//ENVIO LMS
 			    		log.debug('envir a lms',search_obj_detailLMS)
-			    		log.debug('envir a lms 1',search_obj_detailLMS[0])
 			    		if(runtime.envType != 'PRODUCTION'){ 
 		                    urlLMS = 'http://api-referidos-thrmx.lms-la.com/api/fuerzaVentas'
 		                    key = 'Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJJZCI6IjhhMDJkZDE3LTYzMjAtNGFiMi1iOWFkLWZlZDMzZWRhYzNiNiIsInN1YiI6InZzaWx2YWNAbG1zLmNvbS5teCIsImVtYWlsIjoidnNpbHZhY0BsbXMuY29tLm14IiwidW5pcXVlX25hbWUiOiJ2c2lsdmFjQGxtcy5jb20ubXgiLCJqdGkiOiI4MjEwMDk4MC0zMDNjLTRlMDktYjM1NS0xMGM5N2ViNWU0ZjkiLCJuYmYiOjE2NzgyMjYzNTYsImV4cCI6MTcwOTg0ODc1NiwiaWF0IjoxNjc4MjI2MzU2fQ.CetagLsFKPT9_kj50JrzOemPHUw4FID7uzEs7AYC3WlkiE5S1VJdhURTlTc4XWeX2-An6P5SzQPlCZtvM-WJrQ'
@@ -245,7 +234,7 @@ function(record,search,http,https,encode,runtime,serverWidget) {
         	}
     		if(scriptContext.type == 'edit'){
 
-        		log.debug('old',oldrecord.getValue('isinactive'))
+        		//log.debug('old',oldrecord.getValue('isinactive'))
         		if(oldrecord.getValue('isinactive') != thisRecord.getValue('isinactive')){
         			sendRequest({
             			'isinactive':thisRecord.getValue('isinactive'),
@@ -256,11 +245,11 @@ function(record,search,http,https,encode,runtime,serverWidget) {
     		}
     		if(scriptContext.type == 'xedit'){
         		
-        		log.debug('old',oldrecord.getValue('isinactive'))
+        		//log.debug('old',oldrecord.getValue('isinactive'))
         		if(oldrecord.getValue('isinactive') != thisRecord.getValue('isinactive')){
         			
-        			log.debug('OLD','IDU '+oldrecord.getValue('id')+' TYPE '+oldrecord.getValue('employeetype')+' INACTIVE '+oldrecord.getValue('isinactive'))
-        			log.debug('NEW','IDU '+thisRecord.getValue('id')+' TYPE '+thisRecord.getValue('employeetype')+' INACTIVE '+thisRecord.getValue('isinactive'))
+        			//log.debug('OLD','IDU '+oldrecord.getValue('id')+' TYPE '+oldrecord.getValue('employeetype')+' INACTIVE '+oldrecord.getValue('isinactive'))
+        			//log.debug('NEW','IDU '+thisRecord.getValue('id')+' TYPE '+thisRecord.getValue('employeetype')+' INACTIVE '+thisRecord.getValue('isinactive'))
         			sendRequest({
             			'isinactive':thisRecord.getValue('isinactive'),
             			'IDU':oldrecord.getValue('id'),
@@ -302,7 +291,7 @@ function(record,search,http,https,encode,runtime,serverWidget) {
     		
 			for(var x in procesURL){
 				try{
-					log.debug("info aman",procesURL[x]);
+					//log.debug("info aman",procesURL[x]);
 					credentials = encode.convert({
 		                string: procesURL[x].credentials,
 		                inputEncoding: encode.Encoding.UTF_8,
@@ -318,8 +307,8 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 		                var object_info = new Object();
 		                return object_info;
 		            }
-		            log.debug("info to send headers",headers)
-		            log.debug("info to send obj_to_send prev",obj_to_send)
+		            //log.debug("info to send headers",headers)
+		            //log.debug("info to send obj_to_send prev",obj_to_send)
 		            if(url.indexOf('https') != -1){
 		                var data = https.post({
 		                    url : url,
@@ -333,7 +322,7 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 		                    headers: headers,
 		                    body: JSON.stringify(obj_to_send)
 		                }).body;
-		                log.debug('data post http',data);
+		                //log.debug('data post http',data);
 		            }
 				}catch(error){
 					log.error("error request ",procesURL);
@@ -350,7 +339,32 @@ function(record,search,http,https,encode,runtime,serverWidget) {
     	
     }
     
+    function formatoFecha(fecha){
+    	var fdate = ''
+    	if(fecha != '' && fecha != null){
+    		var auxF = fecha.split('/')
 
+    	var today = new Date();
+        var dd = auxF[0]
+        var mm = auxF[1] 
+        var yyyy = auxF[2]
+        
+       
+        log.debug('mm',mm.length )
+        if(mm <  10){
+            log.debug('mm',mm )
+            mm = '0'+mm
+        }
+        if(dd < 10 ){
+             log.debug('dd',dd )
+            dd = '0'+dd
+        }
+        fdate = yyyy + '-' +mm + '-' + dd;
+    	}
+    	
+
+    	return fdate;
+    }
   	function getEmployeeData(idemp,rol){
     	try{
     			log.debug('1','idemp '+idemp+' rol '+rol)
