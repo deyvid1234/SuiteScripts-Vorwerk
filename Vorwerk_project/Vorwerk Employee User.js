@@ -185,6 +185,11 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 			    		log.debug('No cumple con los filtros para enviar a BND')
 			    	}
 			    	
+			    	try{//ENVIO LMS
+
+			    	}catch(e){
+
+			    	}
 			    	
 
 	    		}
