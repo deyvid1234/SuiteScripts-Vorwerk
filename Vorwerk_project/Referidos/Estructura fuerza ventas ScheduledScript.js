@@ -249,7 +249,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
             ]
             log.debug('objRequestDOPPLER',objRequestDOPPLER)
             var idLista = 28607733
-            var apiKeyDoppler = '62AE8124B6180E8735AB20BB03933167'
+            /*var apiKeyDoppler = '62AE8124B6180E8735AB20BB03933167'
             var responseService = https.post({
                 url: 'https://restapi.fromdoppler.com/accounts/ezequiel.olguin%40thermomix.mx/lists/'+idLista+'/subscribers/import?api_key='+apiKeyDoppler,
                 body : JSON.stringify(objRequestDOPPLER),
@@ -258,7 +258,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                     "Authorization": "token "+apiKeyDoppler
                 }
             }).body;
-            log.debug('responseService Doppler',responseService)
+            log.debug('responseService Doppler',responseService)*/
 
 
             if(runtime.envType != 'PRODUCTION'){ 
@@ -290,6 +290,34 @@ function(record,search,https,file,http,format,encode,email,runtime) {
             log.debug('Error execute',e)
         }
         
+    }
+
+
+    function formatoFecha(fecha){
+      var fdate = ''
+      if(fecha != '' && fecha != null){
+        var auxF = fecha.split('/')
+
+      var today = new Date();
+        var dd = auxF[0]
+        var mm = auxF[1] 
+        var yyyy = auxF[2]
+        
+       
+        log.debug('mm',mm.length )
+        if(mm <  10){
+            log.debug('mm',mm )
+            mm = '0'+mm
+        }
+        if(dd < 10 ){
+             log.debug('dd',dd )
+            dd = '0'+dd
+        }
+        fdate = yyyy + '-' +mm + '-' + dd;
+      }
+      
+
+      return fdate;
     }
     function formatoNumeroTel(numero){
         try{
