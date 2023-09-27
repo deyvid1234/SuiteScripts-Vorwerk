@@ -90,7 +90,7 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 		                type: 'employee',
 		                columns: ['custentity59','internalid','entityid','firstname','email','mobilephone','lastname',
 		                         'isinactive','employeetype','custentity_oficina','location',
-		                         'custentity_delegada','supervisor','custentityregional_manager','custentity_area_manager','custentity_estructura_virtual',
+		                         'custentity_delegada','supervisor','custentityregional_manager','custentity_area_manager','custentity_estructura_virtual','birthdate','hiredate','custentity72',
 		                         {name : 'custentity_mostrador',join : 'custentity_delegada'},
 		                        ],
 		                filters: [
@@ -112,6 +112,14 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 								idu : result.getValue('entityid'),
 								nombre : result.getValue('firstname'),
 								apellido : result.getValue('lastname'),
+
+
+								fecha_nacimiento : result.getValue('birthdate'),
+								fecha_alta : result.getValue('hiredate'),
+								fecha_baja: result.getValue('custentity59'),
+								fecha_reactivacion : result.getValue('custentity72'),
+
+
 								correo : result.getValue('email'),
 								telefono : result.getValue('mobilephone'),
 								inactivo: result.getValue('isinactive'),
@@ -134,6 +142,18 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 					});
 	                
 			    	log.debug('search_obj_detail',search_obj_detail)
+
+			    	var obj_lms = []
+			    	obj_lms.IdInterno         = id
+			    	obj_lms.IDU               = idu
+			    	obj_lms.Nombre            = nombre
+			    	obj_lms.Apellidos         = apellido
+			    	obj_lms.FachaNacimineto   = fecha_nacimiento
+			    	obj_lms.FechaAlta         = fecha_alta
+			    	obj_lms.FechaBaja         = fecha_baja
+			    	obj_lms.FechaReactivacion = fecha_reactivacion
+
+			    	log.debug('obj_lms', obj_lms)
 
 			    	var obj_detail = search_obj_detail
 			    	obj_detail[0].estructura=[]
@@ -164,7 +184,7 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 			    	delete obj_detail[0].gerente
 			    	delete obj_detail[0].mostrador
 
-			    	if(cumpleFiltros){
+			    	/*if(cumpleFiltros){
 			    		log.debug('JSON send',obj_detail)
 			    		if(runtime.envType != 'PRODUCTION'){ 
 		                    urlAD = 'https://dev-apiagenda.mxthermomix.com/users/postUserNetsuite'
@@ -184,11 +204,11 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 			    	}else{
 			    		log.debug('No cumple con los filtros para enviar a BND')
 			    	}
-			    	
+			    	*/
 			    	try{//ENVIO LMS
-
+			    		log.debug('envir a lms')
 			    	}catch(e){
-
+			    		log.debug('Error envio de datos a LMS',e)
 			    	}
 			    	
 
