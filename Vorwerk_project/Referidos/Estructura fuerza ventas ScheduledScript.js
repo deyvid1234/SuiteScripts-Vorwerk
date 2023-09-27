@@ -18,7 +18,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
         try{
             var serachId = ''
             if(runtime.envType != 'PRODUCTION'){ 
-                serachId = 1980
+                serachId = 1959
             }else{
                 serachId = 1959
             }
@@ -26,7 +26,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                 id: serachId
             });
             log.debug('Pre busqueda')
-            var objRequest = []
+            var objRequestLMS = []
              var objRequestDOPPLER = {}
              var resultSearch = []
             var pagedResults = mySearch.runPaged();
@@ -37,17 +37,17 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                 var id = r.getValue('internalid')
                 var custentity_fin_objetivo_1  = r.getValue('custentity_fin_objetivo_1')
                 var custentity_fin_objetivo_2  = r.getValue('custentity_fin_objetivo_2')
-                var custentity72  = r.getValue('custentity72')//Reactivacion
+                var custentity72  = formatoFecha(r.getValue('custentity72'))//Reactivacion
                 var custentity_fin_objetivo_1_reactivacion  = r.getValue('custentity_fin_objetivo_1_reactivacion')
                 var custentity_fin_objetivo_2_reactivacion =  r.getValue('custentity_fin_objetivo_2_reactivacion')
                 var employeetype  = r.getText('employeetype')
-                var birthdate =  r.getValue('birthdate')
+                var birthdate =  formatoFecha(r.getValue('birthdate'))
                 var entityid  = r.getValue('entityid')
                 var firstname  = r.getValue('firstname')
                 var lastname  = r.getValue('lastname')
                 var email =  r.getValue('email')  
-                var hiredate  = r.getValue('hiredate')
-                var custentity59  = r.getValue('custentity59')//baja
+                var hiredate  = formatoFecha(r.getValue('hiredate'))
+                var custentity59  = formatoFecha(r.getValue('custentity59'))//baja
                 var telefono  = r.getValue('phone')
                 var supervisor  = r.getText('supervisor')
                 var curp  = r.getValue('custentity_curp')
@@ -59,7 +59,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                 var mobilephone  = r.getValue('mobilephone')
                 var oficina  = r.getText('custentity_oficina')
                 log.debug('pre obj R LMS')
-                objRequest.push({
+                objRequestLMS.push({
                 "IdInterno": id,
                 "IDU": entityid,
                 "Nombre": firstname,
@@ -68,6 +68,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                 "FechaAlta": hiredate,
                 "FechaBaja": custentity59,
                 "FechaReactivacion": custentity72,
+                "inactivo": isinactive
                 })
 
 
@@ -248,7 +249,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
             ]
             log.debug('objRequestDOPPLER',objRequestDOPPLER)
             var idLista = 28607733
-            var apiKeyDoppler = '62AE8124B6180E8735AB20BB03933167'
+            /*var apiKeyDoppler = '62AE8124B6180E8735AB20BB03933167'
             var responseService = https.post({
                 url: 'https://restapi.fromdoppler.com/accounts/ezequiel.olguin%40thermomix.mx/lists/'+idLista+'/subscribers/import?api_key='+apiKeyDoppler,
                 body : JSON.stringify(objRequestDOPPLER),
@@ -257,20 +258,30 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                     "Authorization": "token "+apiKeyDoppler
                 }
             }).body;
-            log.debug('responseService Doppler',responseService)
+            log.debug('responseService Doppler',responseService)*/
 
 
-
-
-            var responseService = http.post({
-                url: 'http://api-referidos-thrmx.lms-la.com/api/venta',
-                body : JSON.stringify(objRequest),
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": "Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJJZCI6ImIyZmI2OTE5LWM0MjItNDg4YS04Y2NlLWQyZWVjYjE5ZTkwNyIsInN1YiI6ImpjcmV5ZXNAbG1zLWxhLmNvbSIsImVtYWlsIjoiamNyZXllc0BsbXMtbGEuY29tIiwianRpIjoiZTUzZTczZDYtYTk0Yy00Mzk4LTlhNjEtNzU5MDVlZTBlYzlmIiwibmJmIjoxNjU0ODE3ODU5LCJleHAiOjE2ODYzNTM4NTksImlhdCI6MTY1NDgxNzg1OX0.DcN1kY4for7XdwkzdgNa8pzbLyVao9M3yrW-0xpobvvBz2ycBrKBDaVmquB2Ms8226b6ZBm9ktUfE4-Hf9W6ww"
-                }
+            if(runtime.envType != 'PRODUCTION'){ 
+                urlLMS = 'http://api-referidos-thrmx.lms-la.com/api/fuerzaVentas'
+                key = 'Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJJZCI6IjhhMDJkZDE3LTYzMjAtNGFiMi1iOWFkLWZlZDMzZWRhYzNiNiIsInN1YiI6InZzaWx2YWNAbG1zLmNvbS5teCIsImVtYWlsIjoidnNpbHZhY0BsbXMuY29tLm14IiwidW5pcXVlX25hbWUiOiJ2c2lsdmFjQGxtcy5jb20ubXgiLCJqdGkiOiI4MjEwMDk4MC0zMDNjLTRlMDktYjM1NS0xMGM5N2ViNWU0ZjkiLCJuYmYiOjE2NzgyMjYzNTYsImV4cCI6MTcwOTg0ODc1NiwiaWF0IjoxNjc4MjI2MzU2fQ.CetagLsFKPT9_kj50JrzOemPHUw4FID7uzEs7AYC3WlkiE5S1VJdhURTlTc4XWeX2-An6P5SzQPlCZtvM-WJrQ'
+            }else{//prod
+                urlLMS = ''
+                key = ''
+            }
+            log.debug('urlLMS',urlLMS)
+            log.debug('key',key)
+            log.debug('objRequestLMS',objRequestLMS)
+            var responseServiceLMS = http.put({
+            url: urlLMS,
+            body : JSON.stringify(objRequestLMS),
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": key
+            }
             }).body;
-            log.debug('responseService LMS',responseService)
+            var responseServiceLMS = JSON.parse(responseServiceLMS)
+
+            log.debug('responseService LMS',responseServiceLMS)
 
 
 
@@ -280,6 +291,34 @@ function(record,search,https,file,http,format,encode,email,runtime) {
             log.debug('Error execute',e)
         }
         
+    }
+
+
+    function formatoFecha(fecha){
+      var fdate = ''
+      if(fecha != '' && fecha != null){
+        var auxF = fecha.split('/')
+
+      var today = new Date();
+        var dd = auxF[0]
+        var mm = auxF[1] 
+        var yyyy = auxF[2]
+        
+       
+        log.debug('mm',mm.length )
+        if(mm <  10){
+            log.debug('mm',mm )
+            mm = '0'+mm
+        }
+        if(dd < 10 ){
+             log.debug('dd',dd )
+            dd = '0'+dd
+        }
+        fdate = yyyy + '-' +mm + '-' + dd;
+      }
+      
+
+      return fdate;
     }
     function formatoNumeroTel(numero){
         try{
