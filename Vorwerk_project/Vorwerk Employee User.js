@@ -101,13 +101,14 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 		                    ['employeetype','anyof',[1,3,5,8]]
 		                ]
 		            });
-		    		var search_obj_detail = [];
+		    		var search_obj_detailAD = [];
+		    		var search_obj_detailLMS = [];
 		    		var cumpleFiltros = false
 					var pagedResults = searchData.runPaged();
 					pagedResults.pageRanges.forEach(function (pageRange){     
 						var currentPage = pagedResults.fetch({index: pageRange.index});
 						currentPage.data.forEach(function (result) {
-							search_obj_detail.push({
+							search_obj_detailAD.push({
 								id : result.getValue('internalid'),
 								idu : result.getValue('entityid'),
 								nombre : result.getValue('firstname'),
@@ -134,6 +135,22 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 								mostrador:result.getValue({name : 'custentity_mostrador',join : 'custentity_delegada'})
 							});
 
+							search_obj_detailLMS.push({
+								
+								IdInterno : result.getValue('internalid'),
+								IDU : result.getValue('entityid'),
+								Nombre : result.getValue('firstname'),
+								Apellidos : result.getValue('lastname'),
+								FachaNacimineto : result.getValue('birthdate'),
+								FechaAlta : result.getValue('hiredate'),
+								FechaBaja: result.getValue('custentity59'),
+								FechaReactivacion : result.getValue('custentity72'),
+
+								//correo : result.getValue('email'),
+								inactivo: result.getValue('isinactive'),
+								
+							});
+
 							if( (result.getValue('isinactive') == true && result.getValue('custentity59') !='') ||  result.getValue('isinactive') == false){
 								cumpleFiltros = true
 							}
@@ -141,21 +158,12 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 						});
 					});
 	                
-			    	log.debug('search_obj_detail',search_obj_detail)
+			    	log.debug('search_obj_detailAD',search_obj_detailAD)
+			    	log.debug('search_obj_detailLMS',search_obj_detailLMS)
 
-			    	var obj_lms = []
-			    	obj_lms.IdInterno         = id
-			    	obj_lms.IDU               = idu
-			    	obj_lms.Nombre            = nombre
-			    	obj_lms.Apellidos         = apellido
-			    	obj_lms.FachaNacimineto   = fecha_nacimiento
-			    	obj_lms.FechaAlta         = fecha_alta
-			    	obj_lms.FechaBaja         = fecha_baja
-			    	obj_lms.FechaReactivacion = fecha_reactivacion
+			    	
 
-			    	log.debug('obj_lms', obj_lms)
-
-			    	var obj_detail = search_obj_detail
+			    	var obj_detail = search_obj_detailAD
 			    	obj_detail[0].estructura=[]
 			    	if(obj_detail[0].regional_manager != ''){
 			        	var regional_manager = getEmployeeData(obj_detail[0].regional_manager,'regional manager')
@@ -206,7 +214,22 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 			    	}
 			    	*/
 			    	try{//ENVIO LMS
-			    		log.debug('envir a lms')
+			    		log.debug('envir a lms',search_obj_detailLMS)
+			    		if(runtime.envType != 'PRODUCTION'){ 
+		                    urlLMS = 'http://api-referidos-thrmx.lms-la.com/api/fuerzaVentas'
+		                }else{//prod
+		                    urlLMS = ''
+		                }
+		                log.debug('urlLMS',urlLMS)
+				    	var responseService = http.put({
+						    url: urlLMS,
+							body : search_obj_detailLMS,
+							headers: {
+				     			"Content-Type": "application/json"
+				     		}
+				   	    }).body;
+				    	var responseService = JSON.parse(responseService)
+				    	log.debug('responseService LMS',responseService)
 			    	}catch(e){
 			    		log.debug('Error envio de datos a LMS',e)
 			    	}
