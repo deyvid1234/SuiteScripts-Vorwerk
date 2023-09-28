@@ -137,7 +137,7 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 								FechaAlta : formatoFecha(result.getValue('hiredate')),
 								FechaBaja: formatoFecha(result.getValue('custentity59')),
 								FechaReactivacion : formatoFecha(result.getValue('custentity72')),
-								inactivo: result.getValue('isinactive'),
+								inactivo: result.getValue('isinactive')== true?'1':'0',
 								
 							});
 
@@ -182,7 +182,7 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 			    	delete obj_detail[0].gerente
 			    	delete obj_detail[0].mostrador
 
-			    	/*if(cumpleFiltros){
+			    	if(cumpleFiltros){
 			    		log.debug('JSON send',obj_detail)
 			    		if(runtime.envType != 'PRODUCTION'){ 
 		                    urlAD = 'https://dev-apiagenda.mxthermomix.com/users/postUserNetsuite'
@@ -202,7 +202,7 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 			    	}else{
 			    		log.debug('No cumple con los filtros para enviar a BND')
 			    	}
-			    	*/
+			    	
 			    	try{//ENVIO LMS
 			    		log.debug('envir a lms',search_obj_detailLMS)
 			    		if(runtime.envType != 'PRODUCTION'){ 
@@ -344,22 +344,24 @@ function(record,search,http,https,encode,runtime,serverWidget) {
     	if(fecha != '' && fecha != null){
     		var auxF = fecha.split('/')
 
-    	var today = new Date();
-        var dd = auxF[0]
-        var mm = auxF[1] 
-        var yyyy = auxF[2]
-        
-       
-        log.debug('mm',mm.length )
-        if(mm <  10){
-            log.debug('mm',mm )
-            mm = '0'+mm
-        }
-        if(dd < 10 ){
-             log.debug('dd',dd )
-            dd = '0'+dd
-        }
-        fdate = yyyy + '-' +mm + '-' + dd;
+	    	log.debug('auxF',auxF)
+	    	var today = new Date();
+	        var dd = parseInt(auxF[0]) 
+	        var mm = parseInt(auxF[1])
+	        var yyyy = auxF[2]
+	        
+	       
+	        log.debug('mm',mm.length )
+	        if(mm <  10){
+	            log.debug('mm',mm )
+	            mm = '0'+mm
+	        }
+	        if(dd < 10 ){
+	             log.debug('dd',dd )
+	            dd = '0'+dd
+	        }
+	        fdate = yyyy + '-' +mm + '-' + dd;
+	        log.debug('fdate',fdate)
     	}
     	
 
