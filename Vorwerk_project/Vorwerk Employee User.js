@@ -274,7 +274,7 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 
 										log.debug('se tiene que actualizar')
 
-										idCustomer = record.submitFields({
+										/*idCustomer = record.submitFields({
 						                    type   : stage,
 						                    id     : idCustomer,
 						                    values : {
@@ -286,28 +286,32 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 						                        enableSourcing          : false,
 						                        ignoreMandatoryFields   : true
 						                    }
-						                });  
+						                });  */
 
 
 
-						                var obj_sales_order= record.load({
-					                        type: 'salesorder',
-					                        id: req_info.internalid,
+						                var obj_customer= record.load({
+					                        type: stage,
+					                        id: idCustomer,
 					                        isDynamic: false,
 					                    });
-					                    obj_sales_order.setValue({
-					                        fieldId: x,
-					                        value: req_info[x]
+					                    obj_customer.setValue({
+					                        fieldId: 'salesrep',
+					                        value: newSalesRep
 					                    });
-					                    obj_sales_order.setValue({
-					                        fieldId: x,
-					                        value: req_info[x]
+					                    obj_customer.setValue({
+					                        fieldId: 'custentity_presentadora_referido',
+					                        value: newSalesRep
 					                    });
-					                    obj_sales_order.setValue({
-					                        fieldId: x,
-					                        value: req_info[x]
+					                    obj_customer.setValue({
+					                        fieldId: 'custentityidu_presentador',
+					                        value: newIDUSalesRep
 					                    });
-					                    var id_sales_order = obj_sales_order.save();									}
+					                    var recCustomer = obj_customer.save({ 
+						                    enableSourcing: false,
+						                    ignoreMandatoryFields: true
+						                });
+					                    log.debug('recCustomer', recCustomer)									}
 									
 									
 								});
