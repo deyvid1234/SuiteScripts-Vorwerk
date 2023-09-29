@@ -191,7 +191,7 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 
 
 			    		//1 Notificacion a LMS y AD de cambio de status inactive
-			    		/*
+			    		
 			    		log.debug('JSON send AD',obj_detail)
 			    		
 			    		if(runtime.envType != 'PRODUCTION'){ 
@@ -231,7 +231,7 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 				    	}catch(e){
 				    		log.debug('Error envio de datos a LMS',e)
 				    	}
-						*/
+						
 
 				    	//2 Flujo de reasignacion de clientes del presentador inactivo
 				    	if(newInactive == true){
@@ -241,14 +241,24 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 				    		var newSalesRep = newSalesRepF.id
 				    		var newIDUSalesRep = newSalesRepF.idu
 
-				    		var searchCustomers = search.create({
+				    		/*var searchCustomers = search.create({
 				                type: 'customer',
 				                columns: ['salesrep','internalid',
 				                        ],
 				                filters: [
 				                    ['salesrep','is',thisRecord.getValue('id')]
 				                ]
+				            });*/
+
+				            var searchCustomers = search.load({
+				               id: 'customsearch_clientes_activos'
 				            });
+				            searchCustomers.filters.push(search.createFilter({
+				                   name: 'salesrep',
+				                   operator: 'is',
+				                   values: thisRecord.getValue('id')
+				            }));
+
 
 				            var pagedResults = searchCustomers.runPaged();
 							pagedResults.pageRanges.forEach(function (pageRange){     
@@ -256,20 +266,49 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 								currentPage.data.forEach(function (result) {
 									
 									var idCustomer = result.getValue('internalid')
+									var stage = result.getValue('formulatext')
+									log.debug('stage',stage)
+									var checkReferidos = result.getValue('custentity_presentadora_referido')
+									if(checkReferidos != '' && checkReferidos ){
+
+
+										log.debug('se tiene que actualizar')
+
+										idCustomer = record.submitFields({
+						                    type   : stage,
+						                    id     : idCustomer,
+						                    values : {
+						                        salesrep           					: newSalesRep,
+						                        custentity_presentadora_referido    : newSalesRep,
+						                        custentityidu_presentador         	: newIDUSalesRep
+						                    },
+						                    options: {
+						                        enableSourcing          : false,
+						                        ignoreMandatoryFields   : true
+						                    }
+						                });  
+
+
+
+						                var obj_sales_order= record.load({
+					                        type: 'salesorder',
+					                        id: req_info.internalid,
+					                        isDynamic: false,
+					                    });
+					                    obj_sales_order.setValue({
+					                        fieldId: x,
+					                        value: req_info[x]
+					                    });
+					                    obj_sales_order.setValue({
+					                        fieldId: x,
+					                        value: req_info[x]
+					                    });
+					                    obj_sales_order.setValue({
+					                        fieldId: x,
+					                        value: req_info[x]
+					                    });
+					                    var id_sales_order = obj_sales_order.save();									}
 									
-									idCustomer = record.submitFields({
-					                    type   : 'customer',
-					                    id     : idCustomer,
-					                    values : {
-					                        salesrep           					: newSalesRep,
-					                        custentity_presentadora_referido    : newSalesRep,
-					                        custentityidu_presentador         	: newIDUSalesRep
-					                    },
-					                    options: {
-					                        enableSourcing          : true,
-					                        ignoreMandatoryFields   : true
-					                    }
-					                });  
 									
 								});
 							});

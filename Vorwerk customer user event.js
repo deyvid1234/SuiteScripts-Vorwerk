@@ -106,7 +106,7 @@ function(record,search,http,https,encode,runtime,serverWidget,error) {
                 log.debug('oldSalesRep', oldSalesRep)
                 log.debug('oldPreRef', oldPreRef)
                 
-                if( newSalesRep != oldSalesRep || newPreRef != oldPreRef || newIDUPreRef != oldIDUPreRef ){
+                if(  newPreRef != oldPreRef || newIDUPreRef != oldIDUPreRef ){
 
                     //Ectrar todos los valores que se van a utiliar usando newRecord.getValue('') y asignarlo a las variables que ya se utilizan o crear nuevas
                     var nombre = newRecord.getValue('altname')
@@ -164,7 +164,7 @@ function(record,search,http,https,encode,runtime,serverWidget,error) {
                             }else{
                                 urlAD = 'https://apiagenda.mxthermomix.com/users/registerUserExternoNetsuite'
                             }
-                            /*if(nombreQuienRecomienda && correoQuienRecomienda){
+                            if(nombreQuienRecomienda && correoQuienRecomienda){
                                 var responseService = https.post({
                                 url: urlAD,
                                 body : objAD,//JSON.stringify(
@@ -174,7 +174,7 @@ function(record,search,http,https,encode,runtime,serverWidget,error) {
                                 }
                             }).body;
                             log.debug('responseService AD',responseService)
-                            }*/
+                            }
                        
 
                         }catch(e){
@@ -201,7 +201,7 @@ function(record,search,http,https,encode,runtime,serverWidget,error) {
                     }else{//prod
                         urlLMS = ''
                     }
-                    /*var responseService = http.put({
+                    var responseService = http.put({
                         url: urlLMS,
                         body : JSON.stringify(objLMS),
                         headers: {
@@ -210,7 +210,7 @@ function(record,search,http,https,encode,runtime,serverWidget,error) {
                         }
                     }).body;
                     var responseService = JSON.parse(responseService)
-                    log.debug('responseService LMS',responseService)*/
+                    log.debug('responseService LMS',responseService)
 
                 }
             }
