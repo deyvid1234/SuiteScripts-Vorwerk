@@ -249,7 +249,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
             ]
             log.debug('objRequestDOPPLER',objRequestDOPPLER)
             var idLista = 28607733
-            /*var apiKeyDoppler = '62AE8124B6180E8735AB20BB03933167'
+            var apiKeyDoppler = '62AE8124B6180E8735AB20BB03933167'
             var responseService = https.post({
                 url: 'https://restapi.fromdoppler.com/accounts/ezequiel.olguin%40thermomix.mx/lists/'+idLista+'/subscribers/import?api_key='+apiKeyDoppler,
                 body : JSON.stringify(objRequestDOPPLER),
@@ -258,7 +258,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                     "Authorization": "token "+apiKeyDoppler
                 }
             }).body;
-            log.debug('responseService Doppler',responseService)*/
+            log.debug('responseService Doppler',responseService)
 
 
             if(runtime.envType != 'PRODUCTION'){ 
