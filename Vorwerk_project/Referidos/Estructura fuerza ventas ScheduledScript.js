@@ -68,7 +68,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                 "FechaAlta": hiredate,
                 "FechaBaja": custentity59,
                 "FechaReactivacion": custentity72,
-                "inactivo": isinactive
+                "inactivo": isinactive == true?'1':'0'
                 })
 
 
@@ -300,8 +300,8 @@ function(record,search,https,file,http,format,encode,email,runtime) {
         var auxF = fecha.split('/')
 
       var today = new Date();
-        var dd = auxF[0]
-        var mm = auxF[1] 
+        var dd = parseInt(auxF[0])
+        var mm = parseInt(auxF[1])
         var yyyy = auxF[2]
         
        
