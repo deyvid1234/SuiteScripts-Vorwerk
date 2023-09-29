@@ -83,8 +83,14 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 
         	try{
         		//Fuerza de ventas bajo demanda
-	    		if(scriptContext.type == 'edit' || scriptContext.type == 'create' || scriptContext.type == 'xedit'){ 	    			
+	    		if(scriptContext.type == 'edit' || scriptContext.type == 'create' || scriptContext.type == 'xedit'){ 
 
+	    			var oldInactive = oldrecord.getValue('isinactive')
+	    			var newInactive = thisRecord.getValue('isinactive')   			
+
+	    			//Variables para elegir nuevo Sales Rep si se inactiva
+	    			var liderEquipo
+	    			var gerenteVentas
 
 	    			var searchData = search.create({
 		                type: 'employee',
@@ -108,6 +114,10 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 					pagedResults.pageRanges.forEach(function (pageRange){     
 						var currentPage = pagedResults.fetch({index: pageRange.index});
 						currentPage.data.forEach(function (result) {
+							
+							liderEquipo = result.getValue('supervisor')
+							gerenteVentas = result.getValue('custentity_delegada')
+
 							search_obj_detailAD.push({
 								id : result.getValue('internalid'),
 								idu : result.getValue('entityid'),
@@ -140,16 +150,10 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 								inactivo: result.getValue('isinactive')== true?'1':'0',
 								
 							});
-
-							if( (result.getValue('isinactive') == true && result.getValue('custentity59') !='') ||  result.getValue('isinactive') == false){
-								cumpleFiltros = true
-							}
-							
 						});
 					});
 	                
-			    	log.debug('search_obj_detailAD',search_obj_detailAD)
-			    	log.debug('search_obj_detailLMS',search_obj_detailLMS)
+			    	
 
 			    	
 
@@ -182,14 +186,19 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 			    	delete obj_detail[0].gerente
 			    	delete obj_detail[0].mostrador
 
-			    	if(cumpleFiltros){
+
+			    	if( newInactive != oldInactive ){
+
+
+			    		//1 Notificacion a LMS y AD de cambio de status inactive
+			    		/*
 			    		log.debug('JSON send AD',obj_detail)
+			    		
 			    		if(runtime.envType != 'PRODUCTION'){ 
 		                    urlAD = 'https://dev-apiagenda.mxthermomix.com/users/postUserNetsuite'
 		                }else{//prod
 		                    urlAD = 'https://apiagenda.mxthermomix.com/users/postUserNetsuite'
 		                }
-		                log.debug('urlAD',urlAD)
 				    	var responseService = https.post({
 						    url: urlAD,
 							body : JSON.stringify(obj_detail[0]),
@@ -200,6 +209,7 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 				    	var responseService = JSON.parse(responseService)
 				    	log.debug('responseService AD',responseService)
 
+
 				    	try{//ENVIO LMS
 				    		log.debug('envir a lms',search_obj_detailLMS)
 				    		if(runtime.envType != 'PRODUCTION'){ 
@@ -208,8 +218,6 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 			                }else{//prod
 			                    urlLMS = ''
 			                }
-			                log.debug('urlLMS',urlLMS)
-			                log.debug('key',key)
 					    	var responseService = http.put({
 							    url: urlLMS,
 								body : JSON.stringify(search_obj_detailLMS),
@@ -223,9 +231,53 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 				    	}catch(e){
 				    		log.debug('Error envio de datos a LMS',e)
 				    	}
+						*/
+
+				    	//2 Flujo de reasignacion de clientes del presentador inactivo
+				    	if(newInactive == true){
+
+				    		var newSalesRepF = getNewSalesRep(thisRecord.getValue('id'),liderEquipo,gerenteVentas)//id presentador , lider de equipo, Gerente de ventas
+				    		log.debug('newSalesRepF',newSalesRepF)
+				    		var newSalesRep = newSalesRepF.id
+				    		var newIDUSalesRep = newSalesRepF.idu
+
+				    		var searchCustomers = search.create({
+				                type: 'customer',
+				                columns: ['salesrep','internalid',
+				                        ],
+				                filters: [
+				                    ['salesrep','is',thisRecord.getValue('id')]
+				                ]
+				            });
+
+				            var pagedResults = searchCustomers.runPaged();
+							pagedResults.pageRanges.forEach(function (pageRange){     
+								var currentPage = pagedResults.fetch({index: pageRange.index});
+								currentPage.data.forEach(function (result) {
+									
+									var idCustomer = result.getValue('internalid')
+									
+									idCustomer = record.submitFields({
+					                    type   : 'customer',
+					                    id     : idCustomer,
+					                    values : {
+					                        salesrep           					: newSalesRep,
+					                        custentity_presentadora_referido    : newSalesRep,
+					                        custentityidu_presentador         	: newIDUSalesRep
+					                    },
+					                    options: {
+					                        enableSourcing          : false,
+					                        ignoreMandatoryFields   : true
+					                    }
+					                });  
+									
+								});
+							});
+
+				    	}
 
 			    	}else{
-			    		log.debug('No cumple con los filtros para enviar a BND')
+			    		log.debug('No hay cambios de status inactive')
 			    	}
 			    	
 			    	
@@ -233,8 +285,11 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 
 	    		}
         	}catch(e){
-        		log.debug('Error envio de datos a BND',e)
+        		log.debug('Error actualizar fuerza de ventas',e)
         	}
+
+
+        	//Flujo envio AMAN - Desconocido 
     		if(scriptContext.type == 'edit'){
 
         		//log.debug('old',oldrecord.getValue('isinactive'))
@@ -260,7 +315,7 @@ function(record,search,http,https,encode,runtime,serverWidget) {
             		});
         		}
     		}
-
+    		//FIN Flujo envio AMAN - Desconocido 
 
     	}catch(err){
     		log.error("error after submit",err)
@@ -269,6 +324,108 @@ function(record,search,http,https,encode,runtime,serverWidget) {
     	return true
     }
     
+    function getNewSalesRep(oldSalesRep, liderEquipo, gerenteVentas){
+
+    	var idSalesRep
+    	var iduSalesRep
+
+
+
+
+
+    	if (liderEquipo != "") {
+
+            var leFields = search.lookupFields({
+                type: 'employee',
+                id: liderEquipo,
+                columns: ["employeetype", "custentity_promocion", "isinactive","entityid"]
+            });
+
+            var typele = leFields.employeetype[0].value;
+            var promole = leFields.custentity_promocion[0].value;
+            var inactivele =leFields.isinactive;
+            var iduLE = leFields.entityid[0].value;
+
+
+        }
+        if( gerenteVentas != '' ) {
+
+            var gvFields = search.lookupFields({
+                type: 'employee',
+                id: gerenteVentas,
+                columns: ["employeetype", "custentity_promocion", "isinactive","entityid"]
+            });
+
+            var typeGV = gvFields.employeetype[0].value;
+            var promoGV = gvFields.custentity_promocion[0].value;
+            var inactiveGV =gvFields.isinactive;
+            var iduGV = leFields.entityid[0].value;
+
+        }
+            
+           
+            if(typele == 3 && promole != 3 && inactivele == false){// se asigna del lider de equipo si cumple con = Lider de equipo / No es litigio / es activo
+                
+                idSalesRep = liderEquipo
+                iduSalesRep = iduLE
+
+            } else if (typeGV == 5 && promoGV != 3 && inactiveGV == false) { // se asigna el GV si cumple con = Gerente de Ventas / No es litigio / es activo
+               
+                idSalesRep = gerenteVentas
+                iduSalesRep = iduGV
+            } else {// se asigna presentador de toda la fuerza de ventas
+
+                var presentadorNuevo = presentadorAleatorio()
+                
+                idSalesRep = presentadorNuevo.internalid_p
+                iduSalesRep = presentadorNuevo.idu_p
+            }
+            log.debug('idSalesRep',idSalesRep)
+            log.debug('iduSalesRep',iduSalesRep)
+
+    	return {id: idSalesRep, idu: iduSalesRep}
+    }
+
+    function presentadorAleatorio(){
+        try{
+
+
+            log.debug('Buscar presentador aleatorio de la lista completa de presentadores activos Elegibles a presentadora Referido')
+            //1 buscar la busqueda customsearch1994 y quitar el filtro de Elegibles a presentadora Referido
+            // 2 añadir los filtros de type = lider de equipo, presentador o Gerente de Ventas y verificar que sea activo
+            // custentity_promocion no es en litigio 
+            var mySearch = search.load({
+                id: 'customsearch1994'
+            });
+
+            
+
+            var totalPresentadoras = []
+            var pagedResults = mySearch.runPaged();
+            pagedResults.pageRanges.forEach(function (pageRange){
+            var currentPage = pagedResults.fetch({index: pageRange.index});
+                currentPage.data.forEach(function (r) {
+                   
+                    totalPresentadoras.push({
+                        'internalid_p'    :   r.getValue('internalid'),
+                        'idu_p'           :   r.getValue('entityid'),
+                        'email_p'         :   r.getValue('email'),
+                        'unidad_p'        :   r.getValue('custentity_nombre_unidad'),
+                        'altname'        :   r.getValue('altname'),
+                    })
+                    return true; 
+
+                });
+
+            });
+            
+            var aleatorionuem = (Math.floor(Math.random() * totalPresentadoras.length))
+            
+            return totalPresentadoras[aleatorionuem]
+        }catch(e){
+            log.debug('Error presentadorAleatorio',e)
+        }
+    }
     
     
     function sendRequest(obj_to_send){
