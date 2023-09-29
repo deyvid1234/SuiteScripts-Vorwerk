@@ -183,7 +183,7 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 			    	delete obj_detail[0].mostrador
 
 			    	if(cumpleFiltros){
-			    		log.debug('JSON send',obj_detail)
+			    		log.debug('JSON send AD',obj_detail)
 			    		if(runtime.envType != 'PRODUCTION'){ 
 		                    urlAD = 'https://dev-apiagenda.mxthermomix.com/users/postUserNetsuite'
 		                }else{//prod
@@ -198,34 +198,37 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 				     		}
 				   	    }).body;
 				    	var responseService = JSON.parse(responseService)
-				    	log.debug('responseService',responseService)
+				    	log.debug('responseService AD',responseService)
+
+				    	try{//ENVIO LMS
+				    		log.debug('envir a lms',search_obj_detailLMS)
+				    		if(runtime.envType != 'PRODUCTION'){ 
+			                    urlLMS = 'http://api-referidos-thrmx.lms-la.com/api/fuerzaVentas'
+			                    key = 'Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJJZCI6IjhhMDJkZDE3LTYzMjAtNGFiMi1iOWFkLWZlZDMzZWRhYzNiNiIsInN1YiI6InZzaWx2YWNAbG1zLmNvbS5teCIsImVtYWlsIjoidnNpbHZhY0BsbXMuY29tLm14IiwidW5pcXVlX25hbWUiOiJ2c2lsdmFjQGxtcy5jb20ubXgiLCJqdGkiOiI4MjEwMDk4MC0zMDNjLTRlMDktYjM1NS0xMGM5N2ViNWU0ZjkiLCJuYmYiOjE2NzgyMjYzNTYsImV4cCI6MTcwOTg0ODc1NiwiaWF0IjoxNjc4MjI2MzU2fQ.CetagLsFKPT9_kj50JrzOemPHUw4FID7uzEs7AYC3WlkiE5S1VJdhURTlTc4XWeX2-An6P5SzQPlCZtvM-WJrQ'
+			                }else{//prod
+			                    urlLMS = ''
+			                }
+			                log.debug('urlLMS',urlLMS)
+			                log.debug('key',key)
+					    	var responseService = http.put({
+							    url: urlLMS,
+								body : JSON.stringify(search_obj_detailLMS),
+								headers: {
+					     			"Content-Type": "application/json",
+					     			"Authorization": key
+					     		}
+					   	    }).body;
+					    	var responseService = JSON.parse(responseService)
+					    	log.debug('responseService LMS',responseService)
+				    	}catch(e){
+				    		log.debug('Error envio de datos a LMS',e)
+				    	}
+
 			    	}else{
 			    		log.debug('No cumple con los filtros para enviar a BND')
 			    	}
 			    	
-			    	try{//ENVIO LMS
-			    		log.debug('envir a lms',search_obj_detailLMS)
-			    		if(runtime.envType != 'PRODUCTION'){ 
-		                    urlLMS = 'http://api-referidos-thrmx.lms-la.com/api/fuerzaVentas'
-		                    key = 'Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJJZCI6IjhhMDJkZDE3LTYzMjAtNGFiMi1iOWFkLWZlZDMzZWRhYzNiNiIsInN1YiI6InZzaWx2YWNAbG1zLmNvbS5teCIsImVtYWlsIjoidnNpbHZhY0BsbXMuY29tLm14IiwidW5pcXVlX25hbWUiOiJ2c2lsdmFjQGxtcy5jb20ubXgiLCJqdGkiOiI4MjEwMDk4MC0zMDNjLTRlMDktYjM1NS0xMGM5N2ViNWU0ZjkiLCJuYmYiOjE2NzgyMjYzNTYsImV4cCI6MTcwOTg0ODc1NiwiaWF0IjoxNjc4MjI2MzU2fQ.CetagLsFKPT9_kj50JrzOemPHUw4FID7uzEs7AYC3WlkiE5S1VJdhURTlTc4XWeX2-An6P5SzQPlCZtvM-WJrQ'
-		                }else{//prod
-		                    urlLMS = ''
-		                }
-		                log.debug('urlLMS',urlLMS)
-		                log.debug('key',key)
-				    	var responseService = http.put({
-						    url: urlLMS,
-							body : JSON.stringify(search_obj_detailLMS),
-							headers: {
-				     			"Content-Type": "application/json",
-				     			"Authorization": key
-				     		}
-				   	    }).body;
-				    	var responseService = JSON.parse(responseService)
-				    	log.debug('responseService LMS',responseService)
-			    	}catch(e){
-			    		log.debug('Error envio de datos a LMS',e)
-			    	}
+			    	
 			    	
 
 	    		}
