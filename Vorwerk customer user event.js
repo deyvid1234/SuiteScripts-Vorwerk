@@ -104,28 +104,44 @@ function(record,search,http,https,encode,runtime,serverWidget,error) {
                 if( newSalesRep != oldSalesRep || newPreRef != oldPreRef || newIDUPreRef != oldIDUPreRef ){
 
                     //Ectrar todos los valores que se van a utiliar usando newRecord.getValue('') y asignarlo a las variables que ya se utilizan o crear nuevas
-                    var nombre = newRecord.getValue('glommedname')
+                    var nombre = newRecord.getValue('altname')
                     var correo = newRecord.getValue('email')
                     var telefono = newRecord.getValue('mobilephone')
-                    var activo = newRecord.getValue('isinactive')
-                    var nombreQuienRecomienda = newRecord.getValue('')
-                    var correoQuienRecomienda = newRecord.getValue('')
-                    var correoPresentador = newRecord.getValue('')
-                    var iduPresentador = newRecord.getValue('custentityidu_presentador')
-                    var telefonoRecomendador = newRecord.getValue('')
+                    var activo = newRecord.getValue('isinactive')==false?true:false
+
+                    var referidoSearch = search.lookupFields({
+                        type: 'customer',
+                        id: newRecord.getValue('custentity_id_cliente_referido'),
+                        columns: ["altname", "email", "mobilephone"]
+                    });
+                    log.debug('referidoSearch',referidoSearch)
+
+                    var employeeSearch = search.lookupFields({
+                        type: 'employee',
+                        id: newRecord.getValue('custentity_presentadora_referido'),
+                        columns: ["firstname", "email", "mobilephone","entityid"]
+                    });
+                    log.debug('referidoSearch',referidoSearch)
+
+                    var nombreQuienRecomienda = referidoSearch.altname
+                    var correoQuienRecomienda = referidoSearch.email
+                    var correoPresentador = employeeSearch.email
+                    var iduPresentador = employeeSearch.entityid
+                    var telefonoRecomendador = referidoSearch.mobilephone
                     var id = newRecord.getValue('id')
                     var salesRep = newRecord.getValue('salesrep') 
-                    var iduSalesRep = salesRep.split(' ')[0]
+                    var iduSalesRep = employeeSearch.entityid
 
-                    if(req_info.idRecomendador){ //Envio Agenda Digital
+                    if(newRecord.getValue('custentity_id_cliente_referido')){ //Envio Agenda Digital
                         
                         try{
                             //var nameFormat = req_info.nombre+" "+req_info.apellidos // cambiar por variables
                             nameFormat = quitarAcentos(nombre)//Traer funcion quitar acentos
+                            
                             var objAD = {
-                                'nombre': nameFormat,
-                                'correo': correo
-                                'telefono': telefono
+                                'nombre': nombre,
+                                'correo': correo,
+                                'telefono': telefono,
                                 'activo': activo,
                                 'nombreQuienRecomienda': quitarAcentos(nombreQuienRecomienda),
                                 'correoQuienRecomienda': correoQuienRecomienda,
@@ -173,7 +189,7 @@ function(record,search,http,https,encode,runtime,serverWidget,error) {
 
                     }
 
-                    log.debug('envir a lms',search_obj_detailLMS)
+                    log.debug('envir a lms',objLMS)
                     if(runtime.envType != 'PRODUCTION'){ 
                         urlLMS = 'http://api-referidos-thrmx.lms-la.com/api/Cliente/actualizar-presentador'
                         key = 'Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJJZCI6IjhhMDJkZDE3LTYzMjAtNGFiMi1iOWFkLWZlZDMzZWRhYzNiNiIsInN1YiI6InZzaWx2YWNAbG1zLmNvbS5teCIsImVtYWlsIjoidnNpbHZhY0BsbXMuY29tLm14IiwidW5pcXVlX25hbWUiOiJ2c2lsdmFjQGxtcy5jb20ubXgiLCJqdGkiOiI4MjEwMDk4MC0zMDNjLTRlMDktYjM1NS0xMGM5N2ViNWU0ZjkiLCJuYmYiOjE2NzgyMjYzNTYsImV4cCI6MTcwOTg0ODc1NiwiaWF0IjoxNjc4MjI2MzU2fQ.CetagLsFKPT9_kj50JrzOemPHUw4FID7uzEs7AYC3WlkiE5S1VJdhURTlTc4XWeX2-An6P5SzQPlCZtvM-WJrQ'
@@ -224,7 +240,7 @@ function(record,search,http,https,encode,runtime,serverWidget,error) {
     return {
         //beforeLoad: beforeLoad,
         beforeSubmit: beforeSubmit,
-        //afterSubmit: afterSubmit
+        afterSubmit: afterSubmit
     };
     
 });
