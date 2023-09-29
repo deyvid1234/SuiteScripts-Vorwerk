@@ -344,7 +344,7 @@ function(record,search,http,https,encode,runtime,serverWidget) {
             var typele = leFields.employeetype[0].value;
             var promole = leFields.custentity_promocion[0].value;
             var inactivele =leFields.isinactive;
-            var iduLE = leFields.entityid[0].value;
+            var iduLE = leFields.entityid;
 
 
         }
@@ -359,7 +359,7 @@ function(record,search,http,https,encode,runtime,serverWidget) {
             var typeGV = gvFields.employeetype[0].value;
             var promoGV = gvFields.custentity_promocion[0].value;
             var inactiveGV =gvFields.isinactive;
-            var iduGV = leFields.entityid[0].value;
+            var iduGV = leFields.entityid;
 
         }
             
