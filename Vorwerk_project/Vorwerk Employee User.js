@@ -266,7 +266,7 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 					                        custentityidu_presentador         	: newIDUSalesRep
 					                    },
 					                    options: {
-					                        enableSourcing          : false,
+					                        enableSourcing          : true,
 					                        ignoreMandatoryFields   : true
 					                    }
 					                });  
