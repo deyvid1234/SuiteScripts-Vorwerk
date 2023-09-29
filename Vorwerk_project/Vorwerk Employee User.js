@@ -241,15 +241,7 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 				    		var newSalesRep = newSalesRepF.id
 				    		var newIDUSalesRep = newSalesRepF.idu
 
-				    		/*var searchCustomers = search.create({
-				                type: 'customer',
-				                columns: ['salesrep','internalid',
-				                        ],
-				                filters: [
-				                    ['salesrep','is',thisRecord.getValue('id')]
-				                ]
-				            });*/
-
+				    		
 				            var searchCustomers = search.load({
 				               id: 'customsearch_clientes_activos'
 				            });
@@ -271,10 +263,7 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 									var checkReferidos = result.getValue('custentity_presentadora_referido')
 									if(checkReferidos != '' && checkReferidos ){
 
-
-										log.debug('se tiene que actualizar')
-
-										/*idCustomer = record.submitFields({
+										idCustomer = record.submitFields({
 						                    type   : stage,
 						                    id     : idCustomer,
 						                    values : {
@@ -286,34 +275,96 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 						                        enableSourcing          : false,
 						                        ignoreMandatoryFields   : true
 						                    }
-						                });  */
+						                });  
+
+					                    log.debug('recCustomer', recCustomer)	
 
 
 
-						                var obj_customer= record.load({
-					                        type: stage,
-					                        id: idCustomer,
-					                        isDynamic: false,
-					                    });
-					                    obj_customer.setValue({
-					                        fieldId: 'salesrep',
-					                        value: newSalesRep
-					                    });
-					                    obj_customer.setValue({
-					                        fieldId: 'custentity_presentadora_referido',
-					                        value: newSalesRep
-					                    });
-					                    obj_customer.setValue({
-					                        fieldId: 'custentityidu_presentador',
-					                        value: newIDUSalesRep
-					                    });
-					                    var recCustomer = obj_customer.save({ 
-						                    enableSourcing: false,
-						                    ignoreMandatoryFields: true
-						                });
-					                    log.debug('recCustomer', recCustomer)									}
+
+
+					                    //Avisar a LMS y AD
+					                    /*
+					                    1. Actualizaer la busqueda de clientes activos con todas las columnas que necesitamos
+					                    2.  en la funcion getNewSalesRep añadir los campos del presentador que necesitamos correo,telefono, idu,----
+					                    3. 	armar json de LMS y AD 
+
+					                    4. Enviar datos			
+										var activo = newRecord.getValue('isinactive')==false?true:false
+										
+					                    try{
+				                            //var nameFormat = req_info.nombre+" "+req_info.apellidos // cambiar por variables
+				                            nameFormat = quitarAcentos(nombre)//Traer funcion quitar acentos
+				                            
+				                            var objAD = {
+				                                'nombre': nombre,
+				                                'correo': correo,
+				                                'telefono': telefono,
+				                                'activo': activo,
+				                                'nombreQuienRecomienda': quitarAcentos(nombreQuienRecomienda),
+				                                'correoQuienRecomienda': correoQuienRecomienda,
+				                                'PresentadorAsignadoCorreo': correoPresentador,
+				                                'PresentadorAsignadoIDU': iduPresentador,
+				                                'telefonoQuienRecomienda':telefonoRecomendador,//Espera de LMS
+				                                'NetSuiteID':id
+				                            }
+
+				                            log.debug('objAD',objAD)
+				                            log.debug('objAD stringfy',JSON.stringify(objAD))
+				                            var urlAD
+				                            if(runtime.envType != 'PRODUCTION'){ 
+				                                urlAD = 'https://dev-apiagenda.mxthermomix.com/users/registerUserExternoNetsuite'
+				                            }else{
+				                                urlAD = 'https://apiagenda.mxthermomix.com/users/registerUserExternoNetsuite'
+				                            }
+				                            if(nombreQuienRecomienda && correoQuienRecomienda){
+				                                var responseService = https.post({
+				                                url: urlAD,
+				                                body : objAD,//JSON.stringify(
+				                                headers: {
+				                                    "Content-Type": "application/x-www-form-urlencoded",
+				                                    "User-Agent": "NetSuite/2019.2(SuiteScript)",
+				                                }
+				                            }).body;
+				                            log.debug('responseService AD',responseService)
+				                            }
+				                       
+
+				                        }catch(e){
+				                        	log.debug('Error Agenda digital Referidos restlet',e)
+				                       	}
+				                       	var objLMS ={
+
+					                      "idCliente": id,
+
+					                      "salesrep": salesRep ,
+
+					                      "idUsalesRep": iduSalesRep
+
+					                    }
+
+					                    log.debug('envir a lms',objLMS)
+					                    if(runtime.envType != 'PRODUCTION'){ 
+					                        urlLMS = 'http://api-referidos-thrmx.lms-la.com/api/Cliente/actualizar-presentador'
+					                        key = 'Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJJZCI6IjhhMDJkZDE3LTYzMjAtNGFiMi1iOWFkLWZlZDMzZWRhYzNiNiIsInN1YiI6InZzaWx2YWNAbG1zLmNvbS5teCIsImVtYWlsIjoidnNpbHZhY0BsbXMuY29tLm14IiwidW5pcXVlX25hbWUiOiJ2c2lsdmFjQGxtcy5jb20ubXgiLCJqdGkiOiI4MjEwMDk4MC0zMDNjLTRlMDktYjM1NS0xMGM5N2ViNWU0ZjkiLCJuYmYiOjE2NzgyMjYzNTYsImV4cCI6MTcwOTg0ODc1NiwiaWF0IjoxNjc4MjI2MzU2fQ.CetagLsFKPT9_kj50JrzOemPHUw4FID7uzEs7AYC3WlkiE5S1VJdhURTlTc4XWeX2-An6P5SzQPlCZtvM-WJrQ'
+					                    }else{//prod
+					                        urlLMS = ''
+					                    }
+					                    var responseService = http.put({
+					                        url: urlLMS,
+					                        body : JSON.stringify(objLMS),
+					                        headers: {
+					                            "Content-Type": "application/json",
+					                            "Authorization": key
+					                        }
+					                    }).body;
+					                    var responseService = JSON.parse(responseService)
+					                    log.debug('responseService LMS',responseService)
+										*/
+
+					                }
 									
-									
+									return true;
 								});
 							});
 

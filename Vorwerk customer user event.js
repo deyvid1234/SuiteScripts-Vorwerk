@@ -91,8 +91,9 @@ function(record,search,http,https,encode,runtime,serverWidget,error) {
         try{
             var newRecord = scriptContext.newRecord;
             var oldrecord = scriptContext.oldRecord;
+            log.debug('scriptContext.type',scriptContext.type)
 
-            if(scriptContext.type == 'edit' ){ 
+            if(scriptContext.type == 'edit' || scriptContext.type == 'xedit'  ){ 
                 var newSalesRep = newRecord.getValue('salesrep')
                 var newPreRef = newRecord.getValue('custentity_presentadora_referido')
                 var newIDUPreRef = newRecord.getValue('custentityidu_presentador')
