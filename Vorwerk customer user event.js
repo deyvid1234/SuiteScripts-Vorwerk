@@ -101,6 +101,11 @@ function(record,search,http,https,encode,runtime,serverWidget,error) {
                 var oldPreRef = oldrecord.getValue('custentity_presentadora_referido')
                 var oldIDUPreRef = oldrecord.getValue('custentityidu_presentador')
 
+                log.debug('newSalesRep', newSalesRep)
+                log.debug('newPreRef', newPreRef)
+                log.debug('oldSalesRep', oldSalesRep)
+                log.debug('oldPreRef', oldPreRef)
+                
                 if( newSalesRep != oldSalesRep || newPreRef != oldPreRef || newIDUPreRef != oldIDUPreRef ){
 
                     //Ectrar todos los valores que se van a utiliar usando newRecord.getValue('') y asignarlo a las variables que ya se utilizan o crear nuevas
@@ -121,7 +126,7 @@ function(record,search,http,https,encode,runtime,serverWidget,error) {
                         id: newRecord.getValue('custentity_presentadora_referido'),
                         columns: ["firstname", "email", "mobilephone","entityid"]
                     });
-                    log.debug('referidoSearch',referidoSearch)
+                    log.debug('employeeSearch',employeeSearch)
 
                     var nombreQuienRecomienda = referidoSearch.altname
                     var correoQuienRecomienda = referidoSearch.email
