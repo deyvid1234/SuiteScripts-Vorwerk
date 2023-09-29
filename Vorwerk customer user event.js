@@ -104,24 +104,35 @@ function(record,search,http,https,encode,runtime,serverWidget,error) {
                 if( newSalesRep != oldSalesRep || newPreRef != oldPreRef || newIDUPreRef != oldIDUPreRef ){
 
                     //Ectrar todos los valores que se van a utiliar usando newRecord.getValue('') y asignarlo a las variables que ya se utilizan o crear nuevas
-                    var nombreQuienRecomienda = ''
-                    var correoQuienRecomienda = ''
+                    var nombre = newRecord.getValue('glommedname')
+                    var correo = newRecord.getValue('email')
+                    var telefono = newRecord.getValue('mobilephone')
+                    var activo = newRecord.getValue('isinactive')
+                    var nombreQuienRecomienda = newRecord.getValue('')
+                    var correoQuienRecomienda = newRecord.getValue('')
+                    var correoPresentador = newRecord.getValue('')
+                    var iduPresentador = newRecord.getValue('custentityidu_presentador')
+                    var telefonoRecomendador = newRecord.getValue('')
+                    var id = newRecord.getValue('id')
+                    var salesRep = newRecord.getValue('salesrep') 
+                    var iduSalesRep = salesRep.split(' ')[0]
+
                     if(req_info.idRecomendador){ //Envio Agenda Digital
                         
                         try{
-                            var nameFormat = req_info.nombre+" "+req_info.apellidos // cambiar por variables
-                            nameFormat = quitarAcentos(nameFormat)//Traer funcion quitar acentos
+                            //var nameFormat = req_info.nombre+" "+req_info.apellidos // cambiar por variables
+                            nameFormat = quitarAcentos(nombre)//Traer funcion quitar acentos
                             var objAD = {
                                 'nombre': nameFormat,
-                                'correo': req_info.email,
-                                'telefono': req_info.telefono,
-                                'activo': true,
+                                'correo': correo
+                                'telefono': telefono
+                                'activo': activo,
                                 'nombreQuienRecomienda': quitarAcentos(nombreQuienRecomienda),
                                 'correoQuienRecomienda': correoQuienRecomienda,
-                                'PresentadorAsignadoCorreo': email_p,
-                                'PresentadorAsignadoIDU': idu_p,
-                                'telefonoQuienRecomienda':objRecomendador.mobilephone,//Espera de LMS
-                                'NetSuiteID':id_cliente
+                                'PresentadorAsignadoCorreo': correoPresentador,
+                                'PresentadorAsignadoIDU': iduPresentador,
+                                'telefonoQuienRecomienda':telefonoRecomendador,//Espera de LMS
+                                'NetSuiteID':id
                             }
 
                             log.debug('objAD',objAD)
@@ -154,11 +165,11 @@ function(record,search,http,https,encode,runtime,serverWidget,error) {
                     //rellenar con variables
                     var objLMS ={
 
-                      "idCliente": ,
+                      "idCliente": id,
 
-                      "salesrep": ,
+                      "salesrep": salesRep ,
 
-                      "idUsalesRep": 
+                      "idUsalesRep": iduSalesRep
 
                     }
 
@@ -191,7 +202,21 @@ function(record,search,http,https,encode,runtime,serverWidget,error) {
         return true
     }
     
-
+ function quitarAcentos(cadena){
+    const acentos = {'á':'a','é':'e','í':'i','ó':'o','ú':'u','Á':'A','É':'E','Í':'I','Ó':'O','Ú':'U','Ñ':'N','ñ':'n'};
+    var cadenasplit = cadena.split('')
+    var sinAcentos = cadenasplit.map(function(x) {
+        if(acentos[x]){
+            return acentos[x];
+        }else{
+            return x;
+        }
+       
+    });
+    var joinsinacentos = sinAcentos.join('').toString(); 
+    log.debug('joinsinacentos',joinsinacentos)
+    return joinsinacentos; 
+    }
     
     
     
