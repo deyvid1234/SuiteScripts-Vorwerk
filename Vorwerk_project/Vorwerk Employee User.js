@@ -258,7 +258,7 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 								currentPage.data.forEach(function (result) {
 									var busquedaCustomer = result.getAllValues()
 									log.debug('busquedaCustomer', busquedaCustomer)
-									var nombreQuienRecomienda = result.getText({name : 'name',join : 'custentity_id_cliente_referido'})
+									var nombreQuienRecomienda = result.getText({name : 'altname',join : 'custentity_id_cliente_referido'})
 									var correoQuienRecomienda = result.getValue({name : 'email',join : 'custentity_id_cliente_referido'})
 									log.debug('nombreQuienRecomienda', nombreQuienRecomienda)
 									log.debug('correoQuienRecomienda', correoQuienRecomienda)
