@@ -427,7 +427,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                     });
 
                     var id_cliente = cliente_record.save({ 
-                        enableSourcing: true,
+                        enableSourcing: false,
                         ignoreMandatoryFields: true
                     });
                      
@@ -1104,7 +1104,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                 });
 
                 var id_cliente = cliente_record.save({ 
-                    enableSourcing: true,
+                    enableSourcing: false,
                     ignoreMandatoryFields: true
                 });
                 log.debug('id_cliente',id_cliente)

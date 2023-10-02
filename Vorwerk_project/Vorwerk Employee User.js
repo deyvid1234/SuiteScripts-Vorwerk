@@ -257,11 +257,9 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 								var currentPage = pagedResults.fetch({index: pageRange.index});
 								currentPage.data.forEach(function (result) {
 									var busquedaCustomer = result.getAllValues()
-									log.debug('busquedaCustomer', busquedaCustomer)
-									var nombreQuienRecomienda = result.getText({name : 'altname',join : 'custentity_id_cliente_referido'})
-									var correoQuienRecomienda = result.getValue({name : 'email',join : 'custentity_id_cliente_referido'})
-									log.debug('nombreQuienRecomienda', nombreQuienRecomienda)
-									log.debug('correoQuienRecomienda', correoQuienRecomienda)
+
+									//Datos del cliente a actualizar presentador
+
 									var idCust = result.getValue('internalid')
 									var stage = result.getValue('formulatext')
 
@@ -269,10 +267,17 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 				                    var correo = result.getValue('email')
 				                    var telefono = result.getValue('mobilephone')
 				                    var activo = result.getValue('isinactive')==false?true:false
+				                    var checkReferidos = result.getValue('custentity_presentadora_referido')
 
+				                    //Datos del Recomendador del cliente 
 
-									log.debug('stage',stage)
-									var checkReferidos = result.getValue('custentity_presentadora_referido')
+									var nombreQuienRecomienda = result.getValue({name : 'altname',join : 'custentity_id_cliente_referido'})!=''?result.getValue({name : 'altname',join : 'custentity_id_cliente_referido'}):false
+									var correoQuienRecomienda = result.getValue({name : 'email',join : 'custentity_id_cliente_referido'})!=''?result.getValue({name : 'email',join : 'custentity_id_cliente_referido'}):false
+									var telefonoQuienRecomienda = result.getValue({name : 'mobilephone',join : 'custentity_id_cliente_referido'})
+
+								
+									
+									
 									if(checkReferidos != '' && checkReferidos ){
 
 										idCustomer = record.submitFields({
@@ -290,87 +295,79 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 						                });  
 					                  	
 
-					                    //Avisar a LMS y AD
-					                    /*
-					                    1. Actualizaer la busqueda de clientes activos con todas las columnas que necesitamos
-					                    2.  en la funcion getNewSalesRep añadir los campos del presentador que necesitamos correo,telefono, idu,----
-					                    3. 	armar json de LMS y AD 
-
-					                    4. Enviar datos			
-										var activo = newRecord.getValue('isinactive')==false?true:false
-										*/
 										if (idCustomer){
 
 
-					                    try{
+						                    try{
 
-				                            //var nameFormat = req_info.nombre+" "+req_info.apellidos // cambiar por variables
-				                            nameFormat = quitarAcentos(nombre)//Traer funcion quitar acentos
-				                            
-				                            var objAD = {
-				                                'nombre': nombre,
-				                                'correo': correo,
-				                                'telefono': telefono,
-				                                'activo': activo,
-				                                'nombreQuienRecomienda': quitarAcentos(nombreQuienRecomienda),
-				                                'correoQuienRecomienda': correoQuienRecomienda,
-				                                'PresentadorAsignadoCorreo': correoPresentador,
-				                                'PresentadorAsignadoIDU': newIDUSalesRep,
-				                                'telefonoQuienRecomienda':telefono,//Espera de LMS
-				                                'NetSuiteID':idCust
-				                            }
+					                            //var nameFormat = req_info.nombre+" "+req_info.apellidos // cambiar por variables
+					                            nameFormat = quitarAcentos(nombre)//Traer funcion quitar acentos
+					                            
+					                            var objAD = {
+					                                'nombre': nameFormat,
+					                                'correo': correo,
+					                                'telefono': telefono?telefono:'',
+					                                'activo': activo,
+					                                'nombreQuienRecomienda': quitarAcentos(nombreQuienRecomienda),
+					                                'correoQuienRecomienda': correoQuienRecomienda,
+					                                'PresentadorAsignadoCorreo': correoPresentador,
+					                                'PresentadorAsignadoIDU': newIDUSalesRep,
+					                                'telefonoQuienRecomienda':telefonoQuienRecomienda?telefonoQuienRecomienda:'',//Espera de LMS
+					                                'NetSuiteID':idCust
+					                            }
 
-				                            log.debug('objAD actualizar customer',objAD)
-				                            log.debug('objAD stringfy',JSON.stringify(objAD))
-				                            var urlAD
-				                            if(runtime.envType != 'PRODUCTION'){ 
-				                                urlAD = 'https://dev-apiagenda.mxthermomix.com/users/registerUserExternoNetsuite'
-				                            }else{
-				                                urlAD = 'https://apiagenda.mxthermomix.com/users/registerUserExternoNetsuite'
-				                            }
-				                            if(nombreQuienRecomienda && correoQuienRecomienda){
-				                                var responseService = https.post({
-				                                url: urlAD,
-				                                body : objAD,//JSON.stringify(
-				                                headers: {
-				                                    "Content-Type": "application/x-www-form-urlencoded",
-				                                    "User-Agent": "NetSuite/2019.2(SuiteScript)",
-				                                }
-				                            }).body;
-				                            log.debug('responseService AD actualizar customer',responseService)
-				                            }
-				                       
+					                            log.debug('objAD actualizar customer',objAD)
 
-				                        }catch(e){
-				                        	log.debug('Error Agenda digital Referidos restlet',e)
-				                       	}
-				                       	var objLMS ={
+					                            var urlAD
+					                            if(runtime.envType != 'PRODUCTION'){ 
+					                                urlAD = 'https://dev-apiagenda.mxthermomix.com/users/registerUserExternoNetsuite'
+					                            }else{
+					                                urlAD = 'https://apiagenda.mxthermomix.com/users/registerUserExternoNetsuite'
+					                            }
 
-					                      "idCliente": idCust,
+					                            if(nombreQuienRecomienda && correoQuienRecomienda){
+					                                var responseService = https.post({
+					                                url: urlAD,
+					                                body : objAD,//JSON.stringify(
+					                                headers: {
+					                                    "Content-Type": "application/x-www-form-urlencoded",
+					                                    "User-Agent": "NetSuite/2019.2(SuiteScript)",
+					                                }
+					                            }).body;
+					                            log.debug('responseService AD actualizar customer',responseService)
+					                            }
+					                       
 
-					                      "salesrep": newSalesRep ,
+					                        }catch(e){
+					                        	log.debug('Error Agenda digital Referidos restlet',e)
+					                       	}
+					                       	var objLMS ={
 
-					                      "idUsalesRep": newIDUSalesRep
+						                      "idCliente": idCust,
 
-					                    }
+						                      "salesrep": newSalesRep ,
 
-					                    log.debug('envir a lms actualizar customer',objLMS)
-					                    if(runtime.envType != 'PRODUCTION'){ 
-					                        urlLMS = 'http://api-referidos-thrmx.lms-la.com/api/Cliente/actualizar-presentador'
-					                        key = 'Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJJZCI6IjhhMDJkZDE3LTYzMjAtNGFiMi1iOWFkLWZlZDMzZWRhYzNiNiIsInN1YiI6InZzaWx2YWNAbG1zLmNvbS5teCIsImVtYWlsIjoidnNpbHZhY0BsbXMuY29tLm14IiwidW5pcXVlX25hbWUiOiJ2c2lsdmFjQGxtcy5jb20ubXgiLCJqdGkiOiI4MjEwMDk4MC0zMDNjLTRlMDktYjM1NS0xMGM5N2ViNWU0ZjkiLCJuYmYiOjE2NzgyMjYzNTYsImV4cCI6MTcwOTg0ODc1NiwiaWF0IjoxNjc4MjI2MzU2fQ.CetagLsFKPT9_kj50JrzOemPHUw4FID7uzEs7AYC3WlkiE5S1VJdhURTlTc4XWeX2-An6P5SzQPlCZtvM-WJrQ'
-					                    }else{//prod
-					                        urlLMS = ''
-					                    }
-					                    var responseService = http.put({
-					                        url: urlLMS,
-					                        body : JSON.stringify(objLMS),
-					                        headers: {
-					                            "Content-Type": "application/json",
-					                            "Authorization": key
-					                        }
-					                    }).body;
-					                    var responseService = JSON.parse(responseService)
-					                    log.debug('responseService LMS actualizar customer',responseService)
+						                      "idUsalesRep": newIDUSalesRep
+
+						                    }
+
+						                    log.debug('envir a lms actualizar customer',objLMS)
+						                    if(runtime.envType != 'PRODUCTION'){ 
+						                        urlLMS = 'http://api-referidos-thrmx.lms-la.com/api/Cliente/actualizar-presentador'
+						                        key = 'Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJJZCI6IjhhMDJkZDE3LTYzMjAtNGFiMi1iOWFkLWZlZDMzZWRhYzNiNiIsInN1YiI6InZzaWx2YWNAbG1zLmNvbS5teCIsImVtYWlsIjoidnNpbHZhY0BsbXMuY29tLm14IiwidW5pcXVlX25hbWUiOiJ2c2lsdmFjQGxtcy5jb20ubXgiLCJqdGkiOiI4MjEwMDk4MC0zMDNjLTRlMDktYjM1NS0xMGM5N2ViNWU0ZjkiLCJuYmYiOjE2NzgyMjYzNTYsImV4cCI6MTcwOTg0ODc1NiwiaWF0IjoxNjc4MjI2MzU2fQ.CetagLsFKPT9_kj50JrzOemPHUw4FID7uzEs7AYC3WlkiE5S1VJdhURTlTc4XWeX2-An6P5SzQPlCZtvM-WJrQ'
+						                    }else{//prod
+						                        urlLMS = ''
+						                    }
+						                    var responseService = http.put({
+						                        url: urlLMS,
+						                        body : JSON.stringify(objLMS),
+						                        headers: {
+						                            "Content-Type": "application/json",
+						                            "Authorization": key
+						                        }
+						                    }).body;
+						                    var responseService = JSON.parse(responseService)
+						                    log.debug('responseService LMS actualizar customer',responseService)
 										}
 
 					                }
@@ -450,7 +447,7 @@ function(record,search,http,https,encode,runtime,serverWidget) {
             var typele = leFields.employeetype[0].value;
             var promole = leFields.custentity_promocion[0].value;
             var inactivele =leFields.isinactive;
-            var iduLE = leFields.entityid.value;
+            var iduLE = leFields.entityid;
             var nombreLE= leFields.firstname;
             var emailLE = leFields.email;
             var telefonoLE = leFields.mobilephone;
@@ -547,7 +544,7 @@ function(record,search,http,https,encode,runtime,serverWidget) {
     	try{
     		var url = "";
     		var credentials ="";
-    		log.debug("runtime.envType",runtime.envType);
+    		//log.debug("runtime.envType",runtime.envType);
     		var procesURL = [];
 			var amanUrl = search.create({
 			    type: 'customrecord_aman_url_method',
@@ -643,19 +640,24 @@ function(record,search,http,https,encode,runtime,serverWidget) {
     	return fdate;
     }
      function quitarAcentos(cadena){
-    const acentos = {'á':'a','é':'e','í':'i','ó':'o','ú':'u','Á':'A','É':'E','Í':'I','Ó':'O','Ú':'U','Ñ':'N','ñ':'n'};
-    var cadenasplit = cadena.split('')
-    var sinAcentos = cadenasplit.map(function(x) {
-        if(acentos[x]){
-            return acentos[x];
-        }else{
-            return x;
-        }
-       
-    });
-    var joinsinacentos = sinAcentos.join('').toString(); 
-    log.debug('joinsinacentos',joinsinacentos)
-    return joinsinacentos; 
+     	if(cadena){
+     		const acentos = {'á':'a','é':'e','í':'i','ó':'o','ú':'u','Á':'A','É':'E','Í':'I','Ó':'O','Ú':'U','Ñ':'N','ñ':'n'};
+		    var cadenasplit = cadena.split('')
+		    var sinAcentos = cadenasplit.map(function(x) {
+		        if(acentos[x]){
+		            return acentos[x];
+		        }else{
+		            return x;
+		        }
+		       
+		    });
+		    var joinsinacentos = sinAcentos.join('').toString(); 
+		    log.debug('joinsinacentos',joinsinacentos)
+		    return joinsinacentos; 
+     	}else{
+     		return false
+     	}
+    
     }
   	function getEmployeeData(idemp,rol){
     	try{

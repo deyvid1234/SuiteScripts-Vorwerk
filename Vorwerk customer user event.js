@@ -44,7 +44,7 @@ function(record,search,http,https,encode,runtime,serverWidget,error) {
             var contextType = scriptContext.type;
 
            
-            if (contextType == 'create') { 
+            if (contextType == 'create' && runtime.executionContext == 'USERINTERFACE') { 
                 var email = newRec.getValue('email');
                 //log.debug('email',email)
 
@@ -93,7 +93,7 @@ function(record,search,http,https,encode,runtime,serverWidget,error) {
             var oldrecord = scriptContext.oldRecord;
             log.debug('scriptContext.type',scriptContext.type)
 
-            if(scriptContext.type == 'edit' ){ 
+            if(scriptContext.type == 'edit' && runtime.executionContext == 'USERINTERFACE' ){ 
                 var newSalesRep = newRecord.getValue('salesrep')
                 var newPreRef = newRecord.getValue('custentity_presentadora_referido')
                 var newIDUPreRef = newRecord.getValue('custentityidu_presentador')
