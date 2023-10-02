@@ -207,7 +207,7 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 				     		}
 				   	    }).body;
 				    	var responseService = JSON.parse(responseService)
-				    	log.debug('responseService AD',responseService)
+				    	log.debug('responseService AD del estatus inactivo',responseService)
 
 
 				    	try{//ENVIO LMS
@@ -227,7 +227,7 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 					     		}
 					   	    }).body;
 					    	var responseService = JSON.parse(responseService)
-					    	log.debug('responseService LMS',responseService)
+					    	log.debug('responseService LMS del estatus inactivo',responseService)
 				    	}catch(e){
 				    		log.debug('Error envio de datos a LMS',e)
 				    	}
@@ -240,7 +240,7 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 				    		log.debug('newSalesRepF',newSalesRepF)
 				    		var newSalesRep = newSalesRepF.id
 				    		var newIDUSalesRep = newSalesRepF.idu
-
+				    		var correoPresentador = newSalesRepF.email
 				    		
 				            var searchCustomers = search.load({
 				               id: 'customsearch_clientes_activos'
@@ -256,16 +256,28 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 							pagedResults.pageRanges.forEach(function (pageRange){     
 								var currentPage = pagedResults.fetch({index: pageRange.index});
 								currentPage.data.forEach(function (result) {
-									
-									var idCustomer = result.getValue('internalid')
+									var busquedaCustomer = result.getAllValues()
+									log.debug('busquedaCustomer', busquedaCustomer)
+									var nombreQuienRecomienda = result.getText({name : 'name',join : 'custentity_id_cliente_referido'})
+									var correoQuienRecomienda = result.getValue({name : 'email',join : 'custentity_id_cliente_referido'})
+									log.debug('nombreQuienRecomienda', nombreQuienRecomienda)
+									log.debug('correoQuienRecomienda', correoQuienRecomienda)
+									var idCust = result.getValue('internalid')
 									var stage = result.getValue('formulatext')
+
+									var nombre = result.getValue('altname')
+				                    var correo = result.getValue('email')
+				                    var telefono = result.getValue('mobilephone')
+				                    var activo = result.getValue('isinactive')==false?true:false
+
+
 									log.debug('stage',stage)
 									var checkReferidos = result.getValue('custentity_presentadora_referido')
 									if(checkReferidos != '' && checkReferidos ){
 
 										idCustomer = record.submitFields({
 						                    type   : stage,
-						                    id     : idCustomer,
+						                    id     : idCust,
 						                    values : {
 						                        salesrep           					: newSalesRep,
 						                        custentity_presentadora_referido    : newSalesRep,
@@ -276,12 +288,7 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 						                        ignoreMandatoryFields   : true
 						                    }
 						                });  
-
-					                    log.debug('recCustomer', recCustomer)	
-
-
-
-
+					                  	
 
 					                    //Avisar a LMS y AD
 					                    /*
@@ -291,8 +298,12 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 
 					                    4. Enviar datos			
 										var activo = newRecord.getValue('isinactive')==false?true:false
-										
+										*/
+										if (idCustomer){
+
+
 					                    try{
+
 				                            //var nameFormat = req_info.nombre+" "+req_info.apellidos // cambiar por variables
 				                            nameFormat = quitarAcentos(nombre)//Traer funcion quitar acentos
 				                            
@@ -304,12 +315,12 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 				                                'nombreQuienRecomienda': quitarAcentos(nombreQuienRecomienda),
 				                                'correoQuienRecomienda': correoQuienRecomienda,
 				                                'PresentadorAsignadoCorreo': correoPresentador,
-				                                'PresentadorAsignadoIDU': iduPresentador,
-				                                'telefonoQuienRecomienda':telefonoRecomendador,//Espera de LMS
-				                                'NetSuiteID':id
+				                                'PresentadorAsignadoIDU': newIDUSalesRep,
+				                                'telefonoQuienRecomienda':telefono,//Espera de LMS
+				                                'NetSuiteID':idCust
 				                            }
 
-				                            log.debug('objAD',objAD)
+				                            log.debug('objAD actualizar customer',objAD)
 				                            log.debug('objAD stringfy',JSON.stringify(objAD))
 				                            var urlAD
 				                            if(runtime.envType != 'PRODUCTION'){ 
@@ -326,7 +337,7 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 				                                    "User-Agent": "NetSuite/2019.2(SuiteScript)",
 				                                }
 				                            }).body;
-				                            log.debug('responseService AD',responseService)
+				                            log.debug('responseService AD actualizar customer',responseService)
 				                            }
 				                       
 
@@ -335,15 +346,15 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 				                       	}
 				                       	var objLMS ={
 
-					                      "idCliente": id,
+					                      "idCliente": idCust,
 
-					                      "salesrep": salesRep ,
+					                      "salesrep": newSalesRep ,
 
-					                      "idUsalesRep": iduSalesRep
+					                      "idUsalesRep": newIDUSalesRep
 
 					                    }
 
-					                    log.debug('envir a lms',objLMS)
+					                    log.debug('envir a lms actualizar customer',objLMS)
 					                    if(runtime.envType != 'PRODUCTION'){ 
 					                        urlLMS = 'http://api-referidos-thrmx.lms-la.com/api/Cliente/actualizar-presentador'
 					                        key = 'Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJJZCI6IjhhMDJkZDE3LTYzMjAtNGFiMi1iOWFkLWZlZDMzZWRhYzNiNiIsInN1YiI6InZzaWx2YWNAbG1zLmNvbS5teCIsImVtYWlsIjoidnNpbHZhY0BsbXMuY29tLm14IiwidW5pcXVlX25hbWUiOiJ2c2lsdmFjQGxtcy5jb20ubXgiLCJqdGkiOiI4MjEwMDk4MC0zMDNjLTRlMDktYjM1NS0xMGM5N2ViNWU0ZjkiLCJuYmYiOjE2NzgyMjYzNTYsImV4cCI6MTcwOTg0ODc1NiwiaWF0IjoxNjc4MjI2MzU2fQ.CetagLsFKPT9_kj50JrzOemPHUw4FID7uzEs7AYC3WlkiE5S1VJdhURTlTc4XWeX2-An6P5SzQPlCZtvM-WJrQ'
@@ -359,8 +370,8 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 					                        }
 					                    }).body;
 					                    var responseService = JSON.parse(responseService)
-					                    log.debug('responseService LMS',responseService)
-										*/
+					                    log.debug('responseService LMS actualizar customer',responseService)
+										}
 
 					                }
 									
@@ -422,6 +433,7 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 
     	var idSalesRep
     	var iduSalesRep
+    	var correoPresentador
 
 
 
@@ -432,13 +444,16 @@ function(record,search,http,https,encode,runtime,serverWidget) {
             var leFields = search.lookupFields({
                 type: 'employee',
                 id: liderEquipo,
-                columns: ["employeetype", "custentity_promocion", "isinactive","entityid"]
+                columns: ["employeetype", "custentity_promocion", "isinactive","entityid","firstname", "email", "mobilephone"]
             });
 
             var typele = leFields.employeetype[0].value;
             var promole = leFields.custentity_promocion[0].value;
             var inactivele =leFields.isinactive;
             var iduLE = leFields.entityid.value;
+            var nombreLE= leFields.firstname;
+            var emailLE = leFields.email;
+            var telefonoLE = leFields.mobilephone;
 
 
         }
@@ -447,13 +462,17 @@ function(record,search,http,https,encode,runtime,serverWidget) {
             var gvFields = search.lookupFields({
                 type: 'employee',
                 id: gerenteVentas,
-                columns: ["employeetype", "custentity_promocion", "isinactive","entityid"]
+                columns: ["employeetype", "custentity_promocion", "isinactive","entityid","firstname", "email", "mobilephone"]
             });
 
             var typeGV = gvFields.employeetype[0].value;
             var promoGV = gvFields.custentity_promocion[0].value;
             var inactiveGV =gvFields.isinactive;
             var iduGV = gvFields.entityid;
+            var nombreGV= gvFields.firstname;
+            var emailGV = gvFields.email;
+            var telefonoGV = gvFields.mobilephone;
+
 
         }
             
@@ -462,11 +481,13 @@ function(record,search,http,https,encode,runtime,serverWidget) {
                 
                 idSalesRep = liderEquipo
                 iduSalesRep = iduLE
+                correoPresentador = emailLE
 
             } else if (typeGV == 5 && promoGV != 3 && inactiveGV == false) { // se asigna el GV si cumple con = Gerente de Ventas / No es litigio / es activo
                
                 idSalesRep = gerenteVentas
                 iduSalesRep = iduGV
+                correoPresentador = emailGV
             } else {// se asigna presentador de toda la fuerza de ventas
 
                 var presentadorNuevo = presentadorAleatorio()
@@ -477,7 +498,7 @@ function(record,search,http,https,encode,runtime,serverWidget) {
             log.debug('idSalesRep',idSalesRep)
             log.debug('iduSalesRep',iduSalesRep)
 
-    	return {id: idSalesRep, idu: iduSalesRep}
+    	return {id: idSalesRep, idu: iduSalesRep, email: correoPresentador }
     }
 
     function presentadorAleatorio(){
@@ -620,6 +641,21 @@ function(record,search,http,https,encode,runtime,serverWidget) {
     	
 
     	return fdate;
+    }
+     function quitarAcentos(cadena){
+    const acentos = {'á':'a','é':'e','í':'i','ó':'o','ú':'u','Á':'A','É':'E','Í':'I','Ó':'O','Ú':'U','Ñ':'N','ñ':'n'};
+    var cadenasplit = cadena.split('')
+    var sinAcentos = cadenasplit.map(function(x) {
+        if(acentos[x]){
+            return acentos[x];
+        }else{
+            return x;
+        }
+       
+    });
+    var joinsinacentos = sinAcentos.join('').toString(); 
+    log.debug('joinsinacentos',joinsinacentos)
+    return joinsinacentos; 
     }
   	function getEmployeeData(idemp,rol){
     	try{
