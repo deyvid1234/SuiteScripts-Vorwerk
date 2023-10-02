@@ -292,7 +292,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                             log.debug('inactivele', inactivele)
 
 
-                        } 
+                        }
                         if (empFields.custentity_delegada != ""){
                             var  gerenteVentas= empFields.custentity_delegada[0].value;
                             var gerenteVentasName= empFields.custentity_delegada[0].text;
@@ -897,7 +897,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                 });
 
                 var id_cliente = cliente_record.save({ 
-                    enableSourcing: true,
+                    enableSourcing: false,
                     ignoreMandatoryFields: true
                 });
                 log.debug('id_cliente',id_cliente)
