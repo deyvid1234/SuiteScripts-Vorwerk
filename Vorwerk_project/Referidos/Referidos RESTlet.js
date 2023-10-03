@@ -334,7 +334,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                             log.debug('nuevo gv',idusalesRepNuevoResponse)
                         } else {// se asigna presentador de toda la fuerza de ventas
 
-                            var presentadorNuevo = presentadorAleatorio(req_info)
+                            var presentadorNuevo = presentadorAleatorioCambio(req_info,salesrepActual)//Se debe asignar uno diferente al actual
                             
 
                             salesrepNuevoResponse = presentadorNuevo.internalid_p
@@ -1215,6 +1215,52 @@ function(record,search,https,file,http,format,encode,email,runtime) {
             return {respuesta:err, err:true};
         }
     }
+
+    function presentadorAleatorioCambio(req_info,salesrepActual){
+        try{
+
+
+            log.debug('Buscar presentador aleatorio de la lista completa de presentadores activos Elegibles a presentadora Referido')
+            //1 buscar la busqueda customsearch1994 y quitar el filtro de Elegibles a presentadora Referido
+            // 2 añadir los filtros de type = lider de equipo, presentador o Gerente de Ventas y verificar que sea activo
+            // custentity_promocion no es en litigio 
+            var mySearch = search.load({
+                id: 'customsearch1994'
+            });
+
+            mySearch.filters.push(search.createFilter({
+               name: 'internalid',
+               operator: 'noneof',
+               values: salesrepActual
+            }));
+
+            var totalPresentadoras = []
+            var pagedResults = mySearch.runPaged();
+            pagedResults.pageRanges.forEach(function (pageRange){
+            var currentPage = pagedResults.fetch({index: pageRange.index});
+                currentPage.data.forEach(function (r) {
+                   
+                    totalPresentadoras.push({
+                        'internalid_p'    :   r.getValue('internalid'),
+                        'idu_p'           :   r.getValue('entityid'),
+                        'email_p'         :   r.getValue('email'),
+                        'unidad_p'        :   r.getValue('custentity_nombre_unidad'),
+                        'altname'        :   r.getValue('altname'),
+                    })
+                    return true; 
+
+                });
+
+            });
+            
+            var aleatorionuem = (Math.floor(Math.random() * totalPresentadoras.length))
+            
+            return totalPresentadoras[aleatorionuem]
+        }catch(e){
+            log.debug('Error presentadorAleatorio',e)
+        }
+    }
+
 
     function presentadorAleatorio(req_info){
         try{

@@ -279,9 +279,9 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 									
 									
 									if(checkReferidos != '' && checkReferidos ){
-
+										log.debug('stage',stage)
 										idCustomer = record.submitFields({
-						                    type   : stage,
+						                    type   : 'customer',
 						                    id     : idCust,
 						                    values : {
 						                        salesrep           					: newSalesRep,
@@ -316,7 +316,7 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 					                                'NetSuiteID':idCust
 					                            }
 
-					                            log.debug('objAD actualizar customer',objAD)
+					                            
 
 					                            var urlAD
 					                            if(runtime.envType != 'PRODUCTION'){ 
@@ -326,6 +326,7 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 					                            }
 
 					                            if(nombreQuienRecomienda && correoQuienRecomienda){
+					                            	log.debug('objAD actualizar customer',objAD)
 					                                var responseService = https.post({
 					                                url: urlAD,
 					                                body : objAD,//JSON.stringify(
@@ -614,21 +615,24 @@ function(record,search,http,https,encode,runtime,serverWidget) {
     function formatoFecha(fecha){
     	var fdate = ''
     	if(fecha != '' && fecha != null){
+    		log.debug('fecha',fecha)
     		var auxF = fecha.split('/')
-
+    		log.debug('parseInt(auxF[0]) ',auxF[0] )
+    		log.debug('parseInt(auxF[1]) ',auxF[1] )
+    		log.debug('parseInt(auxF[2]) ',auxF[2] )
 	    	log.debug('auxF',auxF)
 	    	var today = new Date();
-	        var dd = parseInt(auxF[0]) 
-	        var mm = parseInt(auxF[1])
+	        var dd = auxF[0]
+	        var mm = auxF[1]
 	        var yyyy = auxF[2]
 	        
 	       
-	        log.debug('mm',mm.length )
-	        if(mm <  10){
+	       
+	        if(mm.length <  2){
 	            log.debug('mm',mm )
 	            mm = '0'+mm
 	        }
-	        if(dd < 10 ){
+	        if(dd.length < 2 ){
 	             log.debug('dd',dd )
 	            dd = '0'+dd
 	        }
