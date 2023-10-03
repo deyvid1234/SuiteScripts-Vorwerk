@@ -1151,6 +1151,10 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                     conf = 12
                     numero_para_comisionar = 4
                     break;
+                case '13': 
+                    conf = 13
+                    numero_para_comisionar = 4
+                    break;
                 }
               }
             //Variables principales
@@ -2220,7 +2224,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
            mySearch.filters.push(search.createFilter({
                    name: 'trandate',
                    operator: 'within',
-                   values: ['01/05/2023',period['startDate']]
+                   values: ['01/06/2023',period['startDate']]
                }));
            var pagedResults = mySearch.runPaged();
            pagedResults.pageRanges.forEach(function (pageRange){
@@ -2233,7 +2237,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                 tmR = parseInt(values['GROUP(salesRep.custentity_conf_rec)'][0]['value'])
                 var comisionan = 0
                 var falta = 0
-                if(tmR == 11 || tmR == 12){//Si su TM es R o CC12 solo comisiona 4 ventas
+                if(tmR == 11 || tmR == 12 || tmR == 13){//Si su TM es R o CC12 solo comisiona 4 ventas
                     tmR = true
                     comisionan = 4
                     falta = comisionan - num_h
@@ -2274,7 +2278,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
            mySearch.filters.push(search.createFilter({
                    name: 'trandate',
                    operator: 'within',
-                   values: ['01/05/2023',period['startDate']]
+                   values: ['01/06/2023',period['startDate']]
                }));
            var pagedResults = mySearch.runPaged();
            pagedResults.pageRanges.forEach(function (pageRange){
@@ -2287,7 +2291,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                 tmR = parseInt(values['GROUP(salesRep.custentity_conf_rec)'][0]['value'])
                 var comisionan = 0
                 var falta = 0
-                if(tmR == 11 || tmR == 12){//Si su TM es R o CC12 solo comisiona 4 ventas
+                if(tmR == 11 || tmR == 12 || tmR == 13){//Si su TM es R o CC12 solo comisiona 4 ventas
                     tmR = true
                     comisionan = 4
                     falta = comisionan - num_h

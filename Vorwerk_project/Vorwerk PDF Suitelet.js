@@ -324,7 +324,7 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
                           if(configuracion_rec == 11){
                             configuracion_rec = 1
                           }
-                          if(configuracion_rec == 12){
+                          if(configuracion_rec == 12 || configuracion_rec == 13){
                           	limiteVentasReclutamiento = 4
                           }
 			            }else{
@@ -585,6 +585,10 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
                 nameConf = 'TM4U'
                
                 break;
+            case '13': 
+            		nameConf = 'TM6 4 ventas 2 meses'
+           
+            break;
             }
         }
         log.debug("conf",nameConf) 
@@ -1053,6 +1057,10 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
 						                  nameConfEquipo = 'TM4U'
 						                   
 						                  break;
+						                  case '13': 
+					                  nameConfEquipo = 'TM6 4 ventas 2 meses'
+					                   
+					                  break;
 					                }
 					              }
 
