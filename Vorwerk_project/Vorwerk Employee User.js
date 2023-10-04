@@ -192,7 +192,7 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 
 			    		//1 Notificacion a LMS y AD de cambio de status inactive
 			    		
-			    		log.debug('JSON send AD',obj_detail)
+			    		log.debug('JSON send AD estatus de inactivo',obj_detail)
 			    		
 			    		if(runtime.envType != 'PRODUCTION'){ 
 		                    urlAD = 'https://dev-apiagenda.mxthermomix.com/users/postUserNetsuite'
@@ -211,7 +211,7 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 
 
 				    	try{//ENVIO LMS
-				    		log.debug('envir a lms',search_obj_detailLMS)
+				    		log.debug('envío a lms del estatus de inactivo',search_obj_detailLMS)
 				    		if(runtime.envType != 'PRODUCTION'){ 
 			                    urlLMS = 'http://api-referidos-thrmx.lms-la.com/api/fuerzaVentas'
 			                    key = 'Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJJZCI6IjhhMDJkZDE3LTYzMjAtNGFiMi1iOWFkLWZlZDMzZWRhYzNiNiIsInN1YiI6InZzaWx2YWNAbG1zLmNvbS5teCIsImVtYWlsIjoidnNpbHZhY0BsbXMuY29tLm14IiwidW5pcXVlX25hbWUiOiJ2c2lsdmFjQGxtcy5jb20ubXgiLCJqdGkiOiI4MjEwMDk4MC0zMDNjLTRlMDktYjM1NS0xMGM5N2ViNWU0ZjkiLCJuYmYiOjE2NzgyMjYzNTYsImV4cCI6MTcwOTg0ODc1NiwiaWF0IjoxNjc4MjI2MzU2fQ.CetagLsFKPT9_kj50JrzOemPHUw4FID7uzEs7AYC3WlkiE5S1VJdhURTlTc4XWeX2-An6P5SzQPlCZtvM-WJrQ'
@@ -237,7 +237,7 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 				    	if(newInactive == true){
 
 				    		var newSalesRepF = getNewSalesRep(thisRecord.getValue('id'),liderEquipo,gerenteVentas)//id presentador , lider de equipo, Gerente de ventas
-				    		log.debug('newSalesRepF',newSalesRepF)
+				    		
 				    		var newSalesRep = newSalesRepF.id
 				    		var newIDUSalesRep = newSalesRepF.idu
 				    		var correoPresentador = newSalesRepF.email
@@ -279,7 +279,7 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 									
 									
 									if(checkReferidos != '' && checkReferidos ){
-										log.debug('stage',stage)
+										
 										idCustomer = record.submitFields({
 						                    type   : 'customer',
 						                    id     : idCust,
