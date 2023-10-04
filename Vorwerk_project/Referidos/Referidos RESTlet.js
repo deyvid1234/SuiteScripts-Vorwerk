@@ -453,7 +453,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                     objAD.FechaFin                  =   req_info.FechaFin
                     objAD.EstatusSolicitud          =   statusSolicitud 
                     
-                    log.debug('objAD',objAD)
+                    log.debug('objAD enviado en el cambio de presentador',objAD)
                     var urlAD
 
                     if(runtime.envType != 'PRODUCTION'){ 
@@ -475,7 +475,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                         var responseAD = JSON.parse(responseService)
                         var success = responseAD.success
 
-                        log.debug('sucessAD', success)
+                        //log.debug('sucessAD', success)
                         
                         if (success != true){
                              log.debug('error Agenda')
@@ -632,7 +632,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                     id_cliente = r.getValue('internalid')
                     log.debug('id_cliente', id_cliente)
                     log.debug('idpresentadora_referido', idpresentadora_referido)
-                    log.debug('stage', stage)
+                    //log.debug('stage', stage)
                     log.debug('valuesSEARCH', values)
                     return true; 
                 });
@@ -670,13 +670,13 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                 var yyyy = today.getFullYear();
                 
                
-                log.debug('mm',mm.length )
+                //log.debug('mm',mm.length )
                 if(mm <  10){
-                    log.debug('mm',mm )
+                    //log.debug('mm',mm )
                     mm = '0'+mm
                 }
                 if(dd < 10 ){
-                     log.debug('dd',dd )
+                     //log.debug('dd',dd )
                     dd = '0'+dd
                 }
                 var fdate = yyyy + '-' +mm + '-' + dd;
@@ -743,7 +743,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                     id_cliente = r.getValue('internalid')
                     log.debug('id_cliente', id_cliente)
                     log.debug('idClienteReferido', idClienteReferido)
-                    log.debug('stage', stage)
+                    //log.debug('stage', stage)
                     log.debug('valuesSEARCH', values)
                     return true; 
 
@@ -910,7 +910,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
             var nombreQuienRecomienda = ''
             var correoQuienRecomienda = ''
             if(req_info.idRecomendador){ // Posible cambio Para enviar semilla 
-                log.debug('objRecomendador 1')   
+                //log.debug('objRecomendador 1')   
                 var objRecomendador = search.lookupFields({
                     type: 'customer',
                     id: req_info.idRecomendador,
@@ -920,10 +920,10 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                     'mobilephone'
                     ]
                 });
-                log.debug('objRecomendador 2',objRecomendador)   
-                log.debug('objRecomendador.name.value',objRecomendador.altname)
-                log.debug('objRecomendador.name.value',objRecomendador.email)
-                log.debug('objRecomendador.mobilephone',objRecomendador.mobilephone)
+                //log.debug('objRecomendador 2',objRecomendador)   
+                //log.debug('objRecomendador.name.value',objRecomendador.altname)
+                //log.debug('objRecomendador.name.value',objRecomendador.email)
+                //log.debug('objRecomendador.mobilephone',objRecomendador.mobilephone)
 
                 nombreQuienRecomienda = objRecomendador.altname
                 correoQuienRecomienda = objRecomendador.email
@@ -1010,7 +1010,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
        
     });
     var joinsinacentos = sinAcentos.join('').toString(); 
-    log.debug('joinsinacentos',joinsinacentos)
+    //log.debug('joinsinacentos',joinsinacentos)
     return joinsinacentos; 
     }
     function actualizarCliente(req_info,stage,presentadorRecomendacion,id_cliente){

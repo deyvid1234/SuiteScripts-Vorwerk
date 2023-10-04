@@ -617,10 +617,10 @@ function(record,search,http,https,encode,runtime,serverWidget) {
     	if(fecha != '' && fecha != null){
     		log.debug('fecha',fecha)
     		var auxF = fecha.split('/')
-    		log.debug('parseInt(auxF[0]) ',auxF[0] )
-    		log.debug('parseInt(auxF[1]) ',auxF[1] )
-    		log.debug('parseInt(auxF[2]) ',auxF[2] )
-	    	log.debug('auxF',auxF)
+    		//log.debug('parseInt(auxF[0]) ',auxF[0] )
+    		//log.debug('parseInt(auxF[1]) ',auxF[1] )
+    		//log.debug('parseInt(auxF[2]) ',auxF[2] )
+	    	//log.debug('auxF',auxF)
 	    	var today = new Date();
 	        var dd = auxF[0]
 	        var mm = auxF[1]
@@ -656,7 +656,7 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 		       
 		    });
 		    var joinsinacentos = sinAcentos.join('').toString(); 
-		    log.debug('joinsinacentos',joinsinacentos)
+		    //log.debug('joinsinacentos',joinsinacentos)
 		    return joinsinacentos; 
      	}else{
      		return false
