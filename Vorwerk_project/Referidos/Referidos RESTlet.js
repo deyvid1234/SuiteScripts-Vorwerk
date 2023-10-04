@@ -453,7 +453,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                     objAD.FechaFin                  =   req_info.FechaFin
                     objAD.EstatusSolicitud          =   statusSolicitud 
                     
-                    log.debug('objAD enviado en el cambio de presentador',objAD)
+                    log.debug('objAD enviado en el cambio de presentador'+id_cliente,objAD)
                     var urlAD
 
                     if(runtime.envType != 'PRODUCTION'){ 
@@ -595,7 +595,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
             obj_ret.MotivoCambio = req_info.MotivoCambio
             obj_ret.EstatusSolicitud = statusSolicitud
 
-            log.debug('obj_ret LMS', obj_ret)
+            log.debug('obj_ret LMS'+id_cliente, obj_ret)
             return obj_ret
         }catch(e){
             return e
