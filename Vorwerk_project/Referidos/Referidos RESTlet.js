@@ -933,7 +933,10 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                     var nameFormat = req_info.nombre+" "+req_info.apellidos
                     nameFormat = quitarAcentos(nameFormat)
 
-                    var objAD = {
+                  
+                    if(nombreQuienRecomienda && correoQuienRecomienda){
+
+                        var objAD = {
                         'nombre': nameFormat,
                         'correo': req_info.email,
                         'telefono': req_info.telefono,
@@ -949,7 +952,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
 
                     log.debug('objAD',objAD)
                     log.debug('objAD stringfy',JSON.stringify(objAD))
-                    if(nombreQuienRecomienda && correoQuienRecomienda){
+                    
                         var responseService = https.post({
                         url: urlAD,
                         body : objAD,//JSON.stringify(
