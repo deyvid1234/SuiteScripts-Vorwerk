@@ -1413,7 +1413,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                                     f2 = reactivacion[i_rec_data[arrKeys[e]][i]].split('/')
                                     f_odv =new Date(f1[2],f1[1],f1[0])
                                     f_rec = new Date(f2[2],f2[1],f2[0])
-                                    if( f_odv < f_rec){
+                                    if( f_odv <= f_rec){
                                       reac = false
                                     }
                                   }
@@ -1436,7 +1436,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                                     f2 = reactivacion[i_rec_data[arrKeys[e]][i]].split('/')
                                     f_odv =new Date(f1[2],f1[1],f1[0])
                                     f_rec = new Date(f2[2],f2[1],f2[0])
-                                    if( f_odv < f_rec){
+                                    if( f_odv <= f_rec){
                                       reac = false
                                     }
                                   }
