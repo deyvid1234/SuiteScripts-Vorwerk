@@ -155,7 +155,7 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
 						strTable += "<td border='0.5' border-style='dotted-narrow'>" + v_equipo[i].employee 	+ "</td>";
 						strTable += "<td border='0.5' border-style='dotted-narrow'>" +  cliente	+ "</td>";
 						strTable += "<td border='0.5' border-style='dotted-narrow'>" + v_equipo[i].fecha 		+ "</td>";
-						strTable += "<td border='0.5' border-style='dotted-narrow'>" + v_equipo[i].internalid		+ "</td>";
+						strTable += "<td border='0.5' border-style='dotted-narrow'>" + v_equipo[i].idExterno		+ "</td>";
 						if(odv_sc.indexOf(v_equipo[i].internalid) >= 0 ){
 							strTable += "<td border='0.5' border-style='dotted-narrow' style='text-align:center'>" + 'Si'		+ "</td>";
 						}else{
@@ -232,7 +232,7 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
 						strTable += "<td border='0.5' border-style='dotted-narrow'>" + v_tres_dos[i].employee 	+ "</td>";
 						strTable += "<td border='0.5' border-style='dotted-narrow'>" +  cliente	+ "</td>";
 						strTable += "<td border='0.5' border-style='dotted-narrow'>" + v_tres_dos[i].fecha 		+ "</td>";
-						strTable += "<td border='0.5' border-style='dotted-narrow'>" + v_tres_dos[i].internalid		+ "</td>";
+						strTable += "<td border='0.5' border-style='dotted-narrow'>" + v_tres_dos[i].idExterno		+ "</td>";
 						strTable += "<td border='0.5' border-style='dotted-narrow'>" + emp.hiredate+ "</td>";
 						strTable += "</tr>";
 
@@ -340,7 +340,7 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
 						strTable += "<td border='0.5' border-style='dotted-narrow'>" + v_rec[i].employee 	+ "</td>";
 						strTable += "<td border='0.5' border-style='dotted-narrow'>" +  cliente	+ "</td>";
 						strTable += "<td border='0.5' border-style='dotted-narrow'>" + v_rec[i].fecha 		+ "</td>";
-						strTable += "<td border='0.5' border-style='dotted-narrow'>" + v_rec[i].internalid		+ "</td>";
+						strTable += "<td border='0.5' border-style='dotted-narrow'>" + v_rec[i].idExterno		+ "</td>";
 						strTable += "<td border='0.5' border-style='dotted-narrow' align='right'>" + currencyFormat('$',monto_rec >0? monto_rec : '0.00')	+ "</td>";
 						strTable += "</tr>";
 						
@@ -871,6 +871,7 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
                  	           { name: 'salesrep'},
                  	           { name: 'entity'},
                  	           { name: 'trandate'},
+                 	           { name: 'tranid'},
                  	       ],
                  	       filters: [
                  	           {
@@ -1002,6 +1003,7 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
 			      	           { name: 'salesrep'},
 			      	           { name: 'entity'},
 			      	           { name: 'trandate'},
+			      	           { name: 'tranid'},
 			      	           {name : 'custentity123',join : 'salesrep'}
 			      	       ],
 			      	       filters: [
@@ -1027,6 +1029,7 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
 					  	  		   	result.id_rec = r.getValue('salesrep'),
 					  	  		   	result.cliente = r.getText('entity'),
 					  	  		   	result.fecha = r.getValue('trandate'),
+					  	  		   	result.idExterno = r.getValue('tranid'),
 					  	  		   	
 
 					  	  		   	result.confEquipo = r.getValue({name : 'custentity123',join : 'salesrep'});
@@ -1120,6 +1123,7 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
     	 	     	           { name: 'salesrep'},
     	 	     	           { name: 'entity'},
     	 	     	           { name: 'trandate'},
+    	 	     	           { name: 'tranid'},
     	 	     	           { name: 'custentity123', join: 'salesrep'},
     	 	     	       ],
     	 	     	       filters: [
@@ -1147,6 +1151,7 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
     	 		 	  		   	result.employee = r.getText('salesrep'),
     	 		 	  		   	result.cliente = r.getText('entity'),
     	 		 	  		   	result.fecha = r.getValue('trandate'),
+    	 		 	  		   	result.idExterno = r.getValue('tranid'),
     	 		 	  		   	result.confEquipo = r.getValue({name : 'custentity123',join : 'salesrep'});
  
     	 		 	  		  	odv_equipo_result[result.internalid] =  result;
@@ -1194,6 +1199,8 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
     	 	     	           { name: 'salesrep'},
     	 	     	           { name: 'entity'},
     	 	     	           { name: 'trandate'},
+    	 	     	           { name: 'tranid'},
+
     	 	     	       ],
     	 	     	       filters: [
     	 	     	           {
@@ -1217,6 +1224,7 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
     	 		 	  		   	result.employee = r.getText('salesrep'),
     	 		 	  		   	result.cliente = r.getText('entity'),
     	 		 	  		   	result.fecha = r.getValue('trandate'),
+    	 		 	  		   	result.idExterno = r.getValue('tranid'),
     	 		 	  		   	result.id_emp = r.getValue('salesrep'),
     	 		 	  		   	odv_equipo_result[result.internalid] =  result;
     	 		 	  		   	log.debug('fin ciclo')
