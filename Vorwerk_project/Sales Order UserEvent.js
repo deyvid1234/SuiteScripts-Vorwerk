@@ -522,7 +522,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 		    				"Importe": importe,
 		    				"salesrep": salesrep,
 		    				"IDUsalesRep":objsalesrep.entityid,
-		    				"Order": recordid
+		    				"Order": ""+recordid+""
 		    			}
 		    			log.debug('objRequest LMS',objRequest)
 		    			var responseService = http.post({
@@ -611,7 +611,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 		    				"FechaCancelacion":fdate,
 		    				"salesrep": salesrep,
 		    				"IDUsalesRep":objsalesrep.entityid,
-		    				"Order": recordid
+		    				"Order": ""+recordid+""
 		    			}
 		    			log.debug('objRequest LMS',objRequest)
 		    			log.debug('objRequest.length',JSON.stringify(objRequest).length)
