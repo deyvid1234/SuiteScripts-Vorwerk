@@ -69,7 +69,7 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
 					strTable += "<td border='0.5' width='0px'><b>PEDIDO</b></td>";
 					strTable += "<td border='0.5' width='40px'><b>MONTO</b></td>";
 					strTable += "<td border='0.5' width='0px'><b>PRODUCTIVIDAD</b></td>";
-					strTable += "<td border='0.5' width='0px'><b>ENTREGA</b></td>";
+					//strTable += "<td border='0.5' width='0px'><b>ENTREGA</b></td>";
 					strTable += "</tr>";
 					/*fin encabezado de tabla*/
 					log.debug('id_entrega',id_entrega)
@@ -98,7 +98,7 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
 							strTable += "<td border='0.5' border-style='dotted-narrow'>" + v_propia[i].idExterno		+ "</td>";
 							strTable += "<td border='0.5' border-style='dotted-narrow' align='right'>" + monto	+ "</td>";
 							strTable += "<td border='0.5' border-style='dotted-narrow' align='right'>" + currencyFormat('$',(b_produc)+'.00')+ "</td>";
-							if(type_emp == 1 && promocion == 1){
+							/*if(type_emp == 1 && promocion == 1){
 								strTable += "<td border='0.5' border-style='dotted-narrow' align='right'>" + '$0.00'	+ "</td>";
 							}else{
 								if(id_entrega.indexOf(v_propia[i].internalid) >= 0 ){
@@ -106,7 +106,7 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
 								}else{
 									strTable += "<td border='0.5' border-style='dotted-narrow' align='right'>" + '$0.00'	+ "</td>";
 								}
-							}
+							}*/
 							
 							strTable += "</tr>";
 						
@@ -117,7 +117,7 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
 					strTable += "<td border='0.5' colspan= '5' border-style='none' align='right'><b>Subtotal</b></td>";
 					strTable += "<td border='0.5' border-style='dotted-narrow' align='right'><b>" + currencyFormat('$',(data.venta_propia)+'.00')	+ "</b></td>";
 					strTable += "<td border='0.5' border-style='dotted-narrow' align='right'><b>" + currencyFormat('$',(data.productividad)+'.00')	+ "</b></td>";
-					strTable += "<td border='0.5' border-style='dotted-narrow' align='right'><b>" + currencyFormat('$',(data.entrega_monto)+'.00')	+ "</b></td>";
+					//strTable += "<td border='0.5' border-style='dotted-narrow' align='right'><b>" + currencyFormat('$',(data.entrega_monto)+'.00')	+ "</b></td>";
 					strTable += "</tr>";			
 					strTable += "</table>";
 					/*cuerpo de tabla*/
@@ -157,7 +157,7 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
 						strTable += "<td border='0.5' border-style='dotted-narrow'>" + v_equipo[i].fecha 		+ "</td>";
 						strTable += "<td border='0.5' border-style='dotted-narrow'>" + v_equipo[i].idExterno		+ "</td>";
 						if(odv_sc.indexOf(v_equipo[i].internalid) >= 0 ){
-							strTable += "<td border='0.5' border-style='dotted-narrow' style='text-align:center'>" + 'Si'		+ "</td>";
+							strTable += "<td border='0.5' border-style='dotted-narrow' style='text-align:center'>" + '$500.00'		+ "</td>";
 						}else{
 							strTable += "<td border='0.5' border-style='dotted-narrow'>" + ''		+ "</td>";
 						}
