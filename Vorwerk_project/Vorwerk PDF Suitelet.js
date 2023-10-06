@@ -95,7 +95,7 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
 							strTable += "<td border='0.5' border-style='dotted-narrow'>" + v_propia[i].employee 	+ "</td>";
 							strTable += "<td border='0.5' border-style='dotted-narrow'>" + cliente 	+ "</td>";
 							strTable += "<td border='0.5' border-style='dotted-narrow'>" + v_propia[i].fecha 		+ "</td>";
-							strTable += "<td border='0.5' border-style='dotted-narrow'>" + v_propia[i].internalid		+ "</td>";
+							strTable += "<td border='0.5' border-style='dotted-narrow'>" + v_propia[i].idExterno		+ "</td>";
 							strTable += "<td border='0.5' border-style='dotted-narrow' align='right'>" + monto	+ "</td>";
 							strTable += "<td border='0.5' border-style='dotted-narrow' align='right'>" + currencyFormat('$',(b_produc)+'.00')+ "</td>";
 							if(type_emp == 1 && promocion == 1){
@@ -892,6 +892,7 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
              	  		   	result.employee = r.getText('salesrep'),
              	  		   	result.cliente = r.getText('entity'),
              	  		   	result.fecha = r.getValue('trandate'),
+             	  		   	result.idExterno = r.getValue('tranid'),
              	  		 	vpr[result.internalid] =  result;
                  	       return true;
              	    	});
