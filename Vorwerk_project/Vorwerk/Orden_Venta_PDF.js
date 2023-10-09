@@ -71,6 +71,7 @@ function Orden_Venta_PDF(request,response)
         companyInfoLogoURL  = "src='" + host + companyInfoLogoURL + "'/";
 
         serie = "";
+        var artsKits = []
         for(var i=1;i<itemcount + 1;i++){
             var tmp_item = salesorder.getLineItemValue('item', 'item', i);
             nlapiLogExecution('debug', 'tmp_item', tmp_item);
@@ -96,12 +97,16 @@ function Orden_Venta_PDF(request,response)
             var typeDelItem= itemtypeSearch[0].getValue("type")
             nlapiLogExecution('debug', 'typeDelItem', typeDelItem);
             if(itemtypeSearch && typeDelItem == 'Kit') {
-             for (var i = 0 ; i < itemtypeSearch.length; i++) {
-                var memberitem= itemtypeSearch[i].getValue("memberitem")
-                nlapiLogExecution('debug', 'memberitem', memberitem);
-                var displayname= itemtypeSearch[i].getValue({name : 'displayname',join : 'memberItem'})
-                nlapiLogExecution('debug', 'displayname', displayname);   
+                var atrs = [] //tasa, cuchara, libro
+                for (var i = 0 ; i < itemtypeSearch.length; i++) {
+                    var memberitem= itemtypeSearch[i].getValue("memberitem")
+                    nlapiLogExecution('debug', 'memberitem', memberitem);
+                    var displayname= itemtypeSearch[i].getValue('displayname', 'memberItem')
+                    nlapiLogExecution('debug', 'displayname', displayname);   
+                    atrs.push(displayname)
                 };
+                
+                artsKits[tmp_item] = atrs
             };
            
 
@@ -224,7 +229,8 @@ function Orden_Venta_PDF(request,response)
         strName += "</thead>";
 
         for(var i=1;i<itemcount + 1;i++)
-        {
+        {   
+            var idItemarts =salesorder.getLineItemValue('item', 'item', i)
             var idItemSearch=salesorder.getLineItemValue('item', 'item', i)*1;
             var itemSearch = nlapiSearchRecord("item",null,
                 [
@@ -269,6 +275,24 @@ function Orden_Venta_PDF(request,response)
             strName     += "<td align='right' font-size=\"9pt\">$"          + currencyFormat(amount,2)      + "</td>";
             strName     += "<td align='right' font-size=\"9pt\">$"          + currencyFormat(gross,2)           + "</td>";
             strName         += "</tr>";
+
+            
+            for( i in  artsKits[idItemarts]){//Selecciona del arreglo de kits el kit en el que estamos posicionados y recorre sus articulos
+
+               
+                nlapiLogExecution('debug', 'artsKits[i]', artsKits[idItemarts][i]);
+                strName     += "<tr class='"+ trClass + "'>";
+                strName     += "<td align='left' font-size=\"9pt\">"                + ''   + "</td>";
+                strName     += "<td align='left' font-size=\"9pt\">"                + artsKits[idItemarts][i]   + "</td>";
+                strName     += "<td align='center' font-size=\"9pt\">"              + ''      + "</td>";
+                strName     += "<td align='center' font-size=\"9pt\">"              + ''         + "</td>";
+                strName     += "<td align='right' font-size=\"9pt\">"              + ''    + "</td>";
+                strName     += "<td align='right' font-size=\"9pt\">"          + ''     + "</td>";
+                strName     += "<td align='right' font-size=\"9pt\">"          + ''         + "</td>";
+                strName         += "</tr>";
+                
+
+            }
         }
         strName += "</table>";
         strName += "<p font-size='4'>&nbsp;</p>";
