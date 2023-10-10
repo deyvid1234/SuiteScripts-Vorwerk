@@ -253,24 +253,104 @@ function() {
 				3:'custrecord_rec_equipo_90'
 			},
 			bp1:{
-				1:'',
+				1:'custrecord_c_pre_bp1',
 				2:'',
 				3:'custrecord_c_jdg_bp1'
 			},
 			bp1_monto:{
-				1:'',
+				1:'custrecord_c_pre_bpm1',
 				2:'',
 				3:'custrecord_c_jdg_bpm1'
 			},
 			bp2:{
-				1:'',
+				1:'custrecord_c_pre_bp2',
 				2:'',
 				3:'custrecord_c_jdg_bp2'
 			},
 			bp2_monto:{
-				1:'',
+				1:'custrecord_c_pre_bpm2',
 				2:'',
 				3:'custrecord_c_jdg_bpm2'
+			},
+			bp3:{
+				1:'custrecord_c_pre_bp3',
+				2:'',
+				3:'custrecord_c_jdg_bp3'
+			},
+			bp3_monto:{
+				1:'custrecord_c_pre_bpm3',
+				2:'',
+				3:'custrecord_c_jdg_bpm3'
+			},
+			bp4:{
+				1:'custrecord_c_pre_bp4',
+				2:'',
+				3:'custrecord_c_jdg_bp4'
+			},
+			bp4_monto:{
+				1:'custrecord_c_pre_bpm4',
+				2:'',
+				3:'custrecord_c_jdg_bpm4'
+			},
+			bp5:{
+				1:'custrecord_c_pre_bp5',
+				2:'',
+				3:'custrecord_c_jdg_bp5'
+			},
+			bp5_monto:{
+				1:'custrecord_c_pre_bpm5',
+				2:'',
+				3:'custrecord_c_jdg_bpm5'
+			},
+			bp6:{
+				1:'custrecord_c_pre_bp6',
+				2:'',
+				3:'custrecord_c_jdg_bp6'
+			},
+			bp6_monto:{
+				1:'custrecord_c_pre_bpm6',
+				2:'',
+				3:'custrecord_c_jdg_bpm6'
+			},
+			bp7:{
+				1:'custrecord_c_pre_bp7',
+				2:'',
+				3:'custrecord_c_jdg_bp7'
+			},
+			bp7_monto:{
+				1:'custrecord_c_pre_bpm7',
+				2:'',
+				3:'custrecord_c_jdg_bpm7'
+			},
+			bp8:{
+				1:'custrecord_c_pre_bp8',
+				2:'',
+				3:'custrecord_c_jdg_bp8'
+			},
+			bp8_monto:{
+				1:'custrecord_c_pre_bpm8',
+				2:'',
+				3:'custrecord_c_jdg_bpm8'
+			},
+			bp9:{
+				1:'custrecord_c_pre_bp9',
+				2:'',
+				3:'custrecord_c_jdg_bp9'
+			},
+			bp9_monto:{
+				1:'custrecord_c_pre_bpm9',
+				2:'',
+				3:'custrecord_c_jdg_bpm9'
+			},
+			bp10:{
+				1:'custrecord_c_pre_bp10',
+				2:'',
+				3:'custrecord_c_jdg_bp10'
+			},
+			bp10_monto:{
+				1:'custrecord_c_pre_bpm10',
+				2:'',
+				3:'custrecord_c_jdg_bpm10'
 			},
 		} 
 	}
