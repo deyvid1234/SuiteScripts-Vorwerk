@@ -178,8 +178,11 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
 				}
 				var com_aux = data.comision_equipo==0?0:currencyFormat('$',data.comision_equipo/(parseInt(porcentaje)/100)+'.00')
 				strTable += "<tr>";
-				strTable += "<td border='0.5' colspan= '5' border-style='none' align='right'><b>Numero de Ventas de Equipo</b></td>";
-				strTable += "<td border='0.5' border-style='dotted-narrow' align='right'><b>" + lineaRec	+ "</b></td>";
+				strTable += "<td border='0.5' colspan= '5' border-style='none' align='right'><b>Total Supercomision</b></td>";
+				strTable += "<td border='0.5' border-style='dotted-narrow' align='right'><b>"+ currencyFormat('$',bonosc+'.00')	+ "</b></td>";
+				strTable += "</tr>";
+				strTable += "<tr>";
+				strTable += "<td border='0.5' colspan= '5' border-style='none' align='right'><b>   </b></td>";
 				strTable += "</tr>";
 				strTable += "<tr>";
 				strTable += "<td border='0.5' colspan= '5' border-style='none' align='right'><b>Total comisión Venta de Equipos</b></td>";
@@ -192,10 +195,6 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
 				strTable += "<tr>";
 				strTable += "<td border='0.5' colspan= '5' border-style='none' align='right'><b>Total comisión</b></td>";
 				strTable += "<td border='0.5' border-style='dotted-narrow' align='right'><b>" + currencyFormat('$',data.comision_equipo+'.00')	+ "</b></td>";
-				strTable += "</tr>";
-				strTable += "<tr>";
-				strTable += "<td border='0.5' colspan= '5' border-style='none' align='right'><b>Supercomision</b></td>";
-				strTable += "<td border='0.5' border-style='dotted-narrow' align='right'><b>" + currencyFormat('$',bonosc+'.00')	+ "</b></td>";
 				strTable += "</tr>";
 				strTable += "</table>";
 				//Fin Ventas Equipo
