@@ -89,13 +89,13 @@ function Orden_Venta_PDF(request,response)
 
                 ]
             );
-              nlapiLogExecution('debug', 'itemtypeSearch', itemtypeSearch[0]);
+              
             var skuDelItem= itemtypeSearch[0].getValue("itemid")
-            nlapiLogExecution('debug', 'skuDelItem', skuDelItem);
+            //nlapiLogExecution('debug', 'skuDelItem', skuDelItem);
             var nombreDelItem= itemtypeSearch[0].getValue("displayname")
-            nlapiLogExecution('debug', 'nombreDelItem', nombreDelItem);
+            //nlapiLogExecution('debug', 'nombreDelItem', nombreDelItem);
             var typeDelItem= itemtypeSearch[0].getValue("type")
-            nlapiLogExecution('debug', 'typeDelItem', typeDelItem);
+            //nlapiLogExecution('debug', 'typeDelItem', typeDelItem);
             if(itemtypeSearch && typeDelItem == 'Kit') {
                 var atrs = [] //tasa, cuchara, libro
                 for (var i = 0 ; i < itemtypeSearch.length; i++) {
