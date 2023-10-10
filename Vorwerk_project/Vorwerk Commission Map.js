@@ -188,11 +188,11 @@ function(email,record, file, search, https, runtime,format,Dictionary) {
                 });
                 //Emerald
                 registerEmp.setValue({
-                    fieldId: config_fields.bono_1[config.type],
+                    fieldId: config_fields.bp1[config.type],
                     value: 34   
                 });
                 registerEmp.setValue({
-                    fieldId: config_fields.bono_m_1[config.type],
+                    fieldId: config_fields.bp1_monto[config.type],
                     value: comissionInfo.bono_emerald   
                 });
                 //Entrega

@@ -251,7 +251,27 @@ function() {
 				1:'custrecord_rec_equipo_90',
 				2:'custrecord_rec_equipo_90',
 				3:'custrecord_rec_equipo_90'
-			}
+			},
+			bp1:{
+				1:'',
+				2:'',
+				3:'custrecord_c_jdg_bp1'
+			},
+			bp1_monto:{
+				1:'',
+				2:'',
+				3:'custrecord_c_jdg_bpm1'
+			},
+			bp2:{
+				1:'',
+				2:'',
+				3:'custrecord_c_jdg_bp2'
+			},
+			bp2_monto:{
+				1:'',
+				2:'',
+				3:'custrecord_c_jdg_bpm2'
+			},
 		} 
 	}
     return {
