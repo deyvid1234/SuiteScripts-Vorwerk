@@ -1552,6 +1552,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                 var Supercomision = 0
                 var arrODVSC = {}
                   for(i in i_pre_data[arrKeys[e]] ){//Recorremos a las presentadoras del equipo de la LE
+                    var pre_aiux = i_pre_data[arrKeys[e]][i] //id Presentadora 
                     
                     if(infoODVPromo_pre[i_pre_data[arrKeys[e]][i]] != null){//Valida si la presentadora tiene ventas en el arreglo infoODVPromo_pre
                       sum =sum + Object.keys(infoODVPromo_pre[i_pre_data[arrKeys[e]][i]]).length  
@@ -1579,50 +1580,37 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                         
                         if(rec_sc[arrKeys[e]].indexOf(i_pre_data[arrKeys[e]][i]) >= 0 ){//Valida si la recluta existe en el arreglo de reclutas post febrero
                        
-                        var pre_aiux = i_pre_data[arrKeys[e]][i]
                         
-                        log.debug('1 odv_reclutas_sc[i_pre_data[arrKeys[e]][i]]',odv_reclutas_sc[i_pre_data[arrKeys[e]][i]])
-                        log.debug('2 Object.keys(infoODVPromo_pre[i_pre_data[arrKeys[e]][i]])',Object.keys(infoODVPromo_pre[i_pre_data[arrKeys[e]][i]]))
+                        
                         odv_reclutas_sc[i_pre_data[arrKeys[e]][i]] = Object.keys(infoODVPromo_pre[i_pre_data[arrKeys[e]][i]])
                             var ovd_pre_object_keys = Object.keys(infoODVPromo_pre[i_pre_data[arrKeys[e]][i]])
-                            log.debug('3 ovd_pre_object_keys',ovd_pre_object_keys)
                             var cont_odv_pre = 0
                             var scODV = []
                             for(p in ovd_pre_object_keys){
-                                log.debug('4 ovd_pre_object_keys[p] ',ovd_pre_object_keys[p])
-                                log.debug('5 odv_objetivo_2', odv_objetivo_2)
 
                                 if(ovd_pre_object_keys[p] in odv_objetivo_2 || odv_objetivo_2.hasOwnProperty(ovd_pre_object_keys[p]) ){
-                                    log.debug('6 bingo')
+                                   
                                     cont_odv_pre += 1//Ventas del periodo y dentro de la fecha de objetivo
-                                    log.debug('4 ovd_pre_object_keys[p] Esta orden comision SC del presentador: '+pre_aiux,ovd_pre_object_keys[p])
+                                    //log.debug('4 ovd_pre_object_keys[p] Esta orden comision SC del presentador: '+pre_aiux,ovd_pre_object_keys[p])
                                     scODV.push(ovd_pre_object_keys[p])
                                     arrODVSC[pre_aiux] = scODV
-                                    log.debug('1bingo',arrODVSC)
                                 }
 
                             }
                             
-                            log.debug('7 pre_num_ventas',pre_num_ventas)
-                            log.debug('8 i_pre_data[arrKeys[e]][i]',i_pre_data[arrKeys[e]][i])
 
                             if(i_pre_data[arrKeys[e]][i] in pre_num_ventas || pre_num_ventas.hasOwnProperty(i_pre_data[arrKeys[e]][i]) ){
                                 var odp_pre = cont_odv_pre
-                                log.debue('9 pre_num_ventas[i_pre_data[arrKeys[e]][i]]',pre_num_ventas[i_pre_data[arrKeys[e]][i]])
                                 var falta = pre_num_ventas[i_pre_data[arrKeys[e]][i]]['falta']
                                 if(odp_pre >= falta ){
                                     Supercomision += falta
-                                    log.debug('10 ostia','odp_pre '+odp_pre+' falta '+falta)
                                 }else{
                                     Supercomision +=   odp_pre 
-                                    log.debug('11 ostia','odp_pre '+odp_pre+' falta '+falta)
                                 }
                                
                             }else{
-                                log.debug('12 Supercomision',Supercomision)
-                                log.debug('13 cont_odv_pre',cont_odv_pre)
+                                
                                 Supercomision += cont_odv_pre
-                                log.debug('14 Supercomision',Supercomision)
                             }
                         
                         }
@@ -1649,9 +1637,12 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
 
                         var ovd_pre_object_keys = Object.keys(infoODVPromo_tm_pre[i_pre_data[arrKeys[e]][i]])
                             var cont_odv_pre = 0
+                            var scODV_TM = []
                             for(i in ovd_pre_object_keys){
                                 if(ovd_pre_object_keys[i] in odv_objetivo_2 || odv_objetivo_2.hasOwnProperty(ovd_pre_object_keys[i]) ){
                                     cont_odv_pre += 1
+                                    scODV_TM.push(ovd_pre_object_keys[i])
+                                    arrODVSC[pre_aiux] = scODV_TM
                                 }
                             }
                         
