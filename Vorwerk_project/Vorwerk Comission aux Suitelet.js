@@ -222,11 +222,11 @@ function(file,search,plugin,runtime,task) {
                     operator: 'anyof',
                     values: [1,2,3,4,5,6,7,8]
                 },
-                {
+                /*{
                   name: 'internalid',
                   operator: 'anyof',
-                  values: [21613,77906,197346]
-               },
+                  values: [11512]
+               },*/
                 
               ],
               columns: [
