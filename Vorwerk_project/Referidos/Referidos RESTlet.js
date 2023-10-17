@@ -156,6 +156,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
 
                 var obj_client = false
                 var idpresentadora_referido
+                var id_cliente_referido
                 var stage
                 var id_cliente
                 var pagedResults = mySearch.runPaged();
@@ -165,11 +166,13 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                         var values = r.getAllValues();
                         obj_client = values
                         idpresentadora_referido = r.getValue('custentity_presentadora_referido')
+                        id_cliente_referido = r.getValue('custentity_id_cliente_referido')!=''?false:true
                         stage = r.getValue('formulatext')
                         id_cliente = r.getValue('internalid')
 
                         salesrepActual = r.getValue('salesrep')
                         IDUsalesRepActual = r.getText('salesrep').split(' ')[0]
+                        
                         
                         return true; 
                     });
@@ -452,6 +455,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                     objAD.FechaInicio               =   req_info.FechaInicio
                     objAD.FechaFin                  =   req_info.FechaFin
                     objAD.EstatusSolicitud          =   statusSolicitud 
+                    objAD.Semilla                   =   id_cliente_referido
                     
                     log.debug('objAD enviado en el cambio de presentador'+id_cliente,objAD)
                     var urlAD
@@ -962,7 +966,38 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                         }
                     }).body;
                     log.debug('responseService AD',responseService)
+                    }else{
+
+                        var objAD = {
+                        'nombre': nameFormat,
+                        'correo': req_info.email,
+                        'telefono': req_info.telefono,
+                        'activo': true,
+                        'nombreQuienRecomienda': '',
+                        'correoQuienRecomienda': '',
+                        'PresentadorAsignadoCorreo': email_p,
+                        'PresentadorAsignadoIDU': idu_p,
+                        'telefonoQuienRecomienda':'',//Espera de LMS
+                        'NetSuiteID':id_cliente,
+                        'Semilla': true
+
+                        }
+
+                        log.debug('objAD',objAD)
+                        log.debug('objAD stringfy',JSON.stringify(objAD))
+                        
+                            var responseService = https.post({
+                            url: urlAD,
+                            body : objAD,//JSON.stringify(
+                            headers: {
+                                "Content-Type": "application/x-www-form-urlencoded",
+                                "User-Agent": "NetSuite/2019.2(SuiteScript)",
+                            }
+                        }).body;
+                        log.debug('responseService AD',responseService)
+
                     }
+
                     
                    
                    }catch(e){
@@ -1138,24 +1173,28 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                 nombreQuienRecomienda = objRecomendador.altname
                 correoQuienRecomienda = objRecomendador.email
                 try{
-                    var nameFormat = req_info.nombre+" "+req_info.apellidos
-                    nameFormat = quitarAcentos(nameFormat)
-                    var objAD = {
-                        'nombre': nameFormat,
-                        'correo': req_info.email,
-                        'telefono': req_info.telefono,
-                        'activo': true,
-                        'nombreQuienRecomienda': quitarAcentos(nombreQuienRecomienda),
-                        'correoQuienRecomienda': correoQuienRecomienda,
-                        'PresentadorAsignadoCorreo': email_p,
-                        'PresentadorAsignadoIDU': idu_p,
-                        'telefonoQuienRecomienda':objRecomendador.mobilephone,//Espera de LMS
-                        'NetSuiteID':id_cliente
-                    }
-
-                    log.debug('objAD',objAD)
-                    log.debug('objAD stringfy',JSON.stringify(objAD))
+                    
                     if(nombreQuienRecomienda && correoQuienRecomienda){
+
+                        var nameFormat = req_info.nombre+" "+req_info.apellidos
+                        nameFormat = quitarAcentos(nameFormat)
+                        var objAD = {
+                            'nombre': nameFormat,
+                            'correo': req_info.email,
+                            'telefono': req_info.telefono,
+                            'activo': true,
+                            'nombreQuienRecomienda': quitarAcentos(nombreQuienRecomienda),
+                            'correoQuienRecomienda': correoQuienRecomienda,
+                            'PresentadorAsignadoCorreo': email_p,
+                            'PresentadorAsignadoIDU': idu_p,
+                            'telefonoQuienRecomienda':objRecomendador.mobilephone,//Espera de LMS
+                            'NetSuiteID':id_cliente,
+                            'Semilla': false
+                        }
+
+                        log.debug('objAD',objAD)
+                        log.debug('objAD stringfy',JSON.stringify(objAD))
+
                         var responseService = https.post({
                         url: urlAD,
                         body : objAD,//JSON.stringify(
@@ -1163,8 +1202,39 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                             "Content-Type": "application/x-www-form-urlencoded",
                             "User-Agent": "NetSuite/2019.2(SuiteScript)",
                         }
-                    }).body;
-                    log.debug('responseService AD',responseService)
+                        }).body;
+                        log.debug('responseService AD',responseService)
+
+                    }else{
+
+                        var nameFormat = req_info.nombre+" "+req_info.apellidos
+                        nameFormat = quitarAcentos(nameFormat)
+                        var objAD = {
+                            'nombre': nameFormat,
+                            'correo': req_info.email,
+                            'telefono': req_info.telefono,
+                            'activo': true,
+                            'nombreQuienRecomienda': '',
+                            'correoQuienRecomienda': '',
+                            'PresentadorAsignadoCorreo': email_p,
+                            'PresentadorAsignadoIDU': idu_p,
+                            'telefonoQuienRecomienda':objRecomendador.mobilephone,//Espera de LMS
+                            'NetSuiteID':id_cliente,
+                            'Semilla': true
+                        }
+
+                        log.debug('objAD',objAD)
+                        log.debug('objAD stringfy',JSON.stringify(objAD))
+
+                        var responseService = https.post({
+                        url: urlAD,
+                        body : objAD,//JSON.stringify(
+                        headers: {
+                            "Content-Type": "application/x-www-form-urlencoded",
+                            "User-Agent": "NetSuite/2019.2(SuiteScript)",
+                        }
+                        }).body;
+                        log.debug('responseService AD',responseService)
                     }
                
 

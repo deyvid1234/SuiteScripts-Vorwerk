@@ -490,7 +490,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 	            	log.debug('objPresentadora',objPresentadora)
 
 	            	
-		    		if( type == 'create' || salesrep != old_salesrep || true ){
+		    		if( type == 'create' || salesrep != old_salesrep ){
 
 		    			if(runtime.envType != 'PRODUCTION'){ 
 		                    urlLMS = 'http://api-referidos-thrmx.lms-la.com/api/venta'
