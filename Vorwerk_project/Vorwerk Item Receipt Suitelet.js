@@ -138,7 +138,7 @@ function(render,email,file,record,search,format,runtime) {
              var myMergeResult = render.mergeEmail({
                 templateId: idTpl,
                             
-                //transactionId: recordid
+                transactionId: recordid
             });
             return myMergeResult.body
     	}catch(err){
@@ -175,24 +175,6 @@ function(render,email,file,record,search,format,runtime) {
     			+'<p align="center" style="font-size:14pt; font-weight: bold;">RECEPCÍON DE MERCANCÍAS</p>'
     			+'<table border="0" cellpadding="1" cellspacing="1" style="width: 663px;">'
     			+'<tbody>'
-    			+'<tr>'
-    			+'<td Colspan="1" style="width: 120px; font-size: 12px;text-align: left;"><b>No. DE RECEPCIÓN:</b></td>'
-    			+'<td colspan="2" style="width: 107px; font-size: 12px;text-align: left;"><b>'+'name'+'</b></td>'
-                +'<td Colspan="3" rowspan= "1" style="width: 120px; font-size: 12px;text-align: right;"><b>PROVEEDOR:</b></td>'
-                +'<td colspan="4" rowspan= "1" style="width: 107px; font-size: 12px;text-align: right;"><b>'+'name'+'</b></td>'
-    			+'</tr>'
-    			+'<tr>'
-    			+'<td style="width: 120px; font-size: 12px;"><b>FECHA DE RECEPCIÓN:</b></td>'
-    			+'<td style="width: 107px; font-size: 12px;"><b>'+'date_create'+'</b></td>'
-                +'<td style="width: 120px; font-size: 12px;text-align: right"><b>REMISIÓN/FACTURA:</b></td>'
-                +'<td style="width: 107px; font-size: 12px;text-align: right"><b>'+'date_create'+'</b></td>'
-    			+'</tr>'
-                +'<tr>'
-                +'<td style="width: 120px; font-size: 12px;"><b>UBICACIÓN:</b></td>'
-                +'<td style="width: 107px; font-size: 12px;"><b>'+'date_create'+'</b></td>'
-                +'<td style="width: 120px; font-size: 12px;text-align: right"><b>ORDEN DE VENTA:</b></td>'
-                +'<td style="width: 107px; font-size: 12px;text-align: right"><b>'+'date_create'+'</b></td>'
-                +'</tr>'
     			+'</tbody>'
     			+'</table>'
     			
