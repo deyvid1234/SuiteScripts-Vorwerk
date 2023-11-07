@@ -487,9 +487,10 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 	                ]
 	            	});
 	            	log.debug('objPresentadora',objPresentadora)
+	            	log.debug('objPresentadora',objPresentadora)
 
 	            	
-		    		if( type == 'create' || salesrep != old_salesrep){
+		    		if( type == 'create' || salesrep != old_salesrep ){
 
 		    			if(runtime.envType != 'PRODUCTION'){ 
 		                    urlLMS = 'http://api-referidos-thrmx.lms-la.com/api/venta'
@@ -536,7 +537,17 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 
 			            log.debug('pre actualizacion customer',objcustomer.custentity_first_so[0].value)
 			            if(objcustomer.custentity_first_so[0].value == false || objcustomer.custentity_first_so[0].value == ''){
-			            	
+			            	//Actualizar Customer
+				            var submitFields = record.submitFields({
+				                type: 'customer',
+				                id: customer,
+				                values: {
+				                //'custentityidu_presentador':objsalesrep.entityid,
+				                'custentity_first_so':recordid,
+				            	//'custentity_date_first_so':fdate,
+				            	'custentitysales_rep_first_so':salesrep,
+				            	}
+				            });
 
 
 			    			//Ajuste AD
@@ -558,18 +569,6 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 		                        }
 		                    }).body;
 		                    log.debug('responseService AD',responseService)
-
-		                    //Actualizar Customer
-				            var submitFields = record.submitFields({
-				                type: 'customer',
-				                id: customer,
-				                values: {
-				                //'custentityidu_presentador':objsalesrep.entityid,
-				                'custentity_first_so':recordid,
-				            	//'custentity_date_first_so':fdate,
-				            	'custentitysales_rep_first_so':salesrep,
-				            	}
-				            });
 
 			            }
 			            
@@ -685,13 +684,14 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 		            });
 	    		}
 
-	    	}catch(e){
-	    		log.debug('Error afterSubmit',e)
-	    	}
+		    	}catch(e){
+		    		log.debug('Error Forma de pago',e)
+		    	}
         }catch(err){
     		log.error("error after submit",err);
     	}
 
+    	
     	//Actualizar campo RECLUTADORA
     	if(type == 'edit'){
     		var newRec = scriptContext.newRecord;
@@ -978,7 +978,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 	   	               })	
 	      			});
 	      		});
-	      		//log.debug('numOrders',numOrders);
+	      		log.debug('numOrders',numOrders);
 	           if(numOrders.length > 10){
 	        	   return false;
 	           }
