@@ -156,7 +156,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
     		                     fieldId: 'item',
     		                     line: e
     		                 })
-    		                 if(tmp_id == 1126 || tmp_id == 1757 || tmp_id == 2001|| tmp_id == 2170|| tmp_id == 2035){
+    		                 if(tmp_id == 1126 || tmp_id == 1757 || tmp_id == 2001|| tmp_id == 2170|| tmp_id == 2035 || tmp_id == 2571){
     		                	 var subrec = rec.getSublistSubrecord({
      	                            sublistId: 'item',
      	                            fieldId: 'inventorydetail',
@@ -1067,7 +1067,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 	    		                     fieldId: 'location',
 	    		                     line: e
 	    		                 })
-	    						if(tmp_id != 2170 && tmp_id != 2001 && tmp_id != 2280 && tmp_id != 2490){
+	    						if(tmp_id != 2170 && tmp_id != 2001 && tmp_id != 2280 && tmp_id != 2490 && tmp_id != 2571){
 	    							var tmp_amount = salesorder.getSublistValue({
 		    		                     sublistId: 'item',
 		    		                     fieldId: 'amount',
@@ -1103,7 +1103,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 	    		                     line: x
 	    		                 })
                                 log.debug('tmp_id',tmp_id+'  line  '+i)
-                                if(tmp_id != 2170 && tmp_id != 2001 && tmp_id != 2280  ){
+                                if(tmp_id != 2170 && tmp_id != 2001 && tmp_id != 2280 && tmp_id != 2490 && tmp_id != 2571 ){
                                     try{
 										salesorder.removeLine({
 	                                        sublistId: 'item',
@@ -1279,7 +1279,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 		    		                     fieldId: 'location',
 		    		                     line: e
 		    		                 })
-		    						if(tmp_id != 2170 && tmp_id != 2001 && tmp_id != 2280){//&& tmp_id != 2280 eliminado hasta definir descuento de tmr
+		    						if(tmp_id != 2170 && tmp_id != 2001 && tmp_id != 2280 && tmp_id != 2571){//&& tmp_id != 2280 eliminado hasta definir descuento de tmr
 		    							var tmp_amount = salesorder.getSublistValue({
 			    		                     sublistId: 'item',
 			    		                     fieldId: 'amount',
@@ -1306,7 +1306,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 		    		                     fieldId: 'item',
 		    		                     line: x
 		    		                 })
-	                                if(tmp_id != 2170 && tmp_id != 2001 && tmp_id != 2280 ){//&& tmp_id != 2280 eliminado hasta definir descuento de tmr
+	                                if(tmp_id != 2170 && tmp_id != 2001 && tmp_id != 2280 && tmp_id != 2571 ){//&& tmp_id != 2280 eliminado hasta definir descuento de tmr
 	                                	log.debug('remover')
 	                                    try{
 											salesorder.removeLine({
