@@ -72,6 +72,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                 })
 
 
+
                 log.debug('pre obj R DOPPLER')
                 //JSON DOPPLER
                 var empJson = {
@@ -250,7 +251,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
             log.debug('objRequestDOPPLER',objRequestDOPPLER)
             var idLista = 28607733
             var apiKeyDoppler = '62AE8124B6180E8735AB20BB03933167'
-            var responseService = https.post({
+            /*var responseService = https.post({
                 url: 'https://restapi.fromdoppler.com/accounts/ezequiel.olguin%40thermomix.mx/lists/'+idLista+'/subscribers/import?api_key='+apiKeyDoppler,
                 body : JSON.stringify(objRequestDOPPLER),
                 headers: {
@@ -258,7 +259,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                     "Authorization": "token "+apiKeyDoppler
                 }
             }).body;
-            log.debug('responseService Doppler',responseService)
+            log.debug('responseService Doppler',responseService)*/
 
 
             if(runtime.envType != 'PRODUCTION'){ 
@@ -273,12 +274,13 @@ function(record,search,https,file,http,format,encode,email,runtime) {
             log.debug('objRequestLMS',objRequestLMS)
             var responseServiceLMS = http.put({
             url: urlLMS,
-            body : JSON.stringify(objRequestLMS),
+            body : objRequestLMS,
             headers: {
                 "Content-Type": "application/json",
                 "Authorization": key
             }
             }).body;
+            log.debug('responseServiceLMS',responseServiceLMS)
             var responseServiceLMS = JSON.parse(responseServiceLMS)
 
             log.debug('responseService LMS',responseServiceLMS)
@@ -296,29 +298,34 @@ function(record,search,https,file,http,format,encode,email,runtime) {
 
     function formatoFecha(fecha){
       var fdate = ''
-      if(fecha != '' && fecha != null){
-        var auxF = fecha.split('/')
-
-      var today = new Date();
-        var dd = parseInt(auxF[0])
-        var mm = parseInt(auxF[1])
-        var yyyy = auxF[2]
+        if(fecha != '' && fecha != null){
+            log.debug('fecha',fecha)
+            var auxF = fecha.split('/')
+            log.debug('parseInt(auxF[0]) ',auxF[0] )
+            log.debug('parseInt(auxF[1]) ',auxF[1] )
+            log.debug('parseInt(auxF[2]) ',auxF[2] )
+            log.debug('auxF',auxF)
+            var today = new Date();
+            var dd = auxF[0]
+            var mm = auxF[1]
+            var yyyy = auxF[2]
+            
+           
+           
+            if(mm.length <  2){
+                log.debug('mm',mm )
+                mm = '0'+mm
+            }
+            if(dd.length < 2 ){
+                 log.debug('dd',dd )
+                dd = '0'+dd
+            }
+            fdate = yyyy + '-' +mm + '-' + dd;
+            log.debug('fdate',fdate)
+        }
         
-       
-        log.debug('mm',mm.length )
-        if(mm <  10){
-            log.debug('mm',mm )
-            mm = '0'+mm
-        }
-        if(dd < 10 ){
-             log.debug('dd',dd )
-            dd = '0'+dd
-        }
-        fdate = yyyy + '-' +mm + '-' + dd;
-      }
-      
 
-      return fdate;
+        return fdate;
     }
     function formatoNumeroTel(numero){
         try{
@@ -398,6 +405,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
         }
         
     }
+
     return {
         execute: execute
     };
