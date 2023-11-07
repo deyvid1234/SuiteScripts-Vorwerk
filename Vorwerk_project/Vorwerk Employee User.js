@@ -304,18 +304,7 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 					                            //var nameFormat = req_info.nombre+" "+req_info.apellidos // cambiar por variables
 					                            nameFormat = quitarAcentos(nombre)//Traer funcion quitar acentos
 					                            
-					                            var objAD = {
-					                                'nombre': nameFormat,
-					                                'correo': correo,
-					                                'telefono': telefono?telefono:'',
-					                                'activo': activo,
-					                                'nombreQuienRecomienda': quitarAcentos(nombreQuienRecomienda),
-					                                'correoQuienRecomienda': correoQuienRecomienda,
-					                                'PresentadorAsignadoCorreo': correoPresentador,
-					                                'PresentadorAsignadoIDU': newIDUSalesRep,
-					                                'telefonoQuienRecomienda':telefonoQuienRecomienda?telefonoQuienRecomienda:'',//Espera de LMS
-					                                'NetSuiteID':idCust
-					                            }
+					                            
 
 					                            
 
@@ -327,6 +316,19 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 					                            }
 
 					                            if(nombreQuienRecomienda && correoQuienRecomienda){
+					                            	var objAD = {
+						                                'nombre': nameFormat,
+						                                'correo': correo,
+						                                'telefono': telefono?telefono:'',
+						                                'activo': activo,
+						                                'nombreQuienRecomienda': quitarAcentos(nombreQuienRecomienda),
+						                                'correoQuienRecomienda': correoQuienRecomienda,
+						                                'PresentadorAsignadoCorreo': correoPresentador,
+						                                'PresentadorAsignadoIDU': newIDUSalesRep,
+						                                'telefonoQuienRecomienda':telefonoQuienRecomienda?telefonoQuienRecomienda:'',//Espera de LMS
+						                                'NetSuiteID':idCust,
+                            							'Semilla': false
+					                            	}
 					                            	log.debug('objAD actualizar customer '+idCust,objAD)
 					                                var responseService = https.post({
 					                                url: urlAD,
@@ -336,6 +338,30 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 					                                    "User-Agent": "NetSuite/2019.2(SuiteScript)",
 					                                }
 					                            }).body;
+					                            log.debug('responseService AD actualizar customer '+idCust,responseService)
+					                            }else{
+					                            	var objAD = {
+						                                'nombre': nameFormat,
+						                                'correo': correo,
+						                                'telefono': telefono?telefono:'',
+						                                'activo': activo,
+						                                'nombreQuienRecomienda': '',
+						                                'correoQuienRecomienda': '',
+						                                'PresentadorAsignadoCorreo': correoPresentador,
+						                                'PresentadorAsignadoIDU': newIDUSalesRep,
+						                                'telefonoQuienRecomienda':'',//Espera de LMS
+						                                'NetSuiteID':idCust,
+                            							'Semilla': true
+					                            	}
+					                            	log.debug('objAD actualizar customer '+idCust,objAD)
+					                                var responseService = https.post({
+					                                url: urlAD,
+					                                body : objAD,//JSON.stringify(
+					                                headers: {
+					                                    "Content-Type": "application/x-www-form-urlencoded",
+					                                    "User-Agent": "NetSuite/2019.2(SuiteScript)",
+					                                }
+					                            	}).body;
 					                            log.debug('responseService AD actualizar customer '+idCust,responseService)
 					                            }
 					                       

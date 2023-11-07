@@ -803,7 +803,17 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                     //obj_ret.clienteTM = respuestaProceso.clienteTM
                     obj_ret.mensaje = ''
                 }else{
-                    return respuestaProceso.respuesta
+                    obj_ret.StatusCode = 400
+                    obj_ret.IdCliente = respuestaProceso.id_cliente
+                    obj_ret.idPresentadora = respuestaProceso.idPresentadora
+                    obj_ret.iduPresentadora = respuestaProceso.iduPresentadora
+                    obj_ret.idRecomendador = respuestaProceso.idRecomendador
+                    obj_ret.presentador = respuestaProceso.presentador
+                    obj_ret.namePresentadora = respuestaProceso.namePresentadora
+                    obj_ret.emailPresentadora = respuestaProceso.emailPresentadora
+                    //obj_ret.clienteTM = respuestaProceso.clienteTM
+                    obj_ret.mensaje = respuestaProceso.respuesta
+                    
                 }
 
             return obj_ret
@@ -1017,15 +1027,16 @@ function(record,search,https,file,http,format,encode,email,runtime) {
             }else{
                 var id_cliente = null
                 return {
-                    respuesta:id_cliente, 
-                    err:false,
+                    respuesta:'El correo ya se encuentra registrado como PRESENTADOR', 
+                    err:true,
                     idPresentadora:internalid_p,
                     iduPresentadora:idu_p,
                     idRecomendador:req_info.idRecomendador,
                     presentador:true,
                     namePresentadora:altname,
                     emailPresentadora:email_p,
-                    clienteTM:false
+                    clienteTM:false,
+                    id_cliente:id_cliente
                 };
             }
             

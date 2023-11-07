@@ -144,21 +144,7 @@ function(record,search,http,https,encode,runtime,serverWidget,error) {
                             //var nameFormat = req_info.nombre+" "+req_info.apellidos // cambiar por variables
                             nameFormat = quitarAcentos(nombre)//Traer funcion quitar acentos
                             
-                            var objAD = {
-                                'nombre': nombre,
-                                'correo': correo,
-                                'telefono': telefono,
-                                'activo': activo,
-                                'nombreQuienRecomienda': quitarAcentos(nombreQuienRecomienda),
-                                'correoQuienRecomienda': correoQuienRecomienda,
-                                'PresentadorAsignadoCorreo': correoPresentador,
-                                'PresentadorAsignadoIDU': iduPresentador,
-                                'telefonoQuienRecomienda':telefonoRecomendador,//Espera de LMS
-                                'NetSuiteID':id
-                            }
-
-                            log.debug('objAD',objAD)
-                            log.debug('objAD stringfy',JSON.stringify(objAD))
+                            
                             var urlAD
                             if(runtime.envType != 'PRODUCTION'){ 
                                 urlAD = 'https://dev-apiagenda.mxthermomix.com/users/registerUserExternoNetsuite'
@@ -166,6 +152,22 @@ function(record,search,http,https,encode,runtime,serverWidget,error) {
                                 urlAD = 'https://apiagenda.mxthermomix.com/users/registerUserExternoNetsuite'
                             }
                             if(nombreQuienRecomienda && correoQuienRecomienda){
+                                var objAD = {
+                                    'nombre': nombre,
+                                    'correo': correo,
+                                    'telefono': telefono,
+                                    'activo': activo,
+                                    'nombreQuienRecomienda': quitarAcentos(nombreQuienRecomienda),
+                                    'correoQuienRecomienda': correoQuienRecomienda,
+                                    'PresentadorAsignadoCorreo': correoPresentador,
+                                    'PresentadorAsignadoIDU': iduPresentador,
+                                    'telefonoQuienRecomienda':telefonoRecomendador,//Espera de LMS
+                                    'NetSuiteID':id,
+                                    'Semilla': false
+                                }
+
+                                log.debug('objAD',objAD)
+                                log.debug('objAD stringfy',JSON.stringify(objAD))
                                 var responseService = https.post({
                                 url: urlAD,
                                 body : objAD,//JSON.stringify(
@@ -175,6 +177,32 @@ function(record,search,http,https,encode,runtime,serverWidget,error) {
                                 }
                             }).body;
                             log.debug('responseService AD',responseService)
+                            }else{
+                                var objAD = {
+                                    'nombre': nombre,
+                                    'correo': correo,
+                                    'telefono': telefono,
+                                    'activo': activo,
+                                    'nombreQuienRecomienda': '',
+                                    'correoQuienRecomienda': '',
+                                    'PresentadorAsignadoCorreo': correoPresentador,
+                                    'PresentadorAsignadoIDU': iduPresentador,
+                                    'telefonoQuienRecomienda':'',//Espera de LMS
+                                    'NetSuiteID':id,
+                                    'Semilla': true
+                                }
+
+                                log.debug('objAD',objAD)
+                                log.debug('objAD stringfy',JSON.stringify(objAD))
+                               var responseService = https.post({
+                                url: urlAD,
+                                body : objAD,//JSON.stringify(
+                                headers: {
+                                    "Content-Type": "application/x-www-form-urlencoded",
+                                    "User-Agent": "NetSuite/2019.2(SuiteScript)",
+                                }
+                                }).body;
+                                log.debug('responseService AD',responseService) 
                             }
                        
 

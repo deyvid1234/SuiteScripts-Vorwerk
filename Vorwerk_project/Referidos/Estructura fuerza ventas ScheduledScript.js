@@ -274,7 +274,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
             log.debug('objRequestLMS',objRequestLMS)
             var responseServiceLMS = http.put({
             url: urlLMS,
-            body : objRequestLMS,
+            body : JSON.stringify(objRequestLMS),
             headers: {
                 "Content-Type": "application/json",
                 "Authorization": key
