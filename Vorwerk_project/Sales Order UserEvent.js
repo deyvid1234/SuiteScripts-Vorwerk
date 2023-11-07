@@ -530,7 +530,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 			                body : JSON.stringify(objRequest),
 			                headers: {
 			                    "Content-Type": "application/json",
-			                    "Authorization": "Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJJZCI6IjIyMWFmN2U5LTJjMDAtNDYzZC1hYzliLThkZDA2MzhmYzYzMSIsInN1YiI6InRocm14Lm5ldHN1aXRlLmFwaUBsbXMtbGEuY29tIiwiZW1haWwiOiJ0aHJteC5uZXRzdWl0ZS5hcGlAbG1zLWxhLmNvbSIsInVuaXF1ZV9uYW1lIjoidGhybXgubmV0c3VpdGUuYXBpQGxtcy1sYS5jb20iLCJqdGkiOiIwZGUwNmRjNi1iZmZlLTRjYWYtYTI5Ni05M2UwNDc4NTUyMmUiLCJuYmYiOjE2Njg0NDEyMTQsImV4cCI6MTY5OTk3NzIxNCwiaWF0IjoxNjY4NDQxMjE0fQ.6sKvLZuT3fV6HpnE7W1sAwrLtpe2cgVK7cjnQqZqRNk1FNAHhSfvOqZzQxE87Bh4-EjkLg51F6_VzyN0xPxFaQ"
+			                    "Authorization": "Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJJZCI6IjIyMWFmN2U5LTJjMDAtNDYzZC1hYzliLThkZDA2MzhmYzYzMSIsInN1YiI6InRocm14Lm5ldHN1aXRlLmFwaUBsbXMtbGEuY29tIiwiZW1haWwiOiJ0aHJteC5uZXRzdWl0ZS5hcGlAbG1zLWxhLmNvbSIsInVuaXF1ZV9uYW1lIjoidGhybXgubmV0c3VpdGUuYXBpQGxtcy1sYS5jb20iLCJqdGkiOiIzZjc3NzM1NS0zNmI1LTRlYWQtODg2NC0yMzI2MWZlM2VjZjEiLCJuYmYiOjE2OTkzNzIwMDYsImV4cCI6MTczMDk5NDQwNiwiaWF0IjoxNjk5MzcyMDA2fQ.Urf90o2LXL3ZVsepiEDLi5E06AMQHP_ro2FWqEehoDHv1s8fXEoGn7zdU75Q8cZyCYeRT-xEgdr-5koTFHIiuA"
 			                }
 			            }).body;
 			            log.debug('responseService LMS',responseService)
@@ -619,7 +619,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 			                url: urlLMSCancel,
 			                body : JSON.stringify(objRequest),
 			                headers: {
-			                	"Authorization": "Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJJZCI6IjhhMDJkZDE3LTYzMjAtNGFiMi1iOWFkLWZlZDMzZWRhYzNiNiIsInN1YiI6InZzaWx2YWNAbG1zLmNvbS5teCIsImVtYWlsIjoidnNpbHZhY0BsbXMuY29tLm14IiwidW5pcXVlX25hbWUiOiJ2c2lsdmFjQGxtcy5jb20ubXgiLCJqdGkiOiI3ZjVhYTJiOS1jMTgxLTRjMDctOWRjOS03MzljMmNjM2NhMmEiLCJuYmYiOjE2NzgyMjY0NDAsImV4cCI6MTcwOTg0ODg0MCwiaWF0IjoxNjc4MjI2NDQwfQ.gzoypesLFecnag0kRGCQu9Vy86A_wEYgDUR9j-01ObPX3UW3Pks8hpV5yOGE1ymnXeFsHokPOH5yLyWIybLW8w",
+			                	"Authorization": "Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJJZCI6IjIyMWFmN2U5LTJjMDAtNDYzZC1hYzliLThkZDA2MzhmYzYzMSIsInN1YiI6InRocm14Lm5ldHN1aXRlLmFwaUBsbXMtbGEuY29tIiwiZW1haWwiOiJ0aHJteC5uZXRzdWl0ZS5hcGlAbG1zLWxhLmNvbSIsInVuaXF1ZV9uYW1lIjoidGhybXgubmV0c3VpdGUuYXBpQGxtcy1sYS5jb20iLCJqdGkiOiIzZjc3NzM1NS0zNmI1LTRlYWQtODg2NC0yMzI2MWZlM2VjZjEiLCJuYmYiOjE2OTkzNzIwMDYsImV4cCI6MTczMDk5NDQwNiwiaWF0IjoxNjk5MzcyMDA2fQ.Urf90o2LXL3ZVsepiEDLi5E06AMQHP_ro2FWqEehoDHv1s8fXEoGn7zdU75Q8cZyCYeRT-xEgdr-5koTFHIiuA",
 			                    "Content-Type": "application/json",
 			                }
 			            }).body;

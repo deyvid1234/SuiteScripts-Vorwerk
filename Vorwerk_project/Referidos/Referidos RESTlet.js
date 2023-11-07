@@ -463,7 +463,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                     if(runtime.envType != 'PRODUCTION'){ 
                         urlAD = 'https://dev-apiagenda.mxthermomix.com/users/CambioPresentador'
                     }else{
-                        urlAD = ''
+                        urlAD = 'https://apiagenda.mxthermomix.com/users/CambioPresentador'
                     }
                     try{
 
@@ -696,7 +696,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                     body : JSON.stringify(objRequest),
                     headers: {
                         "Content-Type": "application/json",
-                        "Authorization": "Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJJZCI6IjhhMDJkZDE3LTYzMjAtNGFiMi1iOWFkLWZlZDMzZWRhYzNiNiIsInN1YiI6InZzaWx2YWNAbG1zLmNvbS5teCIsImVtYWlsIjoidnNpbHZhY0BsbXMuY29tLm14IiwidW5pcXVlX25hbWUiOiJ2c2lsdmFjQGxtcy5jb20ubXgiLCJqdGkiOiI3ZjVhYTJiOS1jMTgxLTRjMDctOWRjOS03MzljMmNjM2NhMmEiLCJuYmYiOjE2NzgyMjY0NDAsImV4cCI6MTcwOTg0ODg0MCwiaWF0IjoxNjc4MjI2NDQwfQ.gzoypesLFecnag0kRGCQu9Vy86A_wEYgDUR9j-01ObPX3UW3Pks8hpV5yOGE1ymnXeFsHokPOH5yLyWIybLW8w"
+                        "Authorization": "Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJJZCI6IjIyMWFmN2U5LTJjMDAtNDYzZC1hYzliLThkZDA2MzhmYzYzMSIsInN1YiI6InRocm14Lm5ldHN1aXRlLmFwaUBsbXMtbGEuY29tIiwiZW1haWwiOiJ0aHJteC5uZXRzdWl0ZS5hcGlAbG1zLWxhLmNvbSIsInVuaXF1ZV9uYW1lIjoidGhybXgubmV0c3VpdGUuYXBpQGxtcy1sYS5jb20iLCJqdGkiOiIzZjc3NzM1NS0zNmI1LTRlYWQtODg2NC0yMzI2MWZlM2VjZjEiLCJuYmYiOjE2OTkzNzIwMDYsImV4cCI6MTczMDk5NDQwNiwiaWF0IjoxNjk5MzcyMDA2fQ.Urf90o2LXL3ZVsepiEDLi5E06AMQHP_ro2FWqEehoDHv1s8fXEoGn7zdU75Q8cZyCYeRT-xEgdr-5koTFHIiuA"
                     }
                 }).body;
                 log.debug('responseService LMS Experiencia',responseService)
