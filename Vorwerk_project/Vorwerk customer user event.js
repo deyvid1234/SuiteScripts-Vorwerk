@@ -44,7 +44,7 @@ function(record,search,http,https,encode,runtime,serverWidget,error) {
             var contextType = scriptContext.type;
 
            
-            if (contextType == 'create' && runtime.executionContext == 'USERINTERFACE') { 
+            if (contextType == 'create' ) { 
                 var email = newRec.getValue('email');
                 //log.debug('email',email)
 
