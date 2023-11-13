@@ -52,21 +52,21 @@ function(record, search,https,format,url,email) {
 
             if (idTransacciones!= "" || presentadoraReferio != ""){
 
-                log.debug("Mantener", id)
+                //log.debug("Mantener", id)
                 //log.debug('id',id)
                 //log.debug('preentadora referido',presentadoraReferio)
                 //log.debug('tranid',idTransacciones)
 
             } else{
-                log.debug("Inactivar")
+                //log.debug("Inactivar")
                 eliminados.push({
                     deleteType: type,
                     deleteEmail: email,
                     deleteId: id
                 });
-                log.debug('eliminados',eliminados)
+                //log.debug('eliminados',eliminados)
 
-                
+                context.write(id, eliminados);
                 
             }
             
@@ -74,6 +74,7 @@ function(record, search,https,format,url,email) {
             //1. Extraerr correctamente los datos 
             //2. Hacer un if - Si tiene tranid o tiene presentadora referido - imprimir 'mantener'
             // sino imprimir 'inactivar'
+            
 
     	}catch(err){
     		log.error("err set",err);
@@ -87,7 +88,8 @@ function(record, search,https,format,url,email) {
      * @since 2015.1
      */
     function reduce(context) {
-        log.debug('Reduce',eliminados)
+        context.write(context.key, context.values);
+        return true;
     }
 
 
@@ -98,7 +100,12 @@ function(record, search,https,format,url,email) {
      * @since 2015.1
      */
     function summarize(summary) {
-    	log.debug("start summarize",true);
+        var procesados = [];
+        summary.output.iterator().each(function (key, saved) {
+            procesados.push(JSON.parse(saved));
+            return true;
+        });
+      log.debug('Registros Procesados', procesados);
     	
     }
     
