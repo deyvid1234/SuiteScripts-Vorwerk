@@ -34,13 +34,43 @@ function(record, search,https,format,url,email) {
     function map(context) {
     	try{
     		var info = JSON.parse(context.value);
-            log.debug('info',info)
+            //log.debug('info',info)
 
-            log.debug('info.recordType',info.recordType)
-            log.debug('email',info.values.email)
-            log.debug('email',info.id)
-            log.debug('tranid',info.values.tranid.transaction)
-            log.debug('tranid',info.values.custentity_presentadora_referido)
+           
+            var type = info.recordType
+            var email = info.values.email
+            var id = info.id
+            var presentadoraReferio = info.values.custentity_presentadora_referido
+            var idTransacciones = info.values["tranid.transaction"]
+
+            /*log.debug('recordType',type)
+            log.debug('email',email)
+            log.debug('id',id)
+            log.debug('preentadora referido',presentadoraReferio)
+            log.debug('tranid',idTransacciones)*/
+            var eliminados= []
+
+            if (idTransacciones!= "" || presentadoraReferio != ""){
+
+                log.debug("Mantener", id)
+                //log.debug('id',id)
+                //log.debug('preentadora referido',presentadoraReferio)
+                //log.debug('tranid',idTransacciones)
+
+            } else{
+                log.debug("Inactivar")
+                eliminados.push({
+                    deleteType: type,
+                    deleteEmail: email,
+                    deleteId: id
+                });
+                log.debug('eliminados',eliminados)
+
+                
+                
+            }
+            
+            return eliminados;
             //1. Extraerr correctamente los datos 
             //2. Hacer un if - Si tiene tranid o tiene presentadora referido - imprimir 'mantener'
             // sino imprimir 'inactivar'
@@ -57,7 +87,7 @@ function(record, search,https,format,url,email) {
      * @since 2015.1
      */
     function reduce(context) {
-
+        log.debug('Reduce',eliminados)
     }
 
 
