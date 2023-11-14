@@ -19,16 +19,70 @@ function(record, search,https,format,url,email) {
      */
     function getInputData() {
     	//extrae informacion de las odv
-        var busquedaDuplicados = search.load({
+        var emailstotal = search.load({
             id: 'customsearch2085' 
         });
-        var mySearchFilter = search.createFilter({
-    name: 'entity',
-    summary: search.Summary.GROUP
-});
+
+        var emailsFiltrados = {}
+        var emailsFiltradosDuplicados = {}
+
+        var pagedResults = emailstotal.runPaged();
+        pagedResults.pageRanges.forEach(function (pageRange){
+        var currentPage = pagedResults.fetch({index: pageRange.index});
+            currentPage.data.forEach(function (r) {
+                var values = r.getAllValues();
+                var email = r.getValue('email').toLowerCase();
+                var internalid = parseInt(r.getValue('internalid')) 
+                
+                const idMaximoActual = emailsFiltrados[email] || 0;
+                
+
+                if (internalid > idMaximoActual) {
+                    emailsFiltrados[email] = internalid;
+                }
+
+                if(idMaximoActual != 0){
+                    emailsFiltradosDuplicados[email] = emailsFiltrados[email]
+                }
+                
+                return true; 
+            });
+
+        });
+
+        log.debug('emailsFiltradosDuplicados',emailsFiltradosDuplicados)
+        log.debug('emailsFiltrados',emailsFiltrados)
+        var keys = Object.keys(emailsFiltradosDuplicados)
+        //console.log('keys',keys)
 
 
-    	return busquedaDuplicados;
+        var emailsTransactions = search.load({
+            id: 'customsearch2086' 
+        });
+
+        
+
+        var aEliminar = {}
+        var pagedResults = emailsTransactions.runPaged();
+        pagedResults.pageRanges.forEach(function (pageRange){
+        var currentPage = pagedResults.fetch({index: pageRange.index});
+            currentPage.data.forEach(function (r) {
+                var values = r.getAllValues();
+                log.debug('values',values)
+                var internalid = parseInt(r.getValue('internalid')) 
+                var email = r.getValue('email').toLowerCase();
+                log.debug('emailsFiltradosDuplicados[email]',emailsFiltradosDuplicados[email])
+                log.debug('keys.hasOwnProperty(email)',keys.indexOf(email))
+                if(internalid != emailsFiltradosDuplicados[email] &&  keys.indexOf(email) >= 0 ){
+                    aEliminar[internalid] = email
+                }
+                return true; 
+            });
+
+        });
+        log.debug('aEliminar',aEliminar)
+
+    	return Object.keys(aEliminar);
     }
 
     /**
@@ -41,8 +95,8 @@ function(record, search,https,format,url,email) {
     	try{
     		var info = JSON.parse(context.value);
             log.debug('info',info)
-
-           
+            log.debug('context',context)
+           /*
             var type = info.recordType
             var email = info.values.email
             var id = info.id
@@ -62,7 +116,7 @@ function(record, search,https,format,url,email) {
             log.debug('email',email)
             log.debug('id',id)
             log.debug('preentadora referido',presentadoraReferio)
-            log.debug('tranid',idTransacciones)*/
+            log.debug('tranid',idTransacciones)
             var eliminados= []
 
             if (idTransacciones!= "" || presentadoraReferio != ""){
@@ -90,7 +144,7 @@ function(record, search,https,format,url,email) {
             //2. Hacer un if - Si tiene tranid o tiene presentadora referido - imprimir 'mantener'
             // sino imprimir 'inactivar'
             
-
+*/
     	}catch(err){
     		log.error("err set",err);
     	}
