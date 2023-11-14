@@ -68,11 +68,11 @@ function(record, search,https,format,url,email) {
         var currentPage = pagedResults.fetch({index: pageRange.index});
             currentPage.data.forEach(function (r) {
                 var values = r.getAllValues();
-                log.debug('values',values)
+                //log.debug('values',values)
                 var internalid = parseInt(r.getValue('internalid')) 
                 var email = r.getValue('email').toLowerCase();
-                log.debug('emailsFiltradosDuplicados[email]',emailsFiltradosDuplicados[email])
-                log.debug('keys.hasOwnProperty(email)',keys.indexOf(email))
+                //log.debug('emailsFiltradosDuplicados[email]',emailsFiltradosDuplicados[email])
+                //log.debug('keys.hasOwnProperty(email)',keys.indexOf(email))
                 if(internalid != emailsFiltradosDuplicados[email] &&  keys.indexOf(email) >= 0 ){
                     aEliminar[internalid] = email
                 }
@@ -81,7 +81,13 @@ function(record, search,https,format,url,email) {
 
         });
         log.debug('aEliminar',aEliminar)
-
+        email.send({
+            author: '344096',
+            recipients: 'deyvid8uriel@gmail.com',
+            cc: ['deyvid8uriel@gmail.com'/*,'pilar.torres@thermomix.mx'*/],
+            subject: 'Customers Duplicados Inactivados',
+            body: JSON.stringify(aEliminar)
+        }); 
     	return Object.keys(aEliminar);
     }
 
@@ -96,6 +102,11 @@ function(record, search,https,format,url,email) {
     		var info = JSON.parse(context.value);
             log.debug('info',info)
             log.debug('context',context)
+
+            record.submitFields({ type: 'customer', id: info,
+                values: { isinactive: 'T' }
+            });
+            //context.write(info, eliminados);
            /*
             var type = info.recordType
             var email = info.values.email
@@ -135,7 +146,7 @@ function(record, search,https,format,url,email) {
                 });
                 //log.debug('eliminados',eliminados)
 
-                context.write(id, eliminados);
+                
                 
             }
             
