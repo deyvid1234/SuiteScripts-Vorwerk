@@ -20,8 +20,14 @@ function(record, search,https,format,url,email) {
     function getInputData() {
     	//extrae informacion de las odv
         var busquedaDuplicados = search.load({
-            id: 'customsearch2082' 
+            id: 'customsearch2085' 
         });
+        var mySearchFilter = search.createFilter({
+    name: 'entity',
+    summary: search.Summary.GROUP
+});
+
+
     	return busquedaDuplicados;
     }
 
