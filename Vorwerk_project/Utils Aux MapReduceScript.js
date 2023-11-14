@@ -34,7 +34,7 @@ function(record, search,https,format,url,email) {
     function map(context) {
     	try{
     		var info = JSON.parse(context.value);
-            //log.debug('info',info)
+            log.debug('info',info)
 
            
             var type = info.recordType
@@ -42,6 +42,15 @@ function(record, search,https,format,url,email) {
             var id = info.id
             var presentadoraReferio = info.values.custentity_presentadora_referido
             var idTransacciones = info.values["tranid.transaction"]
+            var typeTransacciones = info.values["type.transaction"].text
+            var fechaTransaccion = info.values["trandate.transaction"]
+            var fechaCreacion = info.values["datecreated.transaction"]
+            var statusTransaccion = info.values["statusref.transaction"].text
+            log.debug('typeTransacciones',typeTransacciones)
+            log.debug('fechaTransaccion',fechaTransaccion)
+            log.debug('fechaCreacion',fechaCreacion)
+            log.debug('statusTransaccion',statusTransaccion)
+
 
             /*log.debug('recordType',type)
             log.debug('email',email)
