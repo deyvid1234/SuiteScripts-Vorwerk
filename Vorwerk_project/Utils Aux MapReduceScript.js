@@ -80,6 +80,30 @@ function(record, search,https,format,url,email) {
             });
 
         });
+         var emailsTransactionsPost2022 = search.load({
+            id: 'customsearch2082' 
+        });
+         var aInactivar = {}
+        var pagedResults = emailsTransactions.runPaged();
+        pagedResults.pageRanges.forEach(function (pageRange){
+        var currentPage = pagedResults.fetch({index: pageRange.index});
+            currentPage.data.forEach(function (r) {
+                var valuesT = r.getAllValues();
+                log.debug('keys',keys)
+                var internalidT = parseInt(r.getValue('internalid')) 
+                var emailT = r.getValue('email').toLowerCase();
+
+        if (keys.indexOf(internalidT)) {
+           log.debug("mantener", internalidT) 
+
+            } else {
+                 aInactivar[internalidT] = internalidT
+            }
+            log.debug("aInactivar", aInactivar)
+             return true; 
+            });
+
+        });
         log.debug('aEliminar',aEliminar)
         email.send({
             author: '344096',
@@ -103,9 +127,9 @@ function(record, search,https,format,url,email) {
             log.debug('info',info)
             log.debug('context',context)
 
-            record.submitFields({ type: 'customer', id: info,
+            /*record.submitFields({ type: 'customer', id: info,
                 values: { isinactive: 'T' }
-            });
+            });*/
             //context.write(info, eliminados);
            /*
             var type = info.recordType
