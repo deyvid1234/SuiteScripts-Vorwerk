@@ -186,7 +186,7 @@ function(record,search,https,file,http,format,encode,email) {
                         cust.curp= r.getValue("custentity_curp");
                         cust.inactive= r.getValue("isinactive");
                         presentadorReferidoAnterior = r.getValue("custentity_presentadora_referido");
-                    }else if(r.recordType == "customer" && cust == false){
+                    }else if( cust == false){
                         cust = {}
                         cust.user_id= r.getValue("internalid");
                         cust.name= r.getValue("companyname");
