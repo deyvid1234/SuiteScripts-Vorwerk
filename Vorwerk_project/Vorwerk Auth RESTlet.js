@@ -121,7 +121,7 @@ function(record,search,https,file,http,format,encode,email) {
     /*************Inicio de funciones de lectura************************/
     //funcion para extraer informacion de usuario
   	function getInformationUser(req_info,valid){
-		var cust = {},emp = {}, obj_ret = {};
+		var cust = false,emp = {}, obj_ret = {};
 		var valid_rfc= false;
 		try{
 			var filters = [];
@@ -154,24 +154,50 @@ function(record,search,https,file,http,format,encode,email) {
                     values: req_info['rfc']
                 });
 			}
+			soColumns = [
+                { name: 'internalid' },
+                { name: 'companyname' },
+                { name: 'email'},
+                { name: 'custentity_rfc'},
+                { name: 'custentity_curp'},
+                { name: 'isinactive'},
+                { name: 'custentity_presentadora_referido'}
+
+            ];
+
 			var busqueda = search.create({
 			    type: "customer",
-			    columns: ['internalid','companyname','email','custentity_rfc','custentity_curp','isinactive'],
+			    columns: soColumns,
 			    filters: filters
 			});
+
+			var presentadorReferidoAnterior = ''
+
 			var pagedResults = busqueda.runPaged();
             pagedResults.pageRanges.forEach(function (pageRange){
                 var currentPage = pagedResults.fetch({index: pageRange.index});
                 currentPage.data.forEach(function (r) {
-                	if(r.recordType == "customer"){
-                		cust.user_id= r.getValue("internalid");
-        				cust.name= r.getValue("companyname");
-        				cust.email= r.getValue("email");
-        				cust.rfc= r.getValue("custentity_rfc");
-        				cust.curp= r.getValue("custentity_curp");
-        				cust.inactive= r.getValue("isinactive");
-                	}
-                	
+
+                	if(r.recordType == "customer" && (r.getValue("custentity_presentadora_referido") || presentadorReferidoAnterior == '') && cust != false ){
+                        cust.user_id= r.getValue("internalid");
+                        cust.name= r.getValue("companyname");
+                        cust.email= r.getValue("email");
+                        cust.rfc= r.getValue("custentity_rfc");
+                        cust.curp= r.getValue("custentity_curp");
+                        cust.inactive= r.getValue("isinactive");
+                        presentadorReferidoAnterior = r.getValue("custentity_presentadora_referido");
+                    }else if(r.recordType == "customer" && cust == false){
+                        cust = {}
+                        cust.user_id= r.getValue("internalid");
+                        cust.name= r.getValue("companyname");
+                        cust.email= r.getValue("email");
+                        cust.rfc= r.getValue("custentity_rfc");
+                        cust.curp= r.getValue("custentity_curp");
+                        cust.inactive= r.getValue("isinactive"); 
+
+                        presentadorReferidoAnterior = r.getValue("custentity_presentadora_referido");
+                    }
+                    
     			    return true;
                 });
             });
