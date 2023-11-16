@@ -432,6 +432,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 data[i]['item'] == '62221' || 
                 data[i]['item'] == '62431' || 
                 data[i]['item'] == '62752' ||
+                data[i]['item'] == '62959' ||
                 data[i]['item'] == 'TM6R'     ){
                 isTM = true
             }
