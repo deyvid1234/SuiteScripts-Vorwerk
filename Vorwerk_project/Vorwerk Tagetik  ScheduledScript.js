@@ -211,6 +211,7 @@ function(record,search,https,file,http,format,encode,email,runtime,format) {
                     data[i]['item'] == '62221' || 
                     data[i]['item'] == '62431' || 
                     data[i]['item'] == '62752' ||
+                    data[i]['item'] == '62959' ||
                     data[i]['item'] == 'TM6R'     ){
                     isTM = true
                 }
