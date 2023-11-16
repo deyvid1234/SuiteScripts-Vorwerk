@@ -178,7 +178,7 @@ function(record,search,https,file,http,format,encode,email) {
                 var currentPage = pagedResults.fetch({index: pageRange.index});
                 currentPage.data.forEach(function (r) {
 
-                	if(r.recordType == "customer" && (r.getValue("custentity_presentadora_referido") || presentadorReferidoAnterior == '') && cust != false ){
+                	if( (r.getValue("custentity_presentadora_referido") || presentadorReferidoAnterior == '') && cust != false ){
                         cust.user_id= r.getValue("internalid");
                         cust.name= r.getValue("companyname");
                         cust.email= r.getValue("email");
@@ -197,7 +197,7 @@ function(record,search,https,file,http,format,encode,email) {
 
                         presentadorReferidoAnterior = r.getValue("custentity_presentadora_referido");
                     }
-                    
+
     			    return true;
                 });
             });
