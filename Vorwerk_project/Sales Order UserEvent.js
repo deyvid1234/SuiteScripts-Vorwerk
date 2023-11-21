@@ -424,6 +424,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 	    		var idOrden = rec.getValue('id')
 	    		var importe = rec.getValue('total')
 	    		var salesrep = rec.getValue('salesrep')
+	    		var tipo_venta = rec.getValue('custbody_tipo_venta')
 
 	    		old_salesrep = salesrep
 	    		log.debug('salesrep Registra venta',salesrep)
@@ -490,7 +491,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 	            	log.debug('objPresentadora',objPresentadora)
 
 	            	
-		    		if( type == 'create' || salesrep != old_salesrep ){
+		    		if( (type == 'create' || salesrep != old_salesrep) && tipo_venta == 2){
 
 		    			if(runtime.envType != 'PRODUCTION'){ 
 		                    urlLMS = 'http://api-referidos-thrmx.lms-la.com/api/venta'
