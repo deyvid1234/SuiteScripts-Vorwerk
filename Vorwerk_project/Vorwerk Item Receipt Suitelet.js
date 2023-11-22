@@ -16,31 +16,31 @@ function(render,email,file,record,search,format,runtime) {
      * @Since 2015.2
      */
     function onRequest(context) {
-    	try{
-    		var method = context.request.method;
-    		var params = context.request.parameters;
-    		var recordid = 4725581//recordid = parseInt(params.receiptID);
-    		log.debug('method',method);
-    		
-	         
-	        var idTpl = 273;
-	        //var sendEmail = params.emailSend;
-	       // log.debug('params',params);
-	        //se carga el record de oportuniddad
-	        var objReceipt = record.load({
-				type: 'itemreceipt',
+        try{
+            var method = context.request.method;
+            var params = context.request.parameters;
+            var recordid = 4725581//recordid = parseInt(params.receiptID);
+            log.debug('method',method);
+            
+             
+            var idTpl = 273;
+            //var sendEmail = params.emailSend;
+           // log.debug('params',params);
+            //se carga el record de oportuniddad
+            var objReceipt = record.load({
+                type: 'itemreceipt',
                 id: recordid,
                 isDynamic: false,
             });
-	        
-	        var date= objReceipt.getValue('trandate');
-	        
-	        /*var date = format.format({
-	        	value: date_aux ,
+            
+            var date= objReceipt.getValue('trandate');
+            
+            /*var date = format.format({
+                value: date_aux ,
                 type: format.Type.DATE
-	        })*/
+            })*/
             var referencia = objReceipt.getValue('tranid');
-	        var name= objReceipt.getValue('entityname');
+            var name= objReceipt.getValue('entityname');
 
             log.debug('name', name)
              log.debug('referencia', referencia)
@@ -48,21 +48,21 @@ function(render,email,file,record,search,format,runtime) {
             }catch(err){
             log.error("xa",err);
         }
-	        //se extrae el cliente
-	        /*var entity = parseInt(objOP.getValue('entity'));
-    		var fieldsLookUp = search.lookupFields({
+            //se extrae el cliente
+            /*var entity = parseInt(objOP.getValue('entity'));
+            var fieldsLookUp = search.lookupFields({
                 type: 'customer',
                 id: entity,
                 columns: ['salesrep','email']
             });
-    		var email_customer = fieldsLookUp.email;
-    		//se extrae el representante
-	        var idUSer = parseInt(fieldsLookUp.salesrep[0].value);
-	        
+            var email_customer = fieldsLookUp.email;
+            //se extrae el representante
+            var idUSer = parseInt(fieldsLookUp.salesrep[0].value);
+            
             */
-	        
-	        
-	    	//obtiene imagen de logo
+            
+            
+            //obtiene imagen de logo
             var logodURL 
 
             if(runtime.envType  == "SANDBOX"){
@@ -71,26 +71,26 @@ function(render,email,file,record,search,format,runtime) {
                 logodURL = getImage('2576941') //id imagen vorwerk tm s green prod
             }
 
-	        //sb1510040
-	        //obtiene imagen de check false 
+            //sb1510040
+            //obtiene imagen de check false 
 
-	        /*var checkfieldURL = getImage('1636738');//sb1510039
-	        //obtiene imagen check true
-	        var checkfieldURL_true = getImage('1636741');//1510241
-	        //genera imagen de check false
-	       */
-	        if(method == 'GET'){
-	        	//proceso para retornar PDF
-		        mainCreateXML(context,idTpl,recordid,logodURL);
-	        }
-	        /*if(method == 'PUT'){
-	        	//proceso para enviar Email
-	        	mainCreateEmailtoSend(objOP,idTpl,idUSer,entity,recordid,logodURL,date,order,checkfieldURL,checkfieldURL_true,email_customer);
-	        }*/
-    	
+            /*var checkfieldURL = getImage('1636738');//sb1510039
+            //obtiene imagen check true
+            var checkfieldURL_true = getImage('1636741');//1510241
+            //genera imagen de check false
+           */
+            if(method == 'GET'){
+                //proceso para retornar PDF
+                mainCreateXML(context,idTpl,recordid,logodURL);
+            }
+            /*if(method == 'PUT'){
+                //proceso para enviar Email
+                mainCreateEmailtoSend(objOP,idTpl,idUSer,entity,recordid,logodURL,date,order,checkfieldURL,checkfieldURL_true,email_customer);
+            }*/
+        
     }
     function mainCreateXML(context,idTpl,recordid,logodURL){
-    	
+        
         try
         {   log.debug('inicia pdf')
             var bodyPDF = getTemplate(idTpl,recordid)
@@ -116,24 +116,24 @@ function(render,email,file,record,search,format,runtime) {
     }
     
     function getImage(idImg){
-    	try{
-    		var host = "https://3367613-sb1.app.netsuite.com";
-    		//obtiene imagen de chekc false
-	        var fileObj = file.load({
-	            id: idImg//'1510039'
-	        });
-    		var url_img = fileObj.url
-    		url_img = stringToArray(url_img,38);
-    		url_img   = url_img.join('&amp;');
-    		url_img   = "src='" + host + url_img + "'/";
-    		
-    		return url_img;
-    	}catch(err){
-    		log.error("error getImage",err)
-    	}
+        try{
+            var host = "https://3367613-sb1.app.netsuite.com";
+            //obtiene imagen de chekc false
+            var fileObj = file.load({
+                id: idImg//'1510039'
+            });
+            var url_img = fileObj.url
+            url_img = stringToArray(url_img,38);
+            url_img   = url_img.join('&amp;');
+            url_img   = "src='" + host + url_img + "'/";
+            
+            return url_img;
+        }catch(err){
+            log.error("error getImage",err)
+        }
     }
     function getTemplate(idTpl,recordid){
-    	try{
+        try{
              log.debug('template')
              var myMergeResult = render.mergeEmail({
                 templateId: idTpl,
@@ -141,14 +141,14 @@ function(render,email,file,record,search,format,runtime) {
                 transactionId: recordid
             });
             return myMergeResult.body
-    	}catch(err){
-    		log.error("error getTemplate",err)
-    	}
+        }catch(err){
+            log.error("error getTemplate",err)
+        }
     }
     function stringToArray(str,base,opc){
       if(str != ''){
-    	  var multiSelectStringArray = str.split(String.fromCharCode(base));
-    	  return multiSelectStringArray;
+          var multiSelectStringArray = str.split(String.fromCharCode(base));
+          return multiSelectStringArray;
       }else{
           switch(opc)
           {
@@ -165,106 +165,106 @@ function(render,email,file,record,search,format,runtime) {
       }
     }
     function createXML(logodURL,emailBody){
-    	try{
+        try{
             log.debug('xml')
-    		var xml = "<?xml version='1.0' encoding='UTF-8'?>\n<!DOCTYPE pdf PUBLIC '-//big.faceless.org//report' 'report-1.1.dtd'>\n"
-    		    + "<pdf>"
-    		    + '<head></head>'
+            var xml = "<?xml version='1.0' encoding='UTF-8'?>\n<!DOCTYPE pdf PUBLIC '-//big.faceless.org//report' 'report-1.1.dtd'>\n"
+                + "<pdf>"
+                + '<head></head>'
                 + '<body footer-height="20pt" padding="0.5in 0.5in 0in 0.5in" margin= "0in 0in 0.5in 0in" size="Letter">'
-    			+'<img height="70" width="160" align="center" ' + logodURL +'>'
-    			+'<p align="center" style="font-size:14pt; font-weight: bold;">RECEPCÍON DE MERCANCÍAS</p>'
-    			+'<table border="0" cellpadding="1" cellspacing="1" style="width: 663px;">'
-    			+'<tbody>'
-    			+'</tbody>'
-    			+'</table>'
-    			
+                +'<img height="70" width="160" align="center" ' + logodURL +'>'
+                +'<p align="center" style="font-size:14pt; font-weight: bold;">RECEPCÍON DE MERCANCÍAS</p>'
+                +'<table border="0" cellpadding="1" cellspacing="1" style="width: 663px;">'
+                +'<tbody>'
+                +'</tbody>'
+                +'</table>'
+                
                 + emailBody
                 + '</body>'
                 + '</pdf>'
-    		return xml;
-    	}catch(error){
-    		log.debug('errcreateXML',error)
-    	}
+            return xml;
+        }catch(error){
+            log.debug('errcreateXML',error)
+        }
     }
     function createHTML(logodURL,emailBody,date,order){
-    	try{
-    		var space = '&nbsp;';
-    		var t_space= ""
-    		for(var x = 0; x<100; x++){
-    			t_space+=space;
+        try{
+            var space = '&nbsp;';
+            var t_space= ""
+            for(var x = 0; x<100; x++){
+                t_space+=space;
             }
-    		
-    		var html ="<html>"
-    		    + '<head><style>'
-    		    +'.IMAGELOGO{'
-    			+'position: relative;'
-    		    +'left: 35%;'
-    			+'}'
-    			+'.LINEAHT{'
-    			+'border-bottom:1.5px solid black;'
-    			+'}'
-    			+'IMAG{'
-    			+'top:-10px;}'
-    			+'.BORDE{'
-    			+'border-radius: 15px 15px 15px 15px;}'
-    			+'.CAJA{'
-    			+'border: solid 2px #000;'
-    			+'border-radius: 10px;};'
-    			+'</style>'
-    			+'<macrolist>'
-    			+'    <macro id="nlheader">'
-    			+t_space+'<img class="IMAGELOGO" height="80" width="100" align="center" ' + logodURL +'>'
-    			+'<p>ORDEN DE SERVICIO T&Eacute;CNICO</p>'
-    			+'<table border="0" cellpadding="1" cellspacing="1" style="width: 1000px;">'
-    			+'<tbody>'
-    			+'<tr>'
-    			+'<td rowspan="3" style="width: 750px;">Vorwerk M&eacute;xico, S. de R.L. de C.V.<br />'
-    			+'Vito Alessio Robles 38 Col. Florida, Del. &Aacute;lvaro Obreg&oacute;n<br />'
-    			+'Cd. de M&eacute;xico, C.P.01030 Tel&eacute;fono: 800 200 1121<br />'
-    			+'www.thermomix.mx</td>'
-    			+'<td style="width: 171px;"> </td>'
-    			+'<td style="width: 107px;"> </td>'
-    			+'</tr>'
-    			+'<tr>'
-    			+'<td Colspan="1" style="width: 120px; padding-left: 80px; text-align: right;">Orden de Servicio</td>'
-    			+'<td  colspan="2" class="linea" style="width: 107px; text-align: right;">'+order+'</td>'
-    			+'</tr>'
-    			+'<tr>'
-    			+'<td style="width: 120px; padding-left: 90px; text-align: right;">Fecha</td>'
-    			+'<td  style="width: 107px; text-align: right;">'+date+'</td>'
-    			+'</tr>'
-    			+'<tr>'
-    			+'<td style="width: 120px;"></td>'
-    			+'<td style="width: 107px;"></td>'
-    			+'</tr>'
-    			+'</tbody>'
-    			+'</table>'
-    			+'    </macro>'
-    			+'    <macro id="nlfooter">'
-    			+'        <p>&nbsp;</p>'
-    			+'    </macro>'
-    			+'</macrolist></head>'
+            
+            var html ="<html>"
+                + '<head><style>'
+                +'.IMAGELOGO{'
+                +'position: relative;'
+                +'left: 35%;'
+                +'}'
+                +'.LINEAHT{'
+                +'border-bottom:1.5px solid black;'
+                +'}'
+                +'IMAG{'
+                +'top:-10px;}'
+                +'.BORDE{'
+                +'border-radius: 15px 15px 15px 15px;}'
+                +'.CAJA{'
+                +'border: solid 2px #000;'
+                +'border-radius: 10px;};'
+                +'</style>'
+                +'<macrolist>'
+                +'    <macro id="nlheader">'
+                +t_space+'<img class="IMAGELOGO" height="80" width="100" align="center" ' + logodURL +'>'
+                +'<p>ORDEN DE SERVICIO T&Eacute;CNICO</p>'
+                +'<table border="0" cellpadding="1" cellspacing="1" style="width: 1000px;">'
+                +'<tbody>'
+                +'<tr>'
+                +'<td rowspan="3" style="width: 750px;">Vorwerk M&eacute;xico, S. de R.L. de C.V.<br />'
+                +'Vito Alessio Robles 38 Col. Florida, Del. &Aacute;lvaro Obreg&oacute;n<br />'
+                +'Cd. de M&eacute;xico, C.P.01030 Tel&eacute;fono: 800 200 1121<br />'
+                +'www.thermomix.mx</td>'
+                +'<td style="width: 171px;"> </td>'
+                +'<td style="width: 107px;"> </td>'
+                +'</tr>'
+                +'<tr>'
+                +'<td Colspan="1" style="width: 120px; padding-left: 80px; text-align: right;">Orden de Servicio</td>'
+                +'<td  colspan="2" class="linea" style="width: 107px; text-align: right;">'+order+'</td>'
+                +'</tr>'
+                +'<tr>'
+                +'<td style="width: 120px; padding-left: 90px; text-align: right;">Fecha</td>'
+                +'<td  style="width: 107px; text-align: right;">'+date+'</td>'
+                +'</tr>'
+                +'<tr>'
+                +'<td style="width: 120px;"></td>'
+                +'<td style="width: 107px;"></td>'
+                +'</tr>'
+                +'</tbody>'
+                +'</table>'
+                +'    </macro>'
+                +'    <macro id="nlfooter">'
+                +'        <p>&nbsp;</p>'
+                +'    </macro>'
+                +'</macrolist></head>'
                 + '<body header="nlheader" header-height="7%" footer="nlfooter" footer-height="20pt" padding="0.5in 0.5in 0.5in 0.5in" margin= "0in 0in 0.5in 0in" size="Letter">'
                 +bodyPDF
                 + '</body>'
                 + '</html>'
-    		return html;
-    		
-    	}catch(erro){
-    		log.debug('errcreateHTML',erro)
-    	}
+            return html;
+            
+        }catch(erro){
+            log.debug('errcreateHTML',erro)
+        }
     }
     
     /*function getChecks(objOP,tempalte,checkfalse,checktrue){
-    	try{
-    		if(objOP.getValue('custbody_garantia')){
+        try{
+            if(objOP.getValue('custbody_garantia')){
                 tempalte = tempalte.replace(/@custbody_garantia_yes/g,checktrue);
                 tempalte = tempalte.replace(/@custbody_garantia_no/g,checkfalse);
             }else{
                 tempalte = tempalte.replace(/@custbody_garantia_yes/g,checkfalse);
                 tempalte = tempalte.replace(/@custbody_garantia_no/g,checktrue);
             }
-    		if(objOP.getValue('custbody61')){
+            if(objOP.getValue('custbody61')){
                 tempalte = tempalte.replace(/@v_golpeado/g,checktrue);
             }else{
                 tempalte = tempalte.replace(/@v_golpeado/g,checkfalse);
@@ -329,23 +329,23 @@ function(render,email,file,record,search,format,runtime) {
             }else{
                 tempalte = tempalte.replace(/@otros/g,checkfalse);
             }
-    		return tempalte;
-    	}catch(err){
-    		log.error("error getChecks",err)
-    	}
+            return tempalte;
+        }catch(err){
+            log.error("error getChecks",err)
+        }
     }
     function sendEmail(html,client){
-    	try{
-    		log.debug('client',client);
-    		email.send({
-				author: '344096',
-				recipients: [client],
-				subject: 'Garantia',
-				body: html
-    		}); 
-    	}catch(err){
-    		log.error("error send email",err)
-    	}
+        try{
+            log.debug('client',client);
+            email.send({
+                author: '344096',
+                recipients: [client],
+                subject: 'Garantia',
+                body: html
+            }); 
+        }catch(err){
+            log.error("error send email",err)
+        }
     }*/
     return {
         onRequest: onRequest

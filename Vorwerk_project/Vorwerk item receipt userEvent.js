@@ -17,20 +17,20 @@ function(runtime,url,https) {
      * @Since 2015.2
      */
     function beforeLoad(scriptContext) {
-    	try{
-    		var record = scriptContext.newRecord;
-    		var form = scriptContext.
-    		form;
-    		form.clientScriptFileId = (runtime.envType != 'PRODUCTION') ? '1585973' : '1585973';
-       	 	form.addButton({
+        try{
+            var record = scriptContext.newRecord;
+            var form = scriptContext.
+            form;
+            form.clientScriptFileId = (runtime.envType != 'PRODUCTION') ? '2461652' : '2461652';
+            form.addButton({
                 id: 'custpage_btn_item_receipt',
                 label: 'Imprimir Recibo',
                 functionName: 'printReceipt(\''+record.id+'\');'
             });
-    	}catch(err){
-    		log.error('Errro beforeLoad',err);
-    	}
-    	
+        }catch(err){
+            log.error('Errro beforeLoad',err);
+        }
+        
     }
 
     /**
@@ -56,11 +56,11 @@ function(runtime,url,https) {
      * @Since 2015.2
      */
     function afterSubmit(scriptContext) {
-    	try{
-    		
-    	}catch(err){
-    		log.error("error after submit",err);
-    	}
+        try{
+            
+        }catch(err){
+            log.error("error after submit",err);
+        }
     }
 
   

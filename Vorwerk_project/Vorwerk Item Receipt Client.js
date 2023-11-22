@@ -47,6 +47,7 @@
                 value: date,
                 type: format.Type.DATE
             });
+             /*
              switch (fieldID) {
                  case 'custbody_numero_serie':
                      if (fieldValue) {
@@ -126,7 +127,7 @@
 
 
 
-             return true;
+             return true;*/
          } catch (err) {
              log.error("error fieldchanged", err);
          }
@@ -276,7 +277,7 @@
          //        validateInsert: validateInsert,
          //        validateDelete: validateDelete,
          saveRecord: saveRecord,
-         printOppo: printOppo
+         printReceipt: printReceipt
      };
 
  });
