@@ -141,7 +141,7 @@ function(record,search,http,https,encode,runtime,serverWidget) {
                             sublistId  : 'item'
                         });
                         //var items= []
-                        var qItemline, lineItem, existeItemLine = false
+                        var existeItemLine = false
 
                         for(var i=0; i < itemLines; i++){
                             var itemId = cargarSO.getSublistValue({
@@ -160,7 +160,7 @@ function(record,search,http,https,encode,runtime,serverWidget) {
                                     line      : i
                                 });
 
-                                var apartadoTotal= itemQuantity+nuevoApartado
+                                var apartadoTotal= itemQuantity+nuevoApartado // script SO - itemQuantity - quantitySalesOrder
                                 cargarSO.setSublistValue({
                                     sublistId : 'item',
                                     fieldId   : 'quantity',

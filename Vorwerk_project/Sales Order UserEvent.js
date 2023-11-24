@@ -710,7 +710,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 	                var dataItem = search.lookupFields({// Busqueda de Invdentory Item
 		                type: 'item',
 		                id: tmp_id,
-		                columns: ['custitem_disponible_eshop','recordtype']//Stock disponible en el campo para eshop, tipo de registro
+		                columns: ['custitem_disponible_eshop','recordtype','custitem_transaccion_apartados']//Stock disponible en el campo para eshop, tipo de registro
 		            });
 
 	    			log.debug('dataItem',dataItem)
@@ -730,10 +730,67 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 		    			var stockAfter = disponible_eshop - quantitySalesOrder //Nuevo stock de Eshop, Disponibler eshop menos lo que acabamos de vender
 		    			log.debug('stockAfter',stockAfter)
 		    			record.submitFields({
-		                type: itemType,
-		                id: tmp_id,
-		                values: { custitem_disponible_eshop: stockAfter}
+			                type: itemType,
+			                id: tmp_id,
+			                values: { custitem_disponible_eshop: stockAfter}
 		            	})
+		            	//Actualizar SO apartados
+		            	else{
+	                         log.debug("cargar")
+	                         var transaccionApartado = dataItem[0].custitem_transaccion_apartados
+	                         log.debug('transaccionApartados', transaccionApartado)
+	                        var idSOaCargar = transaccionApartado.value
+	                        var cargarSO = record.load({
+	                            type: record.Type.SALES_ORDER,
+	                            id: idSOaCargar,
+	                            isDynamic:false,
+	                        });
+	                        
+	                        var itemLines = cargarSO.getLineCount({
+	                            sublistId  : 'item'
+	                        });
+	                        //var items= []
+
+	                        for(var i=0; i < itemLines; i++){
+	                            var itemId = cargarSO.getSublistValue({
+	                                sublistId : 'item',
+	                                fieldId   : 'item',
+	                                line      : i
+	                            });
+
+	                            if(tmp_id == itemId){
+	                                log.debug("actualizar")
+
+	                               
+	                                var itemQuantity = cargarSO.getSublistValue({
+	                                    sublistId : 'item',
+	                                    fieldId   : 'quantity',
+	                                    line      : i
+	                                });
+
+	                                var apartadoTotal= itemQuantity - quantitySalesOrder
+	                                cargarSO.setSublistValue({
+	                                    sublistId : 'item',
+	                                    fieldId   : 'quantity',
+	                                    value: apartadoTotal,
+	                                    line      : i
+	                                    });  
+	                                cargarSO.setSublistValue({
+	                                    sublistId : 'item',
+	                                    fieldId   : 'amount',
+	                                    value: 0.01,
+	                                    line      : i
+	                                });  
+	                                    
+
+	                                cargarSO.save({
+	                                    enableSourcing: true,
+	                                    ignoreMandatoryFields: true
+	                                });
+	                            }
+
+	                        }
+	                    }
 		    		}
 	    		}
     		}
