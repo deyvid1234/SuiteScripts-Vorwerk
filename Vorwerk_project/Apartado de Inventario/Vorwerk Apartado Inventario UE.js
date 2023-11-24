@@ -157,7 +157,7 @@ function(record,search,http,https,encode,runtime,serverWidget) {
                         var itemLines = cargarSO.getLineCount({
                             sublistId  : 'item'
                         });
-                      
+                        //var items= []
                         for(var i=0; i < itemLines; i++){
                             var itemId = cargarSO.getSublistValue({
                                 sublistId : 'item',
@@ -165,7 +165,11 @@ function(record,search,http,https,encode,runtime,serverWidget) {
                                 line      : i
                                 });
                             log.debug('itemId', itemId)
-                            if(id_Item == itemId ){
+                            //items.push(itemId)
+                            //log.debug('items', items)
+                            log.debug('id_Item',id_Item)
+
+                            if(id_Item == itemId){
                             log.debug("actualizar")
 
                             var itemQuantity = cargarSO.getSublistValue({
@@ -182,12 +186,54 @@ function(record,search,http,https,encode,runtime,serverWidget) {
                                 value: apartadoTotal,
                                 line      : i
                                 });  
+                            cargarSO.setSublistValue({
+                                sublistId : 'item',
+                                fieldId   : 'amount',
+                                value: 0.01,
+                                line      : i
+                                });  
                                 
                                 log.debug('apartadoTotal', apartadoTotal)
                                 log.debug('nuevoApartado', nuevoApartado)
-                            }
-                         }
 
+                                cargarSO.save({
+                                    enableSourcing: true,
+                                    ignoreMandatoryFields: true
+                                });
+                            }else {
+                                log.debug("crear linea")
+                                cargarSO.insertLine({
+                                    sublistId: 'item',
+                                    line: i
+                                });
+                                cargarSO.setSublistValue({
+                                    sublistId:'item',
+                                    fieldId:'item',
+                                    value:id_Item,
+                                    line: i
+                                });
+                                cargarSO.setSublistValue({
+                                    sublistId:'item',
+                                    fieldId:'quantity',
+                                    value:nuevoApartado,
+                                    line: i
+                                });
+                                cargarSO.setSublistValue({
+                                    sublistId:'item',
+                                    fieldId:'amount',
+                                    value:0.01,
+                                    line: i
+                                });
+
+                                cargarSO.save({
+                                    enableSourcing: true,
+                                    ignoreMandatoryFields: true
+                                });
+                            }
+
+                        }
+
+                        
                             
                         
                     }
