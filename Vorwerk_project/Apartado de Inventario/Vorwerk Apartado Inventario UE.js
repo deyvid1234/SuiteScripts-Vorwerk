@@ -72,25 +72,9 @@ function(record,search,http,https,encode,runtime,serverWidget) {
                     log.debug('transaccionApartados', transaccionApartados.text)
                     log.debug('location', location)
                     var itemType = dataItem['recordtype']//Tipo de registro del inventory item
-                    if(disponible_eshop >= 0) {
-                        log.debug('stocks','disponible_eshop '+disponible_eshop+' nuevoApartado '+nuevoApartado)
-                        record.submitFields({
-                        type: itemType,
-                        id: id_Item,
-                        values: { custitem_disponible_eshop: nuevoApartado+ disponible_eshop}
-                        })
-
-                    }
-                    else {
-                        record.submitFields({
-                        type: itemType,
-                        id: id_Item,
-                        values: { custitem_disponible_eshop: nuevoApartado}
-                        })
-                    }
-                    if(transaccionApartados[0].value == ""){
+                    
+                    if(transaccionApartados[0].value == ""){//Si no hay SO la crea
                        
-                        log.debug("crear")
                         var obj_SO= record.create({
                             type: 'salesorder',
                             isDynamic: false,
@@ -139,7 +123,7 @@ function(record,search,http,https,encode,runtime,serverWidget) {
                         record.submitFields({
                         type: itemType,
                         id: id_Item,
-                        values: { custitem_transaccion_apartados: id_SO}
+                        values: { custitem_transaccion_apartados: id_SO,custitem_disponible_eshop: nuevoApartado }
                         })
 
                         return id_SO;
@@ -150,80 +134,46 @@ function(record,search,http,https,encode,runtime,serverWidget) {
                         var cargarSO = record.load({
                             type: record.Type.SALES_ORDER,
                             id: idSOaCargar,
-                            isDynamic:
-                             false,
+                            isDynamic:false,
                         });
                         
                         var itemLines = cargarSO.getLineCount({
                             sublistId  : 'item'
                         });
                         //var items= []
+                        var qItemline, lineItem, existeItemLine = false
+
                         for(var i=0; i < itemLines; i++){
                             var itemId = cargarSO.getSublistValue({
                                 sublistId : 'item',
                                 fieldId   : 'item',
                                 line      : i
-                                });
-                            log.debug('itemId', itemId)
-                            //items.push(itemId)
-                            //log.debug('items', items)
-                            log.debug('id_Item',id_Item)
+                            });
 
                             if(id_Item == itemId){
-                            log.debug("actualizar")
+                                log.debug("actualizar")
+                                existeItemLine = true
+                               
+                                var itemQuantity = cargarSO.getSublistValue({
+                                    sublistId : 'item',
+                                    fieldId   : 'quantity',
+                                    line      : i
+                                });
 
-                            var itemQuantity = cargarSO.getSublistValue({
-                                sublistId : 'item',
-                                fieldId   : 'quantity',
-                                line      : i
-                                });  
-                                log.debug('itemQuantity', itemQuantity) 
-
-                            var apartadoTotal= itemQuantity+nuevoApartado
-                            cargarSO.setSublistValue({
-                                sublistId : 'item',
-                                fieldId   : 'quantity',
-                                value: apartadoTotal,
-                                line      : i
-                                });  
-                            cargarSO.setSublistValue({
-                                sublistId : 'item',
-                                fieldId   : 'amount',
-                                value: 0.01,
-                                line      : i
-                                });  
-                                
-                                log.debug('apartadoTotal', apartadoTotal)
-                                log.debug('nuevoApartado', nuevoApartado)
-
-                                cargarSO.save({
-                                    enableSourcing: true,
-                                    ignoreMandatoryFields: true
-                                });
-                            }else {
-                                log.debug("crear linea")
-                                cargarSO.insertLine({
-                                    sublistId: 'item',
-                                    line: i
-                                });
+                                var apartadoTotal= itemQuantity+nuevoApartado
                                 cargarSO.setSublistValue({
-                                    sublistId:'item',
-                                    fieldId:'item',
-                                    value:id_Item,
-                                    line: i
-                                });
+                                    sublistId : 'item',
+                                    fieldId   : 'quantity',
+                                    value: apartadoTotal,
+                                    line      : i
+                                    });  
                                 cargarSO.setSublistValue({
-                                    sublistId:'item',
-                                    fieldId:'quantity',
-                                    value:nuevoApartado,
-                                    line: i
-                                });
-                                cargarSO.setSublistValue({
-                                    sublistId:'item',
-                                    fieldId:'amount',
-                                    value:0.01,
-                                    line: i
-                                });
+                                    sublistId : 'item',
+                                    fieldId   : 'amount',
+                                    value: 0.01,
+                                    line      : i
+                                });  
+                                    
 
                                 cargarSO.save({
                                     enableSourcing: true,
@@ -233,9 +183,44 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 
                         }
 
-                        
-                            
-                        
+                        //No existe el item en la transaccion, Se crea nueva linea
+                        if(existeItemLine == false) {
+                            log.debug("crear linea")
+                            cargarSO.insertLine({
+                                sublistId: 'item',
+                                line: itemLines
+                            });
+                            cargarSO.setSublistValue({
+                                sublistId:'item',
+                                fieldId:'item',
+                                value:id_Item,
+                                line: i
+                            });
+                            cargarSO.setSublistValue({
+                                sublistId:'item',
+                                fieldId:'quantity',
+                                value:nuevoApartado,
+                                line: i
+                            });
+                            cargarSO.setSublistValue({
+                                sublistId:'item',
+                                fieldId:'amount',
+                                value:0.01,
+                                line: i
+                            });
+
+                            cargarSO.save({
+                                enableSourcing: true,
+                                ignoreMandatoryFields: true
+                            });
+
+                            //Actualizar Disponible Eshop
+                            record.submitFields({
+                                type: itemType,
+                                id: id_Item,
+                                values: { custitem_disponible_eshop: nuevoApartado+ disponible_eshop}
+                            })
+                        }
                     }
                 }
             return true
