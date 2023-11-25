@@ -68,9 +68,9 @@ function(record,search,http,https,encode,runtime,serverWidget) {
                     var location = thisRecord.getValue('custrecord_from_location')
                     var transaccionApartados= dataItem['custitem_transaccion_apartados']
                     var name = 3281861
-                    log.debug('transaccionApartados', transaccionApartados.value)
-                    log.debug('transaccionApartados', transaccionApartados.text)
+                    var actualizaDisponibleEshop= disponible_eshop + nuevoApartado
                     log.debug('location', location)
+                    log.debug('nuevoApartado', nuevoApartado)
                     var itemType = dataItem['recordtype']//Tipo de registro del inventory item
                     
                     if(transaccionApartados[0].value == ""){//Si no hay SO la crea
@@ -123,13 +123,13 @@ function(record,search,http,https,encode,runtime,serverWidget) {
                         record.submitFields({
                         type: itemType,
                         id: id_Item,
-                        values: { custitem_transaccion_apartados: id_SO,custitem_disponible_eshop: nuevoApartado }
+                        values: { custitem_transaccion_apartados: id_SO,custitem_disponible_eshop: actualizaDisponibleEshop }
                         })
 
                         return id_SO;
                     }else{
-                         log.debug("cargar")
-                         log.debug('transaccionApartados', transaccionApartados[0].value)
+                        log.debug("cargar")
+                        log.debug('transaccionApartados', transaccionApartados[0].value)
                         var idSOaCargar = transaccionApartados[0].value
                         var cargarSO = record.load({
                             type: record.Type.SALES_ORDER,
@@ -140,7 +140,7 @@ function(record,search,http,https,encode,runtime,serverWidget) {
                         var itemLines = cargarSO.getLineCount({
                             sublistId  : 'item'
                         });
-                        //var items= []
+                        
                         var existeItemLine = false
 
                         for(var i=0; i < itemLines; i++){
@@ -179,6 +179,12 @@ function(record,search,http,https,encode,runtime,serverWidget) {
                                     enableSourcing: true,
                                     ignoreMandatoryFields: true
                                 });
+
+                                record.submitFields({
+                                type: itemType,
+                                id: id_Item,
+                                values: { custitem_disponible_eshop: actualizaDisponibleEshop}
+                            })
                             }
 
                         }
@@ -218,7 +224,7 @@ function(record,search,http,https,encode,runtime,serverWidget) {
                             record.submitFields({
                                 type: itemType,
                                 id: id_Item,
-                                values: { custitem_disponible_eshop: nuevoApartado+ disponible_eshop}
+                                values: { custitem_disponible_eshop: actualizaDisponibleEshop}
                             })
                         }
                     }
