@@ -62,7 +62,9 @@ function(record,search,http,https,encode,runtime,serverWidget) {
                         columns: ['custitem_disponible_eshop','recordtype','custitem_transaccion_apartados']//Stock disponible en el campo para eshop, tipo de registro
                     });
 
+
                     log.debug('dataItem',dataItem)
+
                     var disponible_eshop = parseInt(dataItem['custitem_disponible_eshop']) //Stock dedicado a eshop
                     var nuevoApartado = thisRecord.getValue('custrecord_cantidad_apartada')
                     var location = thisRecord.getValue('custrecord_from_location')
@@ -167,6 +169,22 @@ function(record,search,http,https,encode,runtime,serverWidget) {
                                     value: apartadoTotal,
                                     line      : i
                                     });  
+                                
+                                cargarSO.setSublistValue({
+                                    sublistId : 'item',
+                                    fieldId   : 'commitmentfirm',
+                                    value: true,
+                                    line      : i
+                                    });
+                                
+                                cargarSO.setSublistValue({
+                                    sublistId : 'item',
+                                    fieldId   : 'quantitycommitted',
+                                    value: apartadoTotal,
+                                    line      : i
+                                    }); 
+                                
+                                
                                 cargarSO.setSublistValue({
                                     sublistId : 'item',
                                     fieldId   : 'amount',
