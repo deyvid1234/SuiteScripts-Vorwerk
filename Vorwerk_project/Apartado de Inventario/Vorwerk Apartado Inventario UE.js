@@ -152,6 +152,12 @@ function(record,search,http,https,encode,runtime,serverWidget) {
                                 line      : i
                             });
 
+                            var setLocation = cargarSO.setCurrentSublistValue({
+                                    sublistId: 'item',
+                                    fieldId: 'location',
+                                    value: 53
+                                });
+
                             if(id_Item == itemId){
                                 
                                 log.debug("actualizar")
@@ -207,33 +213,40 @@ function(record,search,http,https,encode,runtime,serverWidget) {
                         //No existe el item en la transaccion, Se crea nueva linea
                         if(existeItemLine == false) {
                             log.debug("crear linea")
-                            cargarSO.insertLine({
+
+                            cargarSO.selectNewLine({
                                 sublistId: 'item',
-                                line: itemLines
+                                
                             });
-                            cargarSO.setSublistValue({
+                            cargarSO.setCurrentSublistValue({
                                 sublistId:'item',
                                 fieldId:'item',
-                                value:id_Item,
-                                line: i
+                                value:id_Item,                                
+                                
                             });
-                            cargarSO.setSublistValue({
+                            cargarSO.setCurrentSublistValue({
                                 sublistId:'item',
                                 fieldId:'quantity',
                                 value:nuevoApartado,
-                                line: i
+                                
                             });
-                            cargarSO.setSublistValue({
+                            cargarSO.setCurrentSublistValue({
                                 sublistId:'item',
                                 fieldId:'amount',
                                 value:0.01,
-                                line: i
+                                
+                            });
+                             cargarSO.setCurrentSublistValue({
+                                sublistId:'item',
+                                fieldId:'location',
+                                value:53
+                                
                             });
                             //Añadir Location
 
-                            /*cargarSO.commitLine({//cierre de linea seleccionada 
+                            cargarSO.commitLine({//cierre de linea seleccionada 
                                     sublistId: 'item'
-                            }); */
+                            }); 
 
                             cargarSO.save({
                                 enableSourcing: false,
