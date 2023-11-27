@@ -151,12 +151,21 @@ function(record,search,http,https,encode,runtime,serverWidget) {
                                 fieldId   : 'item',
                                 line      : i
                             });
-
+                            cargarSO.selectLine({
+                                sublistId: 'item',
+                                line: i
+                            });
                             var setLocation = cargarSO.setCurrentSublistValue({
-                                    sublistId: 'item',
-                                    fieldId: 'location',
-                                    value: 53
-                                });
+                                sublistId: 'item',
+                                fieldId: 'location',
+                                value: 53
+                            });
+                            
+                            cargarSO.commitLine({//cierre de linea seleccionada 
+                                sublistId: 'item'
+                            }); 
+
+                            
 
                             if(id_Item == itemId){
                                 
