@@ -735,7 +735,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 			                values: { custitem_disponible_eshop: stockAfter}
 		            	})
 		            	//Actualizar SO apartados
-		            	else{
+		            	}else{
 	                         log.debug("cargar")
 	                         var transaccionApartado = dataItem[0].custitem_transaccion_apartados
 	                         log.debug('transaccionApartados', transaccionApartado)
@@ -743,7 +743,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 	                        var cargarSO = record.load({
 	                            type: record.Type.SALES_ORDER,
 	                            id: idSOaCargar,
-	                            isDynamic:false,
+	                            isDynamic:true,
 	                        });
 	                        
 	                        var itemLines = cargarSO.getLineCount({
@@ -757,6 +757,19 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 	                                fieldId   : 'item',
 	                                line      : i
 	                            });
+                                cargarSO.selectLine({
+                                    sublistId: 'item',
+                                    line: i
+                                });
+                                var setLocation = cargarSO.setCurrentSublistValue({
+                                    sublistId: 'item',
+                                    fieldId: 'location',
+                                    value: 53
+                                });
+                                
+                                cargarSO.commitLine({//cierre de linea seleccionada 
+                                    sublistId: 'item'
+                                }); 
 
 	                            if(tmp_id == itemId){
 	                                log.debug("actualizar")
@@ -767,31 +780,44 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 	                                    fieldId   : 'quantity',
 	                                    line      : i
 	                                });
+                                    cargarSO.selectLine({
+                                        sublistId: 'item',
+                                        line: i
+                                    });
 
 	                                var apartadoTotal= itemQuantity - quantitySalesOrder
-	                                cargarSO.setSublistValue({
+	                                cargarSO.setCurrentSublistValue({
 	                                    sublistId : 'item',
 	                                    fieldId   : 'quantity',
-	                                    value: apartadoTotal,
-	                                    line      : i
-	                                    });  
-	                                cargarSO.setSublistValue({
+	                                    value: apartadoTotal
+	                                    
+	                                });  
+	                                cargarSO.setCurrentSublistValue({
 	                                    sublistId : 'item',
 	                                    fieldId   : 'amount',
-	                                    value: 0.01,
-	                                    line      : i
-	                                });  
+	                                    value: 0.01
+	                                    
+	                                });
+                                    cargarSO.setCurrentSublistValue({
+                                        sublistId : 'item',
+                                        fieldId   : 'location',
+                                        value: 53
+                                        
+                                    });  
+                                    cargarSO.commitLine({//cierre de linea seleccionada 
+                                        sublistId: 'item'
+                                    }); 
 	                                    
 
 	                                cargarSO.save({
-	                                    enableSourcing: true,
+	                                    enableSourcing: false,
 	                                    ignoreMandatoryFields: true
 	                                });
 	                            }
 
 	                        }
 	                    }
-		    		}
+		    		
 	    		}
     		}
     	}catch(e){
