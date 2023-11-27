@@ -43,7 +43,9 @@ function(record,dialog,http,https,search) {
 
             var fromLocation = thisRecord.getValue('custrecord_from_location');
             var fromLocationEtiqueta = thisRecord.getText('custrecord_from_location');
+            var transaccionApartados = thisRecord.getValue('custitem_transaccion_apartados');
             console.log('Location',fromLocation)
+            console.log('transaccionApartados',transaccionApartados)
 
             var inv_disponible
             var apartadoItem
@@ -160,7 +162,7 @@ function(record,dialog,http,https,search) {
                                     'AND',
                                     ['internalid', 'anyof', fieldValue],
                                 ],
-                        columns: ['locationquantityonhand','custitem_disponible_eshop']
+                        columns: ['locationquantityavailable','custitem_disponible_eshop']
                     });
                       
                     var pagedResults = busqueda.runPaged();
@@ -168,7 +170,7 @@ function(record,dialog,http,https,search) {
                             var currentPage = pagedResults.fetch({index: pageRange.index});
                             currentPage.data.forEach(function (result) {
                                 
-                                inv_disponible = result.getValue('locationquantityonhand');
+                                inv_disponible = result.getValue('locationquantityavailable');
                                 apartadoItem = result.getValue('custitem_disponible_eshop');
                             }); 
                     });
@@ -176,7 +178,7 @@ function(record,dialog,http,https,search) {
                     if(inv_disponible){
                         
                         console.log('apartadoItem',apartadoItem)
-                        disponibleParaApartar = inv_disponible-apartadoItem
+                        disponibleParaApartar = inv_disponible
                         thisRecord.setValue('custrecord_cantidad_disponible', disponibleParaApartar);
                         thisRecord.getField('custrecord_cantidad_apartada').isDisabled = false;
                     }else{
@@ -220,6 +222,15 @@ function(record,dialog,http,https,search) {
                     var options = {
                         title: 'Error',
                         message: 'No puede apartar mas de la cantidad disponible en el location Seleccionado'
+                    };
+                    dialog.alert(options);
+                }
+
+                if(fieldValue < 1 ){
+                     thisRecord.setValue('custrecord_cantidad_apartada', '');
+                    var options = {
+                        title: 'Error',
+                        message: 'No puede apartar cero artículos ni cantidades negativas'
                     };
                     dialog.alert(options);
                 }
