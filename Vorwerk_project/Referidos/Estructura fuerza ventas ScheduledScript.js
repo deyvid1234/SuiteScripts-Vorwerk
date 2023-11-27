@@ -251,7 +251,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
             log.debug('objRequestDOPPLER',objRequestDOPPLER)
             var idLista = 28607733
             var apiKeyDoppler = '62AE8124B6180E8735AB20BB03933167'
-            /*var responseService = https.post({
+            var responseService = https.post({
                 url: 'https://restapi.fromdoppler.com/accounts/ezequiel.olguin%40thermomix.mx/lists/'+idLista+'/subscribers/import?api_key='+apiKeyDoppler,
                 body : JSON.stringify(objRequestDOPPLER),
                 headers: {
@@ -259,22 +259,22 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                     "Authorization": "token "+apiKeyDoppler
                 }
             }).body;
-            log.debug('responseService Doppler',responseService)*/
+            log.debug('responseService Doppler',responseService)
 
 
             if(runtime.envType != 'PRODUCTION'){ 
                 urlLMS = 'http://api-referidos-thrmx.lms-la.com/api/fuerzaVentas'
                 key = 'Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJJZCI6IjhhMDJkZDE3LTYzMjAtNGFiMi1iOWFkLWZlZDMzZWRhYzNiNiIsInN1YiI6InZzaWx2YWNAbG1zLmNvbS5teCIsImVtYWlsIjoidnNpbHZhY0BsbXMuY29tLm14IiwidW5pcXVlX25hbWUiOiJ2c2lsdmFjQGxtcy5jb20ubXgiLCJqdGkiOiI4MjEwMDk4MC0zMDNjLTRlMDktYjM1NS0xMGM5N2ViNWU0ZjkiLCJuYmYiOjE2NzgyMjYzNTYsImV4cCI6MTcwOTg0ODc1NiwiaWF0IjoxNjc4MjI2MzU2fQ.CetagLsFKPT9_kj50JrzOemPHUw4FID7uzEs7AYC3WlkiE5S1VJdhURTlTc4XWeX2-An6P5SzQPlCZtvM-WJrQ'
             }else{//prod
-                urlLMS = ''
-                key = ''
+                urlLMS = 'http://recomiendayganathermomix.mx:9095/api/fuerzaVentas'
+                key = 'Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJJZCI6IjIyMWFmN2U5LTJjMDAtNDYzZC1hYzliLThkZDA2MzhmYzYzMSIsInN1YiI6InRocm14Lm5ldHN1aXRlLmFwaUBsbXMtbGEuY29tIiwiZW1haWwiOiJ0aHJteC5uZXRzdWl0ZS5hcGlAbG1zLWxhLmNvbSIsInVuaXF1ZV9uYW1lIjoidGhybXgubmV0c3VpdGUuYXBpQGxtcy1sYS5jb20iLCJqdGkiOiIzZjc3NzM1NS0zNmI1LTRlYWQtODg2NC0yMzI2MWZlM2VjZjEiLCJuYmYiOjE2OTkzNzIwMDYsImV4cCI6MTczMDk5NDQwNiwiaWF0IjoxNjk5MzcyMDA2fQ.Urf90o2LXL3ZVsepiEDLi5E06AMQHP_ro2FWqEehoDHv1s8fXEoGn7zdU75Q8cZyCYeRT-xEgdr-5koTFHIiuA'
             }
             log.debug('urlLMS',urlLMS)
             log.debug('key',key)
             log.debug('objRequestLMS',objRequestLMS)
             var responseServiceLMS = http.put({
             url: urlLMS,
-            body : objRequestLMS,
+            body : JSON.stringify(objRequestLMS),
             headers: {
                 "Content-Type": "application/json",
                 "Authorization": key

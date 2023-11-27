@@ -85,7 +85,7 @@ function(record,dialog,http,https,search) {
                                 'AND',
                                 ['internalid', 'anyof', idsKit],
                             ],
-                        columns: ['locationquantityonhand','custitem_disponible_eshop','internalid','name']
+                        columns: ['locationquantityavailable','custitem_disponible_eshop','internalid','name']
                     });
                     inv_disponible = false
                     var arts = []
@@ -95,7 +95,7 @@ function(record,dialog,http,https,search) {
                             currentPage.data.forEach(function (result) {
                                 var values = result.getAllValues();
                                 console.log('values search articulos del kit',values)
-                                locationquantityonhand = parseInt(result.getValue('locationquantityonhand'));
+                                locationquantityavailable = parseInt(result.getValue('locationquantityavailable'));
                                 disponibleEshopComponente = parseInt(result.getValue('custitem_disponible_eshop'));
 
                                 var nameArtSearch = result.getValue('name')
@@ -109,25 +109,25 @@ function(record,dialog,http,https,search) {
                                 if (!disponibleEshopComponente) {
                                     disponibleEshopComponente = 0
                                 }
-                                disponibleItemComponente = locationquantityonhand-disponibleEshopComponente;
+                                disponibleItemComponente = locationquantityavailable;
                                 var art = []
                                 art.idArt = internalidArt
                                 art.nameArt = nameArtSearch
-                                art.onHand = locationquantityonhand
+                                art.available = locationquantityavailable
                                 art.disponibleEshopArticulo = disponibleEshopComponente
                                 art.limiteApartadoArt = disponibleItemComponente
 
                                 arts.push(art)
 
                                 console.log('disponibleEshopComponente',disponibleEshopComponente)
-                                console.log('locationquantityonhand', locationquantityonhand)
+                                console.log('locationquantityavailable', locationquantityavailable)
                                 console.log('disponibleItemComponente', disponibleItemComponente)
 
                                
                                 if(inv_disponible == false ){
-                                    inv_disponible = locationquantityonhand
-                                }else if(locationquantityonhand < inv_disponible){
-                                        inv_disponible = locationquantityonhand
+                                    inv_disponible = locationquantityavailable
+                                }else if(locationquantityavailable < inv_disponible){
+                                        inv_disponible = locationquantityavailable
                                 }
                                 
                                 return true;
@@ -138,7 +138,7 @@ function(record,dialog,http,https,search) {
                     if(inv_disponible){
                         
                         console.log('apartadoItem',apartadoItem)
-                        disponibleParaApartar = inv_disponible-apartadoItem
+                        disponibleParaApartar = inv_disponible
                         thisRecord.setValue('custrecord_cantidad_disponible', disponibleParaApartar);
                         thisRecord.getField('custrecord_cantidad_apartada').isDisabled = false;
                     }else{
