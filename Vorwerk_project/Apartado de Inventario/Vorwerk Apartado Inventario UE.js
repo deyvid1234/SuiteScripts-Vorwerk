@@ -170,7 +170,7 @@ function(record,search,http,https,encode,runtime,serverWidget) {
                                     line      : i
                                     });  
                                 
-                                cargarSO.setSublistValue({
+                                /*cargarSO.setSublistValue({
                                     sublistId : 'item',
                                     fieldId   : 'commitmentfirm',
                                     value: true,
@@ -184,19 +184,18 @@ function(record,search,http,https,encode,runtime,serverWidget) {
                                     line      : i
                                     }); 
                                 
-                                
+                                */
                                 cargarSO.setSublistValue({
                                     sublistId : 'item',
                                     fieldId   : 'amount',
                                     value: 0.01,
                                     line      : i
                                 });  
-                                    
+                                cargarSO.commitLine({//cierre de linea seleccionada 
+                                    sublistId: 'item'
+                                }); 
 
-                                cargarSO.save({
-                                    enableSourcing: true,
-                                    ignoreMandatoryFields: true
-                                });
+                                cargarSO.save();
 
                                 record.submitFields({
                                 type: itemType,
@@ -232,6 +231,9 @@ function(record,search,http,https,encode,runtime,serverWidget) {
                                 value:0.01,
                                 line: i
                             });
+                            cargarSO.commitLine({//cierre de linea seleccionada 
+                                    sublistId: 'item'
+                            }); 
 
                             cargarSO.save({
                                 enableSourcing: true,
