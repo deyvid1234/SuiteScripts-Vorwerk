@@ -136,7 +136,7 @@ function(record,search,http,https,encode,runtime,serverWidget) {
                         var cargarSO = record.load({
                             type: record.Type.SALES_ORDER,
                             id: idSOaCargar,
-                            isDynamic:false,
+                            isDynamic:true,
                         });
                         
                         var itemLines = cargarSO.getLineCount({
@@ -153,6 +153,7 @@ function(record,search,http,https,encode,runtime,serverWidget) {
                             });
 
                             if(id_Item == itemId){
+                                
                                 log.debug("actualizar")
                                 existeItemLine = true
                                
@@ -162,40 +163,37 @@ function(record,search,http,https,encode,runtime,serverWidget) {
                                     line      : i
                                 });
 
-                                var apartadoTotal= itemQuantity+nuevoApartado // script SO - itemQuantity - quantitySalesOrder
-                                cargarSO.setSublistValue({
-                                    sublistId : 'item',
-                                    fieldId   : 'quantity',
-                                    value: apartadoTotal,
-                                    line      : i
-                                    });  
+                                cargarSO.selectLine({
+                                    sublistId: 'item',
+                                    line: i
+                                });
+
+                                var apartadoTotal= itemQuantity+nuevoApartado
+
+                                cargarSO.setCurrentSublistValue({
+                                    sublistId: 'item',
+                                    fieldId: 'quantity',
+                                    value: apartadoTotal
+                                });
+                                cargarSO.setCurrentSublistValue({
+                                    sublistId: 'item',
+                                    fieldId: 'amount',
+                                    value: 0.01
+                                });
+                                cargarSO.setCurrentSublistValue({
+                                    sublistId: 'item',
+                                    fieldId: 'location',
+                                    value: 53
+                                });
                                 
-                                /*cargarSO.setSublistValue({
-                                    sublistId : 'item',
-                                    fieldId   : 'commitmentfirm',
-                                    value: true,
-                                    line      : i
-                                    });
-                                
-                                cargarSO.setSublistValue({
-                                    sublistId : 'item',
-                                    fieldId   : 'quantitycommitted',
-                                    value: apartadoTotal,
-                                    line      : i
-                                    }); 
-                                
-                                */
-                                cargarSO.setSublistValue({
-                                    sublistId : 'item',
-                                    fieldId   : 'amount',
-                                    value: 0.01,
-                                    line      : i
-                                });  
                                 cargarSO.commitLine({//cierre de linea seleccionada 
                                     sublistId: 'item'
                                 }); 
 
-                                cargarSO.save();
+                                cargarSO.save({
+                                    enableSourcing: false,
+                                    ignoreMandatoryFields: true
+                                });
 
                                 record.submitFields({
                                 type: itemType,
@@ -231,12 +229,14 @@ function(record,search,http,https,encode,runtime,serverWidget) {
                                 value:0.01,
                                 line: i
                             });
-                            cargarSO.commitLine({//cierre de linea seleccionada 
+                            //Añadir Location
+
+                            /*cargarSO.commitLine({//cierre de linea seleccionada 
                                     sublistId: 'item'
-                            }); 
+                            }); */
 
                             cargarSO.save({
-                                enableSourcing: true,
+                                enableSourcing: false,
                                 ignoreMandatoryFields: true
                             });
 
