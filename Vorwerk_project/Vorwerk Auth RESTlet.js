@@ -606,6 +606,7 @@ function(record,search,https,file,http,format,encode,email) {
 					locationValidado = req_info[x]
 					log.debug('segundo if',locationValidado)
 					obj_sales_order.setValue('location',locationValidado)
+					obj_sales_order.setValue('custbody_so_eshop',true)
 				}
 			}
 			obj_sales_order.setValue('custbody_cfdi_metpago_sat',req_info.custbody_cfdi_metododepago)
