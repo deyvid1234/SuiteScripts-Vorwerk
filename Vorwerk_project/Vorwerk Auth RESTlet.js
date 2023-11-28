@@ -221,52 +221,13 @@ function(record,search,https,file,http,format,encode,email) {
 		}
   	}
     
-    function searchItemsAux(){
-		try {
-			var data = [];
-			var vendorBills = search.load({
-	    		id: 'customsearch_item_location_available_aux'
-			});
-			
-			var pagedResults = vendorBills.runPaged();
-			pagedResults.pageRanges.forEach(function (pageRange){
-				var currentPage = pagedResults.fetch({index: pageRange.index});
-				currentPage.data.forEach(function (r) {
-					
-					var values = r.getAllValues();
-					
-					var obj_aux = {
-							internalid: values['formulatext'],
-							stock: parseInt(values['locationquantityavailable'])||0,
-							sku: values['itemid'],
-							name: values['displayname']
-					}
-					//sandbox 58 //production 53
-					if(values['inventoryLocation.internalid'].length > 0){
-						
-						if(values['inventoryLocation.internalid'][0].value=="82" || values['inventoryLocation.internalid'][0].value==""){
-							data.push(obj_aux);
-						}
-					}else{
-						data.push(obj_aux);
-					}
-				})
-			});
-			
-			return data;
-		}catch(err){
-			return {error:err}
-			log.error('error searchItems Aux', err);
-		}
-		
-	} 
     
     
     
   	//funcion para extraer los items 
     function searchItems(){
 		try {
-			var data = searchItemsAux();
+			var result = []
 			var vendorBills = search.load({
 	    		id: 'customsearch_item_location_available'
 			});
@@ -277,22 +238,25 @@ function(record,search,https,file,http,format,encode,email) {
 				currentPage.data.forEach(function (r) {
 					
 					var values = r.getAllValues();
-					if(values['itemid'] = 'TL5544'){
-						log.debug('values',values)
-					}
+					log.debug('values',values)
 					
+					var stock = 0
+					//Parche solo Septiebre/hasta liberar 100 Ermita -> Regresar a parseInt(values['custitem_disponible_eshop'])||0
+					if(parseInt(values['custitem_disponible_eshop']) > 0){
+						stock = parseInt(values['custitem_disponible_eshop'])
+					}else{
+						stock = parseInt(values['locationquantityavailable'])||0
+					}
+
 					var obj_aux = {
-							internalid: values['formulatext'],
-							stock: parseInt(values['custitem_disponible_eshop'])||0,//parseInt(values['locationquantityavailable'])||0,
+							internalid: r.getValue('internalid'),
+							stock: stock,
 							sku: values['itemid'],
 							name: values['displayname']
 					}
-					if(values['formulatext'] = '2544'){
-						log.debug('values',values)
-						log.debug('obj_aux',obj_aux)
-					}
+					
 					//sandbox 58 //production 53
-					data.push(obj_aux);
+					result.push(obj_aux);
 					
 				})
 			});
@@ -301,10 +265,10 @@ function(record,search,https,file,http,format,encode,email) {
         		author: '923581',
 				recipients: 'pilar.torres@vorwerk.de',//'pilar.torres@vorwerk.de',
 				subject: 'Información de Items',
-				body: JSON.stringify(data)
+				body: JSON.stringify(result)
         	});
 			
-			return data;
+			return result;
 		}catch(err){
 			return {error:err}
 			log.error('error searchItems', err);
@@ -596,13 +560,13 @@ function(record,search,https,file,http,format,encode,email) {
 					obj_sales_order.setValue(x,req_info[x]) 
 				}
 				log.debug(x,req_info[x])
-				if((x == "location" || x == "Location")&& req_info[x] == 53){
-					locationValidado = 82
+				if((x == "location" || x == "Location")&& req_info[x] == 53){//Se asigna Ermita si viene con location Eshop
+					locationValidado = 53 // 82 Cambiar a 82 en prod
 					log.debug('primer if',locationValidado)
 					obj_sales_order.setValue('location',locationValidado)
 					obj_sales_order.setValue('custbody_so_eshop',true)
 				}
-				if(x == "location" || x == "Location"){
+				if(x == "location" || x == "Location"){//Si el location es diferente a Eshop asigna lo que manda tienda en linea
 					locationValidado = req_info[x]
 					log.debug('segundo if',locationValidado)
 					obj_sales_order.setValue('location',locationValidado)
