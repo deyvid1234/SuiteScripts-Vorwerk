@@ -722,7 +722,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 		    		log.debug('disponible_eshop',disponible_eshop)
 		    		var itemType = dataItem['recordtype']
 		    		log.debug('itemType',itemType)
-		    		if(disponible_eshop > 0  && custbody_so_eshop == true){//Cambiar Ermita 82 && locationSO == 53
+		    		if(disponible_eshop > 0  && (custbody_so_eshop == true || locationSO == 53) ){//Cambiar Ermita 82 && locationSO == 53
 		    			//Restar quantity del stock eshop
 		    			log.debug('entra if')
 		    			var quantitySalesOrder = rec.getSublistValue({
@@ -861,7 +861,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 	                    log.debug('disponible_eshop',disponible_eshop)
 	                    var itemType = dataItem['recordtype']
 	                    log.debug('itemType',itemType)
-	                    if(disponible_eshop > 0 && custbody_so_eshop == true){//Cambiar a Ermita 82  && locationSO == 53 
+	                    if(disponible_eshop > 0 && (custbody_so_eshop == true || locationSO == 53)) {//Cambiar a Ermita 82  && locationSO == 53 
 	                        //Restar quantity del stock eshop
 	                        var quantitySalesOrder = rec.getSublistValue({
 	                            sublistId: 'item',

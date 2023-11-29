@@ -44,9 +44,10 @@ function(record,dialog,http,https,search) {
             var fromLocation = thisRecord.getValue('custrecord_from_location');
             var fromLocationEtiqueta = thisRecord.getText('custrecord_from_location');
             var transaccionApartados = thisRecord.getValue('custitem_transaccion_apartados');
+            
             console.log('Location',fromLocation)
             console.log('transaccionApartados',transaccionApartados)
-
+           
             var inv_disponible
             var apartadoItem
 
@@ -106,7 +107,7 @@ function(record,dialog,http,https,search) {
 
                                 console.log('internalidArt',internalidArt)
                                 
-                                if (!disponibleEshopComponente) {
+                                if (!disponibleEshopComponente||disponibleEshopComponente =='' ) {
                                     disponibleEshopComponente = 0
                                 }
                                 disponibleItemComponente = locationquantityavailable;
@@ -206,7 +207,7 @@ function(record,dialog,http,https,search) {
 
     		}
 
-            if(fieldID=='custrecord_cantidad_apartada' && fieldValue){
+            if(fieldID=='custrecord_cantidad_apartada' && fieldValue > 0){
 
                 var cantidadApartada = thisRecord.getValue('custrecord_cantidad_apartada');
                 console.log('cantidadApartada', cantidadApartada)
@@ -236,6 +237,15 @@ function(record,dialog,http,https,search) {
                 }
                 info.cantidadApartada = fieldValue
                 console.log('info cantidad apartada',info)
+            }
+
+            if(fieldID=='custrecord_liberar_apartado' && fieldValue){
+                thisRecord.setValue('custrecord_cantidad_apartada', 0);
+                thisRecord.getField('custrecord_cantidad_apartada').isDisabled = true;
+                console.log('borrar e inactivar cantidad apartada')
+            }else if(fieldID=='custrecord_liberar_apartado' && !fieldValue){
+                thisRecord.getField('custrecord_cantidad_apartada').isDisabled = false;
+                console.log('activar cantidad apartada')
             }
     		
     	}catch(err){
