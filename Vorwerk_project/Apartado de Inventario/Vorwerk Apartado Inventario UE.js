@@ -93,12 +93,18 @@ function(record,search,http,https,encode,runtime,serverWidget) {
                         log.debug('dataItem',dataItem)
 
                         var disponible_eshop = parseInt(dataItem['custitem_disponible_eshop']) //Stock dedicado a eshop
+                            
+                            if (!disponible_eshop||disponible_eshop =='' ) {
+                                    disponible_eshop = 0
+                                }
                         var nuevoApartado = thisRecord.getValue('custrecord_cantidad_apartada')
                         var location = thisRecord.getValue('custrecord_from_location')
                         var transaccionApartados= dataItem['custitem_transaccion_apartados']
                         var name = 3281861
                         var actualizaDisponibleEshop= disponible_eshop + nuevoApartado
+                        log.debug('disponible_eshop', disponible_eshop)
                         log.debug('location', location)
+                        log.debug('actualizaDisponibleEshop', actualizaDisponibleEshop)
                         log.debug('nuevoApartado', nuevoApartado)
                         var itemType = dataItem['recordtype']//Tipo de registro del inventory item
                         
