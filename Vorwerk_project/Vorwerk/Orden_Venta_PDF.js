@@ -238,13 +238,14 @@ function Orden_Venta_PDF(request,response)
                 ],
                 [
                     new nlobjSearchColumn("itemid").setSort(false),
-                    /*new nlobjSearchColumn("displayname"),
-                    new nlobjSearchColumn("salesdescription"),
+                    new nlobjSearchColumn("displayname"),
+                    /*new nlobjSearchColumn("salesdescription"),
                     new nlobjSearchColumn("type"),
                     new nlobjSearchColumn("internalid")*/
                 ]
             );
             var skuDelItem= itemSearch[0].getValue("itemid")
+            var nameDelTtem = itemSearch[0].getValue("displayname")
             //nlapiLogExecution('debug', 'itemSearch', );
             //nlapiLogExecution('debug', 'idItemSearch', idItemSearch );
            // var itemData=nlapiLoadRecord('inventoryitem', idItemSearch);
@@ -268,7 +269,7 @@ function Orden_Venta_PDF(request,response)
 //hipo leave this beautiful body please                     
             strName     += "<tr class='"+ trClass + "'>";
             strName     += "<td align='left' font-size=\"9pt\">"                + sku   + "</td>";
-            strName     += "<td align='left' font-size=\"9pt\">"                + description   + "</td>";
+            strName     += "<td align='left' font-size=\"9pt\">"                + nameDelTtem   + "</td>";
             strName     += "<td align='center' font-size=\"9pt\">"              + quantity      + "</td>";
             strName     += "<td align='center' font-size=\"9pt\">"              + serie         + "</td>";
             strName     += "<td align='right' font-size=\"9pt\">$"              + currencyFormat(taxrate,1)     + "%</td>";
@@ -283,7 +284,7 @@ function Orden_Venta_PDF(request,response)
                 nlapiLogExecution('debug', 'artsKits[i]', artsKits[idItemarts][i]);
                 strName     += "<tr class='"+ trClass + "'>";
                 strName     += "<td align='left' font-size=\"9pt\">"                + ''   + "</td>";
-                strName     += "<td align='left' font-size=\"9pt\">"                + artsKits[idItemarts][i]   + "</td>";
+                strName     += "<td align='letf' font-size=\"8pt\">"                + artsKits[idItemarts][i]   + "</td>";
                 strName     += "<td align='center' font-size=\"9pt\">"              + ''      + "</td>";
                 strName     += "<td align='center' font-size=\"9pt\">"              + ''         + "</td>";
                 strName     += "<td align='right' font-size=\"9pt\">"              + ''    + "</td>";
