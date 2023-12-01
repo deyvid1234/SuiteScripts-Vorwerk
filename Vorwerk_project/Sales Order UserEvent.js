@@ -1492,6 +1492,12 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                    operator: 'is',
                    values: true
                }));
+      		}else{
+      			busqueda.filters.push(search.createFilter({
+                   name: 'custrecordtm64u',
+                   operator: 'is',
+                   values: false
+               }));
       		}
              busqueda.run().each(function(r){//almacenamiento en el object los valores de la tabla 
             	 tabla_Tm[r.getValue('custrecord_vw_no_ventas')]={
