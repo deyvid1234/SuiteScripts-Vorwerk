@@ -424,7 +424,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 	    		var idOrden = rec.getValue('id')
 	    		var importe = rec.getValue('total')
 	    		var salesrep = rec.getValue('salesrep')
-	    		var tipo_venta = rec.getValue('custbody_tipo_venta')
+				var tipo_venta = rec.getValue('custbody_tipo_venta')
 
 	    		old_salesrep = salesrep
 	    		log.debug('salesrep Registra venta',salesrep)
@@ -489,7 +489,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 	            	});
 	            	log.debug('objPresentadora',objPresentadora)
 	            	log.debug('objPresentadora',objPresentadora)
-
+	            	log.debug('type',type)
 	            	
 		    		if( (type == 'create' || salesrep != old_salesrep) && tipo_venta == 2){
 
@@ -578,9 +578,13 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 
 			    	//Campos para validar si es cancelacion 
 			    	var op1 = rec.getValue('custbody_otro_financiamiento')
+                    //log.debug('op1',op1)
 		    		var op1old = oldrec.getValue('custbody_otro_financiamiento')
+                    //log.debug('op1old',op1old)
 		    		var op2 = rec.getValue('custbody_tipo_venta')
+                    //log.debug('op2',op2)
 		    		var op2old = oldrec.getValue('custbody_tipo_venta')
+                    //log.debug('op2old',op2old)
 		    		if( type == 'edit' && ( (op1 == 4 && op1!=op1old) || (op2 == 16 && op2 != op2old) )){
 		    			log.debug('Es cancelacion')
 		    			
@@ -692,6 +696,284 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
     		log.error("error after submit",err);
     	}
 
+    	try{//Actualizacion Inventario ficticio eshop
+    		if(type == 'create'){
+    			var numLines = salesorder.getLineCount({//Toma las lineas de la SO
+	                sublistId: 'item'
+	            });
+	            log.debug('numLines',numLines)
+	    		for(var e =0; e<numLines; e++){	//Se recorre cada linea
+	    			log.debug('e',e)
+					var tmp_id = rec.getSublistValue({//ID del item
+	                    sublistId: 'item',
+	                    fieldId: 'item',
+	                    line: e
+	                })
+	                var locationSO = rec.getValue('location')
+	                var custbody_so_eshop = rec.getValue('custbody_so_eshop') //Check del restlet que indica que viene de tienda en linea
+
+	                var dataItem = search.lookupFields({// Busqueda de Invdentory Item
+		                type: 'item',
+		                id: tmp_id,
+		                columns: ['custitem_disponible_eshop','recordtype','custitem_transaccion_apartados']//Stock disponible en el campo para eshop, tipo de registro
+		            });
+
+	    			log.debug('dataItem',dataItem)
+	    			var disponible_eshop = parseInt(dataItem['custitem_disponible_eshop']) //Stock dedicado a eshop
+		    		log.debug('disponible_eshop',disponible_eshop)
+		    		var itemType = dataItem['recordtype']
+		    		log.debug('itemType',itemType)
+		    		if(disponible_eshop > 0  && (custbody_so_eshop == true || locationSO == 53) ){//Cambiar Ermita 82 && locationSO == 53
+		    			//Restar quantity del stock eshop
+		    			log.debug('entra if')
+		    			var quantitySalesOrder = rec.getSublistValue({
+		                    sublistId: 'item',
+		                    fieldId: 'quantity',
+		                    line: e
+		                })
+		                log.debug('quantitySalesOrder',quantitySalesOrder)
+		    			var stockAfter = disponible_eshop - quantitySalesOrder //Nuevo stock de Eshop, Disponibler eshop menos lo que acabamos de vender
+		    			log.debug('stockAfter',stockAfter)
+		    			record.submitFields({
+			                type: itemType,
+			                id: tmp_id,
+			                values: { custitem_disponible_eshop: stockAfter}
+		            	})
+		            	//Actualizar SO apartados
+		    			log.debug("cargar")
+	                    var transaccionApartado = dataItem.custitem_transaccion_apartados[0]
+	                    log.debug('transaccionApartados', transaccionApartado)
+	                    var idSOaCargar = transaccionApartado.value
+	                    var cargarSO = record.load({
+	                        type: record.Type.SALES_ORDER,
+	                        id: idSOaCargar,
+	                        isDynamic:true,
+	                    });
+	                    
+	                    var itemLines = cargarSO.getLineCount({
+	                        sublistId  : 'item'
+	                    });
+	                    //var items= []
+
+	                    for(var i=0; i < itemLines; i++){
+	                        var itemId = cargarSO.getSublistValue({
+	                            sublistId : 'item',
+	                            fieldId   : 'item',
+	                            line      : i
+	                        });
+	                        cargarSO.selectLine({
+	                            sublistId: 'item',
+	                            line: i
+	                        });
+	                        var setLocation = cargarSO.setCurrentSublistValue({
+	                            sublistId: 'item',
+	                            fieldId: 'location',
+	                            value: 53
+	                        });
+	                        
+	                        cargarSO.commitLine({//cierre de linea seleccionada 
+	                            sublistId: 'item'
+	                        }); 
+
+	                        if(tmp_id == itemId){
+	                            log.debug("actualizar")
+
+	                           
+	                            var itemQuantity = cargarSO.getSublistValue({
+	                                sublistId : 'item',
+	                                fieldId   : 'quantity',
+	                                line      : i
+	                            });
+	                            cargarSO.selectLine({
+	                                sublistId: 'item',
+	                                line: i
+	                            });
+
+	                            var apartadoTotal= itemQuantity - quantitySalesOrder
+	                            cargarSO.setCurrentSublistValue({
+	                                sublistId : 'item',
+	                                fieldId   : 'quantity',
+	                                value: apartadoTotal
+	                                
+	                            });  
+	                            cargarSO.setCurrentSublistValue({
+	                                sublistId : 'item',
+	                                fieldId   : 'amount',
+	                                value: 0.01
+	                                
+	                            });
+	                            cargarSO.setCurrentSublistValue({
+	                                sublistId : 'item',
+	                                fieldId   : 'location',
+	                                value: 53
+	                                
+	                            });  
+	                            cargarSO.commitLine({//cierre de linea seleccionada 
+	                                sublistId: 'item'
+	                            }); 
+	                                
+
+	                            cargarSO.save({
+	                                enableSourcing: false,
+	                                ignoreMandatoryFields: true
+	                            });
+	                        }
+
+	                    }
+		            }
+	    		}
+    		}
+    	}catch(e){
+    		log.debug('Error en Actualizacion Inventario ficticio eshop - Creacion',e)
+    	}
+    	try{
+    		if(type == 'edit'){
+    			//Proceso de cancelacion Reserva ficticia
+	    		var op1 = rec.getValue('custbody_otro_financiamiento')
+	    		var op1old = oldrec.getValue('custbody_otro_financiamiento')
+	    		var op2 = rec.getValue('custbody_tipo_venta')
+	    		var op2old = oldrec.getValue('custbody_tipo_venta')
+
+	    		var so_first_canc = rec.getValue('custbody_so_first_canc')
+
+			    if( type == 'edit' && ( (op1 == 4 && op1!=op1old) || (op2 == 16 && op2 != op2old) ) && !so_first_canc){
+	                log.debug('so_first_canc', so_first_canc)
+	                var numLines = salesorder.getLineCount({//Toma las lineas de la SO
+	                    sublistId: 'item'
+	                });
+	                log.debug('numLines',numLines)
+	                for(var e =0; e<numLines; e++){ //Se recorre cada linea
+	                    log.debug('e',e)
+	                    var tmp_id = rec.getSublistValue({//ID del item
+	                        sublistId: 'item',
+	                        fieldId: 'item',
+	                        line: e
+	                    })
+	                    var locationSO = rec.getValue('location')
+	                    var custbody_so_eshop = rec.getValue('custbody_so_eshop') //Check del restlet que indica que viene de tienda en linea
+	                    var dataItem = search.lookupFields({// Busqueda de Invdentory Item
+	                        type: 'item',
+	                        id: tmp_id,
+	                        columns: ['custitem_disponible_eshop','recordtype','custitem_transaccion_apartados']//Stock disponible en el campo para eshop, tipo de registro
+	                    });
+
+	                    log.debug('dataItem',dataItem)
+	                    var disponible_eshop = parseInt(dataItem['custitem_disponible_eshop']) //Stock dedicado a eshop
+	                    log.debug('disponible_eshop',disponible_eshop)
+	                    var itemType = dataItem['recordtype']
+	                    log.debug('itemType',itemType)
+	                    if(disponible_eshop > 0 && (custbody_so_eshop == true || locationSO == 53)) {//Cambiar a Ermita 82  && locationSO == 53 
+	                        //Restar quantity del stock eshop
+	                        var quantitySalesOrder = rec.getSublistValue({
+	                            sublistId: 'item',
+	                            fieldId: 'quantity',
+	                            line: e
+	                        })
+	                        log.debug('quantitySalesOrder',quantitySalesOrder)
+	                        var stockAfter = disponible_eshop + quantitySalesOrder //Nuevo stock de Eshop, Disponibler eshop menos lo que acabamos de vender
+	                        log.debug('stockAfter',stockAfter)
+	                        record.submitFields({
+	                        type: itemType,
+	                        id: tmp_id,
+	                        values: { custitem_disponible_eshop: stockAfter}
+	                        })
+                            //Actualizar SO apartados cancelacion
+                        log.debug("cargar cancelacion")
+                        var transaccionApartado = dataItem.custitem_transaccion_apartados[0]
+                        log.debug('transaccionApartados', transaccionApartado)
+                        var idSOaCargar = transaccionApartado.value
+                        var cargarSO = record.load({
+                            type: record.Type.SALES_ORDER,
+                            id: idSOaCargar,
+                            isDynamic:true,
+                        });
+                        
+                        var itemLines = cargarSO.getLineCount({
+                            sublistId  : 'item'
+                        });
+                        //var items= []
+
+                        for(var i=0; i < itemLines; i++){
+                            var itemId = cargarSO.getSublistValue({
+                                sublistId : 'item',
+                                fieldId   : 'item',
+                                line      : i
+                            });
+                            cargarSO.selectLine({
+                                sublistId: 'item',
+                                line: i
+                            });
+                            var setLocation = cargarSO.setCurrentSublistValue({
+                                sublistId: 'item',
+                                fieldId: 'location',
+                                value: 53
+                            });
+                            
+                            cargarSO.commitLine({//cierre de linea seleccionada 
+                                sublistId: 'item'
+                            }); 
+
+                            if(tmp_id == itemId){
+                                log.debug("actualizar")
+
+                               
+                                var itemQuantity = cargarSO.getSublistValue({
+                                    sublistId : 'item',
+                                    fieldId   : 'quantity',
+                                    line      : i
+                                });
+                                cargarSO.selectLine({
+                                    sublistId: 'item',
+                                    line: i
+                                });
+
+                                var apartadoTotal= itemQuantity + quantitySalesOrder
+                                cargarSO.setCurrentSublistValue({
+                                    sublistId : 'item',
+                                    fieldId   : 'quantity',
+                                    value: apartadoTotal
+                                    
+                                });  
+                                cargarSO.setCurrentSublistValue({
+                                    sublistId : 'item',
+                                    fieldId   : 'amount',
+                                    value: 0.01
+                                    
+                                });
+                                cargarSO.setCurrentSublistValue({
+                                    sublistId : 'item',
+                                    fieldId   : 'location',
+                                    value: 53
+                                    
+                                });  
+                                cargarSO.commitLine({//cierre de linea seleccionada 
+                                    sublistId: 'item'
+                                }); 
+                                    
+
+                                cargarSO.save({
+                                    enableSourcing: false,
+                                    ignoreMandatoryFields: true
+                                });
+                            }
+
+                        }
+
+	                        var submitFieldsSalesOrder = record.submitFields({
+	            			    type: record.Type.SALES_ORDER,
+	            			    id: recordid,
+	            			    values: {'custbody_so_first_canc':true}
+	            			});
+	                    }
+	                }
+	            
+			    }
+    		}
+    	}catch(e){
+    		log.debug('Error en Actualizacion Inventario ficticio eshop - Cancelacion',e)
+    	}
+    		
+    		
     	
     	//Actualizar campo RECLUTADORA
     	if(type == 'edit'){
