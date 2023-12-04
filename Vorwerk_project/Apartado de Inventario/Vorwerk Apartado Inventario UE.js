@@ -100,7 +100,7 @@ function(record,search,http,https,encode,runtime,serverWidget) {
                         var nuevoApartado = thisRecord.getValue('custrecord_cantidad_apartada')
                         var location = thisRecord.getValue('custrecord_from_location')
                         var transaccionApartados= dataItem['custitem_transaccion_apartados']
-                        var name = 3281861
+                        var name = 3739841
                         var actualizaDisponibleEshop= disponible_eshop + nuevoApartado
                         log.debug('disponible_eshop', disponible_eshop)
                         log.debug('location', location)
@@ -114,6 +114,7 @@ function(record,search,http,https,encode,runtime,serverWidget) {
                                 type: 'salesorder',
                                 isDynamic: false,
                             });
+                            
                             obj_SO.setValue({
                                 fieldId: 'customform',
                                 value: 68
@@ -121,6 +122,10 @@ function(record,search,http,https,encode,runtime,serverWidget) {
                             obj_SO.setValue({
                                 fieldId: 'entity',
                                 value: name
+                            });
+                            obj_SO.setValue({
+                                fieldId: 'salesrep',
+                                value: 344096
                             });
                                                    
                             obj_SO.setSublistValue({
