@@ -71,9 +71,51 @@ function Orden_Venta_PDF(request,response)
         companyInfoLogoURL  = "src='" + host + companyInfoLogoURL + "'/";
 
         serie = "";
+        var artsKits = []
         for(var i=1;i<itemcount + 1;i++){
             var tmp_item = salesorder.getLineItemValue('item', 'item', i);
             nlapiLogExecution('debug', 'tmp_item', tmp_item);
+
+            var itemtypeSearch = nlapiSearchRecord("item",null,
+                [
+                    ["internalid","is",tmp_item]
+                ],
+                [
+                    new nlobjSearchColumn("itemid"),
+                    new nlobjSearchColumn("displayname"),
+                    new nlobjSearchColumn("type"),
+                    new nlobjSearchColumn('memberitem'),
+                    new nlobjSearchColumn('displayname','memberItem' ),
+
+                ]
+            );
+              
+            var skuDelItem= itemtypeSearch[0].getValue("itemid")
+            //nlapiLogExecution('debug', 'skuDelItem', skuDelItem);
+            var nombreDelItem= itemtypeSearch[0].getValue("displayname")
+            //nlapiLogExecution('debug', 'nombreDelItem', nombreDelItem);
+            var typeDelItem= itemtypeSearch[0].getValue("type")
+            //nlapiLogExecution('debug', 'typeDelItem', typeDelItem);
+            if(itemtypeSearch && typeDelItem == 'Kit') {
+                var atrs = [] //tasa, cuchara, libro
+                for (var i = 0 ; i < itemtypeSearch.length; i++) {
+                    var memberitem= itemtypeSearch[i].getValue("memberitem")
+                    nlapiLogExecution('debug', 'memberitem', memberitem);
+                    var displayname= itemtypeSearch[i].getValue('displayname', 'memberItem')
+                    nlapiLogExecution('debug', 'displayname', displayname);   
+                    atrs.push(displayname)
+                };
+                
+                artsKits[tmp_item] = atrs
+            };
+           
+
+            
+            if(typeDelItem == 'Kit'){
+                nlapiLogExecution('debug', 'es kit', 'esto es un kit');
+             
+            }
+
             if(tmp_item == 2001 || tmp_item == 2170 || tmp_item == 2490 || tmp_item == 2571 || tmp_item == 2280){
                 var subrecord = salesorder.viewLineItemSubrecord('item', 'inventorydetail',i);
                 nlapiLogExecution('debug', 'subrecord', JSON.stringify(subrecord));
@@ -187,7 +229,8 @@ function Orden_Venta_PDF(request,response)
         strName += "</thead>";
 
         for(var i=1;i<itemcount + 1;i++)
-        {
+        {   
+            var idItemarts =salesorder.getLineItemValue('item', 'item', i)
             var idItemSearch=salesorder.getLineItemValue('item', 'item', i)*1;
             var itemSearch = nlapiSearchRecord("item",null,
                 [
@@ -195,13 +238,14 @@ function Orden_Venta_PDF(request,response)
                 ],
                 [
                     new nlobjSearchColumn("itemid").setSort(false),
-                    /*new nlobjSearchColumn("displayname"),
-                    new nlobjSearchColumn("salesdescription"),
+                    new nlobjSearchColumn("displayname"),
+                    /*new nlobjSearchColumn("salesdescription"),
                     new nlobjSearchColumn("type"),
                     new nlobjSearchColumn("internalid")*/
                 ]
             );
             var skuDelItem= itemSearch[0].getValue("itemid")
+            var nameDelTtem = itemSearch[0].getValue("displayname")
             //nlapiLogExecution('debug', 'itemSearch', );
             //nlapiLogExecution('debug', 'idItemSearch', idItemSearch );
            // var itemData=nlapiLoadRecord('inventoryitem', idItemSearch);
@@ -225,13 +269,31 @@ function Orden_Venta_PDF(request,response)
 //hipo leave this beautiful body please                     
             strName     += "<tr class='"+ trClass + "'>";
             strName     += "<td align='left' font-size=\"9pt\">"                + sku   + "</td>";
-            strName     += "<td align='left' font-size=\"9pt\">"                + description   + "</td>";
+            strName     += "<td align='left' font-size=\"9pt\">"                + nameDelTtem   + "</td>";
             strName     += "<td align='center' font-size=\"9pt\">"              + quantity      + "</td>";
             strName     += "<td align='center' font-size=\"9pt\">"              + serie         + "</td>";
             strName     += "<td align='right' font-size=\"9pt\">$"              + currencyFormat(taxrate,1)     + "%</td>";
             strName     += "<td align='right' font-size=\"9pt\">$"          + currencyFormat(amount,2)      + "</td>";
             strName     += "<td align='right' font-size=\"9pt\">$"          + currencyFormat(gross,2)           + "</td>";
             strName         += "</tr>";
+
+            
+            for( i in  artsKits[idItemarts]){//Selecciona del arreglo de kits el kit en el que estamos posicionados y recorre sus articulos
+
+               
+                nlapiLogExecution('debug', 'artsKits[i]', artsKits[idItemarts][i]);
+                strName     += "<tr class='"+ trClass + "'>";
+                strName     += "<td align='left' font-size=\"9pt\">"                + ''   + "</td>";
+                strName     += "<td align='letf' font-size=\"8pt\">"                + artsKits[idItemarts][i]   + "</td>";
+                strName     += "<td align='center' font-size=\"9pt\">"              + ''      + "</td>";
+                strName     += "<td align='center' font-size=\"9pt\">"              + ''         + "</td>";
+                strName     += "<td align='right' font-size=\"9pt\">"              + ''    + "</td>";
+                strName     += "<td align='right' font-size=\"9pt\">"          + ''     + "</td>";
+                strName     += "<td align='right' font-size=\"9pt\">"          + ''         + "</td>";
+                strName         += "</tr>";
+                
+
+            }
         }
         strName += "</table>";
         strName += "<p font-size='4'>&nbsp;</p>";
