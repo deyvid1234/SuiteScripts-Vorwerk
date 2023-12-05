@@ -246,6 +246,8 @@ function Orden_Venta_PDF(request,response)
             );
             var skuDelItem= itemSearch[0].getValue("itemid")
             var nameDelTtem = itemSearch[0].getValue("displayname")
+            nameDelTtem = nameDelTtem.replace(/&/g, "&amp;");
+
             //nlapiLogExecution('debug', 'itemSearch', );
             //nlapiLogExecution('debug', 'idItemSearch', idItemSearch );
            // var itemData=nlapiLoadRecord('inventoryitem', idItemSearch);
