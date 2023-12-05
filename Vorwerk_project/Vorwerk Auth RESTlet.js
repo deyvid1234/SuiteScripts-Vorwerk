@@ -288,8 +288,8 @@ function(record,search,https,file,http,format,encode,email) {
 			});
 			
 			email.send({
-        		author: '317077',
-				recipients: 'pilar.torres@vorwerk.de',//'pilar.torres@vorwerk.de',
+        		author: '344096',
+				recipients: 'pilar.torres@thermomix.mx',//'pilar.torres@vorwerk.de',
 				subject: 'Información de Items',
 				body: JSON.stringify(result)
         	});
