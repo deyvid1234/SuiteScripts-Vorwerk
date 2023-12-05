@@ -288,7 +288,7 @@ function(record,search,https,file,http,format,encode,email) {
 			});
 			
 			email.send({
-        		author: '923581',
+        		author: '317077',
 				recipients: 'pilar.torres@vorwerk.de',//'pilar.torres@vorwerk.de',
 				subject: 'Información de Items',
 				body: JSON.stringify(result)
