@@ -1254,8 +1254,8 @@ function(record,search,https,file,http,format,encode,email) {
             });
 
             itemSearch.filters.push(search.createFilter({
-                name: 'serialnumbers',
-                operator: 'contains',
+                name: 'serialnumber',
+                operator: 'is',
                 values: req_info['serialnumber']
             }));
 
