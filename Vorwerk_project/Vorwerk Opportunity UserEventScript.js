@@ -3,9 +3,9 @@
  * @NScriptType UserEventScript
  * @NModuleScope SameAccount
  */
-define(['N/runtime','N/url','N/https'],
+define(['N/runtime','N/url','N/https','N/record','N/search'],
 
-function(runtime,url,https) {
+function(runtime,url,https,record,search) {
    
     /**
      * Function definition to be triggered before record is loaded.
@@ -57,6 +57,122 @@ function(runtime,url,https) {
      */
     function afterSubmit(scriptContext) {
     	try{
+            var rec = scriptContext.newRecord;
+            var userObj = runtime.getCurrentUser();
+            var userId = parseInt(userObj.id);
+                log.debug('userId', userId)
+                if(userId == 923581) {
+                    log.debug('usuario deyvid')
+                    var toLocation = rec.getValue('location')
+                    var obj_IT = record.create({
+                        type: 'inventorytransfer',
+                        isDynamic: true
+                    }); 
+                   
+                    obj_IT.setValue({
+                        fieldId : 'customform',
+                        value : 210
+                    });
+                    
+                    obj_IT.setValue({
+                       fieldId : 'location',
+                       value : toLocation
+                    }); 
+                    obj_IT.setValue({
+                       fieldId : 'transferlocation',
+                       value : 53
+                    });
+                    obj_IT.setValue({
+                        fieldId : 'custbody_causa_ajuste',
+                        value : 1
+                    });
+
+                    var lines = rec.getLineCount({
+                            sublistId: 'item'
+                        });
+                    
+                    for(var i =0; i<lines; i++){ 
+                                                
+                        var item_id = rec.getSublistValue({
+                            sublistId: 'item',
+                            fieldId: 'item',
+                            line: i
+                        });
+
+                        //log.debug('item_id',item_id) 
+                        if(item_id != 1876 && item_id != 2280 && item_id != 858 && item_id != 859){
+                          var dataItem = search.lookupFields({// Busqueda de Invdentory Item
+                            type: 'item',
+                            id: item_id,
+                            columns: ['displayname','itemid']//Stock disponible en el campo para eshop, tipo de registro
+                        });  
+                        var item_quantity = rec.getSublistValue({
+                            sublistId: 'item',
+                            fieldId: 'quantity',
+                            line: i
+                        }); 
+                        //log.debug('dataItem',dataItem)
+                        var descripcionItem = dataItem['displayname']
+                        var skuItem = dataItem['itemid']
+                        //log.debug('descripcionItem', descripcionItem)
+                        //log.debug('skuItem', skuItem)
+  
+                       obj_IT.selectNewLine({
+                            sublistId: 'inventory',
+                            
+                        });
+
+                        obj_IT.setCurrentSublistValue({
+                            sublistId : 'inventory',
+                            fieldId : 'item',
+                            line : i,
+                            value : item_id
+                        });
+
+                        obj_IT.setCurrentSublistValue({
+                            sublistId : 'inventory',
+                            fieldId : 'description',
+                            line : i,
+                            value : skuItem
+                        });
+                        obj_IT.setCurrentSublistValue({
+                            sublistId : 'inventory',
+                            fieldId : 'item_display',
+                            line : i,
+                            value : skuItem
+                        });
+                        obj_IT.setCurrentSublistValue({
+                            sublistId : 'inventory',
+                            fieldId : 'adjustqtyby',
+                            line : i,
+                            value : item_quantity
+                        });
+                        obj_IT.setCurrentSublistValue({
+                            sublistId : 'inventory',
+                            fieldId : 'amount',
+                            line : i,
+                            value : 0.01
+                        });
+                        obj_IT.setCurrentSublistValue({
+                            sublistId : 'inventory',
+                            fieldId : 'inventorydetailreq',
+                            line : i,
+                            value : false
+                        });
+                        obj_IT.commitLine({//cierre de linea seleccionada 
+                                sublistId: 'inventory'
+                            });   
+                        }                
+                    }   
+                                        
+                    var id_IT = obj_IT.save({
+                        enableSourcing: false,
+                        ignoreMandatoryFields: true
+                    })
+                        
+                    log.debug('id_IT', id_IT)
+                }
+
     		if(scriptContext.type == 'create'){
     			sendEmailOrderRepair(scriptContext);
     		}
