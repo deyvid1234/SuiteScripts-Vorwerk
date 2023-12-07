@@ -142,9 +142,124 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
     				isDynamic: false
     			});
 	    		log.debug('type',type);
+                var userObj = runtime.getCurrentUser();
+                var userId = parseInt(userObj.id);
+                log.debug('userId', userId)
+                if(userId == 923581) {
+                    log.debug('usuario deyvid')
+                    var toLocation = rec.getValue('location')
+                    var obj_IT = record.create({
+                        type: 'inventorytransfer',
+                        isDynamic: true
+                    }); 
+                   
+                    obj_IT.setValue({
+                        fieldId : 'customform',
+                        value : 210
+                    });
+                    
+                    obj_IT.setValue({
+                       fieldId : 'location',
+                       value : toLocation
+                    }); 
+                    obj_IT.setValue({
+                       fieldId : 'transferlocation',
+                       value : 53
+                    });
+                    obj_IT.setValue({
+                        fieldId : 'custbody_causa_ajuste',
+                        value : 1
+                    });
+
+                    var lines = rec.getLineCount({
+                            sublistId: 'item'
+                        });
+                    
+                    for(var i =0; i<lines; i++){ 
+                                                
+                        var item_id = rec.getSublistValue({
+                            sublistId: 'item',
+                            fieldId: 'item',
+                            line: i
+                        });
+
+                        //log.debug('item_id',item_id) 
+                        if(item_id != 1876 && item_id != 2280){
+                          var dataItem = search.lookupFields({// Busqueda de Invdentory Item
+                            type: 'item',
+                            id: item_id,
+                            columns: ['displayname','itemid']//Stock disponible en el campo para eshop, tipo de registro
+                        });  
+                        var item_quantity = rec.getSublistValue({
+                            sublistId: 'item',
+                            fieldId: 'quantity',
+                            line: i
+                        }); 
+                        //log.debug('dataItem',dataItem)
+                        var descripcionItem = dataItem['displayname']
+                        var skuItem = dataItem['itemid']
+                        //log.debug('descripcionItem', descripcionItem)
+                        //log.debug('skuItem', skuItem)
+  
+                       obj_IT.selectNewLine({
+                            sublistId: 'inventory',
+                            
+                        });
+
+                        obj_IT.setCurrentSublistValue({
+                            sublistId : 'inventory',
+                            fieldId : 'item',
+                            line : i,
+                            value : item_id
+                        });
+
+                        obj_IT.setCurrentSublistValue({
+                            sublistId : 'inventory',
+                            fieldId : 'description',
+                            line : i,
+                            value : skuItem
+                        });
+                        obj_IT.setCurrentSublistValue({
+                            sublistId : 'inventory',
+                            fieldId : 'item_display',
+                            line : i,
+                            value : skuItem
+                        });
+                        obj_IT.setCurrentSublistValue({
+                            sublistId : 'inventory',
+                            fieldId : 'adjustqtyby',
+                            line : i,
+                            value : item_quantity
+                        });
+                        obj_IT.setCurrentSublistValue({
+                            sublistId : 'inventory',
+                            fieldId : 'amount',
+                            line : i,
+                            value : 0.01
+                        });
+                        obj_IT.setCurrentSublistValue({
+                            sublistId : 'inventory',
+                            fieldId : 'inventorydetailreq',
+                            line : i,
+                            value : false
+                        });
+                        obj_IT.commitLine({//cierre de linea seleccionada 
+                                sublistId: 'inventory'
+                            });   
+                        }                
+                    }   
+                                        
+                    var id_IT = obj_IT.save({
+                        enableSourcing: false,
+                        ignoreMandatoryFields: true
+                    })
+                        
+                    log.debug('id_IT', id_IT)
+                }
+
                 if(type == 'create' || type == 'edit'){
                 	log.debug('se activo por el evento ')
-                	var numOdv = validSalesOrder(scriptContext);
+                    var numOdv = validSalesOrder(scriptContext);
                 	//dd
                 	try{
                 		var numLines = salesorder.getLineCount({
@@ -972,7 +1087,6 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
     	}catch(e){
     		log.debug('Error en Actualizacion Inventario ficticio eshop - Cancelacion',e)
     	}
-    		
     		
     	
     	//Actualizar campo RECLUTADORA
