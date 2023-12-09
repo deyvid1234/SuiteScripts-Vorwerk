@@ -58,10 +58,14 @@ function(runtime,url,https,record,search) {
     function afterSubmit(scriptContext) {
     	try{
             var rec = scriptContext.newRecord;
+            var idRec = rec.getValue('id')
+            var transaccion = rec.getValue('custbody_transaccion_invtransfer')
             var userObj = runtime.getCurrentUser();
             var userId = parseInt(userObj.id);
+            var articuloReparado = rec.getValue('custbody_repar')
+                log.debug('articuloReparado', articuloReparado)
                 log.debug('userId', userId)
-                if(userId == 923581) {
+                if(userId == 923581 && articuloReparado == true && transaccion =='') {
                     log.debug('usuario deyvid')
                     var toLocation = rec.getValue('location')
                     var obj_IT = record.create({
@@ -98,14 +102,17 @@ function(runtime,url,https,record,search) {
                             fieldId: 'item',
                             line: i
                         });
-
-                        //log.debug('item_id',item_id) 
-                        if(item_id != 1876 && item_id != 2280 && item_id != 858 && item_id != 859){
-                          var dataItem = search.lookupFields({// Busqueda de Invdentory Item
+                        var dataItem = search.lookupFields({// Busqueda de Invdentory Item
                             type: 'item',
                             id: item_id,
-                            columns: ['displayname','itemid']//Stock disponible en el campo para eshop, tipo de registro
+                            columns: ['displayname','itemid','recordtype']
                         });  
+                        log.debug('dataItem',dataItem) 
+                        var itemType = dataItem['recordtype']
+                        log.debug('itemType', itemType)
+                        log.debug('item_id',item_id) 
+                        if(itemType == 'serializedinventoryitem' || itemType == 'inventoryitem'){
+                          
                         var item_quantity = rec.getSublistValue({
                             sublistId: 'item',
                             fieldId: 'quantity',
@@ -171,7 +178,21 @@ function(runtime,url,https,record,search) {
                     })
                         
                     log.debug('id_IT', id_IT)
+                    record.submitFields({
+                        type: 'opportunity',
+                        id: idRec,
+                        values: { custbody_transaccion_invtransfer: id_IT}
+                    })
                 }
+                //Regresar inventario
+                   var entregado = rec.getValue('custbody_entrega') 
+                   var idToDelete = rec.getValue('custbody_transaccion_invtransfer')
+                   if(userId == 923581 && articuloReparado == true && transaccion != '' &&entregado == true) {
+                    log.debug('entregado')
+
+                    log.debug('idToDelete', idToDelete)
+                    record.delete({type: 'inventorytransfer', id:idToDelete});
+                   }
 
     		if(scriptContext.type == 'create'){
     			sendEmailOrderRepair(scriptContext);
