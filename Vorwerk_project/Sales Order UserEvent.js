@@ -150,6 +150,8 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                 var transaccion = rec.getValue('custbody_transaccion_invtransfer')
                 log.debug('userId', userId)
                 log.debug('tipoVenta', tipoVenta)
+
+                //traslado de inventario
                 if(userId == 923581 && (tipoVenta == 33 || tipoVenta == 35) && transaccion == '') {
                     log.debug('usuario deyvid')
                     var toLocation = rec.getValue('location')
@@ -384,6 +386,18 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                         id: recordid,
                         values: { custbody_transaccion_invtransfer: id_IT}
                     })
+                }
+                var newRec = scriptContext.newRecord;
+                var oldRec = scriptContext.oldRecord;
+                var oldTipoVenta = oldRec.getValue('custbody_tipo_venta')
+                var newTipoVenta = newRec.getValue('custbody_tipo_venta')
+                var idToDelete = rec.getValue('custbody_transaccion_invtransfer')
+                 log.debug('oldTipoVenta', oldTipoVenta)
+                 log.debug('newTipoVenta', newTipoVenta)
+
+                if(userId == 923581 && newTipoVenta != oldTipoVenta && (newTipoVenta == 1 || newTipoVenta == 2 || newTipoVenta == 19)   ) {
+                    log.debug('idToDelete', idToDelete)
+                    record.delete({type: 'inventorytransfer', id:idToDelete});       
                 }
 
                 if(type == 'create' || type == 'edit'){

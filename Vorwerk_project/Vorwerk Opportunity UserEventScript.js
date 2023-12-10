@@ -63,9 +63,10 @@ function(runtime,url,https,record,search) {
             var userObj = runtime.getCurrentUser();
             var userId = parseInt(userObj.id);
             var articuloReparado = rec.getValue('custbody_repar')
+            var entregado = rec.getValue('custbody_entrega') 
                 log.debug('articuloReparado', articuloReparado)
                 log.debug('userId', userId)
-                if(userId == 923581 && articuloReparado == true && transaccion =='') {
+                if(userId == 923581 && articuloReparado == true && transaccion =='' && entregado== false ) {
                     log.debug('usuario deyvid')
                     var toLocation = rec.getValue('location')
                     var obj_IT = record.create({
@@ -185,7 +186,7 @@ function(runtime,url,https,record,search) {
                     })
                 }
                 //Regresar inventario
-                   var entregado = rec.getValue('custbody_entrega') 
+                   
                    var idToDelete = rec.getValue('custbody_transaccion_invtransfer')
                    if(userId == 923581 && articuloReparado == true && transaccion != '' &&entregado == true) {
                     log.debug('entregado')
