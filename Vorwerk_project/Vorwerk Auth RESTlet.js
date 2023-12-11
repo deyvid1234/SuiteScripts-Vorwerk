@@ -1322,8 +1322,8 @@ function(record,search,https,file,http,format,encode,email) {
                 id: 'customsearch_search_by_seria' // Item Search Service NS
             });
     		itemSearch.filters.push(search.createFilter({
-                name: 'serialnumbers',
-                operator: 'contains',
+                name: 'serialnumber',
+                operator: 'is',
                 values: num_serie
             }));
     		itemSearch.run().each(function(result) {
