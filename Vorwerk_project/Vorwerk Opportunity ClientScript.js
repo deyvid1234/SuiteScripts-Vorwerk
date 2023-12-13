@@ -112,6 +112,10 @@
                     break;
                 case 'custbody_entrega':
                      if (fieldValue){
+                         dialog.alert({
+                                 title: "Atención",
+                                 message: "Al marcar esta casilla se eliminara la transferencia de inventario relacionada"
+                             });
                          thisRecord.setValue('custbody_entr',today );
                          thisRecord.setValue('custbody_entre',userObj.name );
                      }else{
