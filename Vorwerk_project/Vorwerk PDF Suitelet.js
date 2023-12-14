@@ -141,7 +141,7 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
 				strTable += "<td border='0.5' width='200px'><b>CLIENTE</b></td>";
 				strTable += "<td border='0.5' width='0px'><b>FECHA</b></td>";
 				strTable += "<td border='0.5' width='0px'><b>PEDIDO</b></td>";
-				strTable += "<td border='0.5' width='0px'><b>Supercomision</b></td>";
+				
 				strTable += "</tr>";
 				lineaRec=0
 				
@@ -156,11 +156,7 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
 						strTable += "<td border='0.5' border-style='dotted-narrow'>" +  cliente	+ "</td>";
 						strTable += "<td border='0.5' border-style='dotted-narrow'>" + v_equipo[i].fecha 		+ "</td>";
 						strTable += "<td border='0.5' border-style='dotted-narrow'>" + v_equipo[i].idExterno		+ "</td>";
-						if(odv_sc.indexOf(v_equipo[i].internalid) >= 0 ){
-							strTable += "<td border='0.5' border-style='dotted-narrow' style='text-align:center'>" + '$500.00'		+ "</td>";
-						}else{
-							strTable += "<td border='0.5' border-style='dotted-narrow'>" + ''		+ "</td>";
-						}
+						
 						strTable += "</tr>";
 					}catch(errT2){
 						log.error('errT2',errT2);
@@ -177,23 +173,20 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
 					}
 				}
 				var com_aux = data.comision_equipo==0?0:currencyFormat('$',data.comision_equipo/(parseInt(porcentaje)/100)+'.00')
+				
 				strTable += "<tr>";
-				strTable += "<td border='0.5' colspan= '5' border-style='none' align='right'><b>Total Supercomision</b></td>";
-				strTable += "<td border='0.5' border-style='dotted-narrow' align='right'><b>"+ currencyFormat('$',bonosc+'.00')	+ "</b></td>";
+				strTable += "<td border='0.5' colspan= '4' border-style='none' align='right'><b>   </b></td>";
 				strTable += "</tr>";
 				strTable += "<tr>";
-				strTable += "<td border='0.5' colspan= '5' border-style='none' align='right'><b>   </b></td>";
-				strTable += "</tr>";
-				strTable += "<tr>";
-				strTable += "<td border='0.5' colspan= '5' border-style='none' align='right'><b>Total comisión Venta de Equipos</b></td>";
+				strTable += "<td border='0.5' colspan= '4' border-style='none' align='right'><b>Total comisión Venta de Equipos</b></td>";
 				strTable += "<td border='0.5' border-style='dotted-narrow' align='right'><b>" + com_aux	+ "</b></td>";
 				strTable += "</tr>";
 				strTable += "<tr>";
-				strTable += "<td border='0.5' colspan= '5' border-style='none' align='right'><b> % Pagado </b></td>";
+				strTable += "<td border='0.5' colspan= '4' border-style='none' align='right'><b> % Pagado </b></td>";
 				strTable += "<td border='0.5' border-style='dotted-narrow' align='right'><b>" + porcentaje	+ "</b></td>";
 				strTable += "</tr>";
 				strTable += "<tr>";
-				strTable += "<td border='0.5' colspan= '5' border-style='none' align='right'><b>Total comisión</b></td>";
+				strTable += "<td border='0.5' colspan= '4' border-style='none' align='right'><b>Total comisión</b></td>";
 				strTable += "<td border='0.5' border-style='dotted-narrow' align='right'><b>" + currencyFormat('$',data.comision_equipo+'.00')	+ "</b></td>";
 				strTable += "</tr>";
 				strTable += "</table>";
