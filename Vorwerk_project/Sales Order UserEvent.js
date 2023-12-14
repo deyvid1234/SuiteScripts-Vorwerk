@@ -197,7 +197,9 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                         var itemType = dataItem['recordtype']
                         //log.debug('item_id',item_id) 
                         
-                           /* if (itemType == 'serializedinventoryitem'){
+                           if (itemType == 'serializedinventoryitem'){
+                            var itemSerialized = item_id
+                            log.debug('itemSerialized', itemSerialized)
                                 var item_quantity = rec.getSublistValue({
                                 sublistId: 'item',
                                 fieldId: 'quantity',
@@ -230,15 +232,41 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                                                 fieldId: 'issueinventorynumber_display',
                                                 line: x
                                             });
-                                          
+                                            log.debug('subrec', subrec)
+                                            log.debug("serial",serialid);
+                                            log.debug('detailID', detailID)
+                                            log.debug('noSerie', noSerie)
+
+                                            var cargarSO = record.load({
+                                                id: recordid,
+                                                type: 'salesorder',
+                                                isDynamic: true
+                                            }); 
+
+                                            cargarSO.selectLine({‌
+                                                 sublistId: 'item',
+                                                 line: x
+                                                 });
+                                             var invDetailSubrecord = cargarSO.getCurrentSublistSubrecord({‌
+                                                 sublistId: 'item',
+                                                 fieldId: 'inventorydetail'
+                                                 });
+                                             cargarSO.removeCurrentSublistSubrecord({‌
+                                                 sublistId: 'item',
+                                                 fieldId: 'inventorydetail'
+                                                 });
+                                             cargarSO.commitLine({‌
+                                                 sublistId: 'item'
+                                                 });
+                                             cargarSO.save({
+                                                enableSourcing: false,
+                                                ignoreMandatoryFields: true
+                                            })
+                                            
                                         }
                                             
                                       }
-                                     }
-                                     log.debug('subrec', subrec)
-                                    log.debug("serial",serialid);
-                                    log.debug('detailID', detailID)
-                                
+                                     }                            
                                 //log.debug('dataItem',dataItem)
                                 var descripcionItem = dataItem['displayname']
                                 var skuItem = dataItem['itemid']
@@ -315,7 +343,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                                 obj_IT.commitLine({//cierre de linea seleccionada 
                                         sublistId: 'inventory'
                                     });   
-                            }*/
+                            }
 
                             if( itemType == 'inventoryitem'){
                             var item_quantity = rec.getSublistValue({
@@ -397,7 +425,101 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 
                 if(userId == 923581 && newTipoVenta != oldTipoVenta && (newTipoVenta == 1 || newTipoVenta == 2 || newTipoVenta == 19)   ) {
                     log.debug('idToDelete', idToDelete)
-                    record.delete({type: 'inventorytransfer', id:idToDelete});       
+
+                    var cargarSO = record.load({
+                        id: recordid,
+                        type: 'salesorder',
+                        isDynamic: true
+                    }); 
+                    var lines = cargarSO.getLineCount({
+                            sublistId: 'item'
+                        });
+                    
+                    for(var y =0; y<lines; y++){ 
+                                                
+                        var item_id2 = cargarSO.getSublistValue({
+                            sublistId: 'item',
+                            fieldId: 'item',
+                            line: y
+                        });
+                        log.debug('item_id2',item_id2)
+                        var dataItem = search.lookupFields({// Busqueda de Invdentory Item
+                            type: 'item',
+                            id: item_id2,
+                            columns: ['recordtype']//Stock disponible en el campo para eshop, tipo de registro
+                        }); 
+                        var itemType = dataItem['recordtype']
+                        log.debug('itemType',itemType) 
+                           
+                        if (itemType == 'serializedinventoryitem' ){
+                            log.debug('itemSerialized', itemSerialized)
+                            var cargarIT = record.load({
+                                id: idToDelete,
+                                type: 'inventorytransfer',
+                                isDynamic: false
+                            }); 
+                            var linesIT = cargarIT.getLineCount({
+                                sublistId: 'inventory'
+                            });
+                            for(var i =0; i<linesIT; i++){
+                                var itemIT = cargarIT.getSublistValue({
+                                    sublistId: 'inventory',
+                                    fieldId: 'item',
+                                    line: i
+                                });
+                                if (item_id2 == itemIT ){
+                                  var  invDetIT= cargarIT.getSublistSubrecord({‌
+                                        sublistId: 'inventory',
+                                        fieldId: 'inventorydetail',
+                                        line: i
+                                    });  
+                                  log.debug('invDetIT', invDetIT)
+                                  var serieADevolver = invDetIT.getSublistValue({
+                                        sublistId: 'inventoryassignment',
+                                        fieldId: 'issueinventorynumber_display',
+                                        line: i
+                                    });
+                                  log.debug('serieADevolver', serieADevolver)
+                                }
+                            }
+                            
+                           record.delete({type: 'inventorytransfer', id:idToDelete});
+
+                           cargarSO.selectLine({‌
+                            sublistId: 'item',
+                            line: y
+                            });
+                            var invDetailSubrec = cargarSO.getCurrentSublistSubrecord({‌
+                                sublistId: 'item',
+                                fieldId: 'inventorydetail'
+                            });
+                            log.debug('invDetailSubrecord',invDetailSubrec)
+                            invDetailSubrec.selectLine({
+                                        sublistId: 'inventoryassignment', 
+                                        line: 0
+                                    });
+
+                            invDetailSubrec.setCurrentSublistValue({‌
+                                sublistId: 'inventoryassignment',
+                                fieldId: 'receiptinventorynumber',
+                                line: 0,
+                                value :serieADevolver
+                            });
+                            invDetailSubrec.commitLine({‌
+                                sublistId: 'inventoryassignment'
+                            });
+                            cargarSO.commitLine({‌
+                                sublistId: 'item'
+                            });
+
+                            cargarSO.save({
+                                enableSourcing: true,
+                                ignoreMandatoryFields: true
+                            }) 
+                        }
+                    }
+                    
+                           
                 }
 
                 if(type == 'create' || type == 'edit'){
