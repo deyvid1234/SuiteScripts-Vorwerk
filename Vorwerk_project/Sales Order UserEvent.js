@@ -155,6 +155,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                 if(userId == 923581 && (tipoVenta == 33 || tipoVenta == 35) && transaccion == '') {
                     log.debug('usuario deyvid')
                     var toLocation = rec.getValue('location')
+                    var location
                     var obj_IT = record.create({
                         type: 'inventorytransfer',
                         isDynamic: true
@@ -169,10 +170,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                        fieldId : 'location',
                        value : toLocation
                     }); 
-                    obj_IT.setValue({
-                       fieldId : 'transferlocation',
-                       value : 53
-                    });
+                    
                     obj_IT.setValue({
                         fieldId : 'custbody_causa_ajuste',
                         value : 1
@@ -197,9 +195,17 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                         var itemType = dataItem['recordtype']
                         //log.debug('item_id',item_id) 
                         
-                           if (itemType == 'serializedinventoryitem'){
+                        if (itemType == 'serializedinventoryitem'){
+                            
                             var itemSerialized = item_id
                             log.debug('itemSerialized', itemSerialized)
+                            if (itemSerialized == 2280){
+                                log.debug('entra a tm6r')
+                                location = 90
+                            }else if(itemSerialized == 2170){
+                                log.debug('entra a tm6')
+                                location = 89
+                            }
                                 var item_quantity = rec.getSublistValue({
                                 sublistId: 'item',
                                 fieldId: 'quantity',
@@ -217,24 +223,13 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                                    });
                                     if(subitems > 0){
                                         for(var x = 0; x < subitems; x++) {
-                                            var serialid = subrec.getSublistValue({
-                                                sublistId: 'inventoryassignment',
-                                                fieldId: 'internalid',
-                                                line: x
-                                            });
-                                            var detailID = subrec.getSublistValue({
-                                                sublistId: 'inventoryassignment',
-                                                fieldId: 'inventorydetail',
-                                                line: x
-                                            });
+                                            
                                             var noSerie = subrec.getSublistValue({
                                                 sublistId: 'inventoryassignment',
                                                 fieldId: 'issueinventorynumber_display',
                                                 line: x
                                             });
                                             log.debug('subrec', subrec)
-                                            log.debug("serial",serialid);
-                                            log.debug('detailID', detailID)
                                             log.debug('noSerie', noSerie)
 
                                             var cargarSO = record.load({
@@ -244,106 +239,99 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                                             }); 
 
                                             cargarSO.selectLine({‌
-                                                 sublistId: 'item',
-                                                 line: x
-                                                 });
-                                             var invDetailSubrecord = cargarSO.getCurrentSublistSubrecord({‌
+                                                sublistId: 'item',
+                                                line: x
+                                            });
+                                            var invDetailSubrecord = cargarSO.getCurrentSublistSubrecord({‌
+                                                sublistId: 'item',
+                                                fieldId: 'inventorydetail'
+                                            });
+                                            cargarSO.removeCurrentSublistSubrecord({‌
                                                  sublistId: 'item',
                                                  fieldId: 'inventorydetail'
-                                                 });
-                                             cargarSO.removeCurrentSublistSubrecord({‌
-                                                 sublistId: 'item',
-                                                 fieldId: 'inventorydetail'
-                                                 });
-                                             cargarSO.commitLine({‌
-                                                 sublistId: 'item'
-                                                 });
-                                             cargarSO.save({
+                                            });
+                                            cargarSO.commitLine({‌
+                                                sublistId: 'item'
+                                            });
+                                            cargarSO.save({
                                                 enableSourcing: false,
                                                 ignoreMandatoryFields: true
                                             })
                                             
                                         }
                                             
-                                      }
-                                     }                            
+                                    }
+                                }                            
                                 //log.debug('dataItem',dataItem)
                                 var descripcionItem = dataItem['displayname']
                                 var skuItem = dataItem['itemid']
                                 //log.debug('descripcionItem', descripcionItem)
                                 //log.debug('skuItem', skuItem)
-          
-                               obj_IT.selectNewLine({
-                                    sublistId: 'inventory',   
-                                });
+                        log.debug('location', location)
+                        obj_IT.setValue({
+                           fieldId : 'transferlocation',
+                           value : location
+                        });        
+                        obj_IT.selectNewLine({
+                            sublistId: 'inventory',   
+                        });
 
-                                obj_IT.setCurrentSublistValue({
-                                    sublistId : 'inventory',
-                                    fieldId : 'item',
-                                    line : i,
-                                    value : item_id
-                                });
-                                obj_IT.setCurrentSublistValue({
-                                    sublistId : 'inventory',
-                                    fieldId : 'description',
-                                    line : i,
-                                    value : skuItem
-                                });
-                                obj_IT.setCurrentSublistValue({
-                                    sublistId : 'inventory',
-                                    fieldId : 'item_display',
-                                    line : i,
-                                    value : skuItem
-                                });
-                                obj_IT.setCurrentSublistValue({
-                                    sublistId : 'inventory',
-                                    fieldId : 'adjustqtyby',
-                                    line : i,
-                                    value : item_quantity
-                                });
-                                obj_IT.setCurrentSublistValue({
-                                    sublistId : 'inventory',
-                                    fieldId : 'amount',
-                                    line : i,
-                                    value : 0.01
-                                });
-                                 var subrec_IT = obj_IT.getCurrentSublistSubrecord({
-                                        sublistId: 'inventory',
-                                        fieldId: 'inventorydetail',
-                                    });
-                                 log.debug('subrec_IT', subrec_IT)
-                                var invAsig= subrec_IT.selectLine({
-                                        sublistId: 'inventoryassignment',
-                                        line: 0  
-                                    });
-                                  var serialIT = subrec_IT.setCurrentSublistValue({
-                                                sublistId: 'inventoryassignment',
-                                                fieldId: 'internalid',
-                                                line: 0,
-                                                value :serialid
-                                            });
-                                  var detail_id_IT = subrec_IT.setCurrentSublistValue({
-                                                sublistId: 'inventoryassignment',
-                                                fieldId: 'inventorydetail',
-                                                line: 0,
-                                                value :detailID
-                                            });
-                                  var serie_no_IT = subrec_IT.setCurrentSublistValue({
-                                                sublistId: 'inventoryassignment',
-                                                fieldId: 'receiptinventorynumber',
-                                                line: 0,
-                                                value :noSerie
-                                            });
+                        obj_IT.setCurrentSublistValue({
+                            sublistId : 'inventory',
+                            fieldId : 'item',
+                            line : i,
+                            value : item_id
+                        });
+                        obj_IT.setCurrentSublistValue({
+                            sublistId : 'inventory',
+                            fieldId : 'description',
+                            line : i,
+                            value : skuItem
+                        });
+                        obj_IT.setCurrentSublistValue({
+                            sublistId : 'inventory',
+                            fieldId : 'item_display',
+                            line : i,
+                            value : skuItem
+                        });
+                        obj_IT.setCurrentSublistValue({
+                            sublistId : 'inventory',
+                            fieldId : 'adjustqtyby',
+                            line : i,
+                            value : item_quantity
+                        });
+                        obj_IT.setCurrentSublistValue({
+                            sublistId : 'inventory',
+                            fieldId : 'amount',
+                            line : i,
+                            value : 0.01
+                        });
+                        var subrec_IT = obj_IT.getCurrentSublistSubrecord({
+                            sublistId: 'inventory',
+                            fieldId: 'inventorydetail',
+                        });
+                        log.debug('subrec_IT', subrec_IT)
+                        var invAsig= subrec_IT.selectLine({
+                            sublistId: 'inventoryassignment',
+                            line: 0  
+                        });
+                       
+                        var serie_no_IT = subrec_IT.setCurrentSublistValue({
+                            sublistId: 'inventoryassignment',
+                            fieldId: 'receiptinventorynumber',
+                            line: 0,
+                            value :noSerie
+                        });
 
-                                            subrec_IT.commitLine({//cierre de linea seleccionada 
-                                                sublistId: 'inventoryassignment'
-                                            });  
-                                            
+                            subrec_IT.commitLine({//cierre de linea seleccionada 
+                                sublistId: 'inventoryassignment'
+                            });  
+                                                
 
-                                obj_IT.commitLine({//cierre de linea seleccionada 
-                                        sublistId: 'inventory'
-                                    });   
-                            }
+                        obj_IT.commitLine({//cierre de linea seleccionada 
+                            sublistId: 'inventory'
+                        });   
+                    }
 
                             if( itemType == 'inventoryitem'){
                             var item_quantity = rec.getSublistValue({
@@ -412,116 +400,220 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                     record.submitFields({
                         type: 'salesorder',
                         id: recordid,
-                        values: { custbody_transaccion_invtransfer: id_IT}
+                        values: { custbody_transaccion_invtransfer: id_IT, custbody_no_serie : noSerie }
                     })
                 }
+                //devolver
                 var newRec = scriptContext.newRecord;
                 var oldRec = scriptContext.oldRecord;
                 var oldTipoVenta = oldRec.getValue('custbody_tipo_venta')
                 var newTipoVenta = newRec.getValue('custbody_tipo_venta')
                 var idToDelete = rec.getValue('custbody_transaccion_invtransfer')
+                var serieNewTransfer = rec.getValue('custbody_no_serie')
+                var toLocation = rec.getValue('location')
+                var location
                  log.debug('oldTipoVenta', oldTipoVenta)
                  log.debug('newTipoVenta', newTipoVenta)
+                 log.debug('serieNewTransfer', serieNewTransfer)
 
                 if(userId == 923581 && newTipoVenta != oldTipoVenta && (newTipoVenta == 1 || newTipoVenta == 2 || newTipoVenta == 19)   ) {
                     log.debug('idToDelete', idToDelete)
 
-                    var cargarSO = record.load({
-                        id: recordid,
-                        type: 'salesorder',
+                    var obj_IT = record.create({
+                        type: 'inventorytransfer',
                         isDynamic: true
                     }); 
-                    var lines = cargarSO.getLineCount({
+                   
+                    obj_IT.setValue({
+                        fieldId : 'customform',
+                        value : 210
+                    });
+                    obj_IT.setValue({
+                           fieldId : 'transferlocation',
+                           value : toLocation
+                        });
+                    obj_IT.setValue({
+                        fieldId : 'custbody_causa_ajuste',
+                        value : 1
+                    });
+                    var lines = rec.getLineCount({
                             sublistId: 'item'
                         });
                     
-                    for(var y =0; y<lines; y++){ 
+                    for(var i =0; i<lines; i++){ 
                                                 
-                        var item_id2 = cargarSO.getSublistValue({
+                        var item_id = rec.getSublistValue({
                             sublistId: 'item',
                             fieldId: 'item',
-                            line: y
+                            line: i
                         });
-                        log.debug('item_id2',item_id2)
                         var dataItem = search.lookupFields({// Busqueda de Invdentory Item
                             type: 'item',
-                            id: item_id2,
-                            columns: ['recordtype']//Stock disponible en el campo para eshop, tipo de registro
+                            id: item_id,
+                            columns: ['displayname','itemid','recordtype']
                         }); 
                         var itemType = dataItem['recordtype']
-                        log.debug('itemType',itemType) 
-                           
-                        if (itemType == 'serializedinventoryitem' ){
-                            log.debug('itemSerialized', itemSerialized)
-                            var cargarIT = record.load({
-                                id: idToDelete,
-                                type: 'inventorytransfer',
-                                isDynamic: false
-                            }); 
-                            var linesIT = cargarIT.getLineCount({
-                                sublistId: 'inventory'
-                            });
-                            for(var i =0; i<linesIT; i++){
-                                var itemIT = cargarIT.getSublistValue({
-                                    sublistId: 'inventory',
-                                    fieldId: 'item',
-                                    line: i
-                                });
-                                if (item_id2 == itemIT ){
-                                  var  invDetIT= cargarIT.getSublistSubrecord({‌
-                                        sublistId: 'inventory',
-                                        fieldId: 'inventorydetail',
-                                        line: i
-                                    });  
-                                  log.debug('invDetIT', invDetIT)
-                                  var serieADevolver = invDetIT.getSublistValue({
-                                        sublistId: 'inventoryassignment',
-                                        fieldId: 'issueinventorynumber_display',
-                                        line: i
-                                    });
-                                  log.debug('serieADevolver', serieADevolver)
-                                }
-                            }
+                        
+                        
+                        if (itemType == 'serializedinventoryitem'){
                             
-                           record.delete({type: 'inventorytransfer', id:idToDelete});
-
-                           cargarSO.selectLine({‌
-                            sublistId: 'item',
-                            line: y
-                            });
-                            var invDetailSubrec = cargarSO.getCurrentSublistSubrecord({‌
+                            var itemSerialized = item_id
+                            log.debug('itemSerialized', itemSerialized)
+                            if (itemSerialized == 2280){
+                                log.debug('entra a tm6r')
+                                location = 90
+                            }else if(itemSerialized == 2170){
+                                log.debug('entra a tm6')
+                                location = 89
+                            }
+                            var item_quantity = rec.getSublistValue({
                                 sublistId: 'item',
-                                fieldId: 'inventorydetail'
-                            });
-                            log.debug('invDetailSubrecord',invDetailSubrec)
-                            invDetailSubrec.selectLine({
-                                        sublistId: 'inventoryassignment', 
-                                        line: 0
-                                    });
+                                fieldId: 'quantity',
+                                line: i
+                                }); 
 
-                            invDetailSubrec.setCurrentSublistValue({‌
-                                sublistId: 'inventoryassignment',
-                                fieldId: 'receiptinventorynumber',
-                                line: 0,
-                                value :serieADevolver
-                            });
-                            invDetailSubrec.commitLine({‌
+                            var skuItem = dataItem['itemid']
+                                //log.debug('descripcionItem', descripcionItem)
+                                //log.debug('skuItem', skuItem)
+                        log.debug('location', location)
+                        obj_IT.setValue({
+                           fieldId : 'location',
+                           value : location
+                        });        
+                        obj_IT.selectNewLine({
+                            sublistId: 'inventory',   
+                        });
+
+                        obj_IT.setCurrentSublistValue({
+                            sublistId : 'inventory',
+                            fieldId : 'item',
+                            line : i,
+                            value : item_id
+                        });
+                        obj_IT.setCurrentSublistValue({
+                            sublistId : 'inventory',
+                            fieldId : 'description',
+                            line : i,
+                            value : skuItem
+                        });
+                        obj_IT.setCurrentSublistValue({
+                            sublistId : 'inventory',
+                            fieldId : 'item_display',
+                            line : i,
+                            value : skuItem
+                        });
+                        obj_IT.setCurrentSublistValue({
+                            sublistId : 'inventory',
+                            fieldId : 'adjustqtyby',
+                            line : i,
+                            value : item_quantity
+                        });
+                        obj_IT.setCurrentSublistValue({
+                            sublistId : 'inventory',
+                            fieldId : 'amount',
+                            line : i,
+                            value : 0.01
+                        });
+                        var subrec_IT = obj_IT.getCurrentSublistSubrecord({
+                            sublistId: 'inventory',
+                            fieldId: 'inventorydetail',
+                        });
+                        log.debug('subrec_IT222', subrec_IT)
+                        var invAsig= subrec_IT.selectLine({
+                            sublistId: 'inventoryassignment',
+                            line: 0  
+                        });
+                        
+                        var serie_no_IT = subrec_IT.setCurrentSublistValue({
+                            sublistId: 'inventoryassignment',
+                            fieldId: 'receiptinventorynumber',
+                            line: 0,
+                            value :serieNewTransfer
+                        });
+
+                            subrec_IT.commitLine({//cierre de linea seleccionada 
                                 sublistId: 'inventoryassignment'
-                            });
-                            cargarSO.commitLine({‌
-                                sublistId: 'item'
+                            });  
+                                                
+
+                        obj_IT.commitLine({//cierre de linea seleccionada 
+                            sublistId: 'inventory'
+                        });   
+                        }
+
+                            if( itemType == 'inventoryitem'){
+                            var item_quantity = rec.getSublistValue({
+                                sublistId: 'item',
+                                fieldId: 'quantity',
+                                line: i
+                            }); 
+                            //log.debug('dataItem',dataItem)
+                            var descripcionItem = dataItem['displayname']
+                            var skuItem = dataItem['itemid']
+                            //log.debug('descripcionItem', descripcionItem)
+                            //log.debug('skuItem', skuItem)
+      
+                           obj_IT.selectNewLine({
+                                sublistId: 'inventory',   
                             });
 
-                            cargarSO.save({
-                                enableSourcing: true,
-                                ignoreMandatoryFields: true
-                            }) 
-                        }
-                    }
-                    
-                           
+                            obj_IT.setCurrentSublistValue({
+                                sublistId : 'inventory',
+                                fieldId : 'item',
+                                line : i,
+                                value : item_id
+                            });
+                            obj_IT.setCurrentSublistValue({
+                                sublistId : 'inventory',
+                                fieldId : 'description',
+                                line : i,
+                                value : skuItem
+                            });
+                            obj_IT.setCurrentSublistValue({
+                                sublistId : 'inventory',
+                                fieldId : 'item_display',
+                                line : i,
+                                value : skuItem
+                            });
+                            obj_IT.setCurrentSublistValue({
+                                sublistId : 'inventory',
+                                fieldId : 'adjustqtyby',
+                                line : i,
+                                value : item_quantity
+                            });
+                            obj_IT.setCurrentSublistValue({
+                                sublistId : 'inventory',
+                                fieldId : 'amount',
+                                line : i,
+                                value : 0.01
+                            });
+                            obj_IT.setCurrentSublistValue({
+                                sublistId : 'inventory',
+                                fieldId : 'inventorydetailreq',
+                                line : i,
+                                value : false
+                            });
+                            obj_IT.commitLine({//cierre de linea seleccionada 
+                                    sublistId: 'inventory'
+                                });   
+                        }                
+                       
+                                        
+                    var id_IT = obj_IT.save({
+                        enableSourcing: false,
+                        ignoreMandatoryFields: true
+                    })
+                        
+                    log.debug('id_IT', id_IT)
+                    record.submitFields({
+                        type: 'salesorder',
+                        id: recordid,
+                        values: { custbody_transaccion_invtransfer: id_IT}
+                    })
+
                 }
 
+            }
                 if(type == 'create' || type == 'edit'){
                 	log.debug('se activo por el evento ')
                     var numOdv = validSalesOrder(scriptContext);

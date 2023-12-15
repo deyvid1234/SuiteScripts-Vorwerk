@@ -64,11 +64,13 @@ function(runtime,url,https,record,search) {
             var userId = parseInt(userObj.id);
             var articuloReparado = rec.getValue('custbody_repar')
             var entregado = rec.getValue('custbody_entrega') 
+            var location
                 log.debug('articuloReparado', articuloReparado)
                 log.debug('userId', userId)
                 if(userId == 923581 && articuloReparado == true && transaccion =='' && entregado== false ) {
                     log.debug('usuario deyvid')
                     var toLocation = rec.getValue('location')
+                    var client = rec.getValue('entity')
                     var obj_IT = record.create({
                         type: 'inventorytransfer',
                         isDynamic: true
@@ -83,9 +85,14 @@ function(runtime,url,https,record,search) {
                        fieldId : 'location',
                        value : toLocation
                     }); 
+                    if(client == 2521418){
+                        location = 88
+                    }else {
+                        location = 87
+                    }
                     obj_IT.setValue({
                        fieldId : 'transferlocation',
-                       value : 53
+                       value : location
                     });
                     obj_IT.setValue({
                         fieldId : 'custbody_causa_ajuste',
@@ -124,7 +131,7 @@ function(runtime,url,https,record,search) {
                         var skuItem = dataItem['itemid']
                         //log.debug('descripcionItem', descripcionItem)
                         //log.debug('skuItem', skuItem)
-  
+                        
                        obj_IT.selectNewLine({
                             sublistId: 'inventory',
                             
