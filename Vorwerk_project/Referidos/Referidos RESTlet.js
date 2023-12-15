@@ -666,7 +666,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                 if(runtime.envType != 'PRODUCTION'){ 
                     urlLMS = 'http://api-referidos-thrmx.lms-la.com/api/cliente/agregar-presentacion'
                 }else{
-                    urlLMS = 'http://recomiendayganathermomix.mx:9095/api/cliente/agregar-presentacion'
+                    urlLMS = 'http://api.recomiendayganathermomix.mx/api/cliente/agregar-presentacion'
                 }
                 var today = new Date();
                 var dd = today.getDate();

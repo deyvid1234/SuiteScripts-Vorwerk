@@ -497,7 +497,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 		                    urlLMS = 'http://api-referidos-thrmx.lms-la.com/api/venta'
 		                    urlAD = 'https://dev-apiagenda.mxthermomix.com/users/AddSalesExternoNetsuite'
 		                }else{//prod
-		                    urlLMS = 'http://recomiendayganathermomix.mx:9095/api/venta'
+		                    urlLMS = 'http://api.recomiendayganathermomix.mx/api/venta'
 		                    urlAD = 'https://apiagenda.mxthermomix.com/users/AddSalesExternoNetsuite'
 		                }
 		                var today = new Date();
@@ -594,7 +594,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 		                    urlLMSCancel = 'http://api-referidos-thrmx.lms-la.com/api/Venta/cancelar-venta'
 		                    urlADCancel = 'https://dev-apiagenda.mxthermomix.com/users/AddSalesExternoNetsuite'
 		                }else{//prod
-		                    urlLMSCancel = 'http://recomiendayganathermomix.mx:9095/api/Venta/cancelar-venta'
+		                    urlLMSCancel = 'http://api.recomiendayganathermomix.mx/api/Venta/cancelar-venta'
 		                    urlADCancel = 'https://apiagenda.mxthermomix.com/users/AddSalesExternoNetsuite'
 		                }
 
