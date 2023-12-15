@@ -177,7 +177,6 @@ function(record,search,https,file,http,format,encode,email) {
             pagedResults.pageRanges.forEach(function (pageRange){
                 var currentPage = pagedResults.fetch({index: pageRange.index});
                 currentPage.data.forEach(function (r) {
-
                 	if( (r.getValue("custentity_presentadora_referido") || presentadorReferidoAnterior == '') && cust != false ){
                         cust.user_id= r.getValue("internalid");
                         cust.name= r.getValue("companyname");
@@ -197,7 +196,6 @@ function(record,search,https,file,http,format,encode,email) {
 
                         presentadorReferidoAnterior = r.getValue("custentity_presentadora_referido");
                     }
-
     			    return true;
                 });
             });
@@ -210,17 +208,16 @@ function(record,search,https,file,http,format,encode,email) {
                     values: req_info['rfc']
                 });
 			}
-			
 			var busqueda = search.create({
 			    type: "employee",
 			    columns: ['internalid','altname','email','custentity_ce_rfc','custentity_curp','isinactive'],
 			    filters: filters
 			});
+
 			var pagedResults = busqueda.runPaged();
             pagedResults.pageRanges.forEach(function (pageRange){
                 var currentPage = pagedResults.fetch({index: pageRange.index});
                 currentPage.data.forEach(function (r) {
-                	
                 	emp.user_id= r.getValue("internalid");
     				emp.name= r.getValue("altname");
     				emp.email= r.getValue("email");
@@ -232,11 +229,12 @@ function(record,search,https,file,http,format,encode,email) {
                 	
                 });
             });
-
-			
-			if(Object.keys(cust).length){
-				obj_ret.customer_information = cust;
+			if(cust != false){
+				if(Object.keys(cust).length){
+					obj_ret.customer_information = cust;
+				}
 			}
+			
 			if(Object.keys(emp).length){
 				obj_ret.sales_rep_information = emp;
 			}
