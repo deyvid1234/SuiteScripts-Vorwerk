@@ -300,12 +300,12 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                             line : i,
                             value : item_quantity
                         });
-                        obj_IT.setCurrentSublistValue({
+                        /*obj_IT.setCurrentSublistValue({
                             sublistId : 'inventory',
                             fieldId : 'amount',
                             line : i,
                             value : 0.01
-                        });
+                        });*/
                         var subrec_IT = obj_IT.getCurrentSublistSubrecord({
                             sublistId: 'inventory',
                             fieldId: 'inventorydetail',
@@ -373,12 +373,12 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                                 line : i,
                                 value : item_quantity
                             });
-                            obj_IT.setCurrentSublistValue({
+                            /*obj_IT.setCurrentSublistValue({
                                 sublistId : 'inventory',
                                 fieldId : 'amount',
                                 line : i,
                                 value : 0.01
-                            });
+                            });*/
                             obj_IT.setCurrentSublistValue({
                                 sublistId : 'inventory',
                                 fieldId : 'inventorydetailreq',
@@ -508,12 +508,12 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                             line : i,
                             value : item_quantity
                         });
-                        obj_IT.setCurrentSublistValue({
+                        /*obj_IT.setCurrentSublistValue({
                             sublistId : 'inventory',
                             fieldId : 'amount',
                             line : i,
                             value : 0.01
-                        });
+                        });*/
                         var subrec_IT = obj_IT.getCurrentSublistSubrecord({
                             sublistId: 'inventory',
                             fieldId: 'inventorydetail',
@@ -581,12 +581,12 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                                 line : i,
                                 value : item_quantity
                             });
-                            obj_IT.setCurrentSublistValue({
+                            /*obj_IT.setCurrentSublistValue({
                                 sublistId : 'inventory',
                                 fieldId : 'amount',
                                 line : i,
                                 value : 0.01
-                            });
+                            });*/
                             obj_IT.setCurrentSublistValue({
                                 sublistId : 'inventory',
                                 fieldId : 'inventorydetailreq',
@@ -604,7 +604,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                         ignoreMandatoryFields: true
                     })
                         
-                    log.debug('id_IT', id_IT)
+                    log.debug('id_IT222', id_IT)
                     record.submitFields({
                         type: 'salesorder',
                         id: recordid,

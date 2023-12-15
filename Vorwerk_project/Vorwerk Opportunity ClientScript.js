@@ -105,6 +105,10 @@
                     break;
                 case 'custbody_repar':
                      if (fieldValue){
+                      dialog.alert({
+                                 title: "Atención",
+                                 message: "Al marcar esta casilla se generan movimientos en el inventario que no son reversibles"
+                             });
                          thisRecord.setValue('custbody_fcha_reparacion',today );
                      }else{
                         thisRecord.setValue('custbody_fcha_reparacion','' );
@@ -112,10 +116,10 @@
                     break;
                 case 'custbody_entrega':
                      if (fieldValue){
-                         dialog.alert({
+                         /*dialog.alert({
                                  title: "Atención",
-                                 message: "Al marcar esta casilla se eliminara la transferencia de inventario relacionada"
-                             });
+                                 message: "Al marcar esta casilla Al marcar esta casilla se generan movimientos en el inventario que no son reversibles"
+                             });*/
                          thisRecord.setValue('custbody_entr',today );
                          thisRecord.setValue('custbody_entre',userObj.name );
                      }else{
