@@ -1370,7 +1370,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 		    		                 })  
                                     log.debug('tmp_amount tm',tmp_amount)
                                     log.debug('tmp_id tm',tmp_id)
-                                    descuentoTm = (tmp_amount-0.01)*(-1)
+                                    descuentoTm = (tmp_amount-0.01)*(-.84)
                                 }
 	    						
 	    		            }
@@ -1545,7 +1545,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 			                      id: rec.id,
 			                      isDynamic: false
 			                  	});
-		    	            	var descuentoTm = pagatutm(numOdv,odv)*(-1);
+		    	            	var descuentoTm = pagatutm(numOdv,odv)*(-.84);
 		    	            	
 		    	            	var numLines = salesorder.getLineCount({
 		    		                sublistId: 'item'
