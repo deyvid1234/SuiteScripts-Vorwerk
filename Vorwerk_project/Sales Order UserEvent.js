@@ -605,6 +605,65 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                     })
                         
                     log.debug('id_IT222', id_IT)
+
+                    var cargarSO = record.load({
+                        id: recordid,
+                        type: 'salesorder',
+                        isDynamic: true
+                    }); 
+                    var lines = cargarSO.getLineCount({
+                            sublistId: 'item'
+                        });
+                    
+                    for(var i =0; i<lines; i++){ 
+                                                
+                        var item_id = cargarSO.getSublistValue({
+                            sublistId: 'item',
+                            fieldId: 'item',
+                            line: i
+                        });
+                        var dataItem = search.lookupFields({// Busqueda de Invdentory Item
+                            type: 'item',
+                            id: item_id,
+                            columns: ['recordtype']//Stock disponible en el campo para eshop, tipo de registro
+                        }); 
+                        var itemType = dataItem['recordtype']
+                        //log.debug('item_id',item_id) 
+                        
+                        if (itemType == 'serializedinventoryitem') {
+                            log.debug('numero de serie a sales order') 
+                            cargarSO.selectLine({‌
+                                sublistId: 'item',
+                                line: i
+                            });
+                            var invDetailSubrecord = cargarSO.getCurrentSublistSubrecord({‌
+                                sublistId: 'item',
+                                fieldId: 'inventorydetail'
+                            });
+                            var invAsig= invDetailSubrecord.selectLine({
+                                sublistId: 'inventoryassignment',
+                                line: 0  
+                            });
+                       
+                            var serie_no_IT = invDetailSubrecord.setCurrentSublistValue({
+                                sublistId: 'inventoryassignment',
+                                fieldId: 'receiptinventorynumber',
+                                line: 0,
+                                value :serieNewTransfer
+                            });
+                            invDetailSubrecord.commitLine({‌
+                                sublistId: 'inventoryassignment'
+                            });
+                        
+                            cargarSO.commitLine({‌
+                                sublistId: 'item'
+                            });
+                            cargarSO.save({
+                                enableSourcing: false,
+                                ignoreMandatoryFields: true
+                            })
+                        }
+                    }
                     record.submitFields({
                         type: 'salesorder',
                         id: recordid,
