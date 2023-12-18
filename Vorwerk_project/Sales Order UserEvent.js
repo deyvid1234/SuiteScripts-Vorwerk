@@ -144,17 +144,162 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 	    		log.debug('type',type);
                 
             
+                var userObj = runtime.getCurrentUser();
+                var userId = parseInt(userObj.id);
+                log.debug('userId', userId)
+                var opp = rec.getValue('opportunity')
+                log.debug('opp', opp)
 
+                if(type == 'create' && userId == 923581 && opp != ''){
+                    var oppACargar = record.load({
+                        id: opp,
+                        type: 'opportunity',
+                        isDynamic: false
+                    })
+                    var transaccion = oppACargar.getValue('custbody_transaccion_invtransfer')
+                    var idRec = oppACargar.getValue('id')
+                     var articuloReparado = oppACargar.getValue('custbody_repar')
+                   if(articuloReparado == true && transaccion != '') {
+                    log.debug('regresar inventario')
+                    var toLocation = oppACargar.getValue('location')
+                    var client = oppACargar.getValue('entity')
+                    var location
 
+                    var obj_IT = record.create({
+                        type: 'inventorytransfer',
+                        isDynamic: true
+                    }); 
+                   
+                    obj_IT.setValue({
+                        fieldId : 'customform',
+                        value : 210
+                    });
+                    if(client == 2521418){
+                        location = 88
+                    }else {
+                        location = 87
+                    }
+                    obj_IT.setValue({
+                       fieldId : 'location',
+                       value : location
+                    }); 
+                    
+                    log.debug('location',location)
+                    obj_IT.setValue({
+                       fieldId : 'transferlocation',
+                       value : toLocation
+                    });
+                    obj_IT.setValue({
+                        fieldId : 'custbody_causa_ajuste',
+                        value : 1
+                    });
+
+                    var lines = oppACargar.getLineCount({
+                            sublistId: 'item'
+                        });
+                    
+                    for(var i =0; i<lines; i++){ 
+                                                
+                        var item_id = oppACargar.getSublistValue({
+                            sublistId: 'item',
+                            fieldId: 'item',
+                            line: i
+                        });
+                        var dataItem = search.lookupFields({// Busqueda de Invdentory Item
+                            type: 'item',
+                            id: item_id,
+                            columns: ['displayname','itemid','recordtype']
+                        });  
+                        log.debug('dataItem',dataItem) 
+                        var itemType = dataItem['recordtype']
+                        log.debug('itemType', itemType)
+                        log.debug('item_id',item_id) 
+                        if(itemType == 'serializedinventoryitem' || itemType == 'inventoryitem'){
+                          
+                        var item_quantity = oppACargar.getSublistValue({
+                            sublistId: 'item',
+                            fieldId: 'quantity',
+                            line: i
+                        }); 
+                        //log.debug('dataItem',dataItem)
+                        var descripcionItem = dataItem['displayname']
+                        var skuItem = dataItem['itemid']
+                        //log.debug('descripcionItem', descripcionItem)
+                        //log.debug('skuItem', skuItem)
+                        
+                       obj_IT.selectNewLine({
+                            sublistId: 'inventory',
+                            
+                        });
+
+                        obj_IT.setCurrentSublistValue({
+                            sublistId : 'inventory',
+                            fieldId : 'item',
+                            line : i,
+                            value : item_id
+                        });
+
+                        obj_IT.setCurrentSublistValue({
+                            sublistId : 'inventory',
+                            fieldId : 'description',
+                            line : i,
+                            value : skuItem
+                        });
+                        obj_IT.setCurrentSublistValue({
+                            sublistId : 'inventory',
+                            fieldId : 'item_display',
+                            line : i,
+                            value : skuItem
+                        });
+                        obj_IT.setCurrentSublistValue({
+                            sublistId : 'inventory',
+                            fieldId : 'adjustqtyby',
+                            line : i,
+                            value : item_quantity
+                        });
+                        
+                        obj_IT.setCurrentSublistValue({
+                            sublistId : 'inventory',
+                            fieldId : 'inventorydetailreq',
+                            line : i,
+                            value : false
+                        });
+                        obj_IT.commitLine({//cierre de linea seleccionada 
+                                sublistId: 'inventory'
+                            });   
+                        }                
+                    }   
+                                        
+                    var id_IT2 = obj_IT.save({
+                        enableSourcing: false,
+                        ignoreMandatoryFields: true
+                    })
+                        
+                    log.debug('id_IT2', id_IT2)
+                    record.submitFields({
+                        type: 'opportunity',
+                        id: idRec,
+                        values: { custbody_transaccion_invtransfer: id_IT2}
+                    })
+                    
+                   }
+                }
+                
+                if(type == 'create' && userId == 923581 ){
+                    log.debug('cracion de sales order y traslado de inventario')
+                    generarTraslado(scriptContext)
+
+                }
                 var newRec = scriptContext.newRecord;
                 var oldRec = scriptContext.oldRecord;
                 var oldEntregado = oldRec.getValue('custbody_entregado_fisicamente')
                 var newEntregado = newRec.getValue('custbody_entregado_fisicamente')
-               
-                if(type == 'create' && userId == 923581 ){
-                    generarTraslado(scriptContext)
+                var oldTipoVenta = oldRec.getValue('custbody_tipo_venta')
+                var newTipoVenta = newRec.getValue('custbody_tipo_venta')
 
-                }else if (type == 'edit' && userId == 923581 && newEntregado != oldEntregado && newEntregado == true){
+                if (type == 'edit' && userId == 923581 && newEntregado != oldEntregado && newEntregado == true){
+                    generarTraslado(scriptContext)
+                }else if(type == 'edit' && userId == 923581 && newTipoVenta != oldTipoVenta && (newTipoVenta == 1 || newTipoVenta == 2 || newTipoVenta == 19)){
                     generarTraslado(scriptContext)
                 }
 
@@ -1289,7 +1434,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                 record.submitFields({
                     type: 'salesorder',
                     id: recordid,
-                    values: { custbody_transaccion_invtransfer: id_IT, custbody_no_serie : noSerie }
+                    values: { custbody_transaccion_invtransfer: id_IT, custbody_no_serie : noSerie, custbody_entregado_fisicamente: true }
                 })
             }
             //devolver
@@ -1557,7 +1702,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                 record.submitFields({
                     type: 'salesorder',
                     id: recordid,
-                    values: { custbody_transaccion_invtransfer: id_IT, custbody_entregado_fisicamente: true}
+                    values: { custbody_transaccion_invtransfer: id_IT}
                 })
 
             }//Fin if

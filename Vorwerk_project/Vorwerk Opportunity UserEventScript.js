@@ -67,7 +67,7 @@ function(runtime,url,https,record,search) {
             var location
                 log.debug('articuloReparado', articuloReparado)
                 log.debug('userId', userId)
-                if(userId == 923581 && articuloReparado == true && transaccion =='' && entregado== false ) {
+               if(userId == 923581 && articuloReparado == true && transaccion =='' && entregado== false ) {
                     log.debug('usuario deyvid')
                     var toLocation = rec.getValue('location')
                     var client = rec.getValue('entity')
@@ -187,134 +187,10 @@ function(runtime,url,https,record,search) {
                         id: idRec,
                         values: { custbody_transaccion_invtransfer: id_IT}
                     })
+              
+                   
+                  
                 }
-                //Regresar inventario
-                   
-                   var idToDelete = rec.getValue('custbody_transaccion_invtransfer')
-                   if(userId == 923581 && articuloReparado == true && transaccion != '' &&entregado == true) {
-                    log.debug('entregado')
-                    var toLocation = rec.getValue('location')
-                    var client = rec.getValue('entity')
-                    var location
-
-                    var obj_IT = record.create({
-                        type: 'inventorytransfer',
-                        isDynamic: true
-                    }); 
-                   
-                    obj_IT.setValue({
-                        fieldId : 'customform',
-                        value : 210
-                    });
-                    if(client == 2521418){
-                        location = 88
-                    }else {
-                        location = 87
-                    }
-                    obj_IT.setValue({
-                       fieldId : 'location',
-                       value : location
-                    }); 
-                    
-                    log.debug('location',location)
-                    obj_IT.setValue({
-                       fieldId : 'transferlocation',
-                       value : toLocation
-                    });
-                    obj_IT.setValue({
-                        fieldId : 'custbody_causa_ajuste',
-                        value : 1
-                    });
-
-                    var lines = rec.getLineCount({
-                            sublistId: 'item'
-                        });
-                    
-                    for(var i =0; i<lines; i++){ 
-                                                
-                        var item_id = rec.getSublistValue({
-                            sublistId: 'item',
-                            fieldId: 'item',
-                            line: i
-                        });
-                        var dataItem = search.lookupFields({// Busqueda de Invdentory Item
-                            type: 'item',
-                            id: item_id,
-                            columns: ['displayname','itemid','recordtype']
-                        });  
-                        log.debug('dataItem',dataItem) 
-                        var itemType = dataItem['recordtype']
-                        log.debug('itemType', itemType)
-                        log.debug('item_id',item_id) 
-                        if(itemType == 'serializedinventoryitem' || itemType == 'inventoryitem'){
-                          
-                        var item_quantity = rec.getSublistValue({
-                            sublistId: 'item',
-                            fieldId: 'quantity',
-                            line: i
-                        }); 
-                        //log.debug('dataItem',dataItem)
-                        var descripcionItem = dataItem['displayname']
-                        var skuItem = dataItem['itemid']
-                        //log.debug('descripcionItem', descripcionItem)
-                        //log.debug('skuItem', skuItem)
-                        
-                       obj_IT.selectNewLine({
-                            sublistId: 'inventory',
-                            
-                        });
-
-                        obj_IT.setCurrentSublistValue({
-                            sublistId : 'inventory',
-                            fieldId : 'item',
-                            line : i,
-                            value : item_id
-                        });
-
-                        obj_IT.setCurrentSublistValue({
-                            sublistId : 'inventory',
-                            fieldId : 'description',
-                            line : i,
-                            value : skuItem
-                        });
-                        obj_IT.setCurrentSublistValue({
-                            sublistId : 'inventory',
-                            fieldId : 'item_display',
-                            line : i,
-                            value : skuItem
-                        });
-                        obj_IT.setCurrentSublistValue({
-                            sublistId : 'inventory',
-                            fieldId : 'adjustqtyby',
-                            line : i,
-                            value : item_quantity
-                        });
-                        
-                        obj_IT.setCurrentSublistValue({
-                            sublistId : 'inventory',
-                            fieldId : 'inventorydetailreq',
-                            line : i,
-                            value : false
-                        });
-                        obj_IT.commitLine({//cierre de linea seleccionada 
-                                sublistId: 'inventory'
-                            });   
-                        }                
-                    }   
-                                        
-                    var id_IT2 = obj_IT.save({
-                        enableSourcing: false,
-                        ignoreMandatoryFields: true
-                    })
-                        
-                    log.debug('id_IT2', id_IT2)
-                    record.submitFields({
-                        type: 'opportunity',
-                        id: idRec,
-                        values: { custbody_transaccion_invtransfer: id_IT2}
-                    })
-                    
-                   }
 
     		if(scriptContext.type == 'create'){
     			sendEmailOrderRepair(scriptContext);
