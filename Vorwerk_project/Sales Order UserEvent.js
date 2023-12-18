@@ -143,7 +143,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
     			});
 	    		log.debug('type',type);
                 
-            }
+            
 
 
                 var newRec = scriptContext.newRecord;
