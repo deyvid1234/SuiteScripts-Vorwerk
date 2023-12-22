@@ -279,7 +279,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                     record.submitFields({
                         type: 'opportunity',
                         id: idRec,
-                        values: { custbody_transaccion_invtransfer: id_IT2}
+                        values: { custbody_transaccion_invtransfer: id_IT2, custbody_odv_creada: true}
                     })
                     
                    }
