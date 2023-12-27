@@ -72,8 +72,9 @@ function Orden_Venta_PDF(request,response)
 
         serie = "";
         var artsKits = []
-        for(var i=1;i<itemcount + 1;i++){
+        for(var i=0;i<itemcount.length ;i++){
             var tmp_item = salesorder.getLineItemValue('item', 'item', i);
+            nlapiLogExecution('debug', 'itemcount', itemcount);
             nlapiLogExecution('debug', 'tmp_item', tmp_item);
 
             var itemtypeSearch = nlapiSearchRecord("item",null,
@@ -114,6 +115,14 @@ function Orden_Venta_PDF(request,response)
             if(typeDelItem == 'Kit'){
                 nlapiLogExecution('debug', 'es kit', 'esto es un kit');
              
+            }else{
+            var skuDelItem= itemtypeSearch[0].getValue("itemid")
+            nlapiLogExecution('debug', 'skuDelItem', skuDelItem);
+            var nombreDelItem= itemtypeSearch[0].getValue("displayname")
+            nlapiLogExecution('debug', 'nombreDelItem', nombreDelItem);
+            var typeDelItem= itemtypeSearch[0].getValue("type")
+            nlapiLogExecution('debug', 'typeDelItem', typeDelItem);
+
             }
 
             if(tmp_item == 2001 || tmp_item == 2170 || tmp_item == 2490 || tmp_item == 2571 || tmp_item == 2280){
@@ -246,8 +255,10 @@ function Orden_Venta_PDF(request,response)
             );
             var skuDelItem= itemSearch[0].getValue("itemid")
             var nameDelTtem = itemSearch[0].getValue("displayname")
-            //nlapiLogExecution('debug', 'itemSearch', );
-            //nlapiLogExecution('debug', 'idItemSearch', idItemSearch );
+            nameDelTtem = nameDelTtem.replace(/&/g, "&amp;");
+
+            nlapiLogExecution('debug', 'itemSearch',idItemarts);
+            nlapiLogExecution('debug', 'idItemSearch', idItemSearch );
            // var itemData=nlapiLoadRecord('inventoryitem', idItemSearch);
            // nlapiLogExecution('debug', 'itemData itemid', itemData );
             sku = nlapiEscapeXML(returnBlank(skuDelItem));
