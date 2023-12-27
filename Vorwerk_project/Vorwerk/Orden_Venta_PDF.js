@@ -72,7 +72,7 @@ function Orden_Venta_PDF(request,response)
 
         serie = "";
         var artsKits = []
-        for(var i=1;i<itemcount + 1;i++){
+        for(var i=0;i<itemcount.length ;i++){
             var tmp_item = salesorder.getLineItemValue('item', 'item', i);
             nlapiLogExecution('debug', 'tmp_item', tmp_item);
 
