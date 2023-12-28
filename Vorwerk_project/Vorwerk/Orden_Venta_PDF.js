@@ -72,67 +72,70 @@ function Orden_Venta_PDF(request,response)
 
         serie = "";
         var artsKits = []
-        for(var i=0;i<itemcount.length ;i++){
-            var tmp_item = salesorder.getLineItemValue('item', 'item', i);
-            nlapiLogExecution('debug', 'tmp_item', tmp_item);
-
-            var itemtypeSearch = nlapiSearchRecord("item",null,
-                [
-                    ["internalid","is",tmp_item]
-                ],
-                [
-                    new nlobjSearchColumn("itemid"),
-                    new nlobjSearchColumn("displayname"),
-                    new nlobjSearchColumn("type"),
-                    new nlobjSearchColumn('memberitem'),
-                    new nlobjSearchColumn('displayname','memberItem' ),
-
-                ]
-            );
-              
-            var skuDelItem= itemtypeSearch[0].getValue("itemid")
-            //nlapiLogExecution('debug', 'skuDelItem', skuDelItem);
-            var nombreDelItem= itemtypeSearch[0].getValue("displayname")
-            //nlapiLogExecution('debug', 'nombreDelItem', nombreDelItem);
-            var typeDelItem= itemtypeSearch[0].getValue("type")
-            //nlapiLogExecution('debug', 'typeDelItem', typeDelItem);
-            if(itemtypeSearch && typeDelItem == 'Kit') {
-                var atrs = [] //tasa, cuchara, libro
-                for (var i = 0 ; i < itemtypeSearch.length; i++) {
-                    var memberitem= itemtypeSearch[i].getValue("memberitem")
-                    nlapiLogExecution('debug', 'memberitem', memberitem);
-                    var displayname= itemtypeSearch[i].getValue('displayname', 'memberItem')
-                    nlapiLogExecution('debug', 'displayname', displayname);   
-                    atrs.push(displayname)
-                };
+        for(var i=1;i<= itemcount ;i++){
+            try{
                 
-                artsKits[tmp_item] = atrs
-            };
-           
+                var tmp_item = salesorder.getLineItemValue('item', 'item', i);
+                nlapiLogExecution('debug', 'tmp_item', tmp_item);
 
-            
-            if(typeDelItem == 'Kit'){
-                nlapiLogExecution('debug', 'es kit', 'esto es un kit');
-             
-            }
+                var itemtypeSearch = nlapiSearchRecord("item",null,
+                    [
+                        ["internalid","is",tmp_item]
+                    ],
+                    [
+                        new nlobjSearchColumn("itemid"),
+                        new nlobjSearchColumn("displayname"),
+                        new nlobjSearchColumn("type"),
+                        new nlobjSearchColumn('memberitem'),
+                        new nlobjSearchColumn('displayname','memberItem' ),
 
-            if(tmp_item == 2001 || tmp_item == 2170 || tmp_item == 2490 || tmp_item == 2571 || tmp_item == 2280){
-                var subrecord = salesorder.viewLineItemSubrecord('item', 'inventorydetail',i);
-                nlapiLogExecution('debug', 'subrecord', JSON.stringify(subrecord));
-                if(subrecord != null) {
-                    var subitems    = subrecord.getLineItemCount('inventoryassignment');
-                    for(var x = 1; x <= subitems; x++) {
-                        subrecord.selectLineItem('inventoryassignment', x);
-                        serie = subrecord.getCurrentLineItemText('inventoryassignment', 'issueinventorynumber');
-                        nlapiLogExecution('debug', 'serie', serie);
-                        if(serie){
-                            break;
+                    ]
+                );
+                var skuDelItem= itemtypeSearch[0].getValue("itemid")
+                //nlapiLogExecution('debug', 'skuDelItem', skuDelItem);
+                var nombreDelItem= itemtypeSearch[0].getValue("displayname")
+                //nlapiLogExecution('debug', 'nombreDelItem', nombreDelItem);
+                var typeDelItem= itemtypeSearch[0].getValue("type")
+                //nlapiLogExecution('debug', 'typeDelItem', typeDelItem);
+                if(itemtypeSearch && typeDelItem == 'Kit') {
+                    var atrs = [] //tasa, cuchara, libro
+                    for (var j = 0 ; j < itemtypeSearch.length; j++) {
+                        var memberitem= itemtypeSearch[j].getValue("memberitem")
+                        nlapiLogExecution('debug', 'memberitem', memberitem);
+                        var displayname= itemtypeSearch[j].getValue('displayname', 'memberItem')
+                        nlapiLogExecution('debug', 'displayname', displayname);   
+                        atrs.push(displayname)
+                    };
+                    
+                    artsKits[tmp_item] = atrs
+                };
+               
+
+                
+                if(typeDelItem == 'Kit'){
+                    nlapiLogExecution('debug', 'es kit', 'esto es un kit');
+                 
+                }
+
+                if(tmp_item == 2001 || tmp_item == 2170 || tmp_item == 2490 || tmp_item == 2571 || tmp_item == 2280){
+                    var subrecord = salesorder.viewLineItemSubrecord('item', 'inventorydetail',i);
+                    nlapiLogExecution('debug', 'subrecord', JSON.stringify(subrecord));
+                    if(subrecord != null) {
+                        var subitems    = subrecord.getLineItemCount('inventoryassignment');
+                        for(var x = 1; x <= subitems; x++) {
+                            subrecord.selectLineItem('inventoryassignment', x);
+                            serie = subrecord.getCurrentLineItemText('inventoryassignment', 'issueinventorynumber');
+                            nlapiLogExecution('debug', 'serie', serie);
+                            if(serie){
+                                break;
+                            }
+
                         }
-
                     }
                 }
+            }catch(e){
+               nlapiLogExecution('debug', 'Error for items', e); 
             }
-
         }
         if(serie == '')
         {
@@ -228,8 +231,9 @@ function Orden_Venta_PDF(request,response)
         strName += "</tr>";
         strName += "</thead>";
 
-        for(var i=1;i<itemcount + 1;i++)
+        for(var i=1;i<=itemcount ;i++)
         {   
+
             var idItemarts =salesorder.getLineItemValue('item', 'item', i)
             var idItemSearch=salesorder.getLineItemValue('item', 'item', i)*1;
             var itemSearch = nlapiSearchRecord("item",null,
@@ -278,15 +282,14 @@ function Orden_Venta_PDF(request,response)
             strName     += "<td align='right' font-size=\"9pt\">$"          + currencyFormat(amount,2)      + "</td>";
             strName     += "<td align='right' font-size=\"9pt\">$"          + currencyFormat(gross,2)           + "</td>";
             strName         += "</tr>";
-
             
-            for( i in  artsKits[idItemarts]){//Selecciona del arreglo de kits el kit en el que estamos posicionados y recorre sus articulos
+            for( j in  artsKits[idItemarts]){//Selecciona del arreglo de kits el kit en el que estamos posicionados y recorre sus articulos
 
                
-                nlapiLogExecution('debug', 'artsKits[i]', artsKits[idItemarts][i]);
+                nlapiLogExecution('debug', 'artsKits[i]', artsKits[idItemarts][j]);
                 strName     += "<tr class='"+ trClass + "'>";
                 strName     += "<td align='left' font-size=\"9pt\">"                + ''   + "</td>";
-                strName     += "<td align='letf' font-size=\"8pt\">"                + artsKits[idItemarts][i]   + "</td>";
+                strName     += "<td align='letf' font-size=\"8pt\">"                + artsKits[idItemarts][j]   + "</td>";
                 strName     += "<td align='center' font-size=\"9pt\">"              + ''      + "</td>";
                 strName     += "<td align='center' font-size=\"9pt\">"              + ''         + "</td>";
                 strName     += "<td align='right' font-size=\"9pt\">"              + ''    + "</td>";
