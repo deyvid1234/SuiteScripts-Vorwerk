@@ -19,7 +19,7 @@ function(render,email,file,record,search,format,runtime) {
         try{
             var method = context.request.method;
             var params = context.request.parameters;
-            var recordid = 4725581//recordid = parseInt(params.receiptID);
+            var recordid = recordid = parseInt(params.oppID);
             log.debug('method',method);
             
              
@@ -41,10 +41,11 @@ function(render,email,file,record,search,format,runtime) {
             })*/
             var referencia = objReceipt.getValue('tranid');
             var name= objReceipt.getValue('entityname');
-
+           
             log.debug('name', name)
-             log.debug('referencia', referencia)
-            log.debug('date', date) 
+            log.debug('referencia', referencia)
+            log.debug('date', date)
+           
             }catch(err){
             log.error("xa",err);
         }
@@ -89,11 +90,59 @@ function(render,email,file,record,search,format,runtime) {
             }*/
         
     }
-    function mainCreateXML(context,idTpl,recordid,logodURL){
+    function mainCreateXML(context,idTpl,recordid,logodURL,location){
         
         try
         {   log.debug('inicia pdf')
+            var objReceipt = record.load({
+                type: 'itemreceipt',
+                id: recordid,
+                isDynamic: false,
+            });
+            
+            var numLines = objReceipt.getLineCount({
+                sublistId: 'item'
+            });
+                        
+            for(var e =0; e<numLines; e++){
+                var location = objReceipt.getSublistValue({
+                    sublistId: 'item',
+                    fieldId: 'location_display',
+                    line: e
+                })
+                var quantity = objReceipt.getSublistValue({
+                    sublistId: 'item',
+                    fieldId: 'quantity',
+                    line: e
+                })
+                var descripcion = objReceipt.getSublistValue({
+                    sublistId: 'item',
+                    fieldId: 'itemdescription',
+                    line: e
+                })
+                descripcion = descripcion.replace(/&/g, "&amp;");
+
+                var sku = objReceipt.getSublistValue({
+                    sublistId: 'item',
+                    fieldId: 'itemname',
+                    line: e
+                })
+                var total = objReceipt.getSublistValue({
+                    sublistId: 'item',
+                    fieldId: 'rate',
+                    line: e
+                })
+            }
+            
+            log.debug('location', location)
+            log.debug('quantity', quantity) 
             var bodyPDF = getTemplate(idTpl,recordid)
+            bodyPDF = bodyPDF.replace(/@custbody_location/g,location);
+            bodyPDF = bodyPDF.replace(/@quantity/g,quantity);
+            bodyPDF = bodyPDF.replace(/@descripcion/g,descripcion);
+            bodyPDF = bodyPDF.replace(/@sku/g,sku);
+            bodyPDF = bodyPDF.replace(/@total/g,total);
+            
             var xml = createXML(logodURL,bodyPDF)//crea xml para pdf
            
             
@@ -134,7 +183,7 @@ function(render,email,file,record,search,format,runtime) {
     }
     function getTemplate(idTpl,recordid){
         try{
-             log.debug('template')
+            
              var myMergeResult = render.mergeEmail({
                 templateId: idTpl,
                             
@@ -172,7 +221,7 @@ function(render,email,file,record,search,format,runtime) {
                 + '<head></head>'
                 + '<body footer-height="20pt" padding="0.5in 0.5in 0in 0.5in" margin= "0in 0in 0.5in 0in" size="Letter">'
                 +'<img height="70" width="160" align="center" ' + logodURL +'>'
-                +'<p align="center" style="font-size:14pt; font-weight: bold;">RECEPCÍON DE MERCANCÍAS</p>'
+                +'<p align="center" style="font-weight: bold;font-family:Arial,Helvetica,sans-serif; font-size:14px;">RECEPCÍON DE MERCANCÍAS</p>'
                 +'<table border="0" cellpadding="1" cellspacing="1" style="width: 663px;">'
                 +'<tbody>'
                 +'</tbody>'
