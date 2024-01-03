@@ -330,15 +330,19 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
 						//log.debug('cliente',cliente)
 						//log.debug('1ids_rec[v_rec[i].internalid]',ids_rec[v_rec[i].internalid])
 						var monto_rec = CompConfigDetails[configuracion_rec]['esquemaVentasReclutamiento'][(ids_rec[v_rec[i].internalid])>limiteVentasReclutamiento?0:(ids_rec[v_rec[i].internalid])]['compensacion']
-						strTable += "<tr>";
-						strTable += "<td border='0.5' border-style='dotted-narrow'>" + lineaRec 	+ "</td>";
-						strTable += "<td border='0.5' border-style='dotted-narrow'>" + v_rec[i].confEquipo 	+ "</td>";
-						strTable += "<td border='0.5' border-style='dotted-narrow'>" + v_rec[i].employee 	+ "</td>";
-						strTable += "<td border='0.5' border-style='dotted-narrow'>" +  cliente	+ "</td>";
-						strTable += "<td border='0.5' border-style='dotted-narrow'>" + v_rec[i].fecha 		+ "</td>";
-						strTable += "<td border='0.5' border-style='dotted-narrow'>" + v_rec[i].internalid		+ "</td>";
-						strTable += "<td border='0.5' border-style='dotted-narrow' align='right'>" + currencyFormat('$',monto_rec >0? monto_rec : '0.00')	+ "</td>";
-						strTable += "</tr>";
+						if (monto_rec >0){
+							log.debug("entra if monto rec",monto_rec )
+							strTable += "<tr>";
+							strTable += "<td border='0.5' border-style='dotted-narrow'>" + lineaRec 	+ "</td>";
+							strTable += "<td border='0.5' border-style='dotted-narrow'>" + v_rec[i].confEquipo 	+ "</td>";
+							strTable += "<td border='0.5' border-style='dotted-narrow'>" + v_rec[i].employee 	+ "</td>";
+							strTable += "<td border='0.5' border-style='dotted-narrow'>" +  cliente	+ "</td>";
+							strTable += "<td border='0.5' border-style='dotted-narrow'>" + v_rec[i].fecha 		+ "</td>";
+							strTable += "<td border='0.5' border-style='dotted-narrow'>" + v_rec[i].internalid		+ "</td>";
+							strTable += "<td border='0.5' border-style='dotted-narrow' align='right'>" + currencyFormat('$',monto_rec >0? monto_rec : '0.00')	+ "</td>";
+							strTable += "</tr>";
+						}
+						
 						
 				}
 				log.debug('num_odv_por_recluta',num_odv_por_recluta)
