@@ -26,41 +26,11 @@ function(render,email,file,record,search,format,runtime) {
              
             var idTpl = 274;//
             
-            //se carga el record de oportuniddad
-            var objReceipt = record.load({
-                type: 'inventoryadjustment',
-                id: recordid,
-                isDynamic: false,
-            });
             
-            var date= objReceipt.getValue('trandate');
-            
-            /*var date = format.format({
-                value: date_aux ,
-                type: format.Type.DATE
-            })*/
-            var referencia = objReceipt.getValue('tranid');
-            var name= objReceipt.getValue('entityname');
-           
-            log.debug('name', name)
-            log.debug('referencia', referencia)
-            log.debug('date', date)
-           
             }catch(err){
             log.error("xa",err);
         }
-            //se extrae el cliente
-            /*var entity = parseInt(objOP.getValue('entity'));
-            var fieldsLookUp = search.lookupFields({
-                type: 'customer',
-                id: entity,
-                columns: ['salesrep','email']
-            });
-            var email_customer = fieldsLookUp.email;
-            //se extrae el representante
-            var idUSer = parseInt(fieldsLookUp.salesrep[0].value);
             
-            */
             
             
             //obtiene imagen de logo
@@ -72,76 +42,110 @@ function(render,email,file,record,search,format,runtime) {
                 logodURL = getImage('2576941') //id imagen vorwerk tm s green prod
             }
 
-            //sb1510040
-            //obtiene imagen de check false 
-
-            /*var checkfieldURL = getImage('1636738');//sb1510039
-            //obtiene imagen check true
-            var checkfieldURL_true = getImage('1636741');//1510241
-            //genera imagen de check false
-           */
+            
             if(method == 'GET'){
                 //proceso para retornar PDF
                 mainCreateXML(context,idTpl,recordid,logodURL);
             }
-            /*if(method == 'PUT'){
-                //proceso para enviar Email
-                mainCreateEmailtoSend(objOP,idTpl,idUSer,entity,recordid,logodURL,date,order,checkfieldURL,checkfieldURL_true,email_customer);
-            }*/
+           
         
     }
     function mainCreateXML(context,idTpl,recordid,logodURL,location){
         
         try
         {   log.debug('inicia pdf')
-            var objReceipt = record.load({
-                type: 'itemreceipt',
+
+            var bodyPDF = getTemplate(idTpl,recordid)
+            var objAdjustment = record.load({
+                type: 'inventoryadjustment',
                 id: recordid,
                 isDynamic: false,
             });
-            
-            var numLines = objReceipt.getLineCount({
-                sublistId: 'item'
+            var total = objAdjustment.getValue('estimatedtotalvalue');
+            total = total*-1
+            log.debug('total', total)
+            var numLines = objAdjustment.getLineCount({
+                sublistId: 'inventory'
             });
-                        
+
+            var strTable    += "<p font-family=\"Helvetica\" font-size=\"6\" align=\"center\"><b>VENTAS PROPIAS</b></p>";
+            strTable += "<table width='670px'>";
+            strTable += "<tr>";
+            strTable += "<td border='0.5' width='10px'><b>#</b></td>";
+            strTable += "<td border='0.5' width='100px'><b>SKU</b></td>";
+            strTable += "<td border='0.5' width='200px'><b>DESCRIPCIÓN</b></td>";
+            strTable += "<td border='0.5' width='0px'><b>CANTIDAD (pz)</b></td>";
+            strTable += "<td border='0.5' width='0px'><b>COSTO PROMEDIO</b></td>";
+            strTable += "<td border='0.5' width='40px'><b>IMPORTE</b></td>";
+                    
+             
+             
             for(var e =0; e<numLines; e++){
-                var location = objReceipt.getSublistValue({
-                    sublistId: 'item',
+                var location = objAdjustment.getSublistValue({
+                    sublistId: 'inventory',
                     fieldId: 'location_display',
                     line: e
                 })
-                var quantity = objReceipt.getSublistValue({
-                    sublistId: 'item',
-                    fieldId: 'quantity',
+                var quantity = objAdjustment.getSublistValue({
+                    sublistId: 'inventory',
+                    fieldId: 'adjustqtyby',
                     line: e
                 })
-                var descripcion = objReceipt.getSublistValue({
-                    sublistId: 'item',
-                    fieldId: 'itemdescription',
+                quantity = quantity*-1
+                var descripcion = objAdjustment.getSublistValue({
+                    sublistId: 'inventory',
+                    fieldId: 'item_display',
                     line: e
                 })
-                descripcion = descripcion.replace(/&/g, "&amp;");
+                descripcion1 = descripcion.split(' ');
+                descripcion1.shift()
+                descripcion2 = descripcion1.join(' ');
+                var sku = objAdjustment.getSublistValue({
+                    sublistId: 'inventory',
+                    fieldId: 'item_display',
+                    line: e
+                })
+                sku = sku.split(' ');
+                sku = sku[0]
 
-                var sku = objReceipt.getSublistValue({
-                    sublistId: 'item',
-                    fieldId: 'itemname',
+                var unitCost = objAdjustment.getSublistValue({
+                    sublistId: 'inventory',
+                    fieldId: 'avgunitcost',
                     line: e
                 })
-                var total = objReceipt.getSublistValue({
-                    sublistId: 'item',
-                    fieldId: 'rate',
+                var importe = objAdjustment.getSublistValue({
+                    sublistId: 'inventory',
+                    fieldId: 'currentvalue',
                     line: e
-                })
+                })//(quantity*-1)*unitCost currentvalue
+                log.debug('location', location)
+                log.debug('quantity', quantity) 
+                log.debug('sku', sku)
+                log.debug('descripcion', descripcion2)
+                log.debug('importe', importe)
+                strTable += "<tr>";
+                    strTable += "<td border='0.5' border-style='dotted-narrow'>" + lineaRec     + "</td>";
+                            
+                    strTable += "<td border='0.5' border-style='dotted-narrow'>" + sku     + "</td>";
+                    strTable += "<td border='0.5' border-style='dotted-narrow'>" + descripcion2  + "</td>";
+                    strTable += "<td border='0.5' border-style='dotted-narrow'>" + quantity        + "</td>";
+                    strTable += "<td border='0.5' border-style='dotted-narrow'>" + unitCost       + "</td>";
+                    strTable += "<td border='0.5' border-style='dotted-narrow' align='right'>" + importe  + "</td>";
+                    
+                
             }
+            strTable += "<tr>";
+            strTable += "<td border='0.5' colspan= '5' border-style='none' align='right'><b>TOTAL</b></td>";
+            strTable += "<td border='0.5' border-style='dotted-narrow' align='right'><b>" + total + "</b></td>";
+            strTable += "</tr>";            
+            strTable += "</table>";
             
-            log.debug('location', location)
-            log.debug('quantity', quantity) 
-            var bodyPDF = getTemplate(idTpl,recordid)
+                  
+            
+            
+            
             bodyPDF = bodyPDF.replace(/@custbody_location/g,location);
-            bodyPDF = bodyPDF.replace(/@quantity/g,quantity);
-            bodyPDF = bodyPDF.replace(/@descripcion/g,descripcion);
-            bodyPDF = bodyPDF.replace(/@sku/g,sku);
-            bodyPDF = bodyPDF.replace(/@total/g,total);
+            bodyPDF = bodyPDF.replace(/@tabla/g,strTable);
             
             var xml = createXML(logodURL,bodyPDF)//crea xml para pdf
            
@@ -221,12 +225,9 @@ function(render,email,file,record,search,format,runtime) {
                 + '<head></head>'
                 + '<body footer-height="20pt" padding="0.5in 0.5in 0in 0.5in" margin= "0in 0in 0.5in 0in" size="Letter">'
                 +'<img height="70" width="160" align="center" ' + logodURL +'>'
-                +'<p align="center" style="font-weight: bold;font-family:Arial,Helvetica,sans-serif; font-size:14px;">RECEPCÍON DE MERCANCÍAS</p>'
+                +'<p align="center" style="font-weight: bold;font-family:Arial,Helvetica,sans-serif; font-size:16px;">SALIDA DE INVENTARIO</p>'
                 +'<table border="0" cellpadding="1" cellspacing="1" style="width: 663px;">'
-                +'<tbody>'
-                +'</tbody>'
                 +'</table>'
-                
                 + emailBody
                 + '</body>'
                 + '</pdf>'
@@ -304,98 +305,7 @@ function(render,email,file,record,search,format,runtime) {
         }
     }
     
-    /*function getChecks(objOP,tempalte,checkfalse,checktrue){
-        try{
-            if(objOP.getValue('custbody_garantia')){
-                tempalte = tempalte.replace(/@custbody_garantia_yes/g,checktrue);
-                tempalte = tempalte.replace(/@custbody_garantia_no/g,checkfalse);
-            }else{
-                tempalte = tempalte.replace(/@custbody_garantia_yes/g,checkfalse);
-                tempalte = tempalte.replace(/@custbody_garantia_no/g,checktrue);
-            }
-            if(objOP.getValue('custbody61')){
-                tempalte = tempalte.replace(/@v_golpeado/g,checktrue);
-            }else{
-                tempalte = tempalte.replace(/@v_golpeado/g,checkfalse);
-            }
-            if(objOP.getValue('custbody62')){
-                tempalte = tempalte.replace(/@v_desgasta/g,checktrue);
-            }else{
-                tempalte = tempalte.replace(/@v_desgasta/g,checkfalse);
-            }
-            if(objOP.getValue('custbody63')){
-                tempalte = tempalte.replace(/@v_rayado/g,checktrue);
-            }else{
-                tempalte =tempalte.replace(/@v_rayado/g,checkfalse);
-            }
-            if(objOP.getValue('custbody64')){
-                tempalte = tempalte.replace(/@a_golpeado/g,checktrue);
-            }else{
-                tempalte = tempalte.replace(/@a_golpeado/g,checkfalse);
-            }
-            if(objOP.getValue('custbody65')){
-                tempalte = tempalte.replace(/@a_desgasta/g,checktrue);
-            }else{
-                tempalte = tempalte.replace(/@a_desgasta/g,checkfalse);
-            }
-            if(objOP.getValue('custbody66')){
-                tempalte = tempalte.replace(/@a_rayado/g,checktrue);
-            }else{
-                tempalte = tempalte.replace(/@a_rayado/g,checkfalse);
-            }
-            if(objOP.getValue('custbody67')){
-                tempalte = tempalte.replace(/@e_golpeado/g,checktrue);
-            }else{
-                tempalte = tempalte.replace(/@e_golpeado/g,checkfalse);
-            }
-            if(objOP.getValue('custbody68')){
-                tempalte = tempalte.replace(/@e_desgasta/g,checktrue);
-            }else{
-                tempalte = tempalte.replace(/@e_desgasta/g,checkfalse);
-            }
-            if(objOP.getValue('custbody69')){
-                tempalte = tempalte.replace(/@e_rayado/g,checktrue);
-            }else{
-                tempalte = tempalte.replace(/@e_rayado/g,checkfalse);
-            }
-            if(objOP.getValue('custbody70')){
-                tempalte = tempalte.replace(/@p_golpeado/g,checktrue);
-            }else{
-                tempalte = tempalte.replace(/@p_golpeado/g,checkfalse);
-            }
-            if(objOP.getValue('custbody71')){
-                tempalte = tempalte.replace(/@p_desgasta/g,checktrue);
-            }else{
-                tempalte = tempalte.replace(/@p_desgasta/g,checkfalse);
-            }
-            if(objOP.getValue('custbody72')){
-                tempalte = tempalte.replace(/@p_rayado/g,checktrue);
-            }else{
-                tempalte = tempalte.replace(/@p_rayado/g,checkfalse);
-            }
-            if(objOP.getValue('custbody75')){
-                tempalte = tempalte.replace(/@otros/g,checktrue);
-            }else{
-                tempalte = tempalte.replace(/@otros/g,checkfalse);
-            }
-            return tempalte;
-        }catch(err){
-            log.error("error getChecks",err)
-        }
-    }
-    function sendEmail(html,client){
-        try{
-            log.debug('client',client);
-            email.send({
-                author: '344096',
-                recipients: [client],
-                subject: 'Garantia',
-                body: html
-            }); 
-        }catch(err){
-            log.error("error send email",err)
-        }
-    }*/
+    
     return {
         onRequest: onRequest
     };
