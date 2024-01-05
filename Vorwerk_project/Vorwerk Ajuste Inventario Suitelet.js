@@ -54,7 +54,6 @@ function(render,email,file,record,search,format,runtime) {
         
         try
         {   log.debug('inicia pdf')
-
             var bodyPDF = getTemplate(idTpl,recordid)
             var objAdjustment = record.load({
                 type: 'inventoryadjustment',
@@ -62,25 +61,31 @@ function(render,email,file,record,search,format,runtime) {
                 isDynamic: false,
             });
             var total = objAdjustment.getValue('estimatedtotalvalue');
-            total = total*-1
+            var movimiento 
+            if(total <0){
+                movimiento = "Salida de inventario"
+            } else{
+                movimiento = "Entrada de inventario"
+            }
             log.debug('total', total)
             var numLines = objAdjustment.getLineCount({
                 sublistId: 'inventory'
             });
-
-            var strTable    += "<p font-family=\"Helvetica\" font-size=\"6\" align=\"center\"><b>VENTAS PROPIAS</b></p>";
-            strTable += "<table width='670px'>";
+             log.debug('inicia pdf1')
+            var strTable = "<table width='670px'>";
             strTable += "<tr>";
-            strTable += "<td border='0.5' width='10px'><b>#</b></td>";
-            strTable += "<td border='0.5' width='100px'><b>SKU</b></td>";
-            strTable += "<td border='0.5' width='200px'><b>DESCRIPCIÓN</b></td>";
-            strTable += "<td border='0.5' width='0px'><b>CANTIDAD (pz)</b></td>";
-            strTable += "<td border='0.5' width='0px'><b>COSTO PROMEDIO</b></td>";
-            strTable += "<td border='0.5' width='40px'><b>IMPORTE</b></td>";
-                    
-             
-             
+            strTable += "<td border='0.5' align='center'  font-family= 'Arial,Helvetica,sans-serif' color= '#FFFFFF' font-size= '12px' background-color= '#00AC46'><b>#</b></td>";
+            strTable += "<td border='0.5' align='center'  font-family= 'Arial,Helvetica,sans-serif' color= '#FFFFFF' font-size= '12px' background-color= '#00AC46'><b>SKU</b></td>";
+            strTable += "<td border='0.5' align='center'  font-family= 'Arial,Helvetica,sans-serif' color= '#FFFFFF' font-size= '12px' background-color= '#00AC46'><b>DESCRIPCIÓN</b></td>";
+            strTable += "<td border='0.5' align='center'  font-family= 'Arial,Helvetica,sans-serif' color= '#FFFFFF' font-size= '12px' background-color= '#00AC46'><b>CANTIDAD (pz)</b></td>";
+            strTable += "<td border='0.5' align='center'  font-family= 'Arial,Helvetica,sans-serif' color= '#FFFFFF' font-size= '12px' background-color= '#00AC46'><b>COSTO PROMEDIO</b></td>";
+            strTable += "<td border='0.5' align='center'  font-family= 'Arial,Helvetica,sans-serif' color= '#FFFFFF' font-size= '12px' background-color= '#00AC46'><b>IMPORTE</b></td>";
+            strTable += "</tr>";        
+            lineaRec=0 
+             log.debug('inicia pdf2')
+
             for(var e =0; e<numLines; e++){
+                lineaRec++
                 var location = objAdjustment.getSublistValue({
                     sublistId: 'inventory',
                     fieldId: 'location_display',
@@ -91,7 +96,7 @@ function(render,email,file,record,search,format,runtime) {
                     fieldId: 'adjustqtyby',
                     line: e
                 })
-                quantity = quantity*-1
+                
                 var descripcion = objAdjustment.getSublistValue({
                     sublistId: 'inventory',
                     fieldId: 'item_display',
@@ -123,29 +128,32 @@ function(render,email,file,record,search,format,runtime) {
                 log.debug('sku', sku)
                 log.debug('descripcion', descripcion2)
                 log.debug('importe', importe)
+                log.debug('inicia pdf3')
                 strTable += "<tr>";
-                    strTable += "<td border='0.5' border-style='dotted-narrow'>" + lineaRec     + "</td>";
+                strTable += "<td border='0.5' align='center'  font-family= 'Arial,Helvetica,sans-serif' font-size= '12px'>" + lineaRec + "</td>";
                             
-                    strTable += "<td border='0.5' border-style='dotted-narrow'>" + sku     + "</td>";
-                    strTable += "<td border='0.5' border-style='dotted-narrow'>" + descripcion2  + "</td>";
-                    strTable += "<td border='0.5' border-style='dotted-narrow'>" + quantity        + "</td>";
-                    strTable += "<td border='0.5' border-style='dotted-narrow'>" + unitCost       + "</td>";
-                    strTable += "<td border='0.5' border-style='dotted-narrow' align='right'>" + importe  + "</td>";
-                    
+                strTable += "<td border='0.5' align='left'  font-family= 'Arial,Helvetica,sans-serif' font-size= '12px'>" + sku + "</td>";
+                strTable += "<td border='0.5' align='left'  font-family= 'Arial,Helvetica,sans-serif' font-size= '12px'>" + descripcion2 + "</td>";
+                strTable += "<td border='0.5' align='right'  font-family= 'Arial,Helvetica,sans-serif' font-size= '12px'>" + quantity + "</td>";
+                strTable += "<td border='0.5' align='right'  font-family= 'Arial,Helvetica,sans-serif' font-size= '12px'>" + unitCost + "</td>";
+                strTable += "<td border='0.5' align='right'  font-family= 'Arial,Helvetica,sans-serif' font-size= '12px'>" + importe  + "</td>";
+                strTable += "</tr>";
+                log.debug('inicia pdf4')
                 
             }
+            log.debug('inicia pdf5')
             strTable += "<tr>";
-            strTable += "<td border='0.5' colspan= '5' border-style='none' align='right'><b>TOTAL</b></td>";
-            strTable += "<td border='0.5' border-style='dotted-narrow' align='right'><b>" + total + "</b></td>";
+            strTable += "<td colspan= '5'  align='right'  font-family= 'Arial,Helvetica,sans-serif' font-size= '12px'><b>TOTAL</b></td>";
+            strTable += "<td border='0.5' align='right'  font-family= 'Arial,Helvetica,sans-serif' font-size= '12px'><b>" + total + "</b></td>";
             strTable += "</tr>";            
             strTable += "</table>";
-            
-                  
-            
-            
-            
+            log.debug('inicia pdf6')
+                
             bodyPDF = bodyPDF.replace(/@custbody_location/g,location);
+            bodyPDF = bodyPDF.replace(/@movimiento/g,movimiento);
             bodyPDF = bodyPDF.replace(/@tabla/g,strTable);
+            
+           log.debug('inicia pdf7')
             
             var xml = createXML(logodURL,bodyPDF)//crea xml para pdf
            
@@ -225,7 +233,7 @@ function(render,email,file,record,search,format,runtime) {
                 + '<head></head>'
                 + '<body footer-height="20pt" padding="0.5in 0.5in 0in 0.5in" margin= "0in 0in 0.5in 0in" size="Letter">'
                 +'<img height="70" width="160" align="center" ' + logodURL +'>'
-                +'<p align="center" style="font-weight: bold;font-family:Arial,Helvetica,sans-serif; font-size:16px;">SALIDA DE INVENTARIO</p>'
+                +'<p align="center" style="font-weight: bold;font-family:Arial,Helvetica,sans-serif; font-size:16px;">AJUSTE DE INVENTARIO</p>'
                 +'<table border="0" cellpadding="1" cellspacing="1" style="width: 663px;">'
                 +'</table>'
                 + emailBody
