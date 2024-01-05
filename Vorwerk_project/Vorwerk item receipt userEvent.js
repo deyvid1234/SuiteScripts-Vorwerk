@@ -22,11 +22,19 @@ function(runtime,url,https) {
             var form = scriptContext.
             form;
             form.clientScriptFileId = (runtime.envType != 'PRODUCTION') ? '2461652' : '2461652';
-            form.addButton({
-                id: 'custpage_btn_item_receipt',
-                label: 'Imprimir Recibo',
-                functionName: 'printReceipt(\''+record.id+'\');'
-            });
+            var created= record.getValue('ordertype')
+            if(created == 'PurchOrd'){
+                form.addButton({
+                    id: 'custpage_btn_item_receipt',
+                    label: 'Imprimir Recibo',
+                    functionName: 'printReceipt(\''+record.id+'\');'
+                });
+            }
+            
+            
+        log.debug('created',created)
+        
+        
         }catch(err){
             log.error('Errro beforeLoad',err);
         }
@@ -43,6 +51,8 @@ function(runtime,url,https) {
      * @Since 2015.2
      */
     function beforeSubmit(scriptContext) {
+        var record = scriptContext.newRecord;
+
 
     }
 

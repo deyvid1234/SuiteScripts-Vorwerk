@@ -42,9 +42,11 @@ function(render,email,file,record,search,format,runtime) {
             var referencia = objReceipt.getValue('tranid');
             var name= objReceipt.getValue('entityname');
            
+            
             log.debug('name', name)
             log.debug('referencia', referencia)
             log.debug('date', date)
+            
            
             }catch(err){
             log.error("xa",err);
@@ -99,12 +101,26 @@ function(render,email,file,record,search,format,runtime) {
                 id: recordid,
                 isDynamic: false,
             });
-            
+             var ordenCompra= objReceipt.getText('createdfrom')
+            ordenCompra = ordenCompra.split('#')
+            ordenCompra = ordenCompra[1]
+            var created=objReceipt.getValue('objReceipt')
+
             var numLines = objReceipt.getLineCount({
                 sublistId: 'item'
             });
-                        
+            var strTable = "<table width='670px'>";
+            strTable += "<tr>";
+            strTable += "<td border='0.5' align='center'  font-family= 'Arial,Helvetica,sans-serif' font-size= '12px'><b>#</b></td>";
+            strTable += "<td border='0.5' align='center'  font-family= 'Arial,Helvetica,sans-serif' font-size= '12px'><b>SKU</b></td>";
+            strTable += "<td border='0.5' align='center'  font-family= 'Arial,Helvetica,sans-serif' font-size= '12px'><b>DESCRIPCIÓN</b></td>";
+            strTable += "<td border='0.5' align='center'  font-family= 'Arial,Helvetica,sans-serif' font-size= '12px'><b>CANTIDAD (pz)</b></td>";
+            
+            strTable += "</tr>";        
+            lineaRec=0 
+            var sumaQuantity = 0            
             for(var e =0; e<numLines; e++){
+                lineaRec++
                 var location = objReceipt.getSublistValue({
                     sublistId: 'item',
                     fieldId: 'location_display',
@@ -115,6 +131,7 @@ function(render,email,file,record,search,format,runtime) {
                     fieldId: 'quantity',
                     line: e
                 })
+                sumaQuantity += parseFloat(quantity);
                 var descripcion = objReceipt.getSublistValue({
                     sublistId: 'item',
                     fieldId: 'itemdescription',
@@ -127,21 +144,30 @@ function(render,email,file,record,search,format,runtime) {
                     fieldId: 'itemname',
                     line: e
                 })
-                var total = objReceipt.getSublistValue({
-                    sublistId: 'item',
-                    fieldId: 'rate',
-                    line: e
-                })
+                
+                strTable += "<tr>";
+                strTable += "<td border='0.5' align='center'  font-family= 'Arial,Helvetica,sans-serif' font-size= '12px'>" + lineaRec + "</td>";
+                            
+                strTable += "<td border='0.5' align='left'  font-family= 'Arial,Helvetica,sans-serif' font-size= '12px'>" + sku + "</td>";
+                strTable += "<td border='0.5' align='left'  font-family= 'Arial,Helvetica,sans-serif' font-size= '12px'>" + descripcion + "</td>";
+                strTable += "<td border='0.5' align='right'  font-family= 'Arial,Helvetica,sans-serif' font-size= '12px'>" + quantity + "</td>";
+                
+                strTable += "</tr>";
             }
+            var total = sumaQuantity
+            strTable += "<tr>";
+            strTable += "<td colspan= '3'  align='right'  font-family= 'Arial,Helvetica,sans-serif' font-size= '12px'><b>TOTAL</b></td>";
+            strTable += "<td border='0.5' align='right'  font-family= 'Arial,Helvetica,sans-serif' font-size= '12px'><b>" + total + "</b></td>";
+            strTable += "</tr>";            
+            strTable += "</table>";
             
             log.debug('location', location)
-            log.debug('quantity', quantity) 
+             
             var bodyPDF = getTemplate(idTpl,recordid)
-            bodyPDF = bodyPDF.replace(/@custbody_location/g,location);
-            bodyPDF = bodyPDF.replace(/@quantity/g,quantity);
-            bodyPDF = bodyPDF.replace(/@descripcion/g,descripcion);
-            bodyPDF = bodyPDF.replace(/@sku/g,sku);
-            bodyPDF = bodyPDF.replace(/@total/g,total);
+            bodyPDF = bodyPDF.replace(/@custbody_location/g,location); 
+            bodyPDF = bodyPDF.replace(/@ordenCompra/g,ordenCompra); 
+            bodyPDF = bodyPDF.replace(/@tabla/g,strTable);
+           
             
             var xml = createXML(logodURL,bodyPDF)//crea xml para pdf
            
