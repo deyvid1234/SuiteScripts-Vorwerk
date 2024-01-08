@@ -23,7 +23,7 @@ function(render,email,file,record,search,format,runtime) {
             log.debug('method',method);
             
              
-            var idTpl = 273;//prod 274
+            var idTpl = 274;//prod 274 sandbox 273
             //var sendEmail = params.emailSend;
            // log.debug('params',params);
             //se carga el record de oportuniddad

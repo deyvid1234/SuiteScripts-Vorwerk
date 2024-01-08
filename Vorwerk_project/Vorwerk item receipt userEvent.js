@@ -21,7 +21,7 @@ function(runtime,url,https) {
             var record = scriptContext.newRecord;
             var form = scriptContext.
             form;
-            form.clientScriptFileId = (runtime.envType != 'PRODUCTION') ? '2461652' : '2461652';
+            form.clientScriptFileId = (runtime.envType != 'PRODUCTION') ? '2461652' : '2717042';
             var created= record.getValue('ordertype')
             if(created == 'PurchOrd'){
                 form.addButton({
