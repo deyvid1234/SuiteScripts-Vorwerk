@@ -24,7 +24,7 @@ function(render,email,file,record,search,format,runtime) {
             log.debug('method',method);
             
              
-            var idTpl = 274;//
+            var idTpl = 273;//
             
             
             }catch(err){
@@ -105,6 +105,7 @@ function(render,email,file,record,search,format,runtime) {
                 descripcion1 = descripcion.split(' ');
                 descripcion1.shift()
                 descripcion2 = descripcion1.join(' ');
+                descripcion2  = descripcion2.replace(/&/g, "&amp;");
                 var sku = objAdjustment.getSublistValue({
                     sublistId: 'inventory',
                     fieldId: 'item_display',
@@ -118,11 +119,8 @@ function(render,email,file,record,search,format,runtime) {
                     fieldId: 'avgunitcost',
                     line: e
                 })
-                var importe = objAdjustment.getSublistValue({
-                    sublistId: 'inventory',
-                    fieldId: 'currentvalue',
-                    line: e
-                })//(quantity*-1)*unitCost currentvalue
+                var importe = quantity*unitCost 
+                importe= importe.toFixed(2);
                 log.debug('location', location)
                 log.debug('quantity', quantity) 
                 log.debug('sku', sku)

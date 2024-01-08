@@ -22,7 +22,7 @@ function(runtime,url,https) {
             var record = scriptContext.newRecord;
             var form = scriptContext.
             form;
-            form.clientScriptFileId = (runtime.envType != 'PRODUCTION') ? '2463854' : '2463854';
+            form.clientScriptFileId = (runtime.envType != 'PRODUCTION') ? '2463854' : '2716785';
             form.addButton({
                 id: 'custpage_btn_ajuste_inventario',
                 label: 'Imprimir Recibo',
