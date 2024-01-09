@@ -494,10 +494,10 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 		    		if( (type == 'create' || salesrep != old_salesrep) && tipo_venta == 2){
 
 		    			if(runtime.envType != 'PRODUCTION'){ 
-		                    urlLMS = 'http://api-referidos-thrmx.lms-la.com/api/venta'
+		                    urlLMS = 'https://api-referidos-thrmx.lms-la.com/api/venta'
 		                    urlAD = 'https://dev-apiagenda.mxthermomix.com/users/AddSalesExternoNetsuite'
 		                }else{//prod
-		                    urlLMS = 'http://api.recomiendayganathermomix.mx/api/venta'
+		                    urlLMS = 'https://api.recomiendayganathermomix.mx/api/venta'
 		                    urlAD = 'https://apiagenda.mxthermomix.com/users/AddSalesExternoNetsuite'
 		                }
 		                var today = new Date();
@@ -526,7 +526,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 		    				"Order": ""+recordid+""
 		    			}
 		    			log.debug('objRequest LMS',objRequest)
-		    			var responseService = http.post({
+		    			var responseService = https.post({
 			                url: urlLMS,
 			                body : JSON.stringify(objRequest),
 			                headers: {
@@ -591,10 +591,10 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 		    			var urlLMSCancel
 		    			var urlADCancel
 		    			if(runtime.envType != 'PRODUCTION'){ 
-		                    urlLMSCancel = 'http://api-referidos-thrmx.lms-la.com/api/Venta/cancelar-venta'
+		                    urlLMSCancel = 'https://api-referidos-thrmx.lms-la.com/api/Venta/cancelar-venta'
 		                    urlADCancel = 'https://dev-apiagenda.mxthermomix.com/users/AddSalesExternoNetsuite'
 		                }else{//prod
-		                    urlLMSCancel = 'http://api.recomiendayganathermomix.mx/api/Venta/cancelar-venta'
+		                    urlLMSCancel = 'https://api.recomiendayganathermomix.mx/api/Venta/cancelar-venta'
 		                    urlADCancel = 'https://apiagenda.mxthermomix.com/users/AddSalesExternoNetsuite'
 		                }
 
@@ -620,7 +620,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 		    			}
 		    			log.debug('objRequest LMS',objRequest)
 		    			log.debug('objRequest.length',JSON.stringify(objRequest).length)
-		    			var responseService = http.post({
+		    			var responseService = https.post({
 			                url: urlLMSCancel,
 			                body : JSON.stringify(objRequest),
 			                headers: {
