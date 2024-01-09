@@ -664,9 +664,9 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                 //Envio datos LMS
 
                 if(runtime.envType != 'PRODUCTION'){ 
-                    urlLMS = 'http://api-referidos-thrmx.lms-la.com/api/cliente/agregar-presentacion'
+                    urlLMS = 'https://api-referidos-thrmx.lms-la.com/api/cliente/agregar-presentacion'
                 }else{
-                    urlLMS = 'http://api.recomiendayganathermomix.mx/api/cliente/agregar-presentacion'
+                    urlLMS = 'https://api.recomiendayganathermomix.mx/api/cliente/agregar-presentacion'
                 }
                 var today = new Date();
                 var dd = today.getDate();
@@ -691,7 +691,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                     "fechaPresentacion":fdate
                 }
                 log.debug('objRequest LMS Experiencia',objRequest)
-                var responseService = http.post({
+                var responseService = https.post({
                     url: urlLMS,
                     body : JSON.stringify(objRequest),
                     headers: {
