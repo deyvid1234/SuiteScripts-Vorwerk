@@ -131,6 +131,7 @@ function(render,email,file,record,search,format,runtime) {
                     fieldId: 'quantity',
                     line: e
                 })
+                quantity = currencyFormat(quantity)
                 sumaQuantity += parseFloat(quantity);
                 var descripcion = objReceipt.getSublistValue({
                     sublistId: 'item',
@@ -148,13 +149,15 @@ function(render,email,file,record,search,format,runtime) {
                 strTable += "<tr>";
                 strTable += "<td border='0.5' align='center'  font-family= 'Arial,Helvetica,sans-serif' font-size= '12px'>" + lineaRec + "</td>";
                             
-                strTable += "<td border='0.5' align='left'  font-family= 'Arial,Helvetica,sans-serif' font-size= '12px'>" + sku + "</td>";
+                strTable += "<td border='0.5' align='center'  font-family= 'Arial,Helvetica,sans-serif' font-size= '12px'>" + sku + "</td>";
                 strTable += "<td border='0.5' align='left'  font-family= 'Arial,Helvetica,sans-serif' font-size= '12px'>" + descripcion + "</td>";
                 strTable += "<td border='0.5' align='right'  font-family= 'Arial,Helvetica,sans-serif' font-size= '12px'>" + quantity + "</td>";
                 
                 strTable += "</tr>";
             }
             var total = sumaQuantity
+            total = parseFloat(total)
+            total =  currencyFormat(total)
             strTable += "<tr>";
             strTable += "<td colspan= '3'  align='right'  font-family= 'Arial,Helvetica,sans-serif' font-size= '12px'><b>TOTAL</b></td>";
             strTable += "<td border='0.5' align='right'  font-family= 'Arial,Helvetica,sans-serif' font-size= '12px'><b>" + total + "</b></td>";
@@ -244,15 +247,19 @@ function(render,email,file,record,search,format,runtime) {
             log.debug('xml')
             var xml = "<?xml version='1.0' encoding='UTF-8'?>\n<!DOCTYPE pdf PUBLIC '-//big.faceless.org//report' 'report-1.1.dtd'>\n"
                 + "<pdf>"
-                + '<head></head>'
-                + '<body footer-height="20pt" padding="0.5in 0.5in 0in 0.5in" margin= "0in 0in 0.5in 0in" size="Letter">'
-                +'<img height="70" width="160" align="center" ' + logodURL +'>'
-                +'<p align="center" style="font-weight: bold;font-family:Arial,Helvetica,sans-serif; font-size:14px;">RECEPCÍON DE MERCANCÍAS</p>'
-                +'<table border="0" cellpadding="1" cellspacing="1" style="width: 663px;">'
-                +'<tbody>'
-                +'</tbody>'
-                +'</table>'
-                
+                + '<head>'
+                +'<macrolist>'
+                            +'<macro id=\"myheader\">'
+                                +'<img height="70" width="160" align="center" ' + logodURL +'>'
+                                +'<p align="center" style="font-weight: bold;font-family:Arial,Helvetica,sans-serif; font-size:14px;">RECEPCIÓN DE MERCANCÍAS</p>' 
+                            +'</macro>'
+                            +'<macro id=\"paginas\">'
+                                +'<p font-family=\"Helvetica\" font-size=\"6\" align=\"right\">Página <pagenumber/> de <totalpages/></p>'
+                            +'</macro>'
+
+                +'</macrolist>'            
+                +'</head>'
+                + '<body footer-height="20pt" padding="0.5in 0.5in 0in 0.5in" margin= "0in 0in 0.5in 0in" size="Letter" header=\"myheader\" header-height=\"100pt\" footer=\"paginas\">'
                 + emailBody
                 + '</body>'
                 + '</pdf>'
@@ -261,6 +268,43 @@ function(render,email,file,record,search,format,runtime) {
             log.debug('errcreateXML',error)
         }
     }
+    function currencyFormat(v){
+            try{
+                var amt     = v;
+                    amt     = amt.toString();
+                    amt     = amt.split('.');
+                var amtl    = amt[0].length;
+                var amtt    = '';
+                var n       = 0;
+                for(var a=amtl-1;a>=0; a--)
+                {
+                    if(n==3)
+                    {
+                        amtt = amtt + ',' + amt[0].charAt(a); n=1;
+                    }
+                    else
+                    {
+                        amtt = amtt + amt[0].charAt(a) ; n++;
+                    }
+                }
+                var amttt = '';
+                for(var a=0;a<=amtt.length;a++)
+                {
+                    amttt += amtt.charAt(amtt.length-a);
+                }
+                if(amt[1] == '')
+                {
+                    return v = amttt + '.00';
+                }
+                else
+                {
+                    return v = amttt;
+                }
+            }catch(err){
+                log.error('err currencyFormat',err);
+            }
+            
+        }
     function createHTML(logodURL,emailBody,date,order){
         try{
             var space = '&nbsp;';
