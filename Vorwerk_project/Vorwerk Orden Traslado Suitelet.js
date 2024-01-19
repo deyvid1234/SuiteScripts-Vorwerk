@@ -4,9 +4,9 @@ suitelet
  * @NScriptType Suitelet
  * @NModuleScope SameAccount
  */
-define(['N/render','N/email','N/file','N/record','N/search','N/format','N/runtime'],
+define(['N/render','N/email','N/file','N/record','N/search','N/format','N/runtime','N/format/i18n'],
 
-function(render,email,file,record,search,format,runtime) {
+function(render,email,file,record,search,format,runtime,formati18n) {
    
     /**
      * Definition of the Suitelet script trigger point.
@@ -108,8 +108,8 @@ function(render,email,file,record,search,format,runtime) {
                     fieldId: 'itemquantity',
                     line: e
                 })
-                quantity = currencyFormat(quantity)
                 sumaQuantity += parseFloat(quantity);
+                
                 var descripcion = objOrdenTras.getSublistValue({
                     sublistId: 'item',
                     fieldId: 'description',
@@ -347,36 +347,19 @@ function(render,email,file,record,search,format,runtime) {
     }
      function currencyFormat(v){
             try{
-                var amount = parseInt(v.replace(/,/g, ''));
-                var amt     = amount;
-                    amt     = amt.toString();
-                    amt     = amt.split('.');
-                var amtl    = amt[0].length;
-                var amtt    = '';
-                var n       = 0;
-                for(var a=amtl-1;a>=0; a--)
-                {
-                    if(n==3)
-                    {
-                        amtt = amtt + ',' + amt[0].charAt(a); n=1;
-                    }
-                    else
-                    {
-                        amtt = amtt + amt[0].charAt(a) ; n++;
-                    }
-                }
-                var amttt = '';
-                for(var a=0;a<=amtt.length;a++)
-                {
-                    amttt += amtt.charAt(amtt.length-a);
-                }
-                if(amt[1] == '')
-                {
-                    return v = amttt + '.00';
-                }
-                else
-                {
-                    return v = amttt;
+                if(v && v!=''){
+                    
+                    var vFlotante = format.parse({value:v, type: format.Type.FLOAT}) //Sin , ni . ni texto
+                    var rulesFormat = formati18n.getNumberFormatter({ //Reglas de formato
+                        groupSeparator: ",",
+                        decimalSeparator: ".",
+                        precision: 0
+                    });
+
+                    var vformat = rulesFormat.format({number: vFlotante})
+                    return vformat
+                }else{
+                    return '';
                 }
             }catch(err){
                 log.error('err currencyFormat',err);
