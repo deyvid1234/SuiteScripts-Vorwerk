@@ -106,8 +106,16 @@ function(record,search,http,https,encode,runtime,serverWidget,error) {
                 log.debug('newPreRef', newPreRef)
                 log.debug('oldSalesRep', oldSalesRep)
                 log.debug('oldPreRef', oldPreRef)
-                
-                if(  newPreRef != oldPreRef || newIDUPreRef != oldIDUPreRef ){
+
+
+
+                if(  newPreRef != oldPreRef ){
+
+                    if(newIDUPreRef == oldIDUPreRef){
+                        //lookup del presentador donde traigamos el IDU 
+                        //Asignar el IDU en el campo custentityidu_presentador
+                        //asignacion debe hacerse con un submitfield 
+                    }
 
                     //Ectrar todos los valores que se van a utiliar usando newRecord.getValue('') y asignarlo a las variables que ya se utilizan o crear nuevas
                     var nombre = newRecord.getValue('altname')
