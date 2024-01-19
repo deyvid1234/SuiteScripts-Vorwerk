@@ -49,92 +49,124 @@ function(render,email,file,record,search,format,runtime) {
         try
         {   log.debug('inicia pdf')
             
-            var objAdjustment = record.load({
-                type: 'inventoryadjustment',
+            var objOrdenTras = record.load({
+                type: 'itemfulfillment',
                 id: recordid,
                 isDynamic: false,
             });
-            var total = objAdjustment.getValue('estimatedtotalvalue');
-            var noAjuste = objAdjustment.getValue('tranid');
-            var fechaRecepcion = objAdjustment.getText('trandate');
-            var causaAjuste= objAdjustment.getText('custbody_causa_ajuste');
-            var movimiento 
-            if(total <0){
-                movimiento = "Salida de inventario"
-            } else{
-                movimiento = "Entrada de inventario"
-            }
-            log.debug('total', total)
-            var numLines = objAdjustment.getLineCount({
-                sublistId: 'inventory'
+            
+            var noOT = objOrdenTras.getValue('tranid');
+            var fecha = objOrdenTras.getText('trandate');
+            var destino = objOrdenTras.getText('transferlocation');
+            var locDestinno = objOrdenTras.getValue('transferlocation');
+            //obtener datos del location
+            var locDest = record.load({
+                type: 'location',
+                id: locDestinno,
+                isDynamic: false,
+            });
+            var encargadoDestID= locDest.getValue('custrecord_responsable')
+            var encargadoDestino= locDest.getText('custrecord_responsable')
+            var direccionDestino = locDest.getValue('mainaddress_text')
+            //obtener datos del employee
+            var emp = record.load({
+                type: 'employee',
+                id: encargadoDestID,
+                isDynamic: false,
+            });
+            var noTelDestino = emp.getValue('custentity_telt')
+            var numLines = objOrdenTras.getLineCount({
+                sublistId: 'item'
             });
             
             var strTable = "<table width='670px'>";
             strTable += "<tr>";
-            strTable += "<td border='0.5' align='center'  font-family= 'Arial,Helvetica,sans-serif' color= '#FFFFFF' font-size= '12px' background-color= '#00AC46'><b>#</b></td>";
+            strTable += "<td border='0.5' align='center'  font-family= 'Arial,Helvetica,sans-serif' color= '#FFFFFF' font-size= '12px' background-color= '#00AC46'><b>PARTIDA</b></td>";
             strTable += "<td border='0.5' align='center'  font-family= 'Arial,Helvetica,sans-serif' color= '#FFFFFF' font-size= '12px' background-color= '#00AC46'><b>SKU</b></td>";
+            strTable += "<td border='0.5' align='center'  font-family= 'Arial,Helvetica,sans-serif' color= '#FFFFFF' font-size= '12px' background-color= '#00AC46'><b>UNIDAD</b></td>";
             strTable += "<td border='0.5' align='center'  font-family= 'Arial,Helvetica,sans-serif' color= '#FFFFFF' font-size= '12px' background-color= '#00AC46'><b>DESCRIPCIÓN</b></td>";
-            strTable += "<td border='0.5' align='center'  font-family= 'Arial,Helvetica,sans-serif' color= '#FFFFFF' font-size= '12px' background-color= '#00AC46'><b>CANTIDAD (pz)</b></td>";
-            strTable += "<td border='0.5' align='center'  font-family= 'Arial,Helvetica,sans-serif' color= '#FFFFFF' font-size= '12px' background-color= '#00AC46'><b>COSTO PROMEDIO</b></td>";
-            strTable += "<td border='0.5' align='center'  font-family= 'Arial,Helvetica,sans-serif' color= '#FFFFFF' font-size= '12px' background-color= '#00AC46'><b>IMPORTE</b></td>";
+            strTable += "<td border='0.5' align='center'  font-family= 'Arial,Helvetica,sans-serif' color= '#FFFFFF' font-size= '12px' background-color= '#00AC46'><b>CANTIDAD PEDIDA</b></td>";
             strTable += "</tr>";        
             lineaRec=0 
              
-
+            var sumaQuantity = 0
             for(var e =0; e<numLines; e++){
                 lineaRec++
-                var location = objAdjustment.getSublistValue({
-                    sublistId: 'inventory',
+                var origen = objOrdenTras.getSublistValue({
+                    sublistId: 'item',
+                    fieldId: 'location',
+                    line: e
+                })
+                var location = objOrdenTras.getSublistValue({
+                    sublistId: 'item',
                     fieldId: 'location_display',
                     line: e
                 })
-                var quantity = objAdjustment.getSublistValue({
-                    sublistId: 'inventory',
-                    fieldId: 'adjustqtyby',
+                
+                var quantity = objOrdenTras.getSublistValue({
+                    sublistId: 'item',
+                    fieldId: 'itemquantity',
+                    line: e
+                })
+                quantity = currencyFormat(quantity)
+                sumaQuantity += parseFloat(quantity);
+                var descripcion = objOrdenTras.getSublistValue({
+                    sublistId: 'item',
+                    fieldId: 'description',
                     line: e
                 })
                 
-                var descripcion = objAdjustment.getSublistValue({
-                    sublistId: 'inventory',
-                    fieldId: 'item_display',
+                var sku = objOrdenTras.getSublistValue({
+                    sublistId: 'item',
+                    fieldId: 'itemname',
                     line: e
                 })
-                descripcion1 = descripcion.split(' ');
-                descripcion1.shift()
-                descripcion2 = descripcion1.join(' ');
-                var sku = objAdjustment.getSublistValue({
-                    sublistId: 'inventory',
-                    fieldId: 'item_display',
+                
+                var unit = objOrdenTras.getSublistValue({
+                    sublistId: 'item',
+                    fieldId: 'unitsdisplay',
                     line: e
                 })
-                sku = sku.split(' ');
-                sku = sku[0]
-
-                var unitCost = objAdjustment.getSublistValue({
-                    sublistId: 'inventory',
-                    fieldId: 'avgunitcost',
-                    line: e
-                })
-                var importe = objAdjustment.getSublistValue({
-                    sublistId: 'inventory',
-                    fieldId: 'currentvalue',
-                    line: e
-                })//(quantity*-1)*unitCost currentvalue
+                
                
                 strTable += "<tr>";
                 strTable += "<td border='0.5' align='center'  font-family= 'Arial,Helvetica,sans-serif' font-size= '12px'>" + lineaRec + "</td>";
                             
                 strTable += "<td border='0.5' align='center'  font-family= 'Arial,Helvetica,sans-serif' font-size= '12px'>" + sku + "</td>";
-                strTable += "<td border='0.5' align='left'  font-family= 'Arial,Helvetica,sans-serif' font-size= '12px'>" + descripcion2 + "</td>";
+                strTable += "<td border='0.5' align='left'  font-family= 'Arial,Helvetica,sans-serif' font-size= '12px'>" + unit + "</td>";
+                strTable += "<td border='0.5' align='right'  font-family= 'Arial,Helvetica,sans-serif' font-size= '12px'>" + descripcion + "</td>";
                 strTable += "<td border='0.5' align='right'  font-family= 'Arial,Helvetica,sans-serif' font-size= '12px'>" + currencyFormat(quantity) + "</td>";
-                strTable += "<td border='0.5' align='right'  font-family= 'Arial,Helvetica,sans-serif' font-size= '12px'>" + currencyFormat(unitCost) + "</td>";
-                strTable += "<td border='0.5' align='right'  font-family= 'Arial,Helvetica,sans-serif' font-size= '12px'>" + currencyFormat(importe)  + "</td>";
                 strTable += "</tr>";
             }
-            
+            //obtener datos del location origen
+            var locOrigen = record.load({
+                type: 'location',
+                id: origen,
+                isDynamic: false,
+            });
+            var encargadoOrID= locOrigen.getValue('custrecord_responsable')
+            var encargadoOrigen= locOrigen.getText('custrecord_responsable')
+            var direccionOrigen = locOrigen.getValue('mainaddress_text')
+            //obtener datos del employee origen
+            var empOr = record.load({
+                type: 'employee',
+                id: encargadoOrID,
+                isDynamic: false,
+            });
+            var noTelOrigen = empOr.getValue('custentity_telt')
+
+            var numLines = objOrdenTras.getLineCount({
+                sublistId: 'item'
+            }); 
+            var total = sumaQuantity
+                log.debug('total', total)
+                total = parseInt(total)
+                log.debug('total', total)
+                total =  currencyFormat(total)
+                log.debug('total', total)
             strTable += "<tr>";
-            strTable += "<td colspan= '5'  align='right'  font-family= 'Arial,Helvetica,sans-serif' font-size= '12px'><b>TOTAL</b></td>";
-            strTable += "<td border='0.5' align='right'  font-family= 'Arial,Helvetica,sans-serif' font-size= '12px'><b>" + currencyFormat(total) + "</b></td>";
+            strTable += "<td colspan= '4'  align='right'  font-family= 'Arial,Helvetica,sans-serif' font-size= '12px'><b>TOTAL</b></td>";
+            strTable += "<td border='0.5' align='right'  font-family= 'Arial,Helvetica,sans-serif' font-size= '12px'><b>" + total + "</b></td>";
             strTable += "</tr>";            
             strTable += "</table>";
             
@@ -142,7 +174,7 @@ function(render,email,file,record,search,format,runtime) {
             
            
             
-            var xml = createXML(logodURL,bodyPDF,noAjuste,movimiento,fechaRecepcion,causaAjuste,location)//crea xml para pdf
+            var xml = createXML(logodURL,bodyPDF,noOT,fecha,destino,origen,location,direccionDestino,noTelDestino,encargadoDestino,encargadoOrigen,direccionOrigen,noTelOrigen)//crea xml para pdf
            
             //conviete cml a pdf para retornarlo en la vista
             var file_xml = render.xmlToPdf({
@@ -199,7 +231,7 @@ function(render,email,file,record,search,format,runtime) {
           }  
       }
     }
-    function createXML(logodURL,emailBody,noAjuste,movimiento,fechaRecepcion,causaAjuste,location){
+    function createXML(logodURL,emailBody,noOT,fecha,destino,origen,location,direccionDestino,noTelDestino,encargadoDestino,encargadoOrigen,direccionOrigen,noTelOrigen){
         try{
             log.debug('xml')
             var xml = "<?xml version='1.0' encoding='UTF-8'?>\n<!DOCTYPE pdf PUBLIC '-//big.faceless.org//report' 'report-1.1.dtd'>\n"
@@ -208,81 +240,101 @@ function(render,email,file,record,search,format,runtime) {
                 +'<macrolist>'
                             +'<macro id=\"myheader\">'
                                 +'<img height="70" width="160" align="center" ' + logodURL +'>'
-                                +'<p align="center" style="font-weight: bold;font-family:Arial,Helvetica,sans-serif; font-size:16px;">' +'AJUSTE DE INVENTARIO: ' + noAjuste+'</p>' 
-                                +'<table cellpadding="0" style="font-size: 13px; width: 662px; margin-top: 5px;">'
+                                +'<p align="center" style="font-weight: bold;font-family:Arial,Helvetica,sans-serif; font-size:16px;">' +'ORDEN DE TRASLADO: ' + noOT+'</p>' 
+                                +'<table cellpadding="1" style="font-size: 13px; width: 600px; margin-top: 5px;">'
                                     +'<tbody>'
                                         +'<tr>'
-                                        +'<td style="height: 14px; width: 86px;"><strong><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">MOVIMIENTO:</span></span></strong></td>'
-                                        +'<td class="linea LINEAHT" style="height: 14px; width: 261px;"><span style="font-family:Arial,Helvetica,sans-serif;"><span style="font-size: 12px;">'+movimiento+'</span></span></td>'
-                                        +'<td class="linea LINEAHT" style="height: 14px; width: 148px;"><strong><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">FECHA DE RECEPCI&Oacute;N:</span></span></strong></td>'
-                                        +'<td class="linea LINEAHT" style="height: 14px; width: 147px; text-align: center; vertical-align: middle;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">'+fechaRecepcion+'</span></span><br />'
-                                        +'&nbsp;</td>'
+                                        +'<td style="height: 14px; width: 90 px;"><strong><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">RUTA:</span></span></strong></td>'
+                                        +'<td class="linea LINEAHT" style="height: 14px; width: 261px;"><span style="font-family:Arial,Helvetica,sans-serif;"><span style="font-size: 12px;">______________________</span></span></td>'
+                                        +'<td class="linea LINEAHT" style="height: 14px; width: 70px;"><strong><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">FECHA:</span></span></strong></td>'
+                                        +'<td class="linea LINEAHT" style="height: 14px; width: 147px; text-align: left; vertical-align: left;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">'+fecha+'</span></span><br />'
+                                        +'</td>'
                                         +'</tr>'
                                     +'</tbody>'
                                     +'</table>'
-                                    +'<table cellpadding="0" style="width:662px; margin-top:5px;">'
+                                    +'<table cellpadding="1" style="width:677px; margin-top:5px;">'
                                         +'<tbody>'
                                             +'<tr>'
-                                            +'<td style="width: 119px;"><strong><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">CAUSA DE AJUSTE:</span></span></strong></td>'
-                                            +'<td class="linea LINEAHT" style="width: 225px; text-align: center;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">'+causaAjuste+'</span></span></td>'
-                                            +'<td style="width: 80px;"><strong><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">UBICACIÓN:</span></span></strong></td>'
-                                            +'<td style="width: 218px; text-align: center;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">'+location+'</span></span></td>'
+                                            +'<td style="width: 119px;"><strong><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">TRANSPORTE:</span></span></strong></td>'
+                                            +'<td class="linea LINEAHT" style="width: 225px; text-align: center;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">______________________</span></span></td>'
+                                            +'<td style="width: 90 px;"><strong><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">   UNIDAD:</span></span></strong></td>'
+                                            +'<td style="width: 218px; text-align: center;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">______________________</span></span></td>'
+                                            +'&nbsp;'
                                             +'</tr>'
                                         +'</tbody>'
                                         +'</table>'
+                                    +'<table cellpadding="2" style="width:677px; margin-top:5px;">'//ORIGEN
+                                        +'<tbody>'
+                                            +'<tr>'
+                                            +'<td style="width: 119px;"><strong><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">ORIGEN:</span></span></strong></td>'
+                                            +'<td class="linea LINEAHT" style="width: 225px; text-align: center;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">'+location+'</span></span></td>'
+                                            +'<td style="width: 80px;"><strong><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">RESPONSABLE:</span></span></strong></td>'
+                                            +'<td style="width: 218px; text-align: center;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">'+encargadoOrigen+'</span></span></td>'
+                                            +'</tr>'
+                                            +'<tr>'
+                                            +'<td style="width: 119px;"><strong><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">DIRECCIÓN:</span></span></strong></td>'
+                                            +'<td class="linea LINEAHT" style="width: 225px; text-align: center;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">'+direccionOrigen+'</span></span></td>'
+                                            +'<td style="width: 80px;"><strong><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">TELEFONO:</span></span></strong></td>'
+                                            +'<td style="width: 218px; text-align: center;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">'+noTelOrigen+'</span></span></td>'
+                                            +'&nbsp;'
+                                            +'</tr>'
+                                        +'</tbody>'
+                                    +'</table>'
+                                    +'<table cellpadding="2" style="width:677px; margin-top:5px;">'//DESTINO
+                                        +'<tbody>'
+                                            +'<tr>'
+                                            +'<td style="width: 119px;"><strong><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">DESTINO:</span></span></strong></td>'
+                                            +'<td class="linea LINEAHT" style="width: 225px; text-align: center;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">'+destino+'</span></span></td>'
+                                            +'<td style="width: 80px;"><strong><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">RESPONSABLE:</span></span></strong></td>'
+                                            +'<td style="width: 218px; text-align: center;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">'+encargadoDestino+'</span></span></td>'
+                                            +'&nbsp;'
+                                            +'</tr>'
+                                            +'<tr>'
+                                            +'<td style="width: 119px;"><strong><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">DIRECCIÓN:</span></span></strong></td>'
+                                            +'<td class="linea LINEAHT" style="width: 225px; text-align: center;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">'+direccionDestino+'</span></span></td>'
+                                            +'<td style="width: 80px;"><strong><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">TELEFONO:</span></span></strong></td>'
+                                            +'<td style="width: 218px; text-align: center;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">'+noTelDestino+'</span></span></td>'
+                                            +'&nbsp;'
+                                            +'</tr>'
+                                        +'</tbody>'
+                                    +'</table>'
                             +'</macro>'
                             +'<macro id=\"paginas\">'
+                                +'<p font-family=\"Helvetica\" font-size=\"8\" align=\"center\">Vorwerk México, S. de R.L. de C.V. Vito Alessio Robles 38  Col. Florida   C.P. 01030 Del. Álvaro Obregón, México, D.F.   RFC: VME060622GL2</p>'
                                 +'<p font-family=\"Helvetica\" font-size=\"6\" align=\"right\">Página <pagenumber/> de <totalpages/></p>'
                             +'</macro>'
 
                 +'</macrolist>'            
                 +'</head>'
-                + '<body footer-height="20pt" padding="0.5in 0.5in 0in 0.5in" margin= "0in 0in 0.5in 0in" size="Letter" header=\"myheader\" header-height=\"170pt\" footer=\"paginas\">'
+                + '<body footer-height="20pt" padding="0.5in 0.5in 0in 0.5in" margin= "0in 0in 0.5in 0in" size="Letter" header=\"myheader\" header-height=\"300pt\" footer=\"paginas\">'
                 + emailBody
                 +'&nbsp;'
                 +'<table align="left" border="0" cellpadding="1" cellspacing="1" style="width: 677.818px;">'
                     +'<tbody>'
                         +'<tr>'
-                        +'<td style="width: 112px;">&nbsp;</td>'
-                        +'<td style="width: 175px;"><strong><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">Firma</span></span></strong></td>'
-                        +'<td style="width: 180px;"><strong><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">Nombre:&nbsp;</span></span></strong></td>'
-                        +'<td style="width: 189px;"><strong><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">&nbsp;Puesto:</span></span></strong></td>'
-                        +'</tr>'
-                        +'<tr>'
-                        +'<td style="width: 112px; height: 26px;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">Elabor&oacute;:</span></span></td>'
+                        +'<td style="width: 112px; height: 26px;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">__________________________</span></span></td>'
                         +'<td style="width: 175px; height: 26px;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">__________________________</span></span></td>'
-                        +'<td style="width: 180px; height: 26px;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">__________________________</span></span></td>'
-                        +'<td style="width: 189px; height: 26px;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">__________________________</span></span></td>'
                         +'</tr>'
                         +'<tr>'
-                        +'<td style="width: 112px; height: 26px;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">Revis&oacute;:</span></span></td>'
-                        +'<td style="width: 175px; height: 26px;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">__________________________</span></span></td>'
-                        +'<td style="width: 180px; height: 26px;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">__________________________</span></span></td>'
-                        +'<td style="width: 189px; height: 26px;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">__________________________</span></span></td>'
+                        +'<td style="width: 112px; height: 26px;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">ALMACEN</span></span></td>'
+                        +'<td style="width: 175px; height: 26px;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">RECIBE</span></span></td>'
+                        +'</tr>'
+                    +'</tbody>'
+                +'</table>'
+                +'&nbsp;'
+                +'<table align="left" border="0" cellpadding="1" cellspacing="1" style="width: 677.818px;">'
+                    +'<tbody>'
+                        +'<tr>'
+                        +'<td style="width: 112px; height: 26px;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">COMENTARIOS:</span></span></td>'
+                        +'<td style="width: 175px; height: 26px;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">_____________________________________________________________</span></span></td>'
                         +'</tr>'
                         +'<tr>'
-                        +'<td style="width: 112px; height: 26px;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">Supervis&oacute;:</span></span></td>'
-                        +'<td style="width: 175px; height: 26px;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">__________________________</span></span></td>'
-                        +'<td style="width: 180px; height: 26px;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">__________________________</span></span></td>'
-                        +'<td style="width: 189px; height: 26px;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">__________________________</span></span></td>'
+                        +'<td style="width: 112px; height: 26px;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;"></span></span></td>'
+                        +'<td style="width: 175px; height: 26px;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">_____________________________________________________________</span></span></td>'
                         +'</tr>'
                         +'<tr>'
-                        +'<td style="width: 112px; height: 26px;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">Autori&oacute;:</span></span></td>'
-                        +'<td style="width: 175px; height: 26px;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">__________________________</span></span></td>'
-                        +'<td style="width: 180px; height: 26px;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">__________________________</span></span></td>'
-                        +'<td style="width: 189px; height: 26px;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">__________________________</span></span></td>'
-                        +'</tr>'
-                        +'<tr>'
-                        +'<td style="width: 112px; height: 26px;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">Recibi&oacute;:</span></span></td>'
-                        +'<td style="width: 175px; height: 26px;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">__________________________</span></span></td>'
-                        +'<td style="width: 180px; height: 26px;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">__________________________</span></span></td>'
-                        +'<td style="width: 189px; height: 26px;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">__________________________</span></span></td>'
-                        +'</tr>'
-                        +'<tr>'
-                        +'<td style="width: 112px; height: 31px;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">Fecha de recibido:</span></span></td>'
-                        +'<td style="width: 175px; height: 31px;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">__________________________</span></span></td>'
-                        +'<td style="width: 180px; height: 31px;">&nbsp;</td>'
-                        +'<td style="width: 189px; height: 31px;">&nbsp;</td>'
+                        +'<td style="width: 112px; height: 26px;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;"></span></span></td>'
+                        +'<td style="width: 175px; height: 26px;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">_____________________________________________________________</span></span></td>'
                         +'</tr>'
                     +'</tbody>'
                     +'</table>'
@@ -295,7 +347,8 @@ function(render,email,file,record,search,format,runtime) {
     }
      function currencyFormat(v){
             try{
-                var amt     = v;
+                var amount = parseInt(v.replace(/,/g, ''));
+                var amt     = amount;
                     amt     = amt.toString();
                     amt     = amt.split('.');
                 var amtl    = amt[0].length;
