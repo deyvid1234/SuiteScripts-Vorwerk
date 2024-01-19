@@ -114,12 +114,19 @@ function(record,search,http,https,encode,runtime,serverWidget,error) {
                     var correo = newRecord.getValue('email')
                     var telefono = newRecord.getValue('mobilephone')
                     var activo = newRecord.getValue('isinactive')==false?true:false
-
-                    var referidoSearch = search.lookupFields({
-                        type: 'customer',
-                        id: newRecord.getValue('custentity_id_cliente_referido'),
-                        columns: ["altname", "email", "mobilephone"]
-                    });
+                    var referidoSearch
+                    if(newRecord.getValue('custentity_id_cliente_referido') != '' && newRecord.getValue('custentity_id_cliente_referido')){
+                        referidoSearch = search.lookupFields({
+                            type: 'customer',
+                            id: newRecord.getValue('custentity_id_cliente_referido'),
+                            columns: ["altname", "email", "mobilephone"]
+                        });
+                    }else{
+                        referidoSearch.altname = ''
+                        referidoSearch.email = ''
+                        referidoSearch.mobilephone = ''
+                    }
+                    
                     log.debug('referidoSearch',referidoSearch)
 
                     var employeeSearch = search.lookupFields({
