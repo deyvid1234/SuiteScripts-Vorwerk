@@ -22,17 +22,11 @@ function(render,email,file,record,search,format,runtime) {
             var params = context.request.parameters;
             var recordid = recordid = parseInt(params.oppID);
             log.debug('method',method);
+                        
             
-             
-            var idTpl = 274;//
-            
-            
-            }catch(err){
+        }catch(err){
             log.error("xa",err);
-        }
-            
-            
-            
+        } 
             //obtiene imagen de logo
             var logodURL 
 
@@ -45,22 +39,25 @@ function(render,email,file,record,search,format,runtime) {
             
             if(method == 'GET'){
                 //proceso para retornar PDF
-                mainCreateXML(context,idTpl,recordid,logodURL);
+                mainCreateXML(context,recordid,logodURL);
             }
            
         
     }
-    function mainCreateXML(context,idTpl,recordid,logodURL,location){
+    function mainCreateXML(context,recordid,logodURL,location){
         
         try
         {   log.debug('inicia pdf')
-            var bodyPDF = getTemplate(idTpl,recordid)
+            
             var objAdjustment = record.load({
                 type: 'inventoryadjustment',
                 id: recordid,
                 isDynamic: false,
             });
             var total = objAdjustment.getValue('estimatedtotalvalue');
+            var noAjuste = objAdjustment.getValue('tranid');
+            var fechaRecepcion = objAdjustment.getText('trandate');
+            var causaAjuste= objAdjustment.getText('custbody_causa_ajuste');
             var movimiento 
             if(total <0){
                 movimiento = "Salida de inventario"
@@ -71,7 +68,7 @@ function(render,email,file,record,search,format,runtime) {
             var numLines = objAdjustment.getLineCount({
                 sublistId: 'inventory'
             });
-             log.debug('inicia pdf1')
+            
             var strTable = "<table width='670px'>";
             strTable += "<tr>";
             strTable += "<td border='0.5' align='center'  font-family= 'Arial,Helvetica,sans-serif' color= '#FFFFFF' font-size= '12px' background-color= '#00AC46'><b>#</b></td>";
@@ -82,7 +79,7 @@ function(render,email,file,record,search,format,runtime) {
             strTable += "<td border='0.5' align='center'  font-family= 'Arial,Helvetica,sans-serif' color= '#FFFFFF' font-size= '12px' background-color= '#00AC46'><b>IMPORTE</b></td>";
             strTable += "</tr>";        
             lineaRec=0 
-             log.debug('inicia pdf2')
+             
 
             for(var e =0; e<numLines; e++){
                 lineaRec++
@@ -123,41 +120,30 @@ function(render,email,file,record,search,format,runtime) {
                     fieldId: 'currentvalue',
                     line: e
                 })//(quantity*-1)*unitCost currentvalue
-                log.debug('location', location)
-                log.debug('quantity', quantity) 
-                log.debug('sku', sku)
-                log.debug('descripcion', descripcion2)
-                log.debug('importe', importe)
-                log.debug('inicia pdf3')
+               
                 strTable += "<tr>";
                 strTable += "<td border='0.5' align='center'  font-family= 'Arial,Helvetica,sans-serif' font-size= '12px'>" + lineaRec + "</td>";
                             
-                strTable += "<td border='0.5' align='left'  font-family= 'Arial,Helvetica,sans-serif' font-size= '12px'>" + sku + "</td>";
+                strTable += "<td border='0.5' align='center'  font-family= 'Arial,Helvetica,sans-serif' font-size= '12px'>" + sku + "</td>";
                 strTable += "<td border='0.5' align='left'  font-family= 'Arial,Helvetica,sans-serif' font-size= '12px'>" + descripcion2 + "</td>";
-                strTable += "<td border='0.5' align='right'  font-family= 'Arial,Helvetica,sans-serif' font-size= '12px'>" + quantity + "</td>";
-                strTable += "<td border='0.5' align='right'  font-family= 'Arial,Helvetica,sans-serif' font-size= '12px'>" + unitCost + "</td>";
-                strTable += "<td border='0.5' align='right'  font-family= 'Arial,Helvetica,sans-serif' font-size= '12px'>" + importe  + "</td>";
+                strTable += "<td border='0.5' align='right'  font-family= 'Arial,Helvetica,sans-serif' font-size= '12px'>" + currencyFormat(quantity) + "</td>";
+                strTable += "<td border='0.5' align='right'  font-family= 'Arial,Helvetica,sans-serif' font-size= '12px'>" + currencyFormat(unitCost) + "</td>";
+                strTable += "<td border='0.5' align='right'  font-family= 'Arial,Helvetica,sans-serif' font-size= '12px'>" + currencyFormat(importe)  + "</td>";
                 strTable += "</tr>";
-                log.debug('inicia pdf4')
-                
             }
-            log.debug('inicia pdf5')
+            
             strTable += "<tr>";
             strTable += "<td colspan= '5'  align='right'  font-family= 'Arial,Helvetica,sans-serif' font-size= '12px'><b>TOTAL</b></td>";
-            strTable += "<td border='0.5' align='right'  font-family= 'Arial,Helvetica,sans-serif' font-size= '12px'><b>" + total + "</b></td>";
+            strTable += "<td border='0.5' align='right'  font-family= 'Arial,Helvetica,sans-serif' font-size= '12px'><b>" + currencyFormat(total) + "</b></td>";
             strTable += "</tr>";            
             strTable += "</table>";
-            log.debug('inicia pdf6')
-                
-            bodyPDF = bodyPDF.replace(/@custbody_location/g,location);
-            bodyPDF = bodyPDF.replace(/@movimiento/g,movimiento);
-            bodyPDF = bodyPDF.replace(/@tabla/g,strTable);
             
-           log.debug('inicia pdf7')
+            bodyPDF = strTable;
             
-            var xml = createXML(logodURL,bodyPDF)//crea xml para pdf
            
             
+            var xml = createXML(logodURL,bodyPDF,noAjuste,movimiento,fechaRecepcion,causaAjuste,location)//crea xml para pdf
+           
             //conviete cml a pdf para retornarlo en la vista
             var file_xml = render.xmlToPdf({
                             xmlString: xml
@@ -193,19 +179,7 @@ function(render,email,file,record,search,format,runtime) {
             log.error("error getImage",err)
         }
     }
-    function getTemplate(idTpl,recordid){
-        try{
-            
-             var myMergeResult = render.mergeEmail({
-                templateId: idTpl,
-                            
-                transactionId: recordid
-            });
-            return myMergeResult.body
-        }catch(err){
-            log.error("error getTemplate",err)
-        }
-    }
+   
     function stringToArray(str,base,opc){
       if(str != ''){
           var multiSelectStringArray = str.split(String.fromCharCode(base));
@@ -225,18 +199,93 @@ function(render,email,file,record,search,format,runtime) {
           }  
       }
     }
-    function createXML(logodURL,emailBody){
+    function createXML(logodURL,emailBody,noAjuste,movimiento,fechaRecepcion,causaAjuste,location){
         try{
             log.debug('xml')
             var xml = "<?xml version='1.0' encoding='UTF-8'?>\n<!DOCTYPE pdf PUBLIC '-//big.faceless.org//report' 'report-1.1.dtd'>\n"
                 + "<pdf>"
-                + '<head></head>'
-                + '<body footer-height="20pt" padding="0.5in 0.5in 0in 0.5in" margin= "0in 0in 0.5in 0in" size="Letter">'
-                +'<img height="70" width="160" align="center" ' + logodURL +'>'
-                +'<p align="center" style="font-weight: bold;font-family:Arial,Helvetica,sans-serif; font-size:16px;">AJUSTE DE INVENTARIO</p>'
-                +'<table border="0" cellpadding="1" cellspacing="1" style="width: 663px;">'
-                +'</table>'
+                + '<head>'
+                +'<macrolist>'
+                            +'<macro id=\"myheader\">'
+                                +'<img height="70" width="160" align="center" ' + logodURL +'>'
+                                +'<p align="center" style="font-weight: bold;font-family:Arial,Helvetica,sans-serif; font-size:16px;">' +'AJUSTE DE INVENTARIO: ' + noAjuste+'</p>' 
+                                +'<table cellpadding="0" style="font-size: 13px; width: 662px; margin-top: 5px;">'
+                                    +'<tbody>'
+                                        +'<tr>'
+                                        +'<td style="height: 14px; width: 86px;"><strong><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">MOVIMIENTO:</span></span></strong></td>'
+                                        +'<td class="linea LINEAHT" style="height: 14px; width: 261px;"><span style="font-family:Arial,Helvetica,sans-serif;"><span style="font-size: 12px;">'+movimiento+'</span></span></td>'
+                                        +'<td class="linea LINEAHT" style="height: 14px; width: 148px;"><strong><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">FECHA DE RECEPCI&Oacute;N:</span></span></strong></td>'
+                                        +'<td class="linea LINEAHT" style="height: 14px; width: 147px; text-align: center; vertical-align: middle;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">'+fechaRecepcion+'</span></span><br />'
+                                        +'&nbsp;</td>'
+                                        +'</tr>'
+                                    +'</tbody>'
+                                    +'</table>'
+                                    +'<table cellpadding="0" style="width:662px; margin-top:5px;">'
+                                        +'<tbody>'
+                                            +'<tr>'
+                                            +'<td style="width: 119px;"><strong><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">CAUSA DE AJUSTE:</span></span></strong></td>'
+                                            +'<td class="linea LINEAHT" style="width: 225px; text-align: center;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">'+causaAjuste+'</span></span></td>'
+                                            +'<td style="width: 80px;"><strong><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">UBICACIÓN:</span></span></strong></td>'
+                                            +'<td style="width: 218px; text-align: center;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">'+location+'</span></span></td>'
+                                            +'</tr>'
+                                        +'</tbody>'
+                                        +'</table>'
+                            +'</macro>'
+                            +'<macro id=\"paginas\">'
+                                +'<p font-family=\"Helvetica\" font-size=\"6\" align=\"right\">Página <pagenumber/> de <totalpages/></p>'
+                            +'</macro>'
+
+                +'</macrolist>'            
+                +'</head>'
+                + '<body footer-height="20pt" padding="0.5in 0.5in 0in 0.5in" margin= "0in 0in 0.5in 0in" size="Letter" header=\"myheader\" header-height=\"170pt\" footer=\"paginas\">'
                 + emailBody
+                +'&nbsp;'
+                +'<table align="left" border="0" cellpadding="1" cellspacing="1" style="width: 677.818px;">'
+                    +'<tbody>'
+                        +'<tr>'
+                        +'<td style="width: 112px;">&nbsp;</td>'
+                        +'<td style="width: 175px;"><strong><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">Firma</span></span></strong></td>'
+                        +'<td style="width: 180px;"><strong><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">Nombre:&nbsp;</span></span></strong></td>'
+                        +'<td style="width: 189px;"><strong><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">&nbsp;Puesto:</span></span></strong></td>'
+                        +'</tr>'
+                        +'<tr>'
+                        +'<td style="width: 112px; height: 26px;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">Elabor&oacute;:</span></span></td>'
+                        +'<td style="width: 175px; height: 26px;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">__________________________</span></span></td>'
+                        +'<td style="width: 180px; height: 26px;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">__________________________</span></span></td>'
+                        +'<td style="width: 189px; height: 26px;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">__________________________</span></span></td>'
+                        +'</tr>'
+                        +'<tr>'
+                        +'<td style="width: 112px; height: 26px;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">Revis&oacute;:</span></span></td>'
+                        +'<td style="width: 175px; height: 26px;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">__________________________</span></span></td>'
+                        +'<td style="width: 180px; height: 26px;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">__________________________</span></span></td>'
+                        +'<td style="width: 189px; height: 26px;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">__________________________</span></span></td>'
+                        +'</tr>'
+                        +'<tr>'
+                        +'<td style="width: 112px; height: 26px;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">Supervis&oacute;:</span></span></td>'
+                        +'<td style="width: 175px; height: 26px;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">__________________________</span></span></td>'
+                        +'<td style="width: 180px; height: 26px;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">__________________________</span></span></td>'
+                        +'<td style="width: 189px; height: 26px;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">__________________________</span></span></td>'
+                        +'</tr>'
+                        +'<tr>'
+                        +'<td style="width: 112px; height: 26px;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">Autori&oacute;:</span></span></td>'
+                        +'<td style="width: 175px; height: 26px;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">__________________________</span></span></td>'
+                        +'<td style="width: 180px; height: 26px;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">__________________________</span></span></td>'
+                        +'<td style="width: 189px; height: 26px;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">__________________________</span></span></td>'
+                        +'</tr>'
+                        +'<tr>'
+                        +'<td style="width: 112px; height: 26px;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">Recibi&oacute;:</span></span></td>'
+                        +'<td style="width: 175px; height: 26px;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">__________________________</span></span></td>'
+                        +'<td style="width: 180px; height: 26px;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">__________________________</span></span></td>'
+                        +'<td style="width: 189px; height: 26px;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">__________________________</span></span></td>'
+                        +'</tr>'
+                        +'<tr>'
+                        +'<td style="width: 112px; height: 31px;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">Fecha de recibido:</span></span></td>'
+                        +'<td style="width: 175px; height: 31px;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">__________________________</span></span></td>'
+                        +'<td style="width: 180px; height: 31px;">&nbsp;</td>'
+                        +'<td style="width: 189px; height: 31px;">&nbsp;</td>'
+                        +'</tr>'
+                    +'</tbody>'
+                    +'</table>'
                 + '</body>'
                 + '</pdf>'
             return xml;
@@ -244,75 +293,44 @@ function(render,email,file,record,search,format,runtime) {
             log.debug('errcreateXML',error)
         }
     }
-    function createHTML(logodURL,emailBody,date,order){
-        try{
-            var space = '&nbsp;';
-            var t_space= ""
-            for(var x = 0; x<100; x++){
-                t_space+=space;
+     function currencyFormat(v){
+            try{
+                var amt     = v;
+                    amt     = amt.toString();
+                    amt     = amt.split('.');
+                var amtl    = amt[0].length;
+                var amtt    = '';
+                var n       = 0;
+                for(var a=amtl-1;a>=0; a--)
+                {
+                    if(n==3)
+                    {
+                        amtt = amtt + ',' + amt[0].charAt(a); n=1;
+                    }
+                    else
+                    {
+                        amtt = amtt + amt[0].charAt(a) ; n++;
+                    }
+                }
+                var amttt = '';
+                for(var a=0;a<=amtt.length;a++)
+                {
+                    amttt += amtt.charAt(amtt.length-a);
+                }
+                if(amt[1] == '')
+                {
+                    return v = amttt + '.00';
+                }
+                else
+                {
+                    return v = amttt;
+                }
+            }catch(err){
+                log.error('err currencyFormat',err);
             }
             
-            var html ="<html>"
-                + '<head><style>'
-                +'.IMAGELOGO{'
-                +'position: relative;'
-                +'left: 35%;'
-                +'}'
-                +'.LINEAHT{'
-                +'border-bottom:1.5px solid black;'
-                +'}'
-                +'IMAG{'
-                +'top:-10px;}'
-                +'.BORDE{'
-                +'border-radius: 15px 15px 15px 15px;}'
-                +'.CAJA{'
-                +'border: solid 2px #000;'
-                +'border-radius: 10px;};'
-                +'</style>'
-                +'<macrolist>'
-                +'    <macro id="nlheader">'
-                +t_space+'<img class="IMAGELOGO" height="80" width="100" align="center" ' + logodURL +'>'
-                +'<p>ORDEN DE SERVICIO T&Eacute;CNICO</p>'
-                +'<table border="0" cellpadding="1" cellspacing="1" style="width: 1000px;">'
-                +'<tbody>'
-                +'<tr>'
-                +'<td rowspan="3" style="width: 750px;">Vorwerk M&eacute;xico, S. de R.L. de C.V.<br />'
-                +'Vito Alessio Robles 38 Col. Florida, Del. &Aacute;lvaro Obreg&oacute;n<br />'
-                +'Cd. de M&eacute;xico, C.P.01030 Tel&eacute;fono: 800 200 1121<br />'
-                +'www.thermomix.mx</td>'
-                +'<td style="width: 171px;"> </td>'
-                +'<td style="width: 107px;"> </td>'
-                +'</tr>'
-                +'<tr>'
-                +'<td Colspan="1" style="width: 120px; padding-left: 80px; text-align: right;">Orden de Servicio</td>'
-                +'<td  colspan="2" class="linea" style="width: 107px; text-align: right;">'+order+'</td>'
-                +'</tr>'
-                +'<tr>'
-                +'<td style="width: 120px; padding-left: 90px; text-align: right;">Fecha</td>'
-                +'<td  style="width: 107px; text-align: right;">'+date+'</td>'
-                +'</tr>'
-                +'<tr>'
-                +'<td style="width: 120px;"></td>'
-                +'<td style="width: 107px;"></td>'
-                +'</tr>'
-                +'</tbody>'
-                +'</table>'
-                +'    </macro>'
-                +'    <macro id="nlfooter">'
-                +'        <p>&nbsp;</p>'
-                +'    </macro>'
-                +'</macrolist></head>'
-                + '<body header="nlheader" header-height="7%" footer="nlfooter" footer-height="20pt" padding="0.5in 0.5in 0.5in 0.5in" margin= "0in 0in 0.5in 0in" size="Letter">'
-                +bodyPDF
-                + '</body>'
-                + '</html>'
-            return html;
-            
-        }catch(erro){
-            log.debug('errcreateHTML',erro)
         }
-    }
-    
+      
     
     return {
         onRequest: onRequest
