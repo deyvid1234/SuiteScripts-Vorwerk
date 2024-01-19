@@ -329,6 +329,39 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
 						var cliente = v_rec[i].cliente.replace(/&/gi," ")
 						//log.debug('cliente',cliente)
 						//log.debug('1ids_rec[v_rec[i].internalid]',ids_rec[v_rec[i].internalid])
+						
+						var sumaMonto= 0
+						var montoConfiguracion= 0
+						if(num_odv_por_recluta == v_rec[i]) {
+							log.debug('if 1')
+							for (j = 0; j < v_rec[i]; j++ ){
+								log.debug('for 1')
+								montoConfiguracion= CompConfigDetails[configuracion_rec]
+								sumaMonto = sumaMonto + montoConfiguracion;
+							}
+						} else if (num_odv_por_recluta != v_rec[i]){
+							log.debug('else if')
+							for(j = v_rec[i] + 1; j< v_rec[i]; j++){
+								log.debug('for 2')
+								
+								montoConfiguracion= CompConfigDetails[configuracion_rec]
+								sumaMonto = sumaMonto + montoConfiguracion;;
+							}
+						}
+						log.debug('sumaMonto',sumaMonto)
+						log.debug('montoConfiguracion',montoConfiguracion)
+					 /*Esas ventas son de este mes?{
+					 		sumame los montos de todas las configuraciones 
+					 		for(i = 0; i menor ventastotales; i++){
+							monto configuracion = CompConfigDetails[i] - 0 - 1 - 2 
+							sumaTolal = sumaTolal + monto configuracion 0 - 2500 - 0 = 2500
+						}																				1										2
+					 }si no son las ventas del mismo mes (num_odv_por_recluta != v_rec[i]){
+					 	for(i = ventas totales menos ventas del mes mas 1 : 3-2+1= 2; i menor ventastotales; i++){
+							monto configuracion = CompConfigDetails[i] 2
+							sumaTolal = sumaTolal + monto configuracion = 0
+						}	
+					 }*/
 						var monto_rec = CompConfigDetails[configuracion_rec]['esquemaVentasReclutamiento'][(ids_rec[v_rec[i].internalid])>limiteVentasReclutamiento?0:(ids_rec[v_rec[i].internalid])]['compensacion']
 						if (monto_rec >0){
 							log.debug("entra if monto rec",monto_rec )
