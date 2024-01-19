@@ -22,48 +22,16 @@ function(render,email,file,record,search,format,runtime) {
             var recordid = recordid = parseInt(params.oppID);
             log.debug('method',method);
             
-             
-            var idTpl = 273;
-            //var sendEmail = params.emailSend;
-           // log.debug('params',params);
-            //se carga el record de oportuniddad
             var objReceipt = record.load({
                 type: 'itemreceipt',
                 id: recordid,
                 isDynamic: false,
             });
-            
-            var date= objReceipt.getValue('trandate');
-            
-            /*var date = format.format({
-                value: date_aux ,
-                type: format.Type.DATE
-            })*/
-            var referencia = objReceipt.getValue('tranid');
-            var name= objReceipt.getValue('entityname');
+                        
            
-            
-            log.debug('name', name)
-            log.debug('referencia', referencia)
-            log.debug('date', date)
-            
-           
-            }catch(err){
+        }catch(err){
             log.error("xa",err);
         }
-            //se extrae el cliente
-            /*var entity = parseInt(objOP.getValue('entity'));
-            var fieldsLookUp = search.lookupFields({
-                type: 'customer',
-                id: entity,
-                columns: ['salesrep','email']
-            });
-            var email_customer = fieldsLookUp.email;
-            //se extrae el representante
-            var idUSer = parseInt(fieldsLookUp.salesrep[0].value);
-            
-            */
-            
             
             //obtiene imagen de logo
             var logodURL 
@@ -74,38 +42,31 @@ function(render,email,file,record,search,format,runtime) {
                 logodURL = getImage('2576941') //id imagen vorwerk tm s green prod
             }
 
-            //sb1510040
-            //obtiene imagen de check false 
-
-            /*var checkfieldURL = getImage('1636738');//sb1510039
-            //obtiene imagen check true
-            var checkfieldURL_true = getImage('1636741');//1510241
-            //genera imagen de check false
-           */
+           
             if(method == 'GET'){
                 //proceso para retornar PDF
-                mainCreateXML(context,idTpl,recordid,logodURL);
+                mainCreateXML(context,recordid,logodURL);
             }
-            /*if(method == 'PUT'){
-                //proceso para enviar Email
-                mainCreateEmailtoSend(objOP,idTpl,idUSer,entity,recordid,logodURL,date,order,checkfieldURL,checkfieldURL_true,email_customer);
-            }*/
+            
         
     }
-    function mainCreateXML(context,idTpl,recordid,logodURL,location){
+    function mainCreateXML(context,recordid,logodURL){
         
-        try
-        {   log.debug('inicia pdf')
+        try{   
+            log.debug('inicia pdf')
             var objReceipt = record.load({
                 type: 'itemreceipt',
                 id: recordid,
                 isDynamic: false,
             });
-             var ordenCompra= objReceipt.getText('createdfrom')
-            ordenCompra = ordenCompra.split('#')
-            ordenCompra = ordenCompra[1]
-            var created=objReceipt.getValue('objReceipt')
-
+            var ordenCompra= objReceipt.getText('createdfrom')
+                ordenCompra = ordenCompra.split('#')
+                ordenCompra = ordenCompra[1]
+            var proveedor = objReceipt.getText('entity')
+                proveedor = proveedor.replace(/&/g, "&amp;");
+            var fechaRecepcion = objReceipt.getText('trandate')
+            var remisionFactura = objReceipt.getValue('custbody_remision_factura')
+            var noRecepcion = objReceipt.getValue('tranid')
             var numLines = objReceipt.getLineCount({
                 sublistId: 'item'
             });
@@ -138,7 +99,7 @@ function(render,email,file,record,search,format,runtime) {
                     fieldId: 'itemdescription',
                     line: e
                 })
-                descripcion = descripcion.replace(/&/g, "&amp;");
+                    descripcion = descripcion.replace(/&/g, "&amp;");
 
                 var sku = objReceipt.getSublistValue({
                     sublistId: 'item',
@@ -156,8 +117,8 @@ function(render,email,file,record,search,format,runtime) {
                 strTable += "</tr>";
             }
             var total = sumaQuantity
-            total = parseFloat(total)
-            total =  currencyFormat(total)
+                total = parseFloat(total)
+                total =  currencyFormat(total)
             strTable += "<tr>";
             strTable += "<td colspan= '3'  align='right'  font-family= 'Arial,Helvetica,sans-serif' font-size= '12px'><b>TOTAL</b></td>";
             strTable += "<td border='0.5' align='right'  font-family= 'Arial,Helvetica,sans-serif' font-size= '12px'><b>" + total + "</b></td>";
@@ -166,15 +127,10 @@ function(render,email,file,record,search,format,runtime) {
             
             log.debug('location', location)
              
-            var bodyPDF = getTemplate(idTpl,recordid)
-            bodyPDF = bodyPDF.replace(/@custbody_location/g,location); 
-            bodyPDF = bodyPDF.replace(/@ordenCompra/g,ordenCompra); 
-            bodyPDF = bodyPDF.replace(/@tabla/g,strTable);
-           
+            var bodyPDF = strTable         
             
-            var xml = createXML(logodURL,bodyPDF)//crea xml para pdf
+            var xml = createXML(logodURL,bodyPDF,ordenCompra,proveedor,fechaRecepcion,remisionFactura,noRecepcion,location)//crea xml para pdf
            
-            
             //conviete cml a pdf para retornarlo en la vista
             var file_xml = render.xmlToPdf({
                             xmlString: xml
@@ -210,19 +166,7 @@ function(render,email,file,record,search,format,runtime) {
             log.error("error getImage",err)
         }
     }
-    function getTemplate(idTpl,recordid){
-        try{
-            
-             var myMergeResult = render.mergeEmail({
-                templateId: idTpl,
-                            
-                transactionId: recordid
-            });
-            return myMergeResult.body
-        }catch(err){
-            log.error("error getTemplate",err)
-        }
-    }
+    
     function stringToArray(str,base,opc){
       if(str != ''){
           var multiSelectStringArray = str.split(String.fromCharCode(base));
@@ -242,7 +186,7 @@ function(render,email,file,record,search,format,runtime) {
           }  
       }
     }
-    function createXML(logodURL,emailBody){
+    function createXML(logodURL,emailBody,ordenCompra,proveedor,fechaRecepcion,remisionFactura,noRecepcion,location){
         try{
             log.debug('xml')
             var xml = "<?xml version='1.0' encoding='UTF-8'?>\n<!DOCTYPE pdf PUBLIC '-//big.faceless.org//report' 'report-1.1.dtd'>\n"
@@ -252,6 +196,38 @@ function(render,email,file,record,search,format,runtime) {
                             +'<macro id=\"myheader\">'
                                 +'<img height="70" width="160" align="center" ' + logodURL +'>'
                                 +'<p align="center" style="font-weight: bold;font-family:Arial,Helvetica,sans-serif; font-size:14px;">RECEPCIÓN DE MERCANCÍAS</p>' 
+                                +'<table cellpadding="0" style="font-size: 13px; width: 662px; margin-top: 5px;">'
+                                    +'<tbody>'
+                                        +'<tr>'
+                                        +'<td style="height: 14px; width: 91px;"><strong><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">PROVEEDOR:</span></span></strong></td>'
+                                        +'<td class="linea LINEAHT" style="height: 14px; width: 237px; text-align: left;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">'+proveedor+'</span></span></td>'
+                                        +'<td class="linea LINEAHT" style="height: 14px; width: 146px;"><strong><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">FECHA DE RECEPCIÓN:</span></span></strong></td>'
+                                        +'<td class="linea LINEAHT" style="height: 14px; width: 168px; text-align: center; vertical-align: middle;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">'+fechaRecepcion+'</span></span><br />'
+                                        +'&nbsp;</td>'
+                                        +'</tr>'
+                                    +'</tbody>'
+                                +'</table>'
+                                +'<table cellpadding="0" style="width:662px; margin-top:5px;">'
+                                    +'<tbody>'
+                                        +'<tr>'
+                                        +'<td style="width: 57px; height: 33px;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;"><strong>REMISI&Oacute;N/FACTURA:</strong>&nbsp;</span></span></td>'
+                                        +'<td class="linea LINEAHT" style="width: 182px; height: 33px; text-align: center;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">'+remisionFactura+'</span></span>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</td>'
+                                        +'<td style="width: 127px; height: 33px;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;"><strong>ORDEN DE COMPRA</strong>:</span></span></td>'
+                                        +'<td class="linea LINEAHT" style="width: 204px; height: 33px; text-align: center;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">'+ordenCompra+'</span></span></td>'
+                                        +'</tr>'
+                                    +'</tbody>'
+                                +'</table>'
+                                +'<table cellpadding="0" style="width:662px; margin-top:5px;">'
+                                    +'<tbody>'
+                                        +'<tr>'
+                                        +'<td style="width: 119px;"><strong><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">No. DE RECEPCI&Oacute;N:</span></span></strong></td>'
+                                        +'<td class="linea LINEAHT" style="width: 210px; text-align: center;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">'+noRecepcion+'</span></span></td>'
+                                        +'<td style="width: 94px;"><strong><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">UBICACIÓN:</span></span></strong></td>'
+                                        +'<td style="width: 218px; text-align: center;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">'+location+'</span></span></td>'
+                                        +'</tr>'
+                                    +'</tbody>'
+                                +'</table>'
+
                             +'</macro>'
                             +'<macro id=\"paginas\">'
                                 +'<p font-family=\"Helvetica\" font-size=\"6\" align=\"right\">Página <pagenumber/> de <totalpages/></p>'
@@ -259,8 +235,31 @@ function(render,email,file,record,search,format,runtime) {
 
                 +'</macrolist>'            
                 +'</head>'
-                + '<body footer-height="20pt" padding="0.5in 0.5in 0in 0.5in" margin= "0in 0in 0.5in 0in" size="Letter" header=\"myheader\" header-height=\"100pt\" footer=\"paginas\">'
+                + '<body footer-height="20pt" padding="0.5in 0.5in 0in 0.5in" margin= "0in 0in 0.5in 0in" size="Letter" header=\"myheader\" header-height=\"200pt\" footer=\"paginas\">'
+                
+                +'&nbsp;'
                 + emailBody
+                +'&nbsp;'
+                +'&nbsp;'
+                +'<table align="left" border="0" cellpadding="1" cellspacing="1" style="width: 655px;">'
+                    +'<tbody>'
+                        +'<tr>'
+                        +'<td style="width: 253px;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">Recibido por:&nbsp;</span></span><br />'
+                        +'&nbsp;</td>'
+                        +'<td style="width: 116px;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">Revisado por:</span></span><br />'
+                        +'&nbsp;</td>'
+                        +'<td style="width: 140px;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">Sello de recibido</span></span><br />'
+                        +'&nbsp;</td>'
+                        +'</tr>'
+                        +'<tr>'
+                        +'<td style="width: 253px;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">________________________________&nbsp;</span></span><br />'
+                        +'<span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">Nombre y Firma&nbsp; &nbsp;</span></span></td>'
+                        +'<td style="width: 116px;"><span style="font-size:12px;"><span style="font-family:Arial,Helvetica,sans-serif;">____________________________________<br />'
+                        +'Nombre y Firma&nbsp; &nbsp;</span></span></td>'
+                        +'<td style="width: 140px;">&nbsp;</td>'
+                        +'</tr>'
+                    +'</tbody>'
+                    +'</table>'
                 + '</body>'
                 + '</pdf>'
             return xml;
@@ -305,167 +304,7 @@ function(render,email,file,record,search,format,runtime) {
             }
             
         }
-    function createHTML(logodURL,emailBody,date,order){
-        try{
-            var space = '&nbsp;';
-            var t_space= ""
-            for(var x = 0; x<100; x++){
-                t_space+=space;
-            }
-            
-            var html ="<html>"
-                + '<head><style>'
-                +'.IMAGELOGO{'
-                +'position: relative;'
-                +'left: 35%;'
-                +'}'
-                +'.LINEAHT{'
-                +'border-bottom:1.5px solid black;'
-                +'}'
-                +'IMAG{'
-                +'top:-10px;}'
-                +'.BORDE{'
-                +'border-radius: 15px 15px 15px 15px;}'
-                +'.CAJA{'
-                +'border: solid 2px #000;'
-                +'border-radius: 10px;};'
-                +'</style>'
-                +'<macrolist>'
-                +'    <macro id="nlheader">'
-                +t_space+'<img class="IMAGELOGO" height="80" width="100" align="center" ' + logodURL +'>'
-                +'<p>ORDEN DE SERVICIO T&Eacute;CNICO</p>'
-                +'<table border="0" cellpadding="1" cellspacing="1" style="width: 1000px;">'
-                +'<tbody>'
-                +'<tr>'
-                +'<td rowspan="3" style="width: 750px;">Vorwerk M&eacute;xico, S. de R.L. de C.V.<br />'
-                +'Vito Alessio Robles 38 Col. Florida, Del. &Aacute;lvaro Obreg&oacute;n<br />'
-                +'Cd. de M&eacute;xico, C.P.01030 Tel&eacute;fono: 800 200 1121<br />'
-                +'www.thermomix.mx</td>'
-                +'<td style="width: 171px;"> </td>'
-                +'<td style="width: 107px;"> </td>'
-                +'</tr>'
-                +'<tr>'
-                +'<td Colspan="1" style="width: 120px; padding-left: 80px; text-align: right;">Orden de Servicio</td>'
-                +'<td  colspan="2" class="linea" style="width: 107px; text-align: right;">'+order+'</td>'
-                +'</tr>'
-                +'<tr>'
-                +'<td style="width: 120px; padding-left: 90px; text-align: right;">Fecha</td>'
-                +'<td  style="width: 107px; text-align: right;">'+date+'</td>'
-                +'</tr>'
-                +'<tr>'
-                +'<td style="width: 120px;"></td>'
-                +'<td style="width: 107px;"></td>'
-                +'</tr>'
-                +'</tbody>'
-                +'</table>'
-                +'    </macro>'
-                +'    <macro id="nlfooter">'
-                +'        <p>&nbsp;</p>'
-                +'    </macro>'
-                +'</macrolist></head>'
-                + '<body header="nlheader" header-height="7%" footer="nlfooter" footer-height="20pt" padding="0.5in 0.5in 0.5in 0.5in" margin= "0in 0in 0.5in 0in" size="Letter">'
-                +bodyPDF
-                + '</body>'
-                + '</html>'
-            return html;
-            
-        }catch(erro){
-            log.debug('errcreateHTML',erro)
-        }
-    }
-    
-    /*function getChecks(objOP,tempalte,checkfalse,checktrue){
-        try{
-            if(objOP.getValue('custbody_garantia')){
-                tempalte = tempalte.replace(/@custbody_garantia_yes/g,checktrue);
-                tempalte = tempalte.replace(/@custbody_garantia_no/g,checkfalse);
-            }else{
-                tempalte = tempalte.replace(/@custbody_garantia_yes/g,checkfalse);
-                tempalte = tempalte.replace(/@custbody_garantia_no/g,checktrue);
-            }
-            if(objOP.getValue('custbody61')){
-                tempalte = tempalte.replace(/@v_golpeado/g,checktrue);
-            }else{
-                tempalte = tempalte.replace(/@v_golpeado/g,checkfalse);
-            }
-            if(objOP.getValue('custbody62')){
-                tempalte = tempalte.replace(/@v_desgasta/g,checktrue);
-            }else{
-                tempalte = tempalte.replace(/@v_desgasta/g,checkfalse);
-            }
-            if(objOP.getValue('custbody63')){
-                tempalte = tempalte.replace(/@v_rayado/g,checktrue);
-            }else{
-                tempalte =tempalte.replace(/@v_rayado/g,checkfalse);
-            }
-            if(objOP.getValue('custbody64')){
-                tempalte = tempalte.replace(/@a_golpeado/g,checktrue);
-            }else{
-                tempalte = tempalte.replace(/@a_golpeado/g,checkfalse);
-            }
-            if(objOP.getValue('custbody65')){
-                tempalte = tempalte.replace(/@a_desgasta/g,checktrue);
-            }else{
-                tempalte = tempalte.replace(/@a_desgasta/g,checkfalse);
-            }
-            if(objOP.getValue('custbody66')){
-                tempalte = tempalte.replace(/@a_rayado/g,checktrue);
-            }else{
-                tempalte = tempalte.replace(/@a_rayado/g,checkfalse);
-            }
-            if(objOP.getValue('custbody67')){
-                tempalte = tempalte.replace(/@e_golpeado/g,checktrue);
-            }else{
-                tempalte = tempalte.replace(/@e_golpeado/g,checkfalse);
-            }
-            if(objOP.getValue('custbody68')){
-                tempalte = tempalte.replace(/@e_desgasta/g,checktrue);
-            }else{
-                tempalte = tempalte.replace(/@e_desgasta/g,checkfalse);
-            }
-            if(objOP.getValue('custbody69')){
-                tempalte = tempalte.replace(/@e_rayado/g,checktrue);
-            }else{
-                tempalte = tempalte.replace(/@e_rayado/g,checkfalse);
-            }
-            if(objOP.getValue('custbody70')){
-                tempalte = tempalte.replace(/@p_golpeado/g,checktrue);
-            }else{
-                tempalte = tempalte.replace(/@p_golpeado/g,checkfalse);
-            }
-            if(objOP.getValue('custbody71')){
-                tempalte = tempalte.replace(/@p_desgasta/g,checktrue);
-            }else{
-                tempalte = tempalte.replace(/@p_desgasta/g,checkfalse);
-            }
-            if(objOP.getValue('custbody72')){
-                tempalte = tempalte.replace(/@p_rayado/g,checktrue);
-            }else{
-                tempalte = tempalte.replace(/@p_rayado/g,checkfalse);
-            }
-            if(objOP.getValue('custbody75')){
-                tempalte = tempalte.replace(/@otros/g,checktrue);
-            }else{
-                tempalte = tempalte.replace(/@otros/g,checkfalse);
-            }
-            return tempalte;
-        }catch(err){
-            log.error("error getChecks",err)
-        }
-    }
-    function sendEmail(html,client){
-        try{
-            log.debug('client',client);
-            email.send({
-                author: '344096',
-                recipients: [client],
-                subject: 'Garantia',
-                body: html
-            }); 
-        }catch(err){
-            log.error("error send email",err)
-        }
-    }*/
+   
     return {
         onRequest: onRequest
     };
