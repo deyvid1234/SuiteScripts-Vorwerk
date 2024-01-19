@@ -1165,6 +1165,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
             //Datos usuario que recomienda 
             var nombreQuienRecomienda = ''
             var correoQuienRecomienda = ''
+            var telefonoQuienRecomienda = ''
             if(req_info.idRecomendador){
                 log.debug('objRecomendador 1')   
                 var objRecomendador = search.lookupFields({
@@ -1176,13 +1177,13 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                     'mobilephone'
                     ]
                 });
-                log.debug('objRecomendador 2',objRecomendador)   
-                log.debug('objRecomendador.name.value',objRecomendador.altname)
-                log.debug('objRecomendador.name.value',objRecomendador.email)
-                log.debug('objRecomendador.mobilephone',objRecomendador.mobilephone)
-
                 nombreQuienRecomienda = objRecomendador.altname
                 correoQuienRecomienda = objRecomendador.email
+                telefonoQuienRecomienda = objRecomendador.mobilephone
+            }
+                
+
+                
                 try{
                     
                     if(nombreQuienRecomienda && correoQuienRecomienda){
@@ -1198,7 +1199,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                             'correoQuienRecomienda': correoQuienRecomienda,
                             'PresentadorAsignadoCorreo': email_p,
                             'PresentadorAsignadoIDU': idu_p,
-                            'telefonoQuienRecomienda':objRecomendador.mobilephone,//Espera de LMS
+                            'telefonoQuienRecomienda':telefonoQuienRecomienda,//Espera de LMS
                             'NetSuiteID':id_cliente,
                             'Semilla': false
                         }
@@ -1229,7 +1230,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                             'correoQuienRecomienda': '',
                             'PresentadorAsignadoCorreo': email_p,
                             'PresentadorAsignadoIDU': idu_p,
-                            'telefonoQuienRecomienda':objRecomendador.mobilephone,//Espera de LMS
+                            'telefonoQuienRecomienda':'',
                             'NetSuiteID':id_cliente,
                             'Semilla': true
                         }
@@ -1252,7 +1253,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                 }catch(e){
                 log.debug('Error Agenda digital Referidos restlet',e)
                }
-            }
+
             
             //Busqueda valida si el cliente tiene una TM 
         
