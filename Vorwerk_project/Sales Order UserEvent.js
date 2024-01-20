@@ -558,7 +558,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 			    				"noPedido":numOrden,
 			    				"PedidoStatus":'Activo',
 			    			}
-			    			log.debug('objRequestAD',JSON.stringify(objRequestAD))
+			    			log.debug('objRequestAD first SO',JSON.stringify(objRequestAD))
 
 				            //Agenda Digital
 				            var responseService = https.post({
@@ -569,7 +569,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 		                            "x-api-key": "QxTbKbIDyB7eN0wCHxCZH5SN6gZzd0Nd7yreJAhW"
 		                        }
 		                    }).body;
-		                    log.debug('responseService AD',responseService)
+		                    log.debug('responseService AD first SO',responseService)
 
 			            }
 			            

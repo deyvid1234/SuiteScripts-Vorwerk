@@ -961,6 +961,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                         'PresentadorAsignadoIDU': idu_p,
                         'telefonoQuienRecomienda':objRecomendador.mobilephone,//Espera de LMS
                         'NetSuiteID':id_cliente
+                        'Semilla': false
 
                     }
 
