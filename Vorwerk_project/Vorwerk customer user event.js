@@ -164,7 +164,8 @@ function(record,search,http,https,encode,runtime,serverWidget,error) {
                     var telefonoRecomendador = referidoSearch.mobilephone
                     var id = newRecord.getValue('id')
                     var salesRep = newRecord.getValue('salesrep') 
-                    var iduSalesRep = employeeSearch.entityid
+                    var idPresentadorReferido = newRecord.getValue('custentity_presentadora_referido')
+                    var iduSalesRep = employeeSearch.entityid//revisar
                     var idClienteReferido= newRecord.getValue('custentity_id_cliente_referido')
                 try{
                     var urlAD
@@ -243,7 +244,7 @@ function(record,search,http,https,encode,runtime,serverWidget,error) {
 
                       "idCliente": id,
 
-                      "salesrep": salesRep ,
+                      "salesrep": idPresentadorReferido ,
 
                       "idUsalesRep": iduSalesRep
 
