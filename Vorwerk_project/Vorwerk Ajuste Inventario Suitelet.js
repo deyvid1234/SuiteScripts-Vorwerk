@@ -115,11 +115,7 @@ function(render,email,file,record,search,format,runtime) {
                     fieldId: 'avgunitcost',
                     line: e
                 })
-                var importe = objAdjustment.getSublistValue({
-                    sublistId: 'inventory',
-                    fieldId: 'currentvalue',
-                    line: e
-                })//(quantity*-1)*unitCost currentvalue
+                var importe = quantity*unitCost 
                
                 strTable += "<tr>";
                 strTable += "<td border='0.5' align='center'  font-family= 'Arial,Helvetica,sans-serif' font-size= '12px'>" + lineaRec + "</td>";
