@@ -22,7 +22,7 @@ function(runtime,url,https) {
             var record = scriptContext.newRecord;
             var form = scriptContext.
             form;
-            form.clientScriptFileId = (runtime.envType != 'PRODUCTION') ? '2464057' : '2464057';
+            form.clientScriptFileId = (runtime.envType != 'PRODUCTION') ? '2464057' : '2726134';
             form.addButton({
                 id: 'custpage_btn_orden_traslado',
                 label: 'Imprimir Recibo',
