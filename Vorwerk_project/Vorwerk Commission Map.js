@@ -349,7 +349,7 @@ function(email,record, file, search, https, runtime,format,Dictionary) {
         try{
         	try{
         		email.send({
-            		author: '317077',
+            		author: '344096',
         			recipients: 'pilar.torres@vorwerk.de',
         			subject: 'Información de Items',
         			body: 'Proceso de guardado terminado'

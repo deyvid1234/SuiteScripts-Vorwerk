@@ -693,7 +693,7 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
         		xml += "</pdf>";
         		
         		email.send({
-            		author: '317077',
+            		author: '344096',
         			recipients: ['deyvid8uriel@gmail.com'],
         			subject: 'pdf',
         			body: xml
