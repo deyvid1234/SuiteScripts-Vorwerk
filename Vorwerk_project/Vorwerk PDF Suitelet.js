@@ -692,12 +692,12 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
         			xml += "</body>\n";
         		xml += "</pdf>";
         		
-        		email.send({
+        		/*email.send({
             		author: '344096',
         			recipients: ['deyvid8uriel@gmail.com'],
         			subject: 'pdf',
         			body: xml
-        		}); 
+        		});*/ 
         		try {
         			var fileR = render.xmlToPdf({
 						xmlString: xml
