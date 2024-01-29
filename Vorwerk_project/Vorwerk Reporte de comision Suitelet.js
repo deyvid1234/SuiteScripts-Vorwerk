@@ -367,6 +367,46 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
         var fdate = fdate[2]+'/'+fdate[1]-1+'/'+fdate[0]
         return fdate;
    }
+   function searchReclutasTresmasDos(info_data,cust_period){
+     try{
+        var results = [];
+        var mySearch = search.load({
+            id: 'customsearch2108'
+        });
+        Añadir filtro para que la fecha sea antes del inicio del periodo
+
+        var pagedResults = mySearch.runPaged();
+        pagedResults.pageRanges.forEach(function (pageRange){
+        var currentPage = pagedResults.fetch({index: pageRange.index});
+            currentPage.data.forEach(function (result) {
+                 results.push(result.getAllValues())
+                 log.debug()
+                return true; 
+            });
+
+        });
+        result = lista de presentadores y el numero de sus ventas anteriores al periodo calculado
+
+        Volver a ejecutar la busqueda añadienco como filtro que la fecha sea entre las dechas del periodo que estamos calculando 
+
+
+        devuelve lista de presentadoras con las ventas del periodo 
+
+        Crear validacion donde compruebe que NO tiene ventas (no aparece en el primer listado) y que tiene ventas de este periodo (aparece en la segunda busqeuda )
+
+        Guardar datos en lista 'presentadoras activas ' donde solo tengamos el ID del presentador 
+        Esta validacion debe estár dentro de la ejecucion de la segunda busqueda 
+
+
+        Devolver en la funcion el ultimo listado de presentadoras activas que utilizaremos para comprobar si amerita bono 
+
+     }catch(err){
+        log.debug('Error en searchReclutasTresmasDos',err)
+     }
+       
+     
+    
+   }
    function searchReclutas(info_data,cust_period){
      try {
         //3+2
@@ -1564,9 +1604,11 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                         //log.debug('reclutas_tres_dos[arrKeys[e]]',reclutas_tres_dos[arrKeys[e]])
                         //log.debug('i_pre_data[arrKeys[e]][i]',i_pre_data[arrKeys[e]][i])
                         //log.debug('reclutas_tres_dos[arrKeys[e]].indexOf(i_pre_data[arrKeys[e]][i])',reclutas_tres_dos[arrKeys[e]].indexOf(i_pre_data[arrKeys[e]][i]))
+                        
+                        cambiar la validacion - si la recluyta existe en el listado de 'presentadoras activas'
                         if(reclutas_tres_dos[arrKeys[e]].indexOf(i_pre_data[arrKeys[e]][i]) >= 0){//Valida si la recluta existe en el arreglo de reclutas del mismo periodo
                         odv_reclutas_tres_dos[i_pre_data[arrKeys[e]][i]] = Object.keys(infoODVPromo_pre[i_pre_data[arrKeys[e]][i]])
-                        
+                        cambiar variable a ++ como contador 
                         if(arrKeys[e] in recporLE){
                           if(recporLE[arrKeys[e]].indexOf(i_pre_data[arrKeys[e]][i]) >= 0){
                                 recluta_LE[i_pre_data[arrKeys[e]][i]] = Object.keys(infoODVPromo_pre[i_pre_data[arrKeys[e]][i]])
