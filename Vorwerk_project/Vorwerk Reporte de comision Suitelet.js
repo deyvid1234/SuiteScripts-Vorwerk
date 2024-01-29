@@ -381,16 +381,37 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
             currentPage.data.forEach(function (result) {
                  results.push(result.getAllValues())
                  log.debug()
+                 if
+                 rersult[idPresentador] = ++
                 return true; 
             });
 
         });
+        lista historico [0008: 2,999: 0,888:10]
         result = lista de presentadores y el numero de sus ventas anteriores al periodo calculado
 
-        Volver a ejecutar la busqueda añadienco como filtro que la fecha sea entre las dechas del periodo que estamos calculando 
+        Volver a ejecutar la busqueda añadienco como filtro que la fecha sea entre las fechas del periodo que estamos calculando 
+        var arregloPresentadorasActivas = []
+        var ventasPresentadorasPEriodoCalculado = []
 
+        var pagedResults = mySearch.runPaged();
+        pagedResults.pageRanges.forEach(function (pageRange){
+        var currentPage = pagedResults.fetch({index: pageRange.index});
+            currentPage.data.forEach(function (result) {
+                 results.push(result.getAllValues())
+                 log.debug()
+                var presentadorid = get internalid (internal id del presentador)
+                var  numVentas = get gurpVentas 
+                ventasPresentadorasPEriodoCalculado push = presentadorid : numVentas
+                 if(presentadorid NO existe en 'lista historico'? && numVentas mayor 0   ){
+                    arregloPresentadorasActivas = añademe el presentadorid
+                 }
+                 rersult[idPresentador] = ++
+                return true; 
+            });
 
-        devuelve lista de presentadoras con las ventas del periodo 
+        });
+        return devuelve lista de presentadoras con las ventas del periodo 
 
         Crear validacion donde compruebe que NO tiene ventas (no aparece en el primer listado) y que tiene ventas de este periodo (aparece en la segunda busqeuda )
 
@@ -399,7 +420,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
 
 
         Devolver en la funcion el ultimo listado de presentadoras activas que utilizaremos para comprobar si amerita bono 
-
+        return 
      }catch(err){
         log.debug('Error en searchReclutasTresmasDos',err)
      }
