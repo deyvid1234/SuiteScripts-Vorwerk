@@ -362,8 +362,18 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
         var fdate = new Date(fdate[2],fdate[1]-1,fdate[0])
         return fdate;
    }
+   function stringtodateGuion(date){
+        var fdate = date.split('-')
+        var fdate = new Date(fdate[2],fdate[1]-1,fdate[0])
+        return fdate;
+   }
    function ddmmyyyydate(date){
         var fdate = date.split('/')
+        var fdate = fdate[2]+'/'+fdate[1]-1+'/'+fdate[0]
+        return fdate;
+   }
+   function ddmmyyyydateGuion(date){
+        var fdate = date.split('-')
         var fdate = fdate[2]+'/'+fdate[1]-1+'/'+fdate[0]
         return fdate;
    }
@@ -375,17 +385,18 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
             var ventasPresentadoraPeriodoCalculado = {}
 
             var fechasPeriodo = Utils.getObjPeriod(cust_period)
-            var fechaPeriodMin = stringtodate(fechasPeriodo['startDate'])
-            var fechaPeriodMax = stringtodate(fechasPeriodo['endDate'])
+            var fechaPeriodMin = fechasPeriodo['startDate']
+            var fechaPeriodMax = fechasPeriodo['endDate']
 
-
+            log.debug('fechaPeriodMi n 3+2',fechaPeriodMin)
+            log.debug('fechaPeriodMax  3+2',fechaPeriodMin)
             var historicoVentasPre = search.load({
                 id: 'customsearch2108'
             });
             //Añadir filtro para que la fecha sea antes del inicio del periodo
             historicoVentasPre.filters.push(search.createFilter({//Ventas post septiembre 2023
                  name: 'trandate',
-                 operator: 'before',
+                 operator: 'BEFORE',
                  values: fechaPeriodMin//fecha inicio
             }));
             
@@ -427,7 +438,6 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
 
                     var idPresentador = result.getValue({name: 'salesrep', summary: 'GROUP'})
                     var cantidad = result.getValue({name: 'internalid', summary: 'COUNT'})
-                    log.debug('datos',cantidad+' '+idPresentador)
 
                     ventasPresentadoraPeriodoCalculado[idPresentador] = cantidad
                      
@@ -1056,16 +1066,17 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                var items_promo_rec = Utils.matchEmpCompItems(structure_info_rec);
 //             log.debug('items_promo rec',items_promo_rec);
                //var reclutas_tres_dos = information_rec.tres_dos;//Trabajar searchReclutas32
-               var reclutas_tres_dos = searchReclutas32(info_data,cust_period)
+               //var reclutas_tres_dos = searchReclutas32(info_data,cust_period)
 
                var ventasPresentadorareclutas_tres_dos = searchReclutasTresmasDos(info_data,cust_period)
-               var recporLE = reclutas_tres_dos.reclutaporLE
-               reclutas_tres_dos = reclutas_tres_dos.tres_dos;
+               log.debug('ventasPresentadorareclutas_tres_dos',ventasPresentadorareclutas_tres_dos)
+               //var recporLE = reclutas_tres_dos.reclutaporLE
+               //reclutas_tres_dos = reclutas_tres_dos.tres_dos;
                var rec_sc = searchReclutas_sc()
                rec_sc = rec_sc.rec_sc
                log.debug('rec_sc',rec_sc)
-               log.debug('recporLE',recporLE)
-               log.debug('reclutas_tres_dos',reclutas_tres_dos)
+               //log.debug('recporLE',recporLE)
+               //log.debug('reclutas_tres_dos',reclutas_tres_dos)
                var fileinfoODVPromo_rec = Utils.getFileId("search_aux_3"+cust_type+"_"+cust_period+"_"+cust_promo+".json");
                if(fileinfoODVPromo_rec == false){
                    log.debug("no se encontro el archivo","search_aux_3"+cust_type+"_"+cust_period+"_"+cust_promo+".json");
@@ -1646,7 +1657,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                       // Se llena el arreglo odv_reclutas_tres_dos
                       //if(arrKeys[e] == 905233){
                         //log.debug('reclutas_tres_dos',reclutas_tres_dos)
-                      if(arrKeys[e] in reclutas_tres_dos){//Valida si existe la lider en el resultado de la busqueda de presentadoras 3 + 2, Arreglo con presentadoras reclutadas en el mismo periodo calculado
+                      /*if(arrKeys[e] in reclutas_tres_dos){//Valida si existe la lider en el resultado de la busqueda de presentadoras 3 + 2, Arreglo con presentadoras reclutadas en el mismo periodo calculado
                         
                         
                         
@@ -1660,7 +1671,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                         }
                             
                         }
-                      }
+                      }*/
                       //Nuevo y renovado y fresco 3+2 
                       if( ventasPresentadorareclutas_tres_dos.hasOwnProperty(i_pre_data[arrKeys[e]][i]) ){
                             presentadorasActivasDelLE ++
@@ -1714,11 +1725,11 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                       odv_pre_comisionables.push(Object.keys(infoODVPromo_tm_pre[i_pre_data[arrKeys[e]][i]]))
                           odvTMpagada_pre = odvTMpagada_pre + parseInt(Object.keys(infoODVPromo_tm_pre[i_pre_data[arrKeys[e]][i]]).length)
                         // Se llena el arreglo odv_reclutas_tres_dos
-                      if(arrKeys[e] in reclutas_tres_dos){
+                     /* if(arrKeys[e] in reclutas_tres_dos){
                         if(reclutas_tres_dos[arrKeys[e]].indexOf(i_pre_data[arrKeys[e]][i]) > 0 ){
                         odv_reclutas_tres_dos[i_pre_data[arrKeys[e]][i]] += Object.keys(infoODVPromo_tm_pre[i_pre_data[arrKeys[e]][i]])
                         }
-                      }
+                      }*/
 
                       //Nuevo y renovado y fresco 3+2 
                       if( ventasPresentadorareclutas_tres_dos.hasOwnProperty(i_pre_data[arrKeys[e]][i]) ){
@@ -1810,7 +1821,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
               
               //3 + 2 
               var v_total = odvPNumber+(odvTMpagada>0?odvTMpagada:0)+(odvTMganada>0?odvTMganada:0)
-              try{
+              /*try{
                 var bono_tres_dos = 0
                 if(Object.keys(odv_reclutas_tres_dos).length >=2 && v_total > 2 && Object.keys(recluta_LE).length >=1){//Reclutas juntan almenos 2 ventas y el LE tiene al menos 3 ventas 
                     
@@ -1833,16 +1844,16 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
               }catch(e){
                 Log.debug('Error 5 + 2 ',e)
               }
-
+                */
 
 
 
               log.debug('Valores antes de nuevo 3+2','bono_cinco_dos '+bono_cinco_dos+' bono_tres_dos '+bono_tres_dos)
 
-              if(presentadorasActivasDelLE >=2 v_total > 4){
+              if(presentadorasActivasDelLE >=2 && v_total > 4){
                     bono_cinco_dos = 8000
                     bono_tres_dos = 0
-              }else if(presentadorasActivasDelLE >=2 v_total > 2){
+              }else if(presentadorasActivasDelLE >=2 && v_total > 2){
                 bono_tres_dos = 5000
                 bono_cinco_dos = 0
               }
@@ -2152,9 +2163,9 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                           value :JSON.stringify(odv_rec_comisionable)
                         });
                     }
-                    if(Object.keys(odv_reclutas_tres_dos).length > 0 ){
+                    if(/*Object.keys(odv_reclutas_tres_dos).length > 0*/ bono_tres_dos>0 || bono_cinco_dos > 0 ){
                     //ODV comisionables 3+2 
-                        sublist.setSublistValue({//'Reclutas y ODV del periodo mismo equipo'
+                        /*sublist.setSublistValue({//'Reclutas y ODV del periodo mismo equipo'
                           id : 'custentity_odv_rec_del_periodo',
                           line : cont_line,
                           value :JSON.stringify(odv_reclutas_tres_dos)
@@ -2169,7 +2180,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                           line : cont_line,
                           value :Object.keys(odv_reclutas_tres_dos).length
                         });
-                        
+                        */
                         sublist.setSublistValue({//'Bono 3 + 2'
                           id : 'custentity_bono_tres_dos',
                           line : cont_line,
