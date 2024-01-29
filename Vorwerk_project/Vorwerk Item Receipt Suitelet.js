@@ -92,8 +92,10 @@ function(render,email,file,record,search,format,runtime) {
                     fieldId: 'quantity',
                     line: e
                 })
-                quantity = currencyFormat(quantity)
+                quantity2 = currencyFormat(quantity)
+                log.debug('quantity', quantity)
                 sumaQuantity += parseFloat(quantity);
+                log.debug('sumaQuantity', sumaQuantity)
                 var descripcion = objReceipt.getSublistValue({
                     sublistId: 'item',
                     fieldId: 'itemdescription',
@@ -112,13 +114,16 @@ function(render,email,file,record,search,format,runtime) {
                             
                 strTable += "<td border='0.5' align='center'  font-family= 'Arial,Helvetica,sans-serif' font-size= '12px'>" + sku + "</td>";
                 strTable += "<td border='0.5' align='left'  font-family= 'Arial,Helvetica,sans-serif' font-size= '12px'>" + descripcion + "</td>";
-                strTable += "<td border='0.5' align='right'  font-family= 'Arial,Helvetica,sans-serif' font-size= '12px'>" + quantity + "</td>";
+                strTable += "<td border='0.5' align='right'  font-family= 'Arial,Helvetica,sans-serif' font-size= '12px'>" + quantity2 + "</td>";
                 
                 strTable += "</tr>";
             }
             var total = sumaQuantity
+            log.debug('total 1', total)
                 total = parseFloat(total)
+                log.debug('total2', total)
                 total =  currencyFormat(total)
+                log.debug('total 3',total)
             strTable += "<tr>";
             strTable += "<td colspan= '3'  align='right'  font-family= 'Arial,Helvetica,sans-serif' font-size= '12px'><b>TOTAL</b></td>";
             strTable += "<td border='0.5' align='right'  font-family= 'Arial,Helvetica,sans-serif' font-size= '12px'><b>" + total + "</b></td>";
