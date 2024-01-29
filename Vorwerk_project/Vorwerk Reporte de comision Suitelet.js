@@ -368,87 +368,85 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
         return fdate;
    }
    function searchReclutasTresmasDos(info_data,cust_period){
-     try{
-         var resultsHistorico = [];
+     
+        try{
+            var presentadorasActivas = {}
+            var ventasPresentadoraHistorico = {}
+            var ventasPresentadoraPeriodoCalculado = {}
 
-          var presentadorasActivas 
-          var ventasPresentadoraHistorico
-          var ventasPresentadoraPeriodoCalculado
+            var fechasPeriodo = Utils.getObjPeriod(cust_period)
+            var fechaPeriodMin = stringtodate(fechasPeriodo['startDate'])
+            var fechaPeriodMax = stringtodate(fechasPeriodo['endDate'])
 
-          var historicoVentasPre = search.load({
-              id: 'customsearch2108'
-          });
-          //Añadir filtro para que la fecha sea antes del inicio del periodo
-          historicoVentasPre.filters.push(search.createFilter({
-               name: 'trandate',
-               operator: 'before',
-               values: fechasPeriodo
+
+            var historicoVentasPre = search.load({
+                id: 'customsearch2108'
+            });
+            //Añadir filtro para que la fecha sea antes del inicio del periodo
+            historicoVentasPre.filters.push(search.createFilter({//Ventas post septiembre 2023
+                 name: 'trandate',
+                 operator: 'before',
+                 values: fechaPeriodMin//fecha inicio
             }));
-          
+            
 
-          var pagedResults = historicoVentasPre.runPaged();
-          pagedResults.pageRanges.forEach(function (pageRange){
-          var currentPage = pagedResults.fetch({index: pageRange.index});
-              currentPage.data.forEach(function (result) {
+            var pagedResults = historicoVentasPre.runPaged();
+            pagedResults.pageRanges.forEach(function (pageRange){
+            var currentPage = pagedResults.fetch({index: pageRange.index});
+                currentPage.data.forEach(function (result) {
 
-                   var idPresentador = result.getValue({name: 'salesrep', summary: 'GROUP'})
-                   var cantidad = result.getValue({name: 'internalid', summary: 'COUNT'})
+                    var idPresentador = result.getValue({name: 'salesrep', summary: 'GROUP'})
+                    var cantidad = result.getValue({name: 'internalid', summary: 'COUNT'})
 
 
-                    resultsHistorico.push (idPresentador,cantidad)
-                   
-                  return true; 
-              });
+                    ventasPresentadoraHistorico[idPresentador] = cantidad
+                     
+                    return true; 
+                });
 
-              });
-          log.debug('resultsHistorico', resultsHistorico)
-
-        lista historico [0008: 2,999: 0,888:10]
-        result = lista de presentadores y el numero de sus ventas anteriores al periodo calculado
-
-        Volver a ejecutar la busqueda añadienco como filtro que la fecha sea entre las fechas del periodo que estamos calculando 
-        var arregloPresentadorasActivas = []
-        var ventasPresentadorasPEriodoCalculado = []
-        var preActivas = search.load({
-              id: 'customsearch2108'
-          });
-          //Añadir filtro para que la fecha sea antes del inicio del periodo
-          historicoVentasPre.filters.push(search.createFilter({
-               name: 'trandate',
-               operator: 'before',
-               values: fechasPeriodo
-            }));
-        var pagedResults = mySearch.runPaged();
-        pagedResults.pageRanges.forEach(function (pageRange){
-        var currentPage = pagedResults.fetch({index: pageRange.index});
-            currentPage.data.forEach(function (result) {
-                 results.push(result.getAllValues())
-                 log.debug()
-                var presentadorid = get internalid (internal id del presentador)
-                var  numVentas = get gurpVentas 
-                ventasPresentadorasPEriodoCalculado push = presentadorid : numVentas
-                 if(presentadorid NO existe en 'lista historico'? && numVentas mayor 0   ){
-                    arregloPresentadorasActivas = añademe el presentadorid
-                 }
-                 rersult[idPresentador] = ++
-                return true; 
             });
 
-        });
-        return devuelve lista de presentadoras con las ventas del periodo 
-
-        Crear validacion donde compruebe que NO tiene ventas (no aparece en el primer listado) y que tiene ventas de este periodo (aparece en la segunda busqeuda )
-
-        Guardar datos en lista 'presentadoras activas ' donde solo tengamos el ID del presentador 
-        Esta validacion debe estár dentro de la ejecucion de la segunda busqueda 
+            log.debug('ventasPresentadoraHistorico', ventasPresentadoraHistorico)
 
 
-        Devolver en la funcion el ultimo listado de presentadoras activas que utilizaremos para comprobar si amerita bono 
-        return 
-     }catch(err){
-        log.debug('Error en searchReclutasTresmasDos',err)
-     }
-       
+            var periodoCalculadoVentasPre = search.load({ //Ventas post septiembre 2023
+                id: 'customsearch2108'
+            });
+            //Añadir filtro para que la fecha sea antes del inicio del periodo
+            periodoCalculadoVentasPre.filters.push(search.createFilter({
+                 name: 'trandate',
+                 operator: 'within', 
+                 values: [fechaPeriodMin, fechaPeriodMax]//fecha de inicio y fecha fin
+            }));
+            
+
+            var pagedResults = periodoCalculadoVentasPre.runPaged();
+            pagedResults.pageRanges.forEach(function (pageRange){
+            var currentPage = pagedResults.fetch({index: pageRange.index});
+                currentPage.data.forEach(function (result) {
+
+                    var idPresentador = result.getValue({name: 'salesrep', summary: 'GROUP'})
+                    var cantidad = result.getValue({name: 'internalid', summary: 'COUNT'})
+                    log.debug('datos',cantidad+' '+idPresentador)
+
+                    ventasPresentadoraPeriodoCalculado[idPresentador] = cantidad
+                     
+                    if(  ventasPresentadoraHistorico.hasOwnProperty(idPresentador) == false && cantidad > 0){
+                        presentadorasActivas[idPresentador] = cantidad
+                    }
+
+
+
+                    return true; 
+                });
+
+            });
+            log.debug('ventasPresentadoraPeriodoCalculado',ventasPresentadoraPeriodoCalculado)
+            log.debug('presentadorasActivas',presentadorasActivas)
+            return presentadorasActivas;
+        }catch(e){
+            log.debug('error ',e)
+        }
      
     
    }
@@ -1059,6 +1057,8 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
 //             log.debug('items_promo rec',items_promo_rec);
                //var reclutas_tres_dos = information_rec.tres_dos;//Trabajar searchReclutas32
                var reclutas_tres_dos = searchReclutas32(info_data,cust_period)
+
+               var ventasPresentadorareclutas_tres_dos = searchReclutasTresmasDos(info_data,cust_period)
                var recporLE = reclutas_tres_dos.reclutaporLE
                reclutas_tres_dos = reclutas_tres_dos.tres_dos;
                var rec_sc = searchReclutas_sc()
@@ -1259,6 +1259,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
             var odv_rec = 0
             var odv_rec_comisionable ={}
             var odv_reclutas_tres_dos = {}
+            var presentadorasActivasDelLE = 0
             var odvPIds =[]
             var odvPNumber = 0;
             var odvTMganada = 0;
@@ -1646,14 +1647,12 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                       //if(arrKeys[e] == 905233){
                         //log.debug('reclutas_tres_dos',reclutas_tres_dos)
                       if(arrKeys[e] in reclutas_tres_dos){//Valida si existe la lider en el resultado de la busqueda de presentadoras 3 + 2, Arreglo con presentadoras reclutadas en el mismo periodo calculado
-                        //log.debug('reclutas_tres_dos[arrKeys[e]]',reclutas_tres_dos[arrKeys[e]])
-                        //log.debug('i_pre_data[arrKeys[e]][i]',i_pre_data[arrKeys[e]][i])
-                        //log.debug('reclutas_tres_dos[arrKeys[e]].indexOf(i_pre_data[arrKeys[e]][i])',reclutas_tres_dos[arrKeys[e]].indexOf(i_pre_data[arrKeys[e]][i]))
                         
-                        cambiar la validacion - si la recluyta existe en el listado de 'presentadoras activas'
+                        
+                        
                         if(reclutas_tres_dos[arrKeys[e]].indexOf(i_pre_data[arrKeys[e]][i]) >= 0){//Valida si la recluta existe en el arreglo de reclutas del mismo periodo
                         odv_reclutas_tres_dos[i_pre_data[arrKeys[e]][i]] = Object.keys(infoODVPromo_pre[i_pre_data[arrKeys[e]][i]])
-                        cambiar variable a ++ como contador 
+                       
                         if(arrKeys[e] in recporLE){
                           if(recporLE[arrKeys[e]].indexOf(i_pre_data[arrKeys[e]][i]) >= 0){
                                 recluta_LE[i_pre_data[arrKeys[e]][i]] = Object.keys(infoODVPromo_pre[i_pre_data[arrKeys[e]][i]])
@@ -1662,6 +1661,10 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                             
                         }
                       }
+                      //Nuevo y renovado y fresco 3+2 
+                      if( ventasPresentadorareclutas_tres_dos.hasOwnProperty(i_pre_data[arrKeys[e]][i]) ){
+                            presentadorasActivasDelLE ++
+                        }
                       //Supercomision
                       if(arrKeys[e] in rec_sc){//Valida si existe la lider en el resultado de la busqueda de presentadoras SC, Arreglo con presentadoras reclutadas despues de 1/2/2022 sin importar recluta
                         
@@ -1716,6 +1719,13 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                         odv_reclutas_tres_dos[i_pre_data[arrKeys[e]][i]] += Object.keys(infoODVPromo_tm_pre[i_pre_data[arrKeys[e]][i]])
                         }
                       }
+
+                      //Nuevo y renovado y fresco 3+2 
+                      if( ventasPresentadorareclutas_tres_dos.hasOwnProperty(i_pre_data[arrKeys[e]][i]) ){
+                            presentadorasActivasDelLE ++
+                        }
+
+
                       if(arrKeys[e] in rec_sc){
                         if(rec_sc[arrKeys[e]].indexOf(i_pre_data[arrKeys[e]][i]) > 0 ){
                         odv_reclutas_sc[i_pre_data[arrKeys[e]][i]] += Object.keys(infoODVPromo_tm_pre[i_pre_data[arrKeys[e]][i]])
@@ -1797,6 +1807,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                 log.debug('Error ODV DE LAS PRESENTADORAS',e)
               } 
               // Fin ODV DE LAS PRESENTADORAS
+              
               //3 + 2 
               var v_total = odvPNumber+(odvTMpagada>0?odvTMpagada:0)+(odvTMganada>0?odvTMganada:0)
               try{
@@ -1822,6 +1833,21 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
               }catch(e){
                 Log.debug('Error 5 + 2 ',e)
               }
+
+
+
+
+              log.debug('Valores antes de nuevo 3+2','bono_cinco_dos '+bono_cinco_dos+' bono_tres_dos '+bono_tres_dos)
+
+              if(presentadorasActivasDelLE >=2 v_total > 4){
+                    bono_cinco_dos = 8000
+                    bono_tres_dos = 0
+              }else if(presentadorasActivasDelLE >=2 v_total > 2){
+                bono_tres_dos = 5000
+                bono_cinco_dos = 0
+              }
+
+            log.debug('Valores post nuevo 3+2','bono_cinco_dos '+bono_cinco_dos+' bono_tres_dos '+bono_tres_dos)
               //Fin 3 + 2
               //Parche 
               /*if(arrKeys[e] == 15355 || arrKeys[e] == 37453 || arrKeys[e] == 2141633 || arrKeys[e] == 2227423 || arrKeys[e] == 2227424 || arrKeys[e] == 2235478 || arrKeys[e] == 2236907 || arrKeys[e] == 2276457 || arrKeys[e] == 2279300 || arrKeys[e] == 2425369 ){
