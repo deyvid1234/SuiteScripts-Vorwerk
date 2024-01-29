@@ -369,31 +369,55 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
    }
    function searchReclutasTresmasDos(info_data,cust_period){
      try{
-        var results = [];
-        var mySearch = search.load({
-            id: 'customsearch2108'
-        });
-        Añadir filtro para que la fecha sea antes del inicio del periodo
+         var resultsHistorico = [];
 
-        var pagedResults = mySearch.runPaged();
-        pagedResults.pageRanges.forEach(function (pageRange){
-        var currentPage = pagedResults.fetch({index: pageRange.index});
-            currentPage.data.forEach(function (result) {
-                 results.push(result.getAllValues())
-                 log.debug()
-                 if
-                 rersult[idPresentador] = ++
-                return true; 
-            });
+          var presentadorasActivas 
+          var ventasPresentadoraHistorico
+          var ventasPresentadoraPeriodoCalculado
 
-        });
+          var historicoVentasPre = search.load({
+              id: 'customsearch2108'
+          });
+          //Añadir filtro para que la fecha sea antes del inicio del periodo
+          historicoVentasPre.filters.push(search.createFilter({
+               name: 'trandate',
+               operator: 'before',
+               values: fechasPeriodo
+            }));
+          
+
+          var pagedResults = historicoVentasPre.runPaged();
+          pagedResults.pageRanges.forEach(function (pageRange){
+          var currentPage = pagedResults.fetch({index: pageRange.index});
+              currentPage.data.forEach(function (result) {
+
+                   var idPresentador = result.getValue({name: 'salesrep', summary: 'GROUP'})
+                   var cantidad = result.getValue({name: 'internalid', summary: 'COUNT'})
+
+
+                    resultsHistorico.push (idPresentador,cantidad)
+                   
+                  return true; 
+              });
+
+              });
+          log.debug('resultsHistorico', resultsHistorico)
+
         lista historico [0008: 2,999: 0,888:10]
         result = lista de presentadores y el numero de sus ventas anteriores al periodo calculado
 
         Volver a ejecutar la busqueda añadienco como filtro que la fecha sea entre las fechas del periodo que estamos calculando 
         var arregloPresentadorasActivas = []
         var ventasPresentadorasPEriodoCalculado = []
-
+        var preActivas = search.load({
+              id: 'customsearch2108'
+          });
+          //Añadir filtro para que la fecha sea antes del inicio del periodo
+          historicoVentasPre.filters.push(search.createFilter({
+               name: 'trandate',
+               operator: 'before',
+               values: fechasPeriodo
+            }));
         var pagedResults = mySearch.runPaged();
         pagedResults.pageRanges.forEach(function (pageRange){
         var currentPage = pagedResults.fetch({index: pageRange.index});

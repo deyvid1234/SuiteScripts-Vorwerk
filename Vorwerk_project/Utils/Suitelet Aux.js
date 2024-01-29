@@ -10,7 +10,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
     function(plugin,task, serverWidget, search, runtime,file){
         function onRequest(context) {
             	
-	        var results = [];
+	        
 	        var resultsHistorico = [];
 
 	        var presentadorasActivas 
@@ -33,22 +33,11 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
 	        var currentPage = pagedResults.fetch({index: pageRange.index});
 	            currentPage.data.forEach(function (result) {
 
-	                var allvalues = result.getAllValues()
-
-	                 //log.debug('result', result)
-	                 log.debug('results', results)
-
-	                 log.debug('1',allvalues['GROUP(salesrep)'])
-	                 log.debug('2',result.getValue({name: 'salesrep', summary: 'GROUP'}))
-
-	                 var idPresentador = allvalues['GROUP(salesrep)']
-	                 var cantidad = result.getValue('Pedido')
+	                 var idPresentador = result.getValue({name: 'salesrep', summary: 'GROUP'})
+	                 var cantidad = result.getValue({name: 'internalid', summary: 'COUNT'})
 
 
-	                  resultsHistorico.push ({
-	                  id: idPresentador,
-	                  cantidad: cantidad
-	               })
+	                  resultsHistorico.push (idPresentador,cantidad)
 	                 
 	                return true; 
 	            });
