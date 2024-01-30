@@ -61,35 +61,48 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                 currentPage.data.forEach(function (result) {
 
                     //Datos
-                    var all = result.getAllValues();
-                    log.debug('all',all)
-                    var fechaTransaction = result.getValue('trandate')
-                    log.debug('fechaTransaction', fechaTransaction)
-                    var fechaFinObjetivo = result.getValue({name : 'custentity_fin_objetivo_1',join : 'salesrep'})
-                    log.debug('fechaFinObjetivo', fechaFinObjetivo)
-                    var noDocument = result.getValue('tranid')
-                    log.debug('noDocument', noDocument)
-                    var idPresentador = result.getValue({name : 'internalid',join : 'salesrep'})
-                    log.debug('salesRepId', idPresentador)
-                    var fechaContratacion = result.getValue({name : 'hiredate',join : 'salesrep'})
-                    log.debug('fechaContratacion', fechaContratacion)
-                    var fechaReactivacion = result.getValue({name : 'custentity72',join : 'salesrep'})
-                    log.debug('fechaReactivacion', fechaReactivacion)
-                    var reclutadoraSO = result.getValue('custbody_vw_recruiter')
-                    log.debug('reclutadoraSO', reclutadoraSO)
-                    var reclutadoraSR = result.getValue({name : 'custentity_reclutadora',join : 'salesrep'})
-                    log.debug('reclutadoraSR', reclutadoraSR)
-                    var jdg = result.getValue('custbody_jefa_grupo')
-                    log.debug('jdg', jdg)
+                    var presentadorasTotal = []
+                    var datosPedido= new Object();
 
+                    var pedido= result.getValue('internalid')
+                    
+                    var fechaTransaction1 = result.getValue('trandate')
+                    
+                    datosPedido.fechaTransaction = stringtodate(fechaTransaction1)
+                    var fechaFinObjetivo1 = result.getValue({name : 'custentity_fin_objetivo_1',join : 'salesrep'})
+                   
+                    datosPedido.fechaFinObjetivo= stringtodate(fechaFinObjetivo1)
+                    datosPedido.noDocument = result.getValue('tranid')
+                    
+                    var idPresentador = result.getValue({name : 'internalid',join : 'salesrep'})
+                    
+                    datosPedido.fechaContratacion = result.getValue({name : 'hiredate',join : 'salesrep'})
+                    
+                    datosPedido.fechaReactivacion = result.getValue({name : 'custentity72',join : 'salesrep'})
+                    
+                    datosPedido.reclutadoraSO = result.getValue('custbody_vw_recruiter')
+                    
+                    datosPedido.reclutadoraSR = result.getValue({name : 'custentity_reclutadora',join : 'salesrep'})
+                    
+                    datosPedido.jdg = result.getValue('custbody_jefa_grupo')
+                    
+
+                   
+
+                    if (presentadorasTotal.hasOwnProperty(idPresentador)){
+                        ventasPresentadoraPeriodoCalculado[idPresentador].push([{idpedido:pedido},{data:datosPedido}])
+                    }else{
+                        ventasPresentadoraPeriodoCalculado[idPresentador] = ([{idpedido:pedido},{data:datosPedido}])
+                    }
+                    
                     //var idPresentador = result.getValue({name: 'salesrep', summary: 'GROUP'})
                     //var cantidad = result.getValue({name: 'internalid', summary: 'COUNT'})
                     //log.debug('datos',cantidad+' '+idPresentador)
-
-                    ventasPresentadoraPeriodoCalculado[idPresentador] = noDocument
+                     //log.debug('datosPedido.fechaTransaction', datosPedido.fechaTransaction) 
+                     //log.debug('datosPedido.fechaFinObjetivo', datosPedido.fechaFinObjetivo)                 
                      
-                    if(  ventasPresentadoraHistorico.hasOwnProperty(idPresentador) == false && fechaTransaction<fechaFinObjetivo){
-                      presentadorasActivas[idPresentador] = noDocument
+                    if(  ventasPresentadoraHistorico.hasOwnProperty(idPresentador) == false && datosPedido.fechaTransaction < datosPedido.fechaFinObjetivo){
+                      presentadorasActivas[idPresentador] = ([{idpedido:pedido},{data:datosPedido}])
                     }
 
 
@@ -99,17 +112,21 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
 
             });
             log.debug('ventasPresentadoraPeriodoCalculado',ventasPresentadoraPeriodoCalculado)
-            log.debug('presentadorasActivas',presentadorasActivas)
+            log.debug('presentadorasActivas',JSON.stringify(presentadorasActivas))
           }catch(e){
             log.debug('error ',e)
           }
           
           return presentadorasActivas
       }
-
+function stringtodate(date){
+        var fdate = date.split('/')
+        var fdate = new Date(fdate[2],fdate[1]-1,fdate[0])
+        return fdate;
+   }
         return {
-            onRequest : onRequest
-                 
+            onRequest : onRequest,
+            stringtodate : stringtodate     
         };
 
 });
