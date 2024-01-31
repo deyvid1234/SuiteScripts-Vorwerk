@@ -659,8 +659,8 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
                 var c_record = search_crecord(params.comp,type_emp,promocion)
                 if(type_emp== 3){
                 	var v_equipo = venta_equipo(c_record,type_emp)
-                	log.debug('c_record.odv_tres_dos',c_record.odv_tres_dos)//trabajar
-                	var v_tres_dos = venta_tres_dos(c_record.odv_tres_dos,type_emp)
+                	log.debug('c_record.odv_tres_nuevo',c_record.odv_tres_nuevo)//trabajar
+                	var v_tres_dos = venta_tres_dos(c_record.odv_tres_nuevo,type_emp)
         		}else{
         			var v_equipo={}
         			var v_tres_dos={}
@@ -971,6 +971,7 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
     	      	    data.ids_garantia = r.getValue(config_fields.ids_garantia[type_emp])
     	      	   	data.otranueva = config_fields.ajuste[type_emp];
     	      	   	data.odv_tres_dos = r.getValue(config_fields.tres_dos[type_emp]);
+    	      	   	data.odv_tres_nuevo= r.getValue('custrecord_reclutas_ventas');
     	      	   	data.sc = r.getValue(config_fields.sc[type_emp]);
     	      	   	data.id_presentadora = r.getValue(config_fields.emleado[type_emp])
     	        	log.debug('registro',data )
@@ -1174,12 +1175,15 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
         	try{
         		if(type_emp == 3){
         			log.debug("ref",2);
+
         			// ODV del equipo 
     	        	var odv_equipo_result = {}
     	        	
     	        	if(data != ""){
     	        		log.debug('data venta_tres_dos',JSON.parse(data))
     	        		data = JSON.parse(data)
+    	        		log.debug('objetkeysdatalen',Object.keys(data).length)
+    	        		log.debug('objetkeysdata',Object.keys(data))
     	        		var ids = []
 						for(i in data){
     	        			for(e in data[i]){
