@@ -1185,15 +1185,8 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
     	        		
     	        		log.debug('objetkeysdatalen',Object.keys(data).length)
     	        		log.debug('objetkeysdata',Object.keys(data))
-    	        		var ids = []
-						for(i in data){
-    	        			for(e in data[i]){
-    	        				if (e == "Presentador") {
-						            ids.push(data[i][e]);
-						        }
-    	        				
-    	        			}
-    	        		}
+    	        		var ids = Object.keys(data)
+						
     	        		log.debug('ids',ids)
     	        		var odv_equipo = search.create({
     	 	     	       type: search.Type.SALES_ORDER,
