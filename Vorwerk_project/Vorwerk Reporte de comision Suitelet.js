@@ -388,8 +388,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
             var fechaPeriodMin = fechasPeriodo['startDate']
             var fechaPeriodMax = fechasPeriodo['endDate']
 
-            log.debug('fechaPeriodMi n 3+2',fechaPeriodMin)
-            log.debug('fechaPeriodMax  3+2',fechaPeriodMin)
+            
             var historicoVentasPre = search.load({
                 id: 'customsearch2108'
             });
@@ -421,7 +420,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
 
 
             var periodoCalculadoVentasPre = search.load({ //Ventas post septiembre 2023
-                id: 'customsearch2108'
+                id: 'customsearch2109'
             });
             //Añadir filtro para que la fecha sea antes del inicio del periodo
             periodoCalculadoVentasPre.filters.push(search.createFilter({
@@ -436,16 +435,50 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
             var currentPage = pagedResults.fetch({index: pageRange.index});
                 currentPage.data.forEach(function (result) {
 
-                    var idPresentador = result.getValue({name: 'salesrep', summary: 'GROUP'})
-                    var cantidad = result.getValue({name: 'internalid', summary: 'COUNT'})
+                    //Datos
+                    var presentadorasTotal = []
+                    var datosPedido= new Object();
 
-                    ventasPresentadoraPeriodoCalculado[idPresentador] = cantidad
+                    var pedido= result.getValue('internalid')
+                    
+                    var fechaTransaction1 = result.getValue('trandate')
+                    
+                    datosPedido.fechaTransaction = stringtodate(fechaTransaction1)
+                    var fechaFinObjetivo1 = result.getValue({name : 'custentity_fin_objetivo_1',join : 'salesrep'})
+                   
+                    datosPedido.fechaFinObjetivo= stringtodate(fechaFinObjetivo1)
+                    datosPedido.noDocument = result.getValue('tranid')
+                    
+                    var idPresentador = result.getValue({name : 'internalid',join : 'salesrep'})
+                    
+                    datosPedido.fechaContratacion = result.getValue({name : 'hiredate',join : 'salesrep'})
+                    
+                    datosPedido.fechaReactivacion = result.getValue({name : 'custentity72',join : 'salesrep'})
+                    
+                    datosPedido.reclutadoraSO = result.getValue('custbody_vw_recruiter')
+                    
+                    datosPedido.reclutadoraSR = result.getValue({name : 'custentity_reclutadora',join : 'salesrep'})
+                    
+                    datosPedido.jdg = result.getValue('custbody_jefa_grupo')
+                    
+
+                   var testSO ={}
+
+                    if (presentadorasTotal.hasOwnProperty(idPresentador)){
+                        ventasPresentadoraPeriodoCalculado[idPresentador].push([{idpedido:pedido},{data:datosPedido}])
+                    }else{
+                        ventasPresentadoraPeriodoCalculado[idPresentador] = ([{idpedido:pedido},{data:datosPedido}])
+                    }
+                                  
                      
-                    if(  ventasPresentadoraHistorico.hasOwnProperty(idPresentador) == false && cantidad > 0){
-                        presentadorasActivas[idPresentador] = cantidad
+                    if(  ventasPresentadoraHistorico.hasOwnProperty(idPresentador) == false && datosPedido.fechaTransaction < datosPedido.fechaFinObjetivo){
+                        testSO[pedido] = datosPedido
+                      presentadorasActivas[idPresentador] = testSO// ([{idpedido:pedido},{data:datosPedido}])
+                      //log.debug('keys 1', Object.keys(presentadorasActivas[idPresentador]))
                     }
 
-
+                    //log.debug('keys 2', Object.keys(presentadorasActivas))
+                   
 
                     return true; 
                 });
@@ -1270,7 +1303,10 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
             var odv_rec = 0
             var odv_rec_comisionable ={}
             var odv_reclutas_tres_dos = {}
+
             var presentadorasActivasDelLE = 0
+            var ventasTresdosData = new Object();
+
             var odvPIds =[]
             var odvPNumber = 0;
             var odvTMganada = 0;
@@ -1674,7 +1710,15 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                       }*/
                       //Nuevo y renovado y fresco 3+2 
                       if( ventasPresentadorareclutas_tres_dos.hasOwnProperty(i_pre_data[arrKeys[e]][i]) ){
+                            log.debug('pruebas bono 3+2 Presentsador:',presentador)
                             presentadorasActivasDelLE ++
+                            var presentador  = i_pre_data[arrKeys[e]][i]
+                            var internalidPedidoPresentador = Object.keys(ventasPresentadorareclutas_tres_dos[presentador])
+                            log.debug('internalidPedidoPresentador',internalidPedidoPresentador)
+                            var nopedido = ventasPresentadorareclutas_tres_dos[presentador][Object.keys(ventasPresentadorareclutas_tres_dos[presentador])]['noDocument']
+                            log.debug('nopedido',nopedido)
+                            ventasTresdosData[internalidPedidoPresentador] = {NoPedido:nopedido, Presentador:presentador}
+                            log.debug('ventasTresdosData',ventasTresdosData)
                         }
                       //Supercomision
                       if(arrKeys[e] in rec_sc){//Valida si existe la lider en el resultado de la busqueda de presentadoras SC, Arreglo con presentadoras reclutadas despues de 1/2/2022 sin importar recluta
@@ -1848,7 +1892,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
 
 
 
-              log.debug('Valores antes de nuevo 3+2','bono_cinco_dos '+bono_cinco_dos+' bono_tres_dos '+bono_tres_dos)
+              //log.debug('Valores antes de nuevo 3+2','bono_cinco_dos '+bono_cinco_dos+' bono_tres_dos '+bono_tres_dos)
 
               if(presentadorasActivasDelLE >=2 && v_total > 4){
                     bono_cinco_dos = 8000
@@ -1858,7 +1902,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                 bono_cinco_dos = 0
               }
 
-            log.debug('Valores post nuevo 3+2','bono_cinco_dos '+bono_cinco_dos+' bono_tres_dos '+bono_tres_dos)
+            //log.debug('Valores post nuevo 3+2','bono_cinco_dos '+bono_cinco_dos+' bono_tres_dos '+bono_tres_dos)
               //Fin 3 + 2
               //Parche 
               /*if(arrKeys[e] == 15355 || arrKeys[e] == 37453 || arrKeys[e] == 2141633 || arrKeys[e] == 2227423 || arrKeys[e] == 2227424 || arrKeys[e] == 2235478 || arrKeys[e] == 2236907 || arrKeys[e] == 2276457 || arrKeys[e] == 2279300 || arrKeys[e] == 2425369 ){
@@ -2181,6 +2225,12 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                           value :Object.keys(odv_reclutas_tres_dos).length
                         });
                         */
+                        sublist.setSublistValue({//'Reclutas con ventas'
+                          id : 'custentity_rec_con_ventas',
+                          line : cont_line,
+                          value :JSON.stringify(ventasTresdosData)
+                        });
+                    
                         sublist.setSublistValue({//'Bono 3 + 2'
                           id : 'custentity_bono_tres_dos',
                           line : cont_line,
