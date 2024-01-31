@@ -1183,8 +1183,8 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
     	        		log.debug('data venta_tres_dos',JSON.parse(data))
     	        		data = JSON.parse(data)
     	        		
-    	        		log.debug('objetkeysdatalen',Object.keys(data).length)
-    	        		log.debug('objetkeysdata',Object.keys(data))
+    	        		
+    	        		//log.debug('objetkeysdata',Object.keys(data))
     	        		var ids = Object.keys(data)
 						
     	        		log.debug('ids',ids)
@@ -1223,7 +1223,6 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
     	 		 	  		   	result.idExterno = r.getValue('tranid'),
     	 		 	  		   	result.id_emp = r.getValue('salesrep'),
     	 		 	  		   	odv_equipo_result[result.internalid] =  result;
-    	 		 	  		   	log.debug('fin result',result)
     	 		 	  		   	log.debug('fin ciclo')
     	 		     	       return true;
     	 		 	    	});
