@@ -1710,13 +1710,11 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                       }*/
                       //Nuevo y renovado y fresco 3+2 
                       if( ventasPresentadorareclutas_tres_dos.hasOwnProperty(i_pre_data[arrKeys[e]][i]) ){
-                            log.debug('pruebas bono 3+2 Presentsador:',presentador)
+                            
                             presentadorasActivasDelLE ++
                             var presentador  = i_pre_data[arrKeys[e]][i]
                             var internalidPedidoPresentador = Object.keys(ventasPresentadorareclutas_tres_dos[presentador])
-                            log.debug('internalidPedidoPresentador',internalidPedidoPresentador)
                             var nopedido = ventasPresentadorareclutas_tres_dos[presentador][Object.keys(ventasPresentadorareclutas_tres_dos[presentador])]['noDocument']
-                            log.debug('nopedido',nopedido)
                             ventasTresdosData[internalidPedidoPresentador] = {NoPedido:nopedido, Presentador:presentador}
                             log.debug('ventasTresdosData',ventasTresdosData)
                         }
@@ -1778,6 +1776,11 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                       //Nuevo y renovado y fresco 3+2 
                       if( ventasPresentadorareclutas_tres_dos.hasOwnProperty(i_pre_data[arrKeys[e]][i]) ){
                             presentadorasActivasDelLE ++
+                            var presentador  = i_pre_data[arrKeys[e]][i]
+                            var internalidPedidoPresentador = Object.keys(ventasPresentadorareclutas_tres_dos[presentador])
+                            var nopedido = ventasPresentadorareclutas_tres_dos[presentador][Object.keys(ventasPresentadorareclutas_tres_dos[presentador])]['noDocument']
+                            ventasTresdosData[internalidPedidoPresentador] = {NoPedido:nopedido, Presentador:presentador}
+                            log.debug('ventasTresdosData',ventasTresdosData)
                         }
 
 
