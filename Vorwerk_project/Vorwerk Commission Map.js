@@ -236,6 +236,10 @@ function(email,record, file, search, https, runtime,format,Dictionary) {
                     fieldId: config_fields.bp4_monto[config.type],
                     value: comissionInfo.bono_tres_dos  
                 });
+                registerEmp.setValue({
+                    fieldId: 'custrecord_reclutas_ventas',
+                    value: comissionInfo.rec_con_ventas  
+                });
                 //rec_period_LE
                 registerEmp.setValue({
                     fieldId: config_fields.rec_period_LE[config.type],
