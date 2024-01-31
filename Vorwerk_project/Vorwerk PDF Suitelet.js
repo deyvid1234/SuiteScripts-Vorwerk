@@ -10,7 +10,7 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
     	var config_fields = Dictionary.getDictionayFields();
 
 		//creacion del body 
-		function createTable(v_propia,v_equipo,data,v_rec,CompConfigDetails,id_entrega,type_emp_text,period_name,type_emp,conf_emp,promocion,rec_json,idPeriod,v_tres_dos,odv_tres_dos,odv_sc,tmp_emp,confEquipo){
+		function createTable(v_propia,v_equipo,data,v_rec,CompConfigDetails,id_entrega,type_emp_text,period_name,type_emp,conf_emp,promocion,rec_json,idPeriod,v_tres_dos,odv_tres_nuevo,odv_sc,tmp_emp,confEquipo){
 		//configuracion presentadora
 
 			var bono32 = data.bono_m_8
@@ -233,7 +233,7 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
 					}
 					
 				}
-				var j_odv_tres_dos = JSON.parse(odv_tres_dos)
+				var j_odv_tres_dos = JSON.parse(odv_tres_nuevo)
 				log.debug('odv_tres_dos',Object.keys(j_odv_tres_dos))
 				log.debug('odv_tres_dos',Object.keys(j_odv_tres_dos).length)
 				var monto_tres_dos = Object.keys(j_odv_tres_dos).length;
@@ -688,7 +688,7 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
         				xml += "</macrolist>";
         			xml += "</head>";
         			xml += "<body font='helvetica' font-size='6' footer=\"paginas\" footer-height='2'>";
-        				xml += createTable(v_propia,v_equipo,c_record,v_rec,CompConfigDetails,id_entrega,type_emp_text,period_name.name,type_emp,conf_emp,promocion,c_record.rec,params.periodo,v_tres_dos,c_record.odv_tres_dos,c_record.sc,tmp_emp);
+        				xml += createTable(v_propia,v_equipo,c_record,v_rec,CompConfigDetails,id_entrega,type_emp_text,period_name.name,type_emp,conf_emp,promocion,c_record.rec,params.periodo,v_tres_dos,c_record.odv_tres_nuevo,c_record.sc,tmp_emp);
         			xml += "</body>\n";
         		xml += "</pdf>";
         		
@@ -1182,12 +1182,16 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
     	        	if(data != ""){
     	        		log.debug('data venta_tres_dos',JSON.parse(data))
     	        		data = JSON.parse(data)
+    	        		
     	        		log.debug('objetkeysdatalen',Object.keys(data).length)
     	        		log.debug('objetkeysdata',Object.keys(data))
     	        		var ids = []
 						for(i in data){
     	        			for(e in data[i]){
-    	        				ids.push(data[i][e])
+    	        				if (e == "Presentador") {
+						            ids.push(data[i][e]);
+						        }
+    	        				
     	        			}
     	        		}
     	        		log.debug('ids',ids)
@@ -1226,6 +1230,7 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
     	 		 	  		   	result.idExterno = r.getValue('tranid'),
     	 		 	  		   	result.id_emp = r.getValue('salesrep'),
     	 		 	  		   	odv_equipo_result[result.internalid] =  result;
+    	 		 	  		   	log.debug('fin result',result)
     	 		 	  		   	log.debug('fin ciclo')
     	 		     	       return true;
     	 		 	    	});
