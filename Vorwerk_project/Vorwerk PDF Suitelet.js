@@ -10,15 +10,17 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
     	var config_fields = Dictionary.getDictionayFields();
 
 		//creacion del body 
-		function createTable(v_propia,v_equipo,data,v_rec,CompConfigDetails,id_entrega,type_emp_text,period_name,type_emp,conf_emp,promocion,rec_json,idPeriod,v_tres_dos,odv_tres_dos,odv_sc){
+		function createTable(v_propia,v_equipo,data,v_rec,CompConfigDetails,id_entrega,type_emp_text,period_name,type_emp,conf_emp,promocion,rec_json,idPeriod,v_tres_dos,odv_tres_nuevo,odv_sc,tmp_emp,confEquipo){
+		//configuracion presentadora
+
 			var bono32 = data.bono_m_8
 			var bono52 = data.bono_m_9
 			var bonosc = data.bono_m_10
-			var strTable =createHeader(data.emleado,type_emp_text,period_name); 
+			var strTable =createHeader(data.emleado,type_emp_text,period_name,tmp_emp); 
 			log.debug('id_entrega',id_entrega)
 			//datos de prueba 
 			var  lineaRec = 0,
-			commisionName = "006 Thermomix 6",
+			commisionName = '',
 			venta_de	  = "4550 LAURA JACQUELINE TREJO VERGARA "
 			cliente		  = "343660779 ERNESTO HERMILO GUILLEN CAZARIN ",
 			fecha		  = "30/9/2019",
@@ -26,6 +28,8 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
 			monto		  = "$2,500.00",
 			monto_ck		  = "$350.00",
 			ttlRec 		  = 1800;
+
+			
 			//Busqueda de ck
 			var objCKRep = []
 			 try{
@@ -59,14 +63,13 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
 					strTable += "<table width='670px'>";
 					strTable += "<tr>";
 					strTable += "<td border='0.5' width='10px'><b>#</b></td>";
-					strTable += "<td border='0.5' width='90px'><b>TIPO COMPENSACIÓN</b></td>";
 					strTable += "<td border='0.5' width='100px'><b>VENTA REALIZADA POR</b></td>";
 					strTable += "<td border='0.5' width='200px'><b>CLIENTE</b></td>";
 					strTable += "<td border='0.5' width='0px'><b>FECHA</b></td>";
 					strTable += "<td border='0.5' width='0px'><b>PEDIDO</b></td>";
 					strTable += "<td border='0.5' width='40px'><b>MONTO</b></td>";
 					strTable += "<td border='0.5' width='0px'><b>PRODUCTIVIDAD</b></td>";
-					strTable += "<td border='0.5' width='0px'><b>ENTREGA</b></td>";
+					//strTable += "<td border='0.5' width='0px'><b>ENTREGA</b></td>";
 					strTable += "</tr>";
 					/*fin encabezado de tabla*/
 					log.debug('id_entrega',id_entrega)
@@ -88,14 +91,14 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
 						
 							strTable += "<tr>";
 							strTable += "<td border='0.5' border-style='dotted-narrow'>" + lineaRec 	+ "</td>";
-							strTable += "<td border='0.5' border-style='dotted-narrow'>" + commisionName 	+ "</td>";
+							
 							strTable += "<td border='0.5' border-style='dotted-narrow'>" + v_propia[i].employee 	+ "</td>";
 							strTable += "<td border='0.5' border-style='dotted-narrow'>" + cliente 	+ "</td>";
 							strTable += "<td border='0.5' border-style='dotted-narrow'>" + v_propia[i].fecha 		+ "</td>";
-							strTable += "<td border='0.5' border-style='dotted-narrow'>" + v_propia[i].internalid		+ "</td>";
+							strTable += "<td border='0.5' border-style='dotted-narrow'>" + v_propia[i].idExterno		+ "</td>";
 							strTable += "<td border='0.5' border-style='dotted-narrow' align='right'>" + monto	+ "</td>";
 							strTable += "<td border='0.5' border-style='dotted-narrow' align='right'>" + currencyFormat('$',(b_produc)+'.00')+ "</td>";
-							if(type_emp == 1 && promocion == 1){
+							/*if(type_emp == 1 && promocion == 1){
 								strTable += "<td border='0.5' border-style='dotted-narrow' align='right'>" + '$0.00'	+ "</td>";
 							}else{
 								if(id_entrega.indexOf(v_propia[i].internalid) >= 0 ){
@@ -103,7 +106,7 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
 								}else{
 									strTable += "<td border='0.5' border-style='dotted-narrow' align='right'>" + '$0.00'	+ "</td>";
 								}
-							}
+							}*/
 							
 							strTable += "</tr>";
 						
@@ -111,10 +114,10 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
 					}
 					
 					strTable += "<tr>";
-					strTable += "<td border='0.5' colspan= '6' border-style='none' align='right'><b>Subtotal</b></td>";
+					strTable += "<td border='0.5' colspan= '5' border-style='none' align='right'><b>Subtotal</b></td>";
 					strTable += "<td border='0.5' border-style='dotted-narrow' align='right'><b>" + currencyFormat('$',(data.venta_propia)+'.00')	+ "</b></td>";
 					strTable += "<td border='0.5' border-style='dotted-narrow' align='right'><b>" + currencyFormat('$',(data.productividad)+'.00')	+ "</b></td>";
-					strTable += "<td border='0.5' border-style='dotted-narrow' align='right'><b>" + currencyFormat('$',(data.entrega_monto)+'.00')	+ "</b></td>";
+					//strTable += "<td border='0.5' border-style='dotted-narrow' align='right'><b>" + currencyFormat('$',(data.entrega_monto)+'.00')	+ "</b></td>";
 					strTable += "</tr>";			
 					strTable += "</table>";
 					/*cuerpo de tabla*/
@@ -133,12 +136,12 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
 				strTable += "<table width='670px'>";
 				strTable += "<tr>";
 				strTable += "<td border='0.5' width='10px'><b>#</b></td>";
-				strTable += "<td border='0.5' width='100px'><b>TIPO COMPENSACIÓN</b></td>";
+				
 				strTable += "<td border='0.5' width='0px'><b>VENTA REALIZADA POR</b></td>";
 				strTable += "<td border='0.5' width='200px'><b>CLIENTE</b></td>";
 				strTable += "<td border='0.5' width='0px'><b>FECHA</b></td>";
 				strTable += "<td border='0.5' width='0px'><b>PEDIDO</b></td>";
-				strTable += "<td border='0.5' width='0px'><b>Supercomision</b></td>";
+				
 				strTable += "</tr>";
 				lineaRec=0
 				
@@ -148,16 +151,12 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
 						var cliente = v_equipo[i].cliente.replace(/&/gi," ")
 						strTable += "<tr>";
 						strTable += "<td border='0.5' border-style='dotted-narrow'>" + lineaRec 	+ "</td>";
-						strTable += "<td border='0.5' border-style='dotted-narrow'>" + commisionName 	+ "</td>";
+						
 						strTable += "<td border='0.5' border-style='dotted-narrow'>" + v_equipo[i].employee 	+ "</td>";
 						strTable += "<td border='0.5' border-style='dotted-narrow'>" +  cliente	+ "</td>";
 						strTable += "<td border='0.5' border-style='dotted-narrow'>" + v_equipo[i].fecha 		+ "</td>";
-						strTable += "<td border='0.5' border-style='dotted-narrow'>" + v_equipo[i].internalid		+ "</td>";
-						if(odv_sc.indexOf(v_equipo[i].internalid) >= 0 ){
-							strTable += "<td border='0.5' border-style='dotted-narrow' style='text-align:center'>" + 'Si'		+ "</td>";
-						}else{
-							strTable += "<td border='0.5' border-style='dotted-narrow'>" + ''		+ "</td>";
-						}
+						strTable += "<td border='0.5' border-style='dotted-narrow'>" + v_equipo[i].idExterno		+ "</td>";
+						
 						strTable += "</tr>";
 					}catch(errT2){
 						log.error('errT2',errT2);
@@ -174,25 +173,21 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
 					}
 				}
 				var com_aux = data.comision_equipo==0?0:currencyFormat('$',data.comision_equipo/(parseInt(porcentaje)/100)+'.00')
+				
 				strTable += "<tr>";
-				strTable += "<td border='0.5' colspan= '6' border-style='none' align='right'><b>Numero de Ventas de Equipo</b></td>";
-				strTable += "<td border='0.5' border-style='dotted-narrow' align='right'><b>" + lineaRec	+ "</b></td>";
+				strTable += "<td border='0.5' colspan= '4' border-style='none' align='right'><b>   </b></td>";
 				strTable += "</tr>";
 				strTable += "<tr>";
-				strTable += "<td border='0.5' colspan= '6' border-style='none' align='right'><b>Total comisión Venta de Equipos</b></td>";
+				strTable += "<td border='0.5' colspan= '4' border-style='none' align='right'><b>Total comisión Venta de Equipos</b></td>";
 				strTable += "<td border='0.5' border-style='dotted-narrow' align='right'><b>" + com_aux	+ "</b></td>";
 				strTable += "</tr>";
 				strTable += "<tr>";
-				strTable += "<td border='0.5' colspan= '6' border-style='none' align='right'><b> % Pagado </b></td>";
+				strTable += "<td border='0.5' colspan= '4' border-style='none' align='right'><b> % Pagado </b></td>";
 				strTable += "<td border='0.5' border-style='dotted-narrow' align='right'><b>" + porcentaje	+ "</b></td>";
 				strTable += "</tr>";
 				strTable += "<tr>";
-				strTable += "<td border='0.5' colspan= '6' border-style='none' align='right'><b>Total comisión</b></td>";
+				strTable += "<td border='0.5' colspan= '4' border-style='none' align='right'><b>Total comisión</b></td>";
 				strTable += "<td border='0.5' border-style='dotted-narrow' align='right'><b>" + currencyFormat('$',data.comision_equipo+'.00')	+ "</b></td>";
-				strTable += "</tr>";
-				strTable += "<tr>";
-				strTable += "<td border='0.5' colspan= '6' border-style='none' align='right'><b>Supercomision</b></td>";
-				strTable += "<td border='0.5' border-style='dotted-narrow' align='right'><b>" + currencyFormat('$',bonosc+'.00')	+ "</b></td>";
 				strTable += "</tr>";
 				strTable += "</table>";
 				//Fin Ventas Equipo
@@ -204,7 +199,7 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
 				strTable += "<table width='670px'>";
 				strTable += "<tr>";
 				strTable += "<td border='0.5' width='10px'><b>#</b></td>";
-				strTable += "<td border='0.5' width='100px'><b>TIPO COMPENSACIÓN</b></td>";
+				//strTable += "<td border='0.5' width='100px'><b>TIPO COMPENSACIÓN</b></td>";
 				strTable += "<td border='0.5' width='0px'><b>VENTA REALIZADA POR</b></td>";
 				strTable += "<td border='0.5' width='200px'><b>CLIENTE</b></td>";
 				strTable += "<td border='0.5' width='0px'><b>FECHA</b></td>";
@@ -225,11 +220,11 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
 		    			log.debug('emp',emp.hiredate);
 						strTable += "<tr>";
 						strTable += "<td border='0.5' border-style='dotted-narrow'>" + lineaRec 	+ "</td>";
-						strTable += "<td border='0.5' border-style='dotted-narrow'>" + commisionName 	+ "</td>";
+						//strTable += "<td border='0.5' border-style='dotted-narrow'>" + commisionName 	+ "</td>";
 						strTable += "<td border='0.5' border-style='dotted-narrow'>" + v_tres_dos[i].employee 	+ "</td>";
 						strTable += "<td border='0.5' border-style='dotted-narrow'>" +  cliente	+ "</td>";
 						strTable += "<td border='0.5' border-style='dotted-narrow'>" + v_tres_dos[i].fecha 		+ "</td>";
-						strTable += "<td border='0.5' border-style='dotted-narrow'>" + v_tres_dos[i].internalid		+ "</td>";
+						strTable += "<td border='0.5' border-style='dotted-narrow'>" + v_tres_dos[i].idExterno		+ "</td>";
 						strTable += "<td border='0.5' border-style='dotted-narrow'>" + emp.hiredate+ "</td>";
 						strTable += "</tr>";
 
@@ -238,24 +233,24 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
 					}
 					
 				}
-				var j_odv_tres_dos = JSON.parse(odv_tres_dos)
+				var j_odv_tres_dos = JSON.parse(odv_tres_nuevo)
 				log.debug('odv_tres_dos',Object.keys(j_odv_tres_dos))
 				log.debug('odv_tres_dos',Object.keys(j_odv_tres_dos).length)
 				var monto_tres_dos = Object.keys(j_odv_tres_dos).length;
 				strTable += "<tr>";
-				strTable += "<td border='0.5' colspan= '6' border-style='none' align='right'><b>Total Ventas Reclutas del Periodo</b></td>";
+				strTable += "<td border='0.5' colspan= '5' border-style='none' align='right'><b>Total Ventas Reclutas del Periodo</b></td>";
 				strTable += "<td border='0.5' border-style='dotted-narrow' align='right'><b>" + lineaRec + "</b></td>";
 				strTable += "</tr>";
 				strTable += "<tr>";
-				strTable += "<td border='0.5' colspan= '6' border-style='none' align='right'><b>Numero de Reclutas con almenos una venta</b></td>";
+				strTable += "<td border='0.5' colspan= '5' border-style='none' align='right'><b>Numero de Reclutas con almenos una venta</b></td>";
 				strTable += "<td border='0.5' border-style='dotted-narrow' align='right'><b>" + monto_tres_dos + "</b></td>";
 				strTable += "</tr>";
 				strTable += "<tr>";
-				strTable += "<td border='0.5' colspan= '6' border-style='none' align='right'><b>Bono 3 + 2</b></td>";
+				strTable += "<td border='0.5' colspan= '5' border-style='none' align='right'><b>Bono 3 + 2</b></td>";
 				strTable += "<td border='0.5' border-style='dotted-narrow' align='right'><b>" + (bono32 > 1 ? currencyFormat('$',bono32+'.00'):'0.00') + "</b></td>";
 				strTable += "</tr>";
 				strTable += "<tr>";
-				strTable += "<td border='0.5' colspan= '6' border-style='none' align='right'><b>Bono 5 + 2</b></td>";
+				strTable += "<td border='0.5' colspan= '5' border-style='none' align='right'><b>Bono 5 + 2</b></td>";
 				strTable += "<td border='0.5' border-style='dotted-narrow' align='right'><b>" + (bono52 > 1 ? currencyFormat('$',bono52+'.00'):'0.00') + "</b></td>";
 				strTable += "</tr>";
 				strTable += "</table>";
@@ -303,6 +298,7 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
 				log.debug("data.rec", data.rec)
 				ids_rec = JSON.parse(data.rec)
 				for(var i in v_rec){
+						//log.debug('v_rec[i]',v_rec[i])
 						lineaRec++
 						if( num_odv_por_recluta.hasOwnProperty(v_rec[i].employee)){
 							num_odv_por_recluta[v_rec[i].employee]++
@@ -311,6 +307,7 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
 								num_odv_por_recluta[v_rec[i].employee]=1
 							}
 						//Asignacion de configuracion por recluta 
+						var limiteVentasReclutamiento = 6
 						var configuracion_rec
 			            log.debug('Pre asignacion','data.id_presentadora '+data.id_presentadora+' conf_rec '+conf_rec)
 			            if(v_rec[i].id_rec in conf_rec ){
@@ -319,20 +316,28 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
                           if(configuracion_rec == 11){
                             configuracion_rec = 1
                           }
+                          if(configuracion_rec == 12 || configuracion_rec == 13){
+                          	limiteVentasReclutamiento = 4
+                          }
 			            }else{
 			                configuracion_rec = 1
 			            }
 						var cliente = v_rec[i].cliente.replace(/&/gi," ")
-						var monto_rec = CompConfigDetails[configuracion_rec]['esquemaVentasReclutamiento'][(ids_rec[v_rec[i].internalid])>6?0:(ids_rec[v_rec[i].internalid])]['compensacion']
-						strTable += "<tr>";
-						strTable += "<td border='0.5' border-style='dotted-narrow'>" + lineaRec 	+ "</td>";
-						strTable += "<td border='0.5' border-style='dotted-narrow'>" + commisionName 	+ "</td>";
-						strTable += "<td border='0.5' border-style='dotted-narrow'>" + v_rec[i].employee 	+ "</td>";
-						strTable += "<td border='0.5' border-style='dotted-narrow'>" +  cliente	+ "</td>";
-						strTable += "<td border='0.5' border-style='dotted-narrow'>" + v_rec[i].fecha 		+ "</td>";
-						strTable += "<td border='0.5' border-style='dotted-narrow'>" + v_rec[i].internalid		+ "</td>";
-						strTable += "<td border='0.5' border-style='dotted-narrow' align='right'>" + currencyFormat('$',monto_rec >0? monto_rec : '0.00')	+ "</td>";
-						strTable += "</tr>";
+						//log.debug('cliente',cliente)
+						//log.debug('1ids_rec[v_rec[i].internalid]',ids_rec[v_rec[i].internalid])
+						var monto_rec = CompConfigDetails[configuracion_rec]['esquemaVentasReclutamiento'][(ids_rec[v_rec[i].internalid])>limiteVentasReclutamiento?0:(ids_rec[v_rec[i].internalid])]['compensacion']
+						if(monto_rec>0){
+							strTable += "<tr>";
+							strTable += "<td border='0.5' border-style='dotted-narrow'>" + lineaRec 	+ "</td>";
+							strTable += "<td border='0.5' border-style='dotted-narrow'>" + v_rec[i].confEquipo 	+ "</td>";
+							strTable += "<td border='0.5' border-style='dotted-narrow'>" + v_rec[i].employee 	+ "</td>";
+							strTable += "<td border='0.5' border-style='dotted-narrow'>" +  cliente	+ "</td>";
+							strTable += "<td border='0.5' border-style='dotted-narrow'>" + v_rec[i].fecha 		+ "</td>";
+							strTable += "<td border='0.5' border-style='dotted-narrow'>" + v_rec[i].idExterno		+ "</td>";
+							strTable += "<td border='0.5' border-style='dotted-narrow' align='right'>" + currencyFormat('$',monto_rec >0? monto_rec : '0.00')	+ "</td>";
+							strTable += "</tr>";
+							
+						}
 						
 				}
 				log.debug('num_odv_por_recluta',num_odv_por_recluta)
@@ -487,7 +492,7 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
 			return strTable;
 		}
 		//creacion de encabeazado
-		function createHeader(name_employee,type_emp_text,period_name){
+		function createHeader(name_employee,type_emp_text,period_name,tmp_emp){
 			/*var configRecObj = config.load({
     		    type: config.Type.COMPANY_INFORMATION
     		});
@@ -511,7 +516,20 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
 			log.debug('fileObj',fileObj);*/
 			function getImage(idImg){
 	    	try{
-	    		var host = "https://3367613-sb1.app.netsuite.com";
+	    		var host 
+	    		var idImg 
+
+	    		if(runtime.envType  == "SANDBOX"){
+	    			host = "https://3367613-sb1.app.netsuite.com";
+	    			idImg = '2461144';
+	            //id imagen vorwerk tm s green sandbox  
+	            }else{
+	            	host = "https://3367613.app.netsuite.com";
+	    			idImg = '2576941';
+	                //id imagen vorwerk tm s green prod
+	            }
+
+	    		
 	    		//obtiene imagen de chekc false
 		        var fileObj = file.load({
 		            id: idImg//'1510039'
@@ -526,14 +544,51 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
 	    		log.error("error getImage",err)
 	    	}
     	}
-   			 var logodURL 
+   			 var logodURL = getImage()
+   			 var club = ""
+   			 var nameConf = ''
+   			 if (tmp_emp.custentity_club.length > 0) {
+   			 	 log.debug("club",tmp_emp.custentity_club[0].text)    
+				 club =  tmp_emp.custentity_club[0].text;
+   			 } 
+   			 
 
-	            if(runtime.envType  == "SANDBOX"){
-	                logodURL = getImage('2461144') //id imagen vorwerk tm s green sandbox  
-	            }else{
-	                logodURL = getImage('2576941') //id imagen vorwerk tm s green prod
-	            }
-			
+				var nameConf
+				for(var n in tmp_emp.custentity123 ){
+				//log.debug("conf",tmp_emp.custentity123[n].value)
+            switch(tmp_emp.custentity123[n].value){
+            case '1':
+              nameConf = 'Promocion Base'
+              break;
+            case '5': 
+              nameConf = 'Thermomix 6'
+              break;
+            case '6': 
+              nameConf = 'Emerald Club'
+              break;
+            case '7': 
+              nameConf = 'LE Junior'
+              break;
+            case '8': 
+                nameConf = 'NLE Emerald'
+                break;
+            case '11': 
+                nameConf = 'TM6 Rectificada'
+                
+                break;
+            case '12': 
+                nameConf = 'TM4U'
+               
+                break;
+            case '13': 
+            		nameConf = 'TM6 4 ventas 2 meses'
+           
+            break;
+            }
+        }
+        log.debug("conf",nameConf) 
+	       
+
 			var  jdg_name_employee= name_employee;
 			var fc =period_name;
 			
@@ -544,6 +599,8 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
 			strTable += "<p align=\"center\"><h4><b>"+ type_emp_text.toUpperCase() +"</b></h4></p>";
 			strTable += "<p align=\"center\">" + fecha_letras(fc) + "</p>";
 			strTable += "<p align=\"center\">"+jdg_name_employee + "</p>";
+			strTable += "<p align=\"center\">"+club + "</p>";
+			strTable += "<p align=\"center\">"+nameConf+ "</p>";
 
 
 			
@@ -563,7 +620,7 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
                 var tmp_emp = search.lookupFields({
 			                        type: 'employee',
 			                        id: params.employee,
-			                        columns: ['employeetype','custentity123','custentity_promocion']
+			                        columns: ['employeetype','custentity123','custentity_promocion', 'custentity_club']//custentity123 en compensaciones de ingreso
 			                    });
                 log.debug('tmp_emp',tmp_emp);
                 var period_name = search.lookupFields({
@@ -602,8 +659,8 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
                 var c_record = search_crecord(params.comp,type_emp,promocion)
                 if(type_emp== 3){
                 	var v_equipo = venta_equipo(c_record,type_emp)
-                	log.debug('c_record.odv_tres_dos',c_record.odv_tres_dos)//trabajar
-                	var v_tres_dos = venta_tres_dos(c_record.odv_tres_dos,type_emp)
+                	log.debug('c_record.odv_tres_nuevo',c_record.odv_tres_nuevo)//trabajar
+                	var v_tres_dos = venta_tres_dos(c_record.odv_tres_nuevo,type_emp)
         		}else{
         			var v_equipo={}
         			var v_tres_dos={}
@@ -631,16 +688,16 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
         				xml += "</macrolist>";
         			xml += "</head>";
         			xml += "<body font='helvetica' font-size='6' footer=\"paginas\" footer-height='2'>";
-        				xml += createTable(v_propia,v_equipo,c_record,v_rec,CompConfigDetails,id_entrega,type_emp_text,period_name.name,type_emp,conf_emp,promocion,c_record.rec,params.periodo,v_tres_dos,c_record.odv_tres_dos,c_record.sc);
+        				xml += createTable(v_propia,v_equipo,c_record,v_rec,CompConfigDetails,id_entrega,type_emp_text,period_name.name,type_emp,conf_emp,promocion,c_record.rec,params.periodo,v_tres_dos,c_record.odv_tres_nuevo,c_record.sc,tmp_emp);
         			xml += "</body>\n";
         		xml += "</pdf>";
         		
-        		email.send({
-            		author: '317077',
+        		/*email.send({
+            		author: '344096',
         			recipients: ['deyvid8uriel@gmail.com'],
         			subject: 'pdf',
         			body: xml
-        		}); 
+        		});*/ 
         		try {
         			var fileR = render.xmlToPdf({
 						xmlString: xml
@@ -809,6 +866,7 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
                  	           { name: 'salesrep'},
                  	           { name: 'entity'},
                  	           { name: 'trandate'},
+                 	           { name: 'tranid'},
                  	       ],
                  	       filters: [
                  	           {
@@ -830,6 +888,7 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
              	  		   	result.employee = r.getText('salesrep'),
              	  		   	result.cliente = r.getText('entity'),
              	  		   	result.fecha = r.getValue('trandate'),
+             	  		   	result.idExterno = r.getValue('tranid'),
              	  		 	vpr[result.internalid] =  result;
                  	       return true;
              	    	});
@@ -912,6 +971,7 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
     	      	    data.ids_garantia = r.getValue(config_fields.ids_garantia[type_emp])
     	      	   	data.otranueva = config_fields.ajuste[type_emp];
     	      	   	data.odv_tres_dos = r.getValue(config_fields.tres_dos[type_emp]);
+    	      	   	data.odv_tres_nuevo= r.getValue('custrecord_reclutas_ventas');
     	      	   	data.sc = r.getValue(config_fields.sc[type_emp]);
     	      	   	data.id_presentadora = r.getValue(config_fields.emleado[type_emp])
     	        	log.debug('registro',data )
@@ -939,6 +999,8 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
 			      	           { name: 'salesrep'},
 			      	           { name: 'entity'},
 			      	           { name: 'trandate'},
+			      	           { name: 'tranid'},
+			      	           {name : 'custentity123',join : 'salesrep'}
 			      	       ],
 			      	       filters: [
 			      	           {
@@ -963,6 +1025,48 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
 					  	  		   	result.id_rec = r.getValue('salesrep'),
 					  	  		   	result.cliente = r.getText('entity'),
 					  	  		   	result.fecha = r.getValue('trandate'),
+					  	  		   	result.idExterno = r.getValue('tranid'),
+					  	  		   	
+
+					  	  		   	result.confEquipo = r.getValue({name : 'custentity123',join : 'salesrep'});
+
+					  	  		   	var confv_rec = result.confEquipo.split(',')
+					   			 	 		var nameConfEquipo
+												for(var n in confv_rec ){
+					                switch(confv_rec[n]){
+						                case '1':
+						                  nameConfEquipo = 'Promocion Base'
+						                  break;
+						                case '5': 
+						                  nameConfEquipo = 'Thermomix 6'
+						                  break;
+						                case '6': 
+						                  nameConfEquipo = 'Emerald Club'
+						                  break;
+						                case '7': 
+						                  nameConfEquipo = 'LE Junior'
+						                  break;
+						                case '8': 
+						                  nameConfEquipo = 'NLE Emerald'
+						                  break;
+						                case '11': 
+						                  nameConfEquipo = 'TM6 Rectificada'
+						                    
+						                  break;
+						                case '12': 
+						                  nameConfEquipo = 'TM4U'
+						                   
+						                  break;
+						                  case '13': 
+					                  nameConfEquipo = 'TM6 4 ventas 2 meses'
+					                   
+					                  break;
+					                }
+					              }
+
+					              result.confEquipo = nameConfEquipo
+									      //log.debug('Nombre de configuracion equipo',nameConfEquipo)
+
 					  	  		   	odv_rec_result[result.internalid] =  result;
 					  	  		  	return true;
 			                   });
@@ -997,7 +1101,7 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
         	
         }
         
-        function venta_equipo(data,type_emp){
+        function venta_equipo(data,type_emp,confEquipo){
         	try{
         		if(type_emp == 3){
         			log.debug("ref",2);
@@ -1015,6 +1119,8 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
     	 	     	           { name: 'salesrep'},
     	 	     	           { name: 'entity'},
     	 	     	           { name: 'trandate'},
+    	 	     	           { name: 'tranid'},
+    	 	     	           { name: 'custentity123', join: 'salesrep'},
     	 	     	       ],
     	 	     	       filters: [
     	 	     	           {
@@ -1029,38 +1135,37 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
     	 	     	           }
     	 	     	       ]
     	 	     	   });
+    	        		var confEquipo 
     	 	      	 	var pagedResults = odv_equipo.runPaged();
     	 	                pagedResults.pageRanges.forEach(function (pageRange){
     	 	                    var currentPage = pagedResults.fetch({index: pageRange.index});
     	 	                    currentPage.data.forEach(function (r) {
-    	 		      		 	var result  = {};
+    	 		      		 	var result  = {}
+
+    	 		      		 	result.busqueda = r.getAllValues(),
     	 		 	  		  	result.internalid = r.getValue('internalid'),
     	 		 	  		   	result.employee = r.getText('salesrep'),
     	 		 	  		   	result.cliente = r.getText('entity'),
     	 		 	  		   	result.fecha = r.getValue('trandate'),
-    	 		 	  		   	odv_equipo_result[result.internalid] =  result;
-    	 		     	       return true;
+    	 		 	  		   	result.idExterno = r.getValue('tranid'),
+    	 		 	  		   	result.confEquipo = r.getValue({name : 'custentity123',join : 'salesrep'});
+ 
+    	 		 	  		  	odv_equipo_result[result.internalid] =  result;
+    	 		     	      return true;
     	 		 	    	});
     	 	              
     	                 });
     	        		
     	        	}
     	        	
-    	        	
     	      	   log.debug('odv_equipo_result',odv_equipo_result)
+
         		}else{
         			var odv_equipo_result = {}
-        		}
-	        	
-	        	
-	      	   try{
-	      		
-	      	   }catch(e){
-	      		   log.debug('error odv reclutas',e)
-	      	   }
-	      	   
+        		}  	   
         	
         		return odv_equipo_result;
+
         	}catch(err){
         		log.error("error venta_equipo",err)
         	}
@@ -1070,18 +1175,18 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
         	try{
         		if(type_emp == 3){
         			log.debug("ref",2);
+
         			// ODV del equipo 
     	        	var odv_equipo_result = {}
     	        	
     	        	if(data != ""){
     	        		log.debug('data venta_tres_dos',JSON.parse(data))
     	        		data = JSON.parse(data)
-    	        		var ids = []
-						for(i in data){
-    	        			for(e in data[i]){
-    	        				ids.push(data[i][e])
-    	        			}
-    	        		}
+    	        		
+    	        		
+    	        		//log.debug('objetkeysdata',Object.keys(data))
+    	        		var ids = Object.keys(data)
+						
     	        		log.debug('ids',ids)
     	        		var odv_equipo = search.create({
     	 	     	       type: search.Type.SALES_ORDER,
@@ -1090,6 +1195,8 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
     	 	     	           { name: 'salesrep'},
     	 	     	           { name: 'entity'},
     	 	     	           { name: 'trandate'},
+    	 	     	           { name: 'tranid'},
+
     	 	     	       ],
     	 	     	       filters: [
     	 	     	           {
@@ -1113,6 +1220,7 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
     	 		 	  		   	result.employee = r.getText('salesrep'),
     	 		 	  		   	result.cliente = r.getText('entity'),
     	 		 	  		   	result.fecha = r.getValue('trandate'),
+    	 		 	  		   	result.idExterno = r.getValue('tranid'),
     	 		 	  		   	result.id_emp = r.getValue('salesrep'),
     	 		 	  		   	odv_equipo_result[result.internalid] =  result;
     	 		 	  		   	log.debug('fin ciclo')

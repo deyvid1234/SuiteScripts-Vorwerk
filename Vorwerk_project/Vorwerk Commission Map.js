@@ -188,29 +188,29 @@ function(email,record, file, search, https, runtime,format,Dictionary) {
                 });
                 //Emerald
                 registerEmp.setValue({
-                    fieldId: config_fields.bono_1[config.type],
+                    fieldId: config_fields.bp1[config.type],
                     value: 34   
                 });
                 registerEmp.setValue({
-                    fieldId: config_fields.bono_m_1[config.type],
+                    fieldId: config_fields.bp1_monto[config.type],
                     value: comissionInfo.bono_emerald   
                 });
                 //Entrega
                 registerEmp.setValue({
-                    fieldId: config_fields.bono_2[config.type],
+                    fieldId: config_fields.bp2[config.type],
                     value: 18   
                 });
                 registerEmp.setValue({
-                    fieldId: config_fields.bono_m_2[config.type],
+                    fieldId: config_fields.bp2_monto[config.type],
                     value: comissionInfo.entrega    
                 });
                 //CK
                 registerEmp.setValue({
-                    fieldId: config_fields.bono_3[config.type],
+                    fieldId: config_fields.bp3[config.type],
                     value: 82  
                 });
                 registerEmp.setValue({
-                    fieldId: config_fields.bono_m_3[config.type],
+                    fieldId: config_fields.bp3_monto[config.type],
                     value: comissionInfo.total_ck    
                 });
                 //Garantia
@@ -229,12 +229,16 @@ function(email,record, file, search, https, runtime,format,Dictionary) {
                     value: comissionInfo.odv_rec_del_periodo    
                 });
                 registerEmp.setValue({
-                    fieldId: config_fields.bono_8[config.type],
+                    fieldId: config_fields.bp4[config.type],
                     value: 142  // BONO ADICIONAL 3+2
                 });
                 registerEmp.setValue({
-                    fieldId: config_fields.bono_m_8[config.type],
+                    fieldId: config_fields.bp4_monto[config.type],
                     value: comissionInfo.bono_tres_dos  
+                });
+                registerEmp.setValue({
+                    fieldId: 'custrecord_reclutas_ventas',
+                    value: comissionInfo.rec_con_ventas  
                 });
                 //rec_period_LE
                 registerEmp.setValue({
@@ -242,11 +246,11 @@ function(email,record, file, search, https, runtime,format,Dictionary) {
                     value: comissionInfo.rec_period_le    
                 }); 
                 registerEmp.setValue({
-                    fieldId: config_fields.bono_9[config.type],
+                    fieldId: config_fields.bp5[config.type],
                     value: 143  //  BONO ADICIONAL 5+2
                 });
                 registerEmp.setValue({
-                    fieldId: config_fields.bono_m_9[config.type],
+                    fieldId: config_fields.bp5_monto[config.type],
                     value: comissionInfo.bono_cinco_dos  
                 });
                 //sc
@@ -255,11 +259,11 @@ function(email,record, file, search, https, runtime,format,Dictionary) {
                     value: comissionInfo.odv_pre_supercomision    
                 }); 
                 registerEmp.setValue({
-                    fieldId: config_fields.bono_10[config.type],
+                    fieldId: config_fields.bp6[config.type],
                     value: 144  //  SUPERCOMISIÓN
                 });
                 registerEmp.setValue({
-                    fieldId: config_fields.bono_m_10[config.type],
+                    fieldId: config_fields.bp6_monto[config.type],
                     value: comissionInfo.bono_sc  
                 });
 
@@ -349,7 +353,7 @@ function(email,record, file, search, https, runtime,format,Dictionary) {
         try{
         	try{
         		email.send({
-            		author: '317077',
+            		author: '344096',
         			recipients: 'pilar.torres@vorwerk.de',
         			subject: 'Información de Items',
         			body: 'Proceso de guardado terminado'

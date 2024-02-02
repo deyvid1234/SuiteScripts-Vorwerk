@@ -23,7 +23,7 @@ function(runtime,config,record,render,runtime,email,search,format) {
             if (scriptContext.type == 'create') {
                 for(var x = 0; x < currentRecord.getLineCount({sublistId: 'item'}); x++){
                 	var item = currentRecord.getSublistValue({sublistId: 'item', fieldId: 'item', line:x})
-                	if( item == 2001 || item == 2170 ){
+                	if( item == 2001 || item == 2170 || item == 2571){
                 		var recordid = rec.getValue('internalid')
                 		var createdfrom = rec.getValue('createdfrom')
                 		var salesrep = search.lookupFields({

@@ -1,4 +1,4 @@
-/**
+   /**
  * @NApiVersion 2.x
  * @NScriptType Restlet
  * @NModuleScope SameAccount
@@ -60,6 +60,12 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                 case "ProspectoExperiencia":
                     res = getInProspectoExperiencia(req_info)
                 break;
+                case "ActualizaSalesRep":
+                    res = getActualizaSalesRep(req_info)
+                break;
+                case "FuerzaVentas":
+                    res = getFuerzaVentas(req_info)
+                break;
             }
         }catch(err){
             log.error("error request",err);
@@ -69,6 +75,536 @@ function(record,search,https,file,http,format,encode,email,runtime) {
         log.debug("proceso funcional",res);
         return res;
 
+    }
+    function getActualizaSalesRep(req_info){
+        try{
+            /*
+            {
+
+                "IdCliente": 1234,
+
+                "salesrepActual": 123,
+
+                "IDUsalesRepActual": 234,
+
+                "salesrepNuevo": 3434, - si 'Sales Rep Solicitud'
+
+                "IDUsalesRepNuevo": 3455,
+
+                "Evaluacion": {
+
+                    "0": "si", _evaluacion0
+
+                    "1": "si",
+
+                    "2": "no",
+
+                    "3": "si",
+ 
+                    "4": "no",
+
+                    "5": "si",
+
+                    "6": "si",
+
+                    "7": "no"
+
+                },
+
+                "MotivoCambio": 1, - si - crear lista - crear el campo de tipo lista 
+
+                "EsPresentadorAleatorio": 0,- Si - check
+
+                "FechaInicio": "2023-09-01", - si
+
+                "FechaFin": "2023-09-08",- si
+
+                "EstatusSolicitud": 3 - Lista 
+
+            }
+            1   vacía
+            2   Iniciada
+            3   En proceso
+            4   Cerrada
+            5   Cancelada
+            6   Completada
+            7   Inviable
+
+            */
+            //Variables para Response 
+            var salesrepNuevoResponse = req_info.salesrepNuevo
+            var idusalesRepNuevoResponse = req_info.IDUsalesRepNuevo
+            var salesrepActual = req_info.salesrepActual
+            var IDUsalesRepActual = req_info.IDUsalesRepActual
+            var Folio =  req_info.CambioFolio
+            var obj_ret = {}
+            var error = false
+            
+
+            var objAD = {}
+
+            if(req_info.IdCliente){
+               var mySearch = search.load({
+                   id: 'customsearch_clientes_activos'
+                });
+
+                mySearch.filters.push(search.createFilter({
+                       name: 'internalid',
+                       operator: 'is',
+                       values: req_info.IdCliente
+                }));
+
+                var obj_client = false
+                var idpresentadora_referido
+                var id_cliente_referido
+                var stage
+                var id_cliente
+                var pagedResults = mySearch.runPaged();
+                pagedResults.pageRanges.forEach(function (pageRange){
+                var currentPage = pagedResults.fetch({index: pageRange.index});
+                    currentPage.data.forEach(function (r) {
+                        var values = r.getAllValues();
+                        obj_client = values
+                        idpresentadora_referido = r.getValue('custentity_presentadora_referido')
+                        id_cliente_referido = r.getValue('custentity_id_cliente_referido')!=''?false:true
+                        stage = r.getValue('formulatext')
+                        id_cliente = r.getValue('internalid')
+
+                        salesrepActual = r.getValue('salesrep')
+                        IDUsalesRepActual = r.getText('salesrep').split(' ')[0]
+                        
+                        
+                        return true; 
+                    });
+
+                });
+            }else{
+                log.debug('El cliente no existe o no esta activo')
+            }
+
+
+            if(req_info.IdCliente != null && req_info.IdCliente != '' && obj_client){
+
+                var v
+
+                var cliente_record = record.load({
+                    type: stage,
+                    id: req_info.IdCliente,
+                    isDynamic: false,
+                });
+                cliente_record.setValue({
+                    fieldId: 'custentity_folio',
+                    value: Folio
+                });
+                
+                cliente_record.setValue({
+                    fieldId: 'custentity_salesrep_nuevo',
+                    value: req_info.salesrepNuevo
+                });
+                cliente_record.setValue({
+                    fieldId: 'custentity_evaluacion_0',
+                    value: req_info.Evaluacion[0]
+                });
+                cliente_record.setValue({
+                    fieldId: 'custentity_evaluacion_1',
+                    value: req_info.Evaluacion[1]
+                });
+                cliente_record.setValue({
+                    fieldId: 'custentity_evaluacion_2',
+                    value: req_info.Evaluacion[2]
+                });
+                cliente_record.setValue({
+                    fieldId: 'custentity_evaluacion_3',
+                    value: req_info.Evaluacion[3]
+                });
+                cliente_record.setValue({
+                    fieldId: 'custentity_evaluacion_4',
+                    value: req_info.Evaluacion[4]
+                });
+                cliente_record.setValue({
+                    fieldId: 'custentity_evaluacion_5',
+                    value: req_info.Evaluacion[5]
+                });
+                cliente_record.setValue({
+                    fieldId: 'custentity_evaluacion_6',
+                    value: req_info.Evaluacion[6]
+                });
+                cliente_record.setValue({
+                    fieldId: 'custentity_evaluacion_7',
+                    value: req_info.Evaluacion[7]
+                });
+                
+                v = parseInt(req_info.MotivoCambio)
+                
+                cliente_record.setValue({
+                    fieldId: 'custentity_motivo_cambio',
+                    value: v
+                });
+                cliente_record.setValue({
+                    fieldId: 'custentity_fecha_inicio',
+                    value: req_info.FechaInicio
+                });
+                cliente_record.setValue({
+                    fieldId: 'custentity_fecha_fin',
+                    value: req_info.FechaFin
+                });
+                
+
+                v = parseInt(req_info.EsPresentadorAleatorio)==1?true:false
+                
+                cliente_record.setValue({
+                    fieldId: 'custentity_pre_aleatorio',
+                    value: v 
+                });
+
+
+                var statusSolicitud = parseInt(req_info.EstatusSolicitud)
+                if(statusSolicitud == 6){//Proceso finalizado - actualizar sales Rep
+
+                    if(req_info.EsPresentadorAleatorio == 1){ //Nos piden Sales Rep Aleatorio 
+  
+                        var empFields = search.lookupFields({
+                            type: 'employee',
+                            id: salesrepActual,
+                            columns: ["custentity_delegada", "supervisor"]
+                        });
+
+                        
+                        if (empFields.supervisor != "") {
+                        var liderEquipo = empFields.supervisor[0].value;
+                        var liderEquipoName = empFields.supervisor[0].text;
+                        var liderEquipoIDU = liderEquipoName.split(' ')[0]
+
+                        log.debug('liderEquipo', liderEquipo)
+                        log.debug('liderEquipoName', liderEquipoName)
+                        log.debug('liderEquipoIDU',liderEquipoIDU)
+
+                        var leFields = search.lookupFields({
+                            type: 'employee',
+                            id: liderEquipo,
+                            columns: ["employeetype", "custentity_promocion", "isinactive"]
+                        });
+
+                            var typele = leFields.employeetype[0].value;
+                            log.debug('typele', typele)
+
+                            var promole = leFields.custentity_promocion[0].value;
+                            log.debug('promole', promole)
+
+                            var inactivele =leFields.isinactive;
+                            log.debug('inactivele', inactivele)
+
+
+                        }
+                        if (empFields.custentity_delegada != ""){
+                            var  gerenteVentas= empFields.custentity_delegada[0].value;
+                            var gerenteVentasName= empFields.custentity_delegada[0].text;
+                            var gerenteVentasIDU = gerenteVentasName.split(' ')[0]
+
+                            log.debug('gerenteVentas', gerenteVentas)
+                            log.debug('gerenteVentasName', gerenteVentasName)
+                            log.debug('gerenteVentasIDU', gerenteVentasIDU)
+
+                            var gvFields = search.lookupFields({
+                                type: 'employee',
+                                id: gerenteVentas,
+                                columns: ["employeetype", "custentity_promocion", "isinactive"]
+                            });
+
+                            var typeGV = gvFields.employeetype[0].value;
+                            log.debug('typeGV', typeGV)
+
+                            var promoGV = gvFields.custentity_promocion[0].value;
+                            log.debug('promoGV', promoGV)
+
+                            var inactiveGV =gvFields.isinactive;
+                            log.debug('inactiveGV', inactiveGV)
+
+                        }
+                        
+                       
+                        if(typele == 3 && promole != 3 && inactivele == false){// se asigna del lider de equipo si cumple con = Lider de equipo / No es litigio / es activo
+                            
+                            salesrepNuevoResponse = liderEquipo
+                            idusalesRepNuevoResponse = liderEquipoIDU
+                            log.debug('nuevo le',salesrepNuevoResponse)
+                            log.debug('nuevo le',idusalesRepNuevoResponse)
+                        } else if (typeGV == 5 && promoGV != 3 && inactiveGV == false) { // se asigna el GV si cumple con = Gerente de Ventas / No es litigio / es activo
+                           
+                            salesrepNuevoResponse = gerenteVentas
+                            idusalesRepNuevoResponse = gerenteVentasIDU
+                            log.debug('nuevo gv',salesrepNuevoResponse)
+                            log.debug('nuevo gv',idusalesRepNuevoResponse)
+                        } else {// se asigna presentador de toda la fuerza de ventas
+
+                            var presentadorNuevo = presentadorAleatorioCambio(req_info,salesrepActual)//Se debe asignar uno diferente al actual
+                            
+
+                            salesrepNuevoResponse = presentadorNuevo.internalid_p
+                            idusalesRepNuevoResponse = presentadorNuevo.idu_p
+                        }
+
+                        cliente_record.setValue({
+                            fieldId: 'salesrep',
+                            value: salesrepNuevoResponse
+                        });
+                        cliente_record.setValue({
+                            fieldId: 'custentity_presentadora_referido',
+                            value: salesrepNuevoResponse
+                        });
+                        cliente_record.setValue({
+                            fieldId: 'custentityidu_presentador',
+                            value: idusalesRepNuevoResponse
+                        });
+
+                    }else if(req_info.EsPresentadorAleatorio == 0){ //Nos mandan el Sales Rep a asignar
+                        /*var objAux = {
+                            "idPresentador":req_info.salesrepNuevo
+                        }
+                        var presentadorNuevo = presentadorRecomendador(objAux,false) //Busqueda del Presentador a asignar
+                        */
+                         var inactiveSRFields = search.lookupFields({
+                            type: 'employee',
+                            id: req_info.salesrepNuevo,
+                            columns: ["isinactive"]
+                        });
+
+                         var inactiveSRN = inactiveSRFields.isinactive
+                             if (inactiveSRN == false) {//si el sales rep que nos enviaron esta activo se asigna
+
+                                cliente_record.setValue({
+                                fieldId: 'salesrep',
+                                value: req_info.salesrepNuevo
+                                });
+                                cliente_record.setValue({
+                                    fieldId: 'custentity_presentadora_referido',
+                                    value: req_info.salesrepNuevo
+                                });
+                                cliente_record.setValue({
+                                    fieldId: 'custentityidu_presentador',
+                                    value: req_info.IDUsalesRepNuevo
+                                });
+
+                                salesrepNuevoResponse = req_info.salesrepNuevo
+                                idusalesRepNuevoResponse = req_info.IDUsalesRepNuevo
+
+                             } else{// si el sales rep qe nos enviaron esta inactivo se lanza el erro 409 y se da el resppnse a lms con el erro al igual que a 
+                                
+                                obj_ret.StatusCode = 409
+                                obj_ret.mensaje = 'El presentado elegido no esta disponible'
+                                log.debug('El presentado elegido no esta disponible')
+
+                                cliente_record.setValue({
+                                    fieldId: 'custentity_salesrep_nuevo',
+                                    value: ''
+                                });
+
+
+                                statusSolicitud = 7 
+
+                                objAD.EstatusSolicitud          =   statusSolicitud 
+                                objAD.Error                     =   409
+                                objAD.Mensaje                   =   'El presentado elegido no esta disponible'
+                                
+                               
+                             }
+                            
+                        
+                    }else{
+                        error = true
+                        obj_ret.StatusCode = 400
+                        obj_ret.mensaje = 'Campo EsPresentadorAleatorio no defindo'
+
+                        log.debug('Campo EsPresentadorAleatorio no defindo')
+
+                    }
+               
+
+                } //Solicitud en proceso - Solo actualizar datos (NO actualizar Sales rep)
+
+                if(error == false){
+
+                    cliente_record.setValue({
+                        fieldId: 'custentity_estatus_solicitud',
+                        value: statusSolicitud
+                    });
+
+                    var id_cliente = cliente_record.save({ 
+                        enableSourcing: false,
+                        ignoreMandatoryFields: true
+                    });
+                     
+                     //Data a Agenda Digital
+                    
+                    objAD.CambioFolio               =   Folio
+                    objAD.IdCliente                 =   req_info.IdCliente
+                    objAD.salesrepActual            =   salesrepActual
+                    objAD.IDUsalesRepActual         =   IDUsalesRepActual
+                    objAD.salesrepNuevo             =   salesrepNuevoResponse
+                    objAD.IDUsalesRepNuevo          =   idusalesRepNuevoResponse
+                    objAD.EvaluacionR0                =   req_info.Evaluacion[0]==''?'NA':req_info.Evaluacion[0]
+                    objAD.EvaluacionR1                =   req_info.Evaluacion[1]==''?'NA':req_info.Evaluacion[1]
+                    objAD.EvaluacionR2                =   req_info.Evaluacion[2]==''?'NA':req_info.Evaluacion[2]
+                    objAD.EvaluacionR3                =   req_info.Evaluacion[3]==''?'NA':req_info.Evaluacion[3]
+                    objAD.EvaluacionR4                =   req_info.Evaluacion[4]==''?'NA':req_info.Evaluacion[4]
+                    objAD.EvaluacionR5                =   req_info.Evaluacion[5]==''?'NA':req_info.Evaluacion[5]
+                    objAD.EvaluacionR6                =   req_info.Evaluacion[6]==''?'NA':req_info.Evaluacion[6]
+                    objAD.EvaluacionR7                =   req_info.Evaluacion[7]==''?'NA':req_info.Evaluacion[7]
+                    objAD.MotivoCambio              =   req_info.MotivoCambio
+                    objAD.EsPresentadorAleatorio    =   req_info.EsPresentadorAleatorio
+                    objAD.FechaInicio               =   req_info.FechaInicio
+                    objAD.FechaFin                  =   req_info.FechaFin
+                    objAD.EstatusSolicitud          =   statusSolicitud 
+                    objAD.Semilla                   =   id_cliente_referido
+                    
+                    log.debug('objAD enviado en el cambio de presentador'+id_cliente,objAD)
+                    var urlAD
+
+                    if(runtime.envType != 'PRODUCTION'){ 
+                        urlAD = 'https://dev-apiagenda.mxthermomix.com/users/CambioPresentador'
+                    }else{
+                        urlAD = 'https://apiagenda.mxthermomix.com/users/CambioPresentador'
+                    }
+                    try{
+
+                        var responseService = https.post({
+                            url: urlAD,
+                            body : objAD,
+                            headers: {
+                                "Content-Type": "application/x-www-form-urlencoded",
+                                "User-Agent": "NetSuite/2019.2(SuiteScript)",
+                            }
+                        }).body;
+                        log.debug('responseService AD Cambio presentador',responseService)
+                        var responseAD = JSON.parse(responseService)
+                        var success = responseAD.success
+
+                        //log.debug('sucessAD', success)
+                        
+                        if (success != true){
+                             log.debug('error Agenda')
+
+                            var catch_record = record.create({
+                                type: 'customrecord_catch_recomendaciones',
+                                isDynamic: false,
+                            });
+                             var objHeaders = {}
+                             objHeaders.ContentType = "application/x-www-form-urlencoded"
+                             objHeaders.UserAgent   = "NetSuite/2019.2(SuiteScript)"
+
+                            catch_record.setValue({
+                            fieldId: 'custrecord_json_enviado',
+                            value: JSON.stringify(objAD)
+                            });
+                            catch_record.setValue({
+                            fieldId: 'custrecord_url',
+                            value: urlAD
+                            });
+                            catch_record.setValue({
+                            fieldId: 'custrecord_headers',
+                            value: JSON.stringify(objHeaders)
+                            });
+                            catch_record.setValue({
+                            fieldId: 'custrecord_type_pet',
+                            value: 'https'
+                            });
+                            catch_record.setValue({
+                            fieldId: 'custrecord_tokens',
+                            value: ""
+                            });
+                            catch_record.setValue({
+                            fieldId: 'custrecord_response',
+                            value: responseService
+                            });
+                            catch_record.setValue({
+                            fieldId: 'custrecord_response_reintento',
+                            value: ""
+                            });
+                            catch_record.setValue({
+                            fieldId: 'custrecord_procesado',
+                            value: false
+                            });
+
+                            var id_catch = catch_record.save({ 
+                                enableSourcing: true,
+                                ignoreMandatoryFields: true
+                            });
+                            log.debug('id_catch',id_catch)
+                        }
+                    }catch(e){
+                        log.debug('Error objAD',e)
+                        var objHeaders = {}
+                             objHeaders.ContentType = "application/x-www-form-urlencoded"
+                             objHeaders.UserAgent   = "NetSuite/2019.2(SuiteScript)"
+
+                            catch_record.setValue({
+                            fieldId: 'custrecord_json_enviado',
+                            value: JSON.stringify(objAD)
+                            });
+                            catch_record.setValue({
+                            fieldId: 'custrecord_url',
+                            value: urlAD
+                            });
+                            catch_record.setValue({
+                            fieldId: 'custrecord_headers',
+                            value: JSON.stringify(objHeaders)
+                            });
+                            catch_record.setValue({
+                            fieldId: 'custrecord_type_pet',
+                            value: 'https'
+                            });
+                            catch_record.setValue({
+                            fieldId: 'custrecord_tokens',
+                            value: ""
+                            });
+                            catch_record.setValue({
+                            fieldId: 'custrecord_response',
+                            value: responseService
+                            });
+                            catch_record.setValue({
+                            fieldId: 'custrecord_response_reintento',
+                            value: ""
+                            });
+                            catch_record.setValue({
+                            fieldId: 'custrecord_procesado',
+                            value: false
+                            });
+
+                            var id_catch = catch_record.save({ 
+                                enableSourcing: true,
+                                ignoreMandatoryFields: true
+                            });
+                            log.debug('id_catch',id_catch)   
+
+                    }   
+                    
+                }
+                
+
+            }else{
+                obj_ret.StatusCode = 424
+                obj_ret.mensaje = 'No existe el Cliente o está inactivo'
+            }
+           
+
+            log.debug('objAD Cambio presentador',objAD)
+
+            //Response LMS
+            obj_ret.CambioFolio = Folio
+            obj_ret.IdCliente = id_cliente
+            obj_ret.salesrepActual = salesrepActual
+            obj_ret.IDUsalesRepActual = IDUsalesRepActual
+            obj_ret.salesrepNuevo = salesrepNuevoResponse
+            obj_ret.IDUsalesRepNuevo = idusalesRepNuevoResponse
+            obj_ret.MotivoCambio = req_info.MotivoCambio
+            obj_ret.EstatusSolicitud = statusSolicitud
+
+            log.debug('obj_ret LMS'+id_cliente, obj_ret)
+            return obj_ret
+        }catch(e){
+            return e
+            log.debug('Error getActualizaSalesRep',e)
+        }
     }
     function getInProspectoExperiencia(req_info){
         try{
@@ -100,7 +636,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                     id_cliente = r.getValue('internalid')
                     log.debug('id_cliente', id_cliente)
                     log.debug('idpresentadora_referido', idpresentadora_referido)
-                    log.debug('stage', stage)
+                    //log.debug('stage', stage)
                     log.debug('valuesSEARCH', values)
                     return true; 
                 });
@@ -128,9 +664,9 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                 //Envio datos LMS
 
                 if(runtime.envType != 'PRODUCTION'){ 
-                    urlLMS = 'http://api-referidos-thrmx.lms-la.com/api/cliente/agregar-presentacion'
+                    urlLMS = 'https://api-referidos-thrmx.lms-la.com/api/cliente/agregar-presentacion'
                 }else{
-                    urlLMS = 'http://recomiendayganathermomix.mx:9095/api/cliente/agregar-presentacion'
+                    urlLMS = 'https://api.recomiendayganathermomix.mx/api/cliente/agregar-presentacion'
                 }
                 var today = new Date();
                 var dd = today.getDate();
@@ -138,13 +674,13 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                 var yyyy = today.getFullYear();
                 
                
-                log.debug('mm',mm.length )
+                //log.debug('mm',mm.length )
                 if(mm <  10){
-                    log.debug('mm',mm )
+                    //log.debug('mm',mm )
                     mm = '0'+mm
                 }
                 if(dd < 10 ){
-                     log.debug('dd',dd )
+                     //log.debug('dd',dd )
                     dd = '0'+dd
                 }
                 var fdate = yyyy + '-' +mm + '-' + dd;
@@ -155,12 +691,12 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                     "fechaPresentacion":fdate
                 }
                 log.debug('objRequest LMS Experiencia',objRequest)
-                var responseService = http.post({
+                var responseService = https.post({
                     url: urlLMS,
                     body : JSON.stringify(objRequest),
                     headers: {
                         "Content-Type": "application/json",
-                        "Authorization": "Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJJZCI6IjhhMDJkZDE3LTYzMjAtNGFiMi1iOWFkLWZlZDMzZWRhYzNiNiIsInN1YiI6InZzaWx2YWNAbG1zLmNvbS5teCIsImVtYWlsIjoidnNpbHZhY0BsbXMuY29tLm14IiwidW5pcXVlX25hbWUiOiJ2c2lsdmFjQGxtcy5jb20ubXgiLCJqdGkiOiI3ZjVhYTJiOS1jMTgxLTRjMDctOWRjOS03MzljMmNjM2NhMmEiLCJuYmYiOjE2NzgyMjY0NDAsImV4cCI6MTcwOTg0ODg0MCwiaWF0IjoxNjc4MjI2NDQwfQ.gzoypesLFecnag0kRGCQu9Vy86A_wEYgDUR9j-01ObPX3UW3Pks8hpV5yOGE1ymnXeFsHokPOH5yLyWIybLW8w"
+                        "Authorization": "Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJJZCI6IjIyMWFmN2U5LTJjMDAtNDYzZC1hYzliLThkZDA2MzhmYzYzMSIsInN1YiI6InRocm14Lm5ldHN1aXRlLmFwaUBsbXMtbGEuY29tIiwiZW1haWwiOiJ0aHJteC5uZXRzdWl0ZS5hcGlAbG1zLWxhLmNvbSIsInVuaXF1ZV9uYW1lIjoidGhybXgubmV0c3VpdGUuYXBpQGxtcy1sYS5jb20iLCJqdGkiOiIzZjc3NzM1NS0zNmI1LTRlYWQtODg2NC0yMzI2MWZlM2VjZjEiLCJuYmYiOjE2OTkzNzIwMDYsImV4cCI6MTczMDk5NDQwNiwiaWF0IjoxNjk5MzcyMDA2fQ.Urf90o2LXL3ZVsepiEDLi5E06AMQHP_ro2FWqEehoDHv1s8fXEoGn7zdU75Q8cZyCYeRT-xEgdr-5koTFHIiuA"
                     }
                 }).body;
                 log.debug('responseService LMS Experiencia',responseService)
@@ -211,7 +747,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                     id_cliente = r.getValue('internalid')
                     log.debug('id_cliente', id_cliente)
                     log.debug('idClienteReferido', idClienteReferido)
-                    log.debug('stage', stage)
+                    //log.debug('stage', stage)
                     log.debug('valuesSEARCH', values)
                     return true; 
 
@@ -225,7 +761,12 @@ function(record,search,https,file,http,format,encode,email,runtime) {
 
                if(!idRecomendador){ //Si no tiene RECOMENDADOR es registro inicial
                 log.debug('Prospecto SIN Recomendador')
-                presentadorRecomendacion = presentadorAleatorio(req_info)
+                var idPresentador = req_info.idPresentador
+                if(!idPresentador || idPresentador == ''){ //Cliente nuevo sin recomendador pero mandan un presentador para asignar
+                    presentadorRecomendacion = presentadorAleatorio(req_info)
+                }else{
+                    presentadorRecomendacion = presentadorRecomendador(req_info,false) // Como la funciona da prioridad si viene con idPresentador nos funciona para asignarlo sin necesidad de tener un recomendador
+                }
                 log.debug('presentadorRecomendacion',presentadorRecomendacion)
                }else{ //Si tiene RECOMENDADOR pero no es cliente es un prospecto RECOMENDADO y se asigna el Presentador del RECOMENDADOR
                 log.debug('Prospecto CON Recomendador')
@@ -259,9 +800,20 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                     obj_ret.presentador = respuestaProceso.presentador
                     obj_ret.namePresentadora = respuestaProceso.namePresentadora
                     obj_ret.emailPresentadora = respuestaProceso.emailPresentadora
+                    //obj_ret.clienteTM = respuestaProceso.clienteTM
                     obj_ret.mensaje = ''
                 }else{
-                    return respuestaProceso.respuesta
+                    obj_ret.StatusCode = 400
+                    obj_ret.IdCliente = respuestaProceso.id_cliente
+                    obj_ret.idPresentadora = respuestaProceso.idPresentadora
+                    obj_ret.iduPresentadora = respuestaProceso.iduPresentadora
+                    obj_ret.idRecomendador = respuestaProceso.idRecomendador
+                    obj_ret.presentador = respuestaProceso.presentador
+                    obj_ret.namePresentadora = respuestaProceso.namePresentadora
+                    obj_ret.emailPresentadora = respuestaProceso.emailPresentadora
+                    //obj_ret.clienteTM = respuestaProceso.clienteTM
+                    obj_ret.mensaje = respuestaProceso.respuesta
+                    
                 }
 
             return obj_ret
@@ -287,7 +839,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
            var idSearch
            var urlAD
                 if(runtime.envType != 'PRODUCTION'){ 
-                    idSearch = 'customsearch1980';
+                    idSearch = 'customsearch1996';
                     urlAD = 'https://dev-apiagenda.mxthermomix.com/users/registerUserExternoNetsuite'
                 }else{
                     idSearch = 'customsearch1996';
@@ -359,7 +911,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                 });
 
                 var id_cliente = cliente_record.save({ 
-                    enableSourcing: true,
+                    enableSourcing: false,
                     ignoreMandatoryFields: true
                 });
                 log.debug('id_cliente',id_cliente)
@@ -372,7 +924,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
             var nombreQuienRecomienda = ''
             var correoQuienRecomienda = ''
             if(req_info.idRecomendador){ // Posible cambio Para enviar semilla 
-                log.debug('objRecomendador 1')   
+                //log.debug('objRecomendador 1')   
                 var objRecomendador = search.lookupFields({
                     type: 'customer',
                     id: req_info.idRecomendador,
@@ -382,10 +934,10 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                     'mobilephone'
                     ]
                 });
-                log.debug('objRecomendador 2',objRecomendador)   
-                log.debug('objRecomendador.name.value',objRecomendador.altname)
-                log.debug('objRecomendador.name.value',objRecomendador.email)
-                log.debug('objRecomendador.mobilephone',objRecomendador.mobilephone)
+                //log.debug('objRecomendador 2',objRecomendador)   
+                //log.debug('objRecomendador.name.value',objRecomendador.altname)
+                //log.debug('objRecomendador.name.value',objRecomendador.email)
+                //log.debug('objRecomendador.mobilephone',objRecomendador.mobilephone)
 
                 nombreQuienRecomienda = objRecomendador.altname
                 correoQuienRecomienda = objRecomendador.email
@@ -395,7 +947,10 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                     var nameFormat = req_info.nombre+" "+req_info.apellidos
                     nameFormat = quitarAcentos(nameFormat)
 
-                    var objAD = {
+                  
+                    if(nombreQuienRecomienda && correoQuienRecomienda){
+
+                        var objAD = {
                         'nombre': nameFormat,
                         'correo': req_info.email,
                         'telefono': req_info.telefono,
@@ -406,12 +961,13 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                         'PresentadorAsignadoIDU': idu_p,
                         'telefonoQuienRecomienda':objRecomendador.mobilephone,//Espera de LMS
                         'NetSuiteID':id_cliente
+                        'Semilla': false
 
                     }
 
                     log.debug('objAD',objAD)
                     log.debug('objAD stringfy',JSON.stringify(objAD))
-                    if(nombreQuienRecomienda && correoQuienRecomienda){
+                    
                         var responseService = https.post({
                         url: urlAD,
                         body : objAD,//JSON.stringify(
@@ -421,16 +977,68 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                         }
                     }).body;
                     log.debug('responseService AD',responseService)
+                    }else{
+
+                        var objAD = {
+                        'nombre': nameFormat,
+                        'correo': req_info.email,
+                        'telefono': req_info.telefono,
+                        'activo': true,
+                        'nombreQuienRecomienda': '',
+                        'correoQuienRecomienda': '',
+                        'PresentadorAsignadoCorreo': email_p,
+                        'PresentadorAsignadoIDU': idu_p,
+                        'telefonoQuienRecomienda':'',//Espera de LMS
+                        'NetSuiteID':id_cliente,
+                        'Semilla': true
+
+                        }
+
+                        log.debug('objAD',objAD)
+                        log.debug('objAD stringfy',JSON.stringify(objAD))
+                        
+                            var responseService = https.post({
+                            url: urlAD,
+                            body : objAD,//JSON.stringify(
+                            headers: {
+                                "Content-Type": "application/x-www-form-urlencoded",
+                                "User-Agent": "NetSuite/2019.2(SuiteScript)",
+                            }
+                        }).body;
+                        log.debug('responseService AD',responseService)
+
                     }
+
                     
                    
                    }catch(e){
                     log.debug('Error Agenda digital Referidos restlet',e)
                    }
-                   return {respuesta:id_cliente, err:false,idPresentadora:internalid_p,iduPresentadora:idu_p,idRecomendador:req_info.idRecomendador,presentador:false,namePresentadora:altname,emailPresentadora:email_p};
+                   return {
+                        respuesta:id_cliente, 
+                        err:false,
+                        idPresentadora:internalid_p,
+                        iduPresentadora:idu_p,
+                        idRecomendador:req_info.idRecomendador,
+                        presentador:false,
+                        namePresentadora:altname,
+                        emailPresentadora:email_p,
+                        clienteTM:false
+                    };
             }else{
                 var id_cliente = null
-                return {respuesta:id_cliente, err:false,idPresentadora:internalid_p,iduPresentadora:idu_p,idRecomendador:req_info.idRecomendador,presentador:true,namePresentadora:altname,emailPresentadora:email_p};
+                return {
+                    respuesta:'El correo ya se encuentra registrado como PRESENTADOR', 
+                    err:true,
+                    idPresentadora:internalid_p,
+                    iduPresentadora:idu_p,
+                    idRecomendador:req_info.idRecomendador,
+                    presentador:true,
+                    namePresentadora:altname,
+                    emailPresentadora:email_p,
+                    clienteTM:false,
+                    id_cliente:id_cliente
+                };
             }
             
             
@@ -452,7 +1060,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
        
     });
     var joinsinacentos = sinAcentos.join('').toString(); 
-    log.debug('joinsinacentos',joinsinacentos)
+    //log.debug('joinsinacentos',joinsinacentos)
     return joinsinacentos; 
     }
     function actualizarCliente(req_info,stage,presentadorRecomendacion,id_cliente){
@@ -470,11 +1078,13 @@ function(record,search,https,file,http,format,encode,email,runtime) {
             var idSearch
            var urlAD
                 if(runtime.envType != 'PRODUCTION'){ 
-                    idSearch = 'customsearch1980';
+                    idSearch = 'customsearch1996';
                     urlAD = 'https://dev-apiagenda.mxthermomix.com/users/registerUserExternoNetsuite'
+                    idSearchClienteTM = 'customsearch_tm_cliente';
                 }else{
                     idSearch = 'customsearch1996';
                     urlAD = 'https://apiagenda.mxthermomix.com/users/registerUserExternoNetsuite'
+                    idSearchClienteTM = 'customsearch_tm_cliente';
                 }
                 
            var mySearch = search.load({
@@ -544,7 +1154,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                 });
 
                 var id_cliente = cliente_record.save({ 
-                    enableSourcing: true,
+                    enableSourcing: false,
                     ignoreMandatoryFields: true
                 });
                 log.debug('id_cliente',id_cliente)
@@ -556,6 +1166,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
             //Datos usuario que recomienda 
             var nombreQuienRecomienda = ''
             var correoQuienRecomienda = ''
+            var telefonoQuienRecomienda = ''
             if(req_info.idRecomendador){
                 log.debug('objRecomendador 1')   
                 var objRecomendador = search.lookupFields({
@@ -567,32 +1178,36 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                     'mobilephone'
                     ]
                 });
-                log.debug('objRecomendador 2',objRecomendador)   
-                log.debug('objRecomendador.name.value',objRecomendador.altname)
-                log.debug('objRecomendador.name.value',objRecomendador.email)
-                log.debug('objRecomendador.mobilephone',objRecomendador.mobilephone)
-
                 nombreQuienRecomienda = objRecomendador.altname
                 correoQuienRecomienda = objRecomendador.email
-                try{
-                    var nameFormat = req_info.nombre+" "+req_info.apellidos
-                    nameFormat = quitarAcentos(nameFormat)
-                    var objAD = {
-                        'nombre': nameFormat,
-                        'correo': req_info.email,
-                        'telefono': req_info.telefono,
-                        'activo': true,
-                        'nombreQuienRecomienda': quitarAcentos(nombreQuienRecomienda),
-                        'correoQuienRecomienda': correoQuienRecomienda,
-                        'PresentadorAsignadoCorreo': email_p,
-                        'PresentadorAsignadoIDU': idu_p,
-                        'telefonoQuienRecomienda':objRecomendador.mobilephone,//Espera de LMS
-                        'NetSuiteID':id_cliente
-                    }
+                telefonoQuienRecomienda = objRecomendador.mobilephone
+            }
+                
 
-                    log.debug('objAD',objAD)
-                    log.debug('objAD stringfy',JSON.stringify(objAD))
+                
+                try{
+                    
                     if(nombreQuienRecomienda && correoQuienRecomienda){
+
+                        var nameFormat = req_info.nombre+" "+req_info.apellidos
+                        nameFormat = quitarAcentos(nameFormat)
+                        var objAD = {
+                            'nombre': nameFormat,
+                            'correo': req_info.email,
+                            'telefono': req_info.telefono,
+                            'activo': true,
+                            'nombreQuienRecomienda': quitarAcentos(nombreQuienRecomienda),
+                            'correoQuienRecomienda': correoQuienRecomienda,
+                            'PresentadorAsignadoCorreo': email_p,
+                            'PresentadorAsignadoIDU': idu_p,
+                            'telefonoQuienRecomienda':telefonoQuienRecomienda,//Espera de LMS
+                            'NetSuiteID':id_cliente,
+                            'Semilla': false
+                        }
+
+                        log.debug('objAD',objAD)
+                        log.debug('objAD stringfy',JSON.stringify(objAD))
+
                         var responseService = https.post({
                         url: urlAD,
                         body : objAD,//JSON.stringify(
@@ -600,18 +1215,86 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                             "Content-Type": "application/x-www-form-urlencoded",
                             "User-Agent": "NetSuite/2019.2(SuiteScript)",
                         }
-                    }).body;
-                    log.debug('responseService AD',responseService)
+                        }).body;
+                        log.debug('responseService AD',responseService)
+
+                    }else{
+
+                        var nameFormat = req_info.nombre+" "+req_info.apellidos
+                        nameFormat = quitarAcentos(nameFormat)
+                        var objAD = {
+                            'nombre': nameFormat,
+                            'correo': req_info.email,
+                            'telefono': req_info.telefono,
+                            'activo': true,
+                            'nombreQuienRecomienda': '',
+                            'correoQuienRecomienda': '',
+                            'PresentadorAsignadoCorreo': email_p,
+                            'PresentadorAsignadoIDU': idu_p,
+                            'telefonoQuienRecomienda':'',
+                            'NetSuiteID':id_cliente,
+                            'Semilla': true
+                        }
+
+                        log.debug('objAD',objAD)
+                        log.debug('objAD stringfy',JSON.stringify(objAD))
+
+                        var responseService = https.post({
+                        url: urlAD,
+                        body : objAD,//JSON.stringify(
+                        headers: {
+                            "Content-Type": "application/x-www-form-urlencoded",
+                            "User-Agent": "NetSuite/2019.2(SuiteScript)",
+                        }
+                        }).body;
+                        log.debug('responseService AD',responseService)
                     }
                
 
                 }catch(e){
                 log.debug('Error Agenda digital Referidos restlet',e)
                }
-            }
+
             
+            //Busqueda valida si el cliente tiene una TM 
+        
+
+            var mySearch = search.load({
+                id: idSearchClienteTM
+            });
+
+            mySearch.filters.push(search.createFilter({
+               name: 'entity',
+               operator: 'is',
+               values: id_cliente
+            }));
+
+            var clienteTM = false
            
-        return {respuesta:id_cliente, err:false,idPresentadora:internalid_p,iduPresentadora:idu_p,idRecomendador:req_info.idRecomendador,presentador:presentador,namePresentadora:altname,emailPresentadora:email_p};
+            var pagedResults = mySearch.runPaged();
+            pagedResults.pageRanges.forEach(function (pageRange){
+            var currentPage = pagedResults.fetch({index: pageRange.index});
+                currentPage.data.forEach(function (r) {
+                
+                    var values = r.getAllValues();
+                    clienteTM = true
+                    return true; 
+
+                });
+
+            });
+
+        return {
+            respuesta:id_cliente, 
+            err:false,
+            idPresentadora:internalid_p,
+            iduPresentadora:idu_p,
+            idRecomendador:req_info.idRecomendador,
+            presentador:presentador,
+            namePresentadora:altname,
+            emailPresentadora:email_p,
+            clienteTM:clienteTM
+        };
             
         }catch(err){
             log.error("error actualizarCliente",err)
@@ -619,10 +1302,60 @@ function(record,search,https,file,http,format,encode,email,runtime) {
         }
     }
 
+    function presentadorAleatorioCambio(req_info,salesrepActual){
+        try{
+
+
+            log.debug('Buscar presentador aleatorio de la lista completa de presentadores activos Elegibles a presentadora Referido')
+            //1 buscar la busqueda customsearch1994 y quitar el filtro de Elegibles a presentadora Referido
+            // 2 añadir los filtros de type = lider de equipo, presentador o Gerente de Ventas y verificar que sea activo
+            // custentity_promocion no es en litigio 
+            var mySearch = search.load({
+                id: 'customsearch1994'
+            });
+
+            mySearch.filters.push(search.createFilter({
+               name: 'internalid',
+               operator: 'noneof',
+               values: salesrepActual
+            }));
+
+            var totalPresentadoras = []
+            var pagedResults = mySearch.runPaged();
+            pagedResults.pageRanges.forEach(function (pageRange){
+            var currentPage = pagedResults.fetch({index: pageRange.index});
+                currentPage.data.forEach(function (r) {
+                   
+                    totalPresentadoras.push({
+                        'internalid_p'    :   r.getValue('internalid'),
+                        'idu_p'           :   r.getValue('entityid'),
+                        'email_p'         :   r.getValue('email'),
+                        'unidad_p'        :   r.getValue('custentity_nombre_unidad'),
+                        'altname'        :   r.getValue('altname'),
+                    })
+                    return true; 
+
+                });
+
+            });
+            
+            var aleatorionuem = (Math.floor(Math.random() * totalPresentadoras.length))
+            
+            return totalPresentadoras[aleatorionuem]
+        }catch(e){
+            log.debug('Error presentadorAleatorio',e)
+        }
+    }
+
+
     function presentadorAleatorio(req_info){
         try{
+
+
             log.debug('Buscar presentador aleatorio de la lista completa de presentadores activos Elegibles a presentadora Referido')
-            
+            //1 buscar la busqueda customsearch1994 y quitar el filtro de Elegibles a presentadora Referido
+            // 2 añadir los filtros de type = lider de equipo, presentador o Gerente de Ventas y verificar que sea activo
+            // custentity_promocion no es en litigio 
             var mySearch = search.load({
                 id: 'customsearch1994'
             });

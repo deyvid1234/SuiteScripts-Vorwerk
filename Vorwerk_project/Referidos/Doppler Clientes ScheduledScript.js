@@ -35,7 +35,8 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                 '1126'  :'TM5-4 + VAROMA, MEMORIA DE RECETAS AND COOK BOOK',
                 '764'   :'TM31-4C + VAROMA',
                 '992'   :'TM31-4C + VAROMA',
-                '2490'  :'62752 TM6 & Varoma 120V UL Black Ed'
+                '2490'  :'62752 TM6 & Varoma 120V UL Black Ed',
+                '2571'  : 'TM6 & Varoma Spark 120V UL MX'
             }
             var objRequestDOPPLER = {}
             var resultSearch = []

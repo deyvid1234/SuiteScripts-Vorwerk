@@ -224,8 +224,8 @@ function(file,search,plugin,runtime,task) {
                 },
                 /*{
                   name: 'internalid',
-                  operator: 'is',
-                  values: [3346123]
+                  operator: 'anyof',
+                  values: [11512]
                },*/
                 
               ],

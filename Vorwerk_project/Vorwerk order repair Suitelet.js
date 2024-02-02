@@ -54,20 +54,15 @@ function(render,email,file,record,search,format,runtime) {
             
             
             //obtiene imagen de logo
-            var logodURL 
+            var logodURL = getImage()
 
-            if(runtime.envType  == "SANDBOX"){
-                logodURL = getImage('2461144') //id imagen vorwerk tm s green sandbox  
-            }else{
-                logodURL = getImage('2576941') //id imagen vorwerk tm s green prod
-            }
-
+            
             //sb1510040
             //obtiene imagen de check false 
 
-            var checkfieldURL = getImage('1636738');//sb1510039
+            var checkfieldURL = getImageCheck('1636738');//sb1510039
             //obtiene imagen check true
-            var checkfieldURL_true = getImage('1636741');//1510241
+            var checkfieldURL_true = getImageCheck('1636741');//1510241
             //genera imagen de check false
            
             if(method == 'GET'){
@@ -130,9 +125,7 @@ function(render,email,file,record,search,format,runtime) {
             log.error('Error mainCreateEmailtoSend',err)
         }
     }
-    
-    
-    function getImage(idImg){
+    function getImageCheck(idImg){
         try{
             var host = "https://3367613-sb1.app.netsuite.com";
             //obtiene imagen de chekc false
@@ -149,6 +142,39 @@ function(render,email,file,record,search,format,runtime) {
             log.error("error getImage",err)
         }
     }
+
+    function getImage(idImg){
+            try{
+                var host 
+                var idImg 
+
+                if(runtime.envType  == "SANDBOX"){
+                    host = "https://3367613-sb1.app.netsuite.com";
+                    idImg = '2461144';
+                //id imagen vorwerk tm s green sandbox  
+                }else{
+                    host = "https://3367613.app.netsuite.com";
+                    idImg = '2576941';
+                    //id imagen vorwerk tm s green prod
+                }
+
+                
+                //obtiene imagen de chekc false
+                var fileObj = file.load({
+                    id: idImg//'1510039'
+                });
+                var url_img = fileObj.url
+                url_img = stringToArray(url_img,38);
+                url_img   = url_img.join('&amp;');
+                url_img   = "src='" + host + url_img + "'/";
+                
+                return url_img;
+            }catch(err){
+                log.error("error getImage",err)
+            }
+        }
+    
+    
     function getTemplate(idTpl,idUSer,entity,recordid){
         try{
             var myMergeResult = render.mergeEmail({
@@ -193,12 +219,12 @@ function(render,email,file,record,search,format,runtime) {
                 + "<pdf>"
                 + '<head></head>'
                 + '<body footer-height="20pt" padding="0.5in 0.5in 0in 0.5in" margin= "0in 0in 0.5in 0in" size="Letter">'
-                +'<img height="70" width="160" align="center" ' + logodURL +'>'
-                +'<p align="center" style="font-size:14pt; font-weight: bold;">ORDEN SERVICIO</p>'
+                +'<img height="70%" width="70%" align="center" ' + logodURL +'>'
+                +'<p align="center" style="font-size:14pt; font-weight: bold; font-family: sans-serif;">ORDEN SERVICIO</p>'
                 +'<table border="0" cellpadding="1" cellspacing="1" style="width: 663px;">'
                 +'<tbody>'
                 +'<tr>'
-                +'<td rowspan="3" style="width: 367px; font-size: 12px;">Vorwerk M&eacute;xico, S. de R.L. de C.V.<br />'
+                +'<td rowspan="3" style="width: 367px; font-size: 12px; font-family: sans-serif; ">Vorwerk M&eacute;xico, S. de R.L. de C.V.<br />'
                 +'Vito Alessio Robles 38 Col. Florida, Del. &Aacute;lvaro Obreg&oacute;n<br />'
                 +'Cd. de M&eacute;xico, C.P.01030 Teléfono: 800 200 1121<br />'
                 +'www.thermomix.mx</td>'
@@ -206,12 +232,12 @@ function(render,email,file,record,search,format,runtime) {
                 +'<td style="width: 107px;"> </td>'
                 +'</tr>'
                 +'<tr>'
-                +'<td Colspan="1" style="width: 120px; font-size: 12px;"><b>Orden de Servicio:</b></td>'
-                +'<td colspan="2"  style="width: 107px; font-size: 12px;"><b>'+order+'</b></td>'
+                +'<td Colspan="1" style="width: 120px; font-size: 12px; font-family: sans-serif;"><b>Orden de Servicio:</b></td>'
+                +'<td colspan="2"  style="width: 107px; font-size: 12px; font-family: sans-serif;"><b>'+order+'</b></td>'
                 +'</tr>'
                 +'<tr>'
-                +'<td style="width: 120px; font-size: 12px;"><b>Fecha:</b></td>'
-                +'<td style="width: 107px; font-size: 12px;"><b>'+date+'</b></td>'
+                +'<td style="width: 120px; font-size: 12px; font-family: sans-serif;"><b>Fecha:</b></td>'
+                +'<td style="width: 107px; font-size: 12px; font-family: sans-serif;"><b>'+date+'</b></td>'
                 +'</tr>'
                 +'</tbody>'
                 +'</table>'
@@ -251,8 +277,8 @@ function(render,email,file,record,search,format,runtime) {
                 +'</style>'
                 +'<macrolist>'
                 +'    <macro id="nlheader">'
-                +t_space+'<img class="IMAGELOGO" height="80" width="100" align="center" ' + logodURL +'>'
-                +'<p>ORDEN DE SERVICIO T&Eacute;CNICO</p>'
+                +t_space+'<img class="IMAGELOGO" height="80" width="150" align="center" ' + logodURL +'>'
+                +'<p>ORDEN DE SERVICIO</p>'
                 +'<table border="0" cellpadding="1" cellspacing="1" style="width: 1000px;">'
                 +'<tbody>'
                 +'<tr>'

@@ -121,7 +121,7 @@ function(record,search,https,file,http,format,encode,email) {
     /*************Inicio de funciones de lectura************************/
     //funcion para extraer informacion de usuario
   	function getInformationUser(req_info,valid){
-		var cust = {},emp = {}, obj_ret = {};
+		var cust = false,emp = {}, obj_ret = {};
 		var valid_rfc= false;
 		try{
 			var filters = [];
@@ -154,24 +154,48 @@ function(record,search,https,file,http,format,encode,email) {
                     values: req_info['rfc']
                 });
 			}
+			soColumns = [
+                { name: 'internalid' },
+                { name: 'companyname' },
+                { name: 'email'},
+                { name: 'custentity_rfc'},
+                { name: 'custentity_curp'},
+                { name: 'isinactive'},
+                { name: 'custentity_presentadora_referido'}
+
+            ];
+
 			var busqueda = search.create({
 			    type: "customer",
-			    columns: ['internalid','companyname','email','custentity_rfc','custentity_curp','isinactive'],
+			    columns: soColumns,
 			    filters: filters
 			});
+
+			var presentadorReferidoAnterior = ''
+
 			var pagedResults = busqueda.runPaged();
             pagedResults.pageRanges.forEach(function (pageRange){
                 var currentPage = pagedResults.fetch({index: pageRange.index});
                 currentPage.data.forEach(function (r) {
-                	if(r.recordType == "customer"){
-                		cust.user_id= r.getValue("internalid");
-        				cust.name= r.getValue("companyname");
-        				cust.email= r.getValue("email");
-        				cust.rfc= r.getValue("custentity_rfc");
-        				cust.curp= r.getValue("custentity_curp");
-        				cust.inactive= r.getValue("isinactive");
-                	}
-                	
+                	if( (r.getValue("custentity_presentadora_referido") || presentadorReferidoAnterior == '') && cust != false ){
+                        cust.user_id= r.getValue("internalid");
+                        cust.name= r.getValue("companyname");
+                        cust.email= r.getValue("email");
+                        cust.rfc= r.getValue("custentity_rfc");
+                        cust.curp= r.getValue("custentity_curp");
+                        cust.inactive= r.getValue("isinactive");
+                        presentadorReferidoAnterior = r.getValue("custentity_presentadora_referido");
+                    }else if( cust == false){
+                        cust = {}
+                        cust.user_id= r.getValue("internalid");
+                        cust.name= r.getValue("companyname");
+                        cust.email= r.getValue("email");
+                        cust.rfc= r.getValue("custentity_rfc");
+                        cust.curp= r.getValue("custentity_curp");
+                        cust.inactive= r.getValue("isinactive"); 
+
+                        presentadorReferidoAnterior = r.getValue("custentity_presentadora_referido");
+                    }
     			    return true;
                 });
             });
@@ -184,17 +208,16 @@ function(record,search,https,file,http,format,encode,email) {
                     values: req_info['rfc']
                 });
 			}
-			
 			var busqueda = search.create({
 			    type: "employee",
 			    columns: ['internalid','altname','email','custentity_ce_rfc','custentity_curp','isinactive'],
 			    filters: filters
 			});
+
 			var pagedResults = busqueda.runPaged();
             pagedResults.pageRanges.forEach(function (pageRange){
                 var currentPage = pagedResults.fetch({index: pageRange.index});
                 currentPage.data.forEach(function (r) {
-                	
                 	emp.user_id= r.getValue("internalid");
     				emp.name= r.getValue("altname");
     				emp.email= r.getValue("email");
@@ -206,11 +229,12 @@ function(record,search,https,file,http,format,encode,email) {
                 	
                 });
             });
-
-			
-			if(Object.keys(cust).length){
-				obj_ret.customer_information = cust;
+			if(cust != false){
+				if(Object.keys(cust).length){
+					obj_ret.customer_information = cust;
+				}
 			}
+			
 			if(Object.keys(emp).length){
 				obj_ret.sales_rep_information = emp;
 			}
@@ -221,52 +245,13 @@ function(record,search,https,file,http,format,encode,email) {
 		}
   	}
     
-    function searchItemsAux(){
-		try {
-			var data = [];
-			var vendorBills = search.load({
-	    		id: 'customsearch_item_location_available_aux'
-			});
-			
-			var pagedResults = vendorBills.runPaged();
-			pagedResults.pageRanges.forEach(function (pageRange){
-				var currentPage = pagedResults.fetch({index: pageRange.index});
-				currentPage.data.forEach(function (r) {
-					
-					var values = r.getAllValues();
-					
-					var obj_aux = {
-							internalid: values['formulatext'],
-							stock: parseInt(values['locationquantityavailable'])||0,
-							sku: values['itemid'],
-							name: values['displayname']
-					}
-					//sandbox 58 //production 53
-					if(values['inventoryLocation.internalid'].length > 0){
-						
-						if(values['inventoryLocation.internalid'][0].value=="53" || values['inventoryLocation.internalid'][0].value==""){
-							data.push(obj_aux);
-						}
-					}else{
-						data.push(obj_aux);
-					}
-				})
-			});
-			
-			return data;
-		}catch(err){
-			return {error:err}
-			log.error('error searchItems Aux', err);
-		}
-		
-	} 
     
     
     
   	//funcion para extraer los items 
     function searchItems(){
 		try {
-			var data = searchItemsAux();
+			var result = []
 			var vendorBills = search.load({
 	    		id: 'customsearch_item_location_available'
 			});
@@ -277,33 +262,37 @@ function(record,search,https,file,http,format,encode,email) {
 				currentPage.data.forEach(function (r) {
 					
 					var values = r.getAllValues();
+					log.debug('values',values)
 					
+					var stock = 0
+					//Parche solo Septiebre/hasta liberar 100 Ermita -> Regresar a parseInt(values['custitem_disponible_eshop'])||0
+					if(parseInt(values['custitem_disponible_eshop']) > 0){
+						stock = parseInt(values['custitem_disponible_eshop'])
+					}else{
+						stock = parseInt(values['locationquantityavailable'])||0
+					}
+
 					var obj_aux = {
-							internalid: values['formulatext'],
-							stock: parseInt(values['locationquantityavailable'])||0,
+							internalid: r.getValue('internalid'),
+							stock: stock,
 							sku: values['itemid'],
 							name: values['displayname']
 					}
+					
 					//sandbox 58 //production 53
-					if(values['inventoryLocation.internalid'].length > 0){
-						
-						if(values['inventoryLocation.internalid'][0].value=="53" || values['inventoryLocation.internalid'][0].value==""){
-							data.push(obj_aux);
-						}
-					}else{
-						data.push(obj_aux);
-					}
+					result.push(obj_aux);
+					
 				})
 			});
 			
 			email.send({
-        		author: '317077',
-				recipients: 'pilar.torres@vorwerk.de',//'pilar.torres@vorwerk.de',
+        		author: '344096',
+				recipients: 'pilar.torres@thermomix.mx',//'pilar.torres@vorwerk.de',
 				subject: 'Información de Items',
-				body: JSON.stringify(data)
+				body: JSON.stringify(result)
         	});
 			
-			return data;
+			return result;
 		}catch(err){
 			return {error:err}
 			log.error('error searchItems', err);
@@ -589,13 +578,27 @@ function(record,search,https,file,http,format,encode,email) {
 			}
 			
 			log.debug('Info SAT',req_info['custbody_cfdi_metododepago']);
-			
+			var locationValidado 
 			for(var x in req_info){
-				if(x != "items" && x != "multipago" && x != "discountrate" && x != "discountitem" && x!= 'custbody_estatus_envio' && x != 'custbody46' && x != 'custbody_url_one_aclogistics' && x != 'custbody_url_two_aclogistics'){
+				if(x != "location" && x != "items" && x != "multipago" && x != "discountrate" && x != "discountitem" && x!= 'custbody_estatus_envio' && x != 'custbody46' && x != 'custbody_url_one_aclogistics' && x != 'custbody_url_two_aclogistics'){
 					obj_sales_order.setValue(x,req_info[x]) 
+				}
+				log.debug(x,req_info[x])
+				if((x == "location" || x == "Location")&& req_info[x] == 53){//Se asigna Ermita si viene con location Eshop
+					locationValidado = 53 // 82 Cambiar a 82 en prod
+					log.debug('primer if',locationValidado)
+					obj_sales_order.setValue('location',locationValidado)
+					obj_sales_order.setValue('custbody_so_eshop',true)
+				}
+				if(x == "location" || x == "Location"){//Si el location es diferente a Eshop asigna lo que manda tienda en linea
+					locationValidado = req_info[x]
+					log.debug('segundo if',locationValidado)
+					obj_sales_order.setValue('location',locationValidado)
+					obj_sales_order.setValue('custbody_so_eshop',true)
 				}
 			}
 			obj_sales_order.setValue('custbody_cfdi_metpago_sat',req_info.custbody_cfdi_metododepago)
+			
 			var  salesorder_items = req_info.items;
 			for(var x in salesorder_items){
 				var item_mine = salesorder_items[x];
@@ -638,7 +641,7 @@ function(record,search,https,file,http,format,encode,email) {
 				obj_sales_order.setCurrentSublistValue({
 			        sublistId: 'item',
 			        fieldId: 'location',
-			        value: 53
+			        value: locationValidado
 				});
 				obj_sales_order.commitLine({
 			        sublistId: 'item'
@@ -1180,7 +1183,7 @@ function(record,search,https,file,http,format,encode,email) {
     			if(itemId != 1441 && itemId != 859){
 	    			//valida si es la primer guia creada
 	    			if(cont_trak.length == 0){
-	    				if(itemId == 2001 || itemId == 2170){//en caso de ser la primera y tener tm6 toma su decripcion
+	    				if(itemId == 2001 || itemId == 2170 || itemId == 2571){//en caso de ser la primera y tener tm6 toma su decripcion
 	    					description.push(objSO.getSublistValue({
 	    	                    sublistId : 'item',
 	    	                    fieldId   : 'description',
@@ -1196,7 +1199,7 @@ function(record,search,https,file,http,format,encode,email) {
 	    	                }));
 	    				}
 	    			}else{//en caso de tener más de una guia toma todas las descripciones de los demás items
-	    				if(itemId != 2001 && itemId != 2170){
+	    				if(itemId != 2001 && itemId != 2170 && itemId != 2571){
 	    					description.push(objSO.getSublistValue({
 	    	                    sublistId : 'item',
 	    	                    fieldId   : 'description',
@@ -1317,8 +1320,8 @@ function(record,search,https,file,http,format,encode,email) {
                 id: 'customsearch_search_by_seria' // Item Search Service NS
             });
     		itemSearch.filters.push(search.createFilter({
-                name: 'serialnumbers',
-                operator: 'contains',
+                name: 'serialnumber',
+                operator: 'is',
                 values: num_serie
             }));
     		itemSearch.run().each(function(result) {

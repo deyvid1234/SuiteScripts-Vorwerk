@@ -128,7 +128,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
     	log.debug("sumary",summary);
     	try{
     		email.send({
-        		author: '317077',
+        		author: '344096',
     			recipients: ['eomar_ol@hotmail.com','daniel.delgado@mxthermomix.com','pilar.torres@vorwerk.de'],
     			subject: 'Información comisiones generado',
     			body: 'Proceso de guardado terminado ya puede generar el reporte'

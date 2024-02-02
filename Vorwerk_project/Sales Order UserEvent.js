@@ -156,7 +156,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
     		                     fieldId: 'item',
     		                     line: e
     		                 })
-    		                 if(tmp_id == 1126 || tmp_id == 1757 || tmp_id == 2001|| tmp_id == 2170|| tmp_id == 2035){
+    		                 if(tmp_id == 1126 || tmp_id == 1757 || tmp_id == 2001|| tmp_id == 2170|| tmp_id == 2035 || tmp_id == 2571){
     		                	 var subrec = rec.getSublistSubrecord({
      	                            sublistId: 'item',
      	                            fieldId: 'inventorydetail',
@@ -424,6 +424,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 	    		var idOrden = rec.getValue('id')
 	    		var importe = rec.getValue('total')
 	    		var salesrep = rec.getValue('salesrep')
+				var tipo_venta = rec.getValue('custbody_tipo_venta')
 
 	    		old_salesrep = salesrep
 	    		log.debug('salesrep Registra venta',salesrep)
@@ -487,15 +488,16 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 	                ]
 	            	});
 	            	log.debug('objPresentadora',objPresentadora)
-
+	            	log.debug('objPresentadora',objPresentadora)
+	            	log.debug('type',type)
 	            	
-		    		if( type == 'create' || salesrep != old_salesrep){
+		    		if( (type == 'create' || salesrep != old_salesrep) && tipo_venta == 2){
 
 		    			if(runtime.envType != 'PRODUCTION'){ 
-		                    urlLMS = 'http://api-referidos-thrmx.lms-la.com/api/venta'
+		                    urlLMS = 'https://api-referidos-thrmx.lms-la.com/api/venta'
 		                    urlAD = 'https://dev-apiagenda.mxthermomix.com/users/AddSalesExternoNetsuite'
 		                }else{//prod
-		                    urlLMS = 'http://recomiendayganathermomix.mx:9095/api/venta'
+		                    urlLMS = 'https://api.recomiendayganathermomix.mx/api/venta'
 		                    urlAD = 'https://apiagenda.mxthermomix.com/users/AddSalesExternoNetsuite'
 		                }
 		                var today = new Date();
@@ -524,42 +526,19 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 		    				"Order": ""+recordid+""
 		    			}
 		    			log.debug('objRequest LMS',objRequest)
-		    			var responseService = http.post({
+		    			var responseService = https.post({
 			                url: urlLMS,
 			                body : JSON.stringify(objRequest),
 			                headers: {
 			                    "Content-Type": "application/json",
-			                    "Authorization": "Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJJZCI6IjIyMWFmN2U5LTJjMDAtNDYzZC1hYzliLThkZDA2MzhmYzYzMSIsInN1YiI6InRocm14Lm5ldHN1aXRlLmFwaUBsbXMtbGEuY29tIiwiZW1haWwiOiJ0aHJteC5uZXRzdWl0ZS5hcGlAbG1zLWxhLmNvbSIsInVuaXF1ZV9uYW1lIjoidGhybXgubmV0c3VpdGUuYXBpQGxtcy1sYS5jb20iLCJqdGkiOiIwZGUwNmRjNi1iZmZlLTRjYWYtYTI5Ni05M2UwNDc4NTUyMmUiLCJuYmYiOjE2Njg0NDEyMTQsImV4cCI6MTY5OTk3NzIxNCwiaWF0IjoxNjY4NDQxMjE0fQ.6sKvLZuT3fV6HpnE7W1sAwrLtpe2cgVK7cjnQqZqRNk1FNAHhSfvOqZzQxE87Bh4-EjkLg51F6_VzyN0xPxFaQ"
+			                    "Authorization": "Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJJZCI6IjIyMWFmN2U5LTJjMDAtNDYzZC1hYzliLThkZDA2MzhmYzYzMSIsInN1YiI6InRocm14Lm5ldHN1aXRlLmFwaUBsbXMtbGEuY29tIiwiZW1haWwiOiJ0aHJteC5uZXRzdWl0ZS5hcGlAbG1zLWxhLmNvbSIsInVuaXF1ZV9uYW1lIjoidGhybXgubmV0c3VpdGUuYXBpQGxtcy1sYS5jb20iLCJqdGkiOiIzZjc3NzM1NS0zNmI1LTRlYWQtODg2NC0yMzI2MWZlM2VjZjEiLCJuYmYiOjE2OTkzNzIwMDYsImV4cCI6MTczMDk5NDQwNiwiaWF0IjoxNjk5MzcyMDA2fQ.Urf90o2LXL3ZVsepiEDLi5E06AMQHP_ro2FWqEehoDHv1s8fXEoGn7zdU75Q8cZyCYeRT-xEgdr-5koTFHIiuA"
 			                }
 			            }).body;
 			            log.debug('responseService LMS',responseService)
 
 			            log.debug('pre actualizacion customer',objcustomer.custentity_first_so[0].value)
 			            if(objcustomer.custentity_first_so[0].value == false || objcustomer.custentity_first_so[0].value == ''){
-			            	
-
-
-			    			//Ajuste AD
-			    			var objRequestAD = {//Agenda digital
-			    				"NetSuiteID":""+customer+"",//ID Prospecto
-			    				"PedidoID":""+recordid+"",
-			    				"noPedido":numOrden,
-			    				"PedidoStatus":'Activo',
-			    			}
-			    			log.debug('objRequestAD',JSON.stringify(objRequestAD))
-
-				            //Agenda Digital
-				            var responseService = https.post({
-		                        url: urlAD,
-		                        body : JSON.stringify(objRequestAD),
-		                        headers: {
-		                            "Content-Type": "application/json",
-		                            "x-api-key": "QxTbKbIDyB7eN0wCHxCZH5SN6gZzd0Nd7yreJAhW"
-		                        }
-		                    }).body;
-		                    log.debug('responseService AD',responseService)
-
-		                    //Actualizar Customer
+			            	//Actualizar Customer
 				            var submitFields = record.submitFields({
 				                type: 'customer',
 				                id: customer,
@@ -571,6 +550,27 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 				            	}
 				            });
 
+
+			    			//Ajuste AD
+			    			var objRequestAD = {//Agenda digital
+			    				"NetSuiteID":""+customer+"",//ID Prospecto
+			    				"PedidoID":""+recordid+"",
+			    				"noPedido":numOrden,
+			    				"PedidoStatus":'Activo',
+			    			}
+			    			log.debug('objRequestAD first SO',JSON.stringify(objRequestAD))
+
+				            //Agenda Digital
+				            var responseService = https.post({
+		                        url: urlAD,
+		                        body : JSON.stringify(objRequestAD),
+		                        headers: {
+		                            "Content-Type": "application/json",
+		                            "x-api-key": "QxTbKbIDyB7eN0wCHxCZH5SN6gZzd0Nd7yreJAhW"
+		                        }
+		                    }).body;
+		                    log.debug('responseService AD first SO',responseService)
+
 			            }
 			            
 			    	
@@ -578,19 +578,23 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 
 			    	//Campos para validar si es cancelacion 
 			    	var op1 = rec.getValue('custbody_otro_financiamiento')
+                    //log.debug('op1',op1)
 		    		var op1old = oldrec.getValue('custbody_otro_financiamiento')
+                    //log.debug('op1old',op1old)
 		    		var op2 = rec.getValue('custbody_tipo_venta')
+                    //log.debug('op2',op2)
 		    		var op2old = oldrec.getValue('custbody_tipo_venta')
+                    //log.debug('op2old',op2old)
 		    		if( type == 'edit' && ( (op1 == 4 && op1!=op1old) || (op2 == 16 && op2 != op2old) )){
 		    			log.debug('Es cancelacion')
 		    			
 		    			var urlLMSCancel
 		    			var urlADCancel
 		    			if(runtime.envType != 'PRODUCTION'){ 
-		                    urlLMSCancel = 'http://api-referidos-thrmx.lms-la.com/api/Venta/cancelar-venta'
+		                    urlLMSCancel = 'https://api-referidos-thrmx.lms-la.com/api/Venta/cancelar-venta'
 		                    urlADCancel = 'https://dev-apiagenda.mxthermomix.com/users/AddSalesExternoNetsuite'
 		                }else{//prod
-		                    urlLMSCancel = 'http://recomiendayganathermomix.mx:9095/api/Venta/cancelar-venta'
+		                    urlLMSCancel = 'https://api.recomiendayganathermomix.mx/api/Venta/cancelar-venta'
 		                    urlADCancel = 'https://apiagenda.mxthermomix.com/users/AddSalesExternoNetsuite'
 		                }
 
@@ -616,11 +620,11 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 		    			}
 		    			log.debug('objRequest LMS',objRequest)
 		    			log.debug('objRequest.length',JSON.stringify(objRequest).length)
-		    			var responseService = http.post({
+		    			var responseService = https.post({
 			                url: urlLMSCancel,
 			                body : JSON.stringify(objRequest),
 			                headers: {
-			                	"Authorization": "Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJJZCI6IjhhMDJkZDE3LTYzMjAtNGFiMi1iOWFkLWZlZDMzZWRhYzNiNiIsInN1YiI6InZzaWx2YWNAbG1zLmNvbS5teCIsImVtYWlsIjoidnNpbHZhY0BsbXMuY29tLm14IiwidW5pcXVlX25hbWUiOiJ2c2lsdmFjQGxtcy5jb20ubXgiLCJqdGkiOiI3ZjVhYTJiOS1jMTgxLTRjMDctOWRjOS03MzljMmNjM2NhMmEiLCJuYmYiOjE2NzgyMjY0NDAsImV4cCI6MTcwOTg0ODg0MCwiaWF0IjoxNjc4MjI2NDQwfQ.gzoypesLFecnag0kRGCQu9Vy86A_wEYgDUR9j-01ObPX3UW3Pks8hpV5yOGE1ymnXeFsHokPOH5yLyWIybLW8w",
+			                	"Authorization": "Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJJZCI6IjIyMWFmN2U5LTJjMDAtNDYzZC1hYzliLThkZDA2MzhmYzYzMSIsInN1YiI6InRocm14Lm5ldHN1aXRlLmFwaUBsbXMtbGEuY29tIiwiZW1haWwiOiJ0aHJteC5uZXRzdWl0ZS5hcGlAbG1zLWxhLmNvbSIsInVuaXF1ZV9uYW1lIjoidGhybXgubmV0c3VpdGUuYXBpQGxtcy1sYS5jb20iLCJqdGkiOiIzZjc3NzM1NS0zNmI1LTRlYWQtODg2NC0yMzI2MWZlM2VjZjEiLCJuYmYiOjE2OTkzNzIwMDYsImV4cCI6MTczMDk5NDQwNiwiaWF0IjoxNjk5MzcyMDA2fQ.Urf90o2LXL3ZVsepiEDLi5E06AMQHP_ro2FWqEehoDHv1s8fXEoGn7zdU75Q8cZyCYeRT-xEgdr-5koTFHIiuA",
 			                    "Content-Type": "application/json",
 			                }
 			            }).body;
@@ -685,13 +689,292 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 		            });
 	    		}
 
-	    	}catch(e){
-	    		log.debug('Error afterSubmit',e)
-	    	}
+		    	}catch(e){
+		    		log.debug('Error Forma de pago',e)
+		    	}
         }catch(err){
     		log.error("error after submit",err);
     	}
 
+    	try{//Actualizacion Inventario ficticio eshop
+    		if(type == 'create'){
+    			var numLines = salesorder.getLineCount({//Toma las lineas de la SO
+	                sublistId: 'item'
+	            });
+	            log.debug('numLines',numLines)
+	    		for(var e =0; e<numLines; e++){	//Se recorre cada linea
+	    			log.debug('e',e)
+					var tmp_id = rec.getSublistValue({//ID del item
+	                    sublistId: 'item',
+	                    fieldId: 'item',
+	                    line: e
+	                })
+	                var locationSO = rec.getValue('location')
+	                var custbody_so_eshop = rec.getValue('custbody_so_eshop') //Check del restlet que indica que viene de tienda en linea
+
+	                var dataItem = search.lookupFields({// Busqueda de Invdentory Item
+		                type: 'item',
+		                id: tmp_id,
+		                columns: ['custitem_disponible_eshop','recordtype','custitem_transaccion_apartados']//Stock disponible en el campo para eshop, tipo de registro
+		            });
+
+	    			log.debug('dataItem',dataItem)
+	    			var disponible_eshop = parseInt(dataItem['custitem_disponible_eshop']) //Stock dedicado a eshop
+		    		log.debug('disponible_eshop',disponible_eshop)
+		    		var itemType = dataItem['recordtype']
+		    		log.debug('itemType',itemType)
+		    		if(disponible_eshop > 0  && (custbody_so_eshop == true || locationSO == 53) ){//Cambiar Ermita 82 && locationSO == 53
+		    			//Restar quantity del stock eshop
+		    			log.debug('entra if')
+		    			var quantitySalesOrder = rec.getSublistValue({
+		                    sublistId: 'item',
+		                    fieldId: 'quantity',
+		                    line: e
+		                })
+		                log.debug('quantitySalesOrder',quantitySalesOrder)
+		    			var stockAfter = disponible_eshop - quantitySalesOrder //Nuevo stock de Eshop, Disponibler eshop menos lo que acabamos de vender
+		    			log.debug('stockAfter',stockAfter)
+		    			record.submitFields({
+			                type: itemType,
+			                id: tmp_id,
+			                values: { custitem_disponible_eshop: stockAfter}
+		            	})
+		            	//Actualizar SO apartados
+		    			log.debug("cargar")
+	                    var transaccionApartado = dataItem.custitem_transaccion_apartados[0]
+	                    log.debug('transaccionApartados', transaccionApartado)
+	                    var idSOaCargar = transaccionApartado.value
+	                    var cargarSO = record.load({
+	                        type: record.Type.SALES_ORDER,
+	                        id: idSOaCargar,
+	                        isDynamic:true,
+	                    });
+	                    
+	                    var itemLines = cargarSO.getLineCount({
+	                        sublistId  : 'item'
+	                    });
+	                    //var items= []
+
+	                    for(var i=0; i < itemLines; i++){
+	                        var itemId = cargarSO.getSublistValue({
+	                            sublistId : 'item',
+	                            fieldId   : 'item',
+	                            line      : i
+	                        });
+	                        cargarSO.selectLine({
+	                            sublistId: 'item',
+	                            line: i
+	                        });
+	                        var setLocation = cargarSO.setCurrentSublistValue({
+	                            sublistId: 'item',
+	                            fieldId: 'location',
+	                            value: 53
+	                        });
+	                        
+	                        cargarSO.commitLine({//cierre de linea seleccionada 
+	                            sublistId: 'item'
+	                        }); 
+
+	                        if(tmp_id == itemId){
+	                            log.debug("actualizar")
+
+	                           
+	                            var itemQuantity = cargarSO.getSublistValue({
+	                                sublistId : 'item',
+	                                fieldId   : 'quantity',
+	                                line      : i
+	                            });
+	                            cargarSO.selectLine({
+	                                sublistId: 'item',
+	                                line: i
+	                            });
+
+	                            var apartadoTotal= itemQuantity - quantitySalesOrder
+	                            cargarSO.setCurrentSublistValue({
+	                                sublistId : 'item',
+	                                fieldId   : 'quantity',
+	                                value: apartadoTotal
+	                                
+	                            });  
+	                            cargarSO.setCurrentSublistValue({
+	                                sublistId : 'item',
+	                                fieldId   : 'amount',
+	                                value: 0.01
+	                                
+	                            });
+	                            cargarSO.setCurrentSublistValue({
+	                                sublistId : 'item',
+	                                fieldId   : 'location',
+	                                value: 53
+	                                
+	                            });  
+	                            cargarSO.commitLine({//cierre de linea seleccionada 
+	                                sublistId: 'item'
+	                            }); 
+	                                
+
+	                            cargarSO.save({
+	                                enableSourcing: false,
+	                                ignoreMandatoryFields: true
+	                            });
+	                        }
+
+	                    }
+		            }
+	    		}
+    		}
+    	}catch(e){
+    		log.debug('Error en Actualizacion Inventario ficticio eshop - Creacion',e)
+    	}
+    	try{
+    		if(type == 'edit'){
+    			//Proceso de cancelacion Reserva ficticia
+	    		var op1 = rec.getValue('custbody_otro_financiamiento')
+	    		var op1old = oldrec.getValue('custbody_otro_financiamiento')
+	    		var op2 = rec.getValue('custbody_tipo_venta')
+	    		var op2old = oldrec.getValue('custbody_tipo_venta')
+
+	    		var so_first_canc = rec.getValue('custbody_so_first_canc')
+
+			    if( type == 'edit' && ( (op1 == 4 && op1!=op1old) || (op2 == 16 && op2 != op2old) ) && !so_first_canc){
+	                log.debug('so_first_canc', so_first_canc)
+	                var numLines = salesorder.getLineCount({//Toma las lineas de la SO
+	                    sublistId: 'item'
+	                });
+	                log.debug('numLines',numLines)
+	                for(var e =0; e<numLines; e++){ //Se recorre cada linea
+	                    log.debug('e',e)
+	                    var tmp_id = rec.getSublistValue({//ID del item
+	                        sublistId: 'item',
+	                        fieldId: 'item',
+	                        line: e
+	                    })
+	                    var locationSO = rec.getValue('location')
+	                    var custbody_so_eshop = rec.getValue('custbody_so_eshop') //Check del restlet que indica que viene de tienda en linea
+	                    var dataItem = search.lookupFields({// Busqueda de Invdentory Item
+	                        type: 'item',
+	                        id: tmp_id,
+	                        columns: ['custitem_disponible_eshop','recordtype','custitem_transaccion_apartados']//Stock disponible en el campo para eshop, tipo de registro
+	                    });
+
+	                    log.debug('dataItem',dataItem)
+	                    var disponible_eshop = parseInt(dataItem['custitem_disponible_eshop']) //Stock dedicado a eshop
+	                    log.debug('disponible_eshop',disponible_eshop)
+	                    var itemType = dataItem['recordtype']
+	                    log.debug('itemType',itemType)
+	                    if(disponible_eshop > 0 && (custbody_so_eshop == true || locationSO == 53)) {//Cambiar a Ermita 82  && locationSO == 53 
+	                        //Restar quantity del stock eshop
+	                        var quantitySalesOrder = rec.getSublistValue({
+	                            sublistId: 'item',
+	                            fieldId: 'quantity',
+	                            line: e
+	                        })
+	                        log.debug('quantitySalesOrder',quantitySalesOrder)
+	                        var stockAfter = disponible_eshop + quantitySalesOrder //Nuevo stock de Eshop, Disponibler eshop menos lo que acabamos de vender
+	                        log.debug('stockAfter',stockAfter)
+	                        record.submitFields({
+	                        type: itemType,
+	                        id: tmp_id,
+	                        values: { custitem_disponible_eshop: stockAfter}
+	                        })
+                            //Actualizar SO apartados cancelacion
+                        log.debug("cargar cancelacion")
+                        var transaccionApartado = dataItem.custitem_transaccion_apartados[0]
+                        log.debug('transaccionApartados', transaccionApartado)
+                        var idSOaCargar = transaccionApartado.value
+                        var cargarSO = record.load({
+                            type: record.Type.SALES_ORDER,
+                            id: idSOaCargar,
+                            isDynamic:true,
+                        });
+                        
+                        var itemLines = cargarSO.getLineCount({
+                            sublistId  : 'item'
+                        });
+                        //var items= []
+
+                        for(var i=0; i < itemLines; i++){
+                            var itemId = cargarSO.getSublistValue({
+                                sublistId : 'item',
+                                fieldId   : 'item',
+                                line      : i
+                            });
+                            cargarSO.selectLine({
+                                sublistId: 'item',
+                                line: i
+                            });
+                            var setLocation = cargarSO.setCurrentSublistValue({
+                                sublistId: 'item',
+                                fieldId: 'location',
+                                value: 53
+                            });
+                            
+                            cargarSO.commitLine({//cierre de linea seleccionada 
+                                sublistId: 'item'
+                            }); 
+
+                            if(tmp_id == itemId){
+                                log.debug("actualizar")
+
+                               
+                                var itemQuantity = cargarSO.getSublistValue({
+                                    sublistId : 'item',
+                                    fieldId   : 'quantity',
+                                    line      : i
+                                });
+                                cargarSO.selectLine({
+                                    sublistId: 'item',
+                                    line: i
+                                });
+
+                                var apartadoTotal= itemQuantity + quantitySalesOrder
+                                cargarSO.setCurrentSublistValue({
+                                    sublistId : 'item',
+                                    fieldId   : 'quantity',
+                                    value: apartadoTotal
+                                    
+                                });  
+                                cargarSO.setCurrentSublistValue({
+                                    sublistId : 'item',
+                                    fieldId   : 'amount',
+                                    value: 0.01
+                                    
+                                });
+                                cargarSO.setCurrentSublistValue({
+                                    sublistId : 'item',
+                                    fieldId   : 'location',
+                                    value: 53
+                                    
+                                });  
+                                cargarSO.commitLine({//cierre de linea seleccionada 
+                                    sublistId: 'item'
+                                }); 
+                                    
+
+                                cargarSO.save({
+                                    enableSourcing: false,
+                                    ignoreMandatoryFields: true
+                                });
+                            }
+
+                        }
+
+	                        var submitFieldsSalesOrder = record.submitFields({
+	            			    type: record.Type.SALES_ORDER,
+	            			    id: recordid,
+	            			    values: {'custbody_so_first_canc':true}
+	            			});
+	                    }
+	                }
+	            
+			    }
+    		}
+    	}catch(e){
+    		log.debug('Error en Actualizacion Inventario ficticio eshop - Cancelacion',e)
+    	}
+    		
+    		
+    	
     	//Actualizar campo RECLUTADORA
     	if(type == 'edit'){
     		var newRec = scriptContext.newRecord;
@@ -978,7 +1261,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 	   	               })	
 	      			});
 	      		});
-	      		//log.debug('numOrders',numOrders);
+	      		log.debug('numOrders',numOrders);
 	           if(numOrders.length > 10){
 	        	   return false;
 	           }
@@ -1067,7 +1350,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 	    		                     fieldId: 'location',
 	    		                     line: e
 	    		                 })
-	    						if(tmp_id != 2170 && tmp_id != 2001 && tmp_id != 2280 && tmp_id != 2490){
+	    						if(tmp_id != 2170 && tmp_id != 2001 && tmp_id != 2280 && tmp_id != 2490 && tmp_id != 2571){
 	    							var tmp_amount = salesorder.getSublistValue({
 		    		                     sublistId: 'item',
 		    		                     fieldId: 'amount',
@@ -1087,7 +1370,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 		    		                 })  
                                     log.debug('tmp_amount tm',tmp_amount)
                                     log.debug('tmp_id tm',tmp_id)
-                                    descuentoTm = (tmp_amount-0.01)*(-1)
+                                    descuentoTm = (tmp_amount-0.01)*(-.84)
                                 }
 	    						
 	    		            }
@@ -1103,7 +1386,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 	    		                     line: x
 	    		                 })
                                 log.debug('tmp_id',tmp_id+'  line  '+i)
-                                if(tmp_id != 2170 && tmp_id != 2001 && tmp_id != 2280  ){
+                                if(tmp_id != 2170 && tmp_id != 2001 && tmp_id != 2280 && tmp_id != 2490 && tmp_id != 2571 ){
                                     try{
 										salesorder.removeLine({
 	                                        sublistId: 'item',
@@ -1262,7 +1545,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 			                      id: rec.id,
 			                      isDynamic: false
 			                  	});
-		    	            	var descuentoTm = pagatutm(numOdv,odv)*(-1);
+		    	            	var descuentoTm = pagatutm(numOdv,odv)*(-.84);
 		    	            	
 		    	            	var numLines = salesorder.getLineCount({
 		    		                sublistId: 'item'
@@ -1279,7 +1562,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 		    		                     fieldId: 'location',
 		    		                     line: e
 		    		                 })
-		    						if(tmp_id != 2170 && tmp_id != 2001 && tmp_id != 2280){//&& tmp_id != 2280 eliminado hasta definir descuento de tmr
+		    						if(tmp_id != 2170 && tmp_id != 2001 && tmp_id != 2280 && tmp_id != 2571){//&& tmp_id != 2280 eliminado hasta definir descuento de tmr
 		    							var tmp_amount = salesorder.getSublistValue({
 			    		                     sublistId: 'item',
 			    		                     fieldId: 'amount',
@@ -1306,7 +1589,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 		    		                     fieldId: 'item',
 		    		                     line: x
 		    		                 })
-	                                if(tmp_id != 2170 && tmp_id != 2001 && tmp_id != 2280 ){//&& tmp_id != 2280 eliminado hasta definir descuento de tmr
+	                                if(tmp_id != 2170 && tmp_id != 2001 && tmp_id != 2280 && tmp_id != 2571 ){//&& tmp_id != 2280 eliminado hasta definir descuento de tmr
 	                                	log.debug('remover')
 	                                    try{
 											salesorder.removeLine({
@@ -1490,6 +1773,12 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                    name: 'custrecordtm64u',
                    operator: 'is',
                    values: true
+               }));
+      		}else{
+      			busqueda.filters.push(search.createFilter({
+                   name: 'custrecordtm64u',
+                   operator: 'is',
+                   values: false
                }));
       		}
              busqueda.run().each(function(r){//almacenamiento en el object los valores de la tabla 
