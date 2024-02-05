@@ -31,8 +31,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                     cust_type = params.custpage_type_;
                     cust_period = params.custpage_date;
                     cust_entrega = params.custpage_entrega;
-                    fileSearch1 = params.custpage_search_aux1;
-                    fileSearch2 = params.custpage_search_aux2;
+                    
 
                     //Asignacion de valores
                     var custpage_date = form.getField({ id:'custpage_date'});
@@ -45,9 +44,9 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                     custpage_entrega.defaultValue = cust_entrega;
                       
 
-                    log.debug('Filtros','Tipo : '+cust_type+' Promocion : '+cust_promo+' Periodo : '+cust_period+' Entrega : '+cust_entrega+' fileSearch1 '+ fileSearch1+' fileSearch2 '+fileSearch2)
+                    log.debug('Filtros','Tipo : '+cust_type+' Promocion : '+cust_promo+' Periodo : '+cust_period+' Entrega : '+cust_entrega)
                     try{
-                        sublista(form,cust_type,cust_promo,cust_period,cust_entrega,fileSearch1,fileSearch2);
+                        sublista(form,cust_type,cust_promo,cust_period,cust_entrega);
                         
                         context.response.writePage(form)
                     }catch(e){
