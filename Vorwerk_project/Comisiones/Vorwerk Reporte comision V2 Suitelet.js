@@ -178,14 +178,13 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
    
     function sublista(form,cust_type,cust_promo,cust_period,cust_entrega){
         try{
-            var object_fill = {};
+
             const fechaPeriodoCalculado = search.lookupFields({ type: 'customrecord_periods', id: cust_period, columns: ['custrecord_inicio','custrecord_final']});
-            const inicioPeriodo = fechaPeriodoCalculado.custrecord_inicio
-            const finPeriodo = fechaPeriodoCalculado.custrecord_final
+            const inicioPeriodo = fechaPeriodoCalculado.custrecord_inicio // dd/mm/yyyy
+            const finPeriodo = fechaPeriodoCalculado.custrecord_final // dd/mm/yyyy
 
             //Creacion de sublista y sus campos
             var sublist = addFieldsTabla(form,cust_type,cust_promo,cust_period,cust_entrega)
-            
 
             //Busqueda de ordenes de venta 3 periodos antes a hoy
             const salesOrdersData = searchSalesOrders(cust_period,inicioPeriodo,finPeriodo)
@@ -261,9 +260,9 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                 ],
             });
 
-            var allPresentadorData = {} //Todos los datos de todos los presentadores activos
-            var empGrupos = {} //Arreglo de lideres de equipo y sus integrantes
-            var empReclutas = {}//Arreglo de presentadores y sus reclutados
+            var allPresentadorData = {} //Todos los datos de todos los presentadores activos arreglo[presentadora] = {obj1:20/01/2024, conf: CC01...}
+            var empGrupos = {} //Arreglo de lideres de equipo y sus integrantes arreglo[liderGrupo] = [integrante1,integrante2...]
+            var empReclutas = {}//Arreglo de presentadores y sus reclutados arreglo[Reclutadora] = [reclutada1,reclutada2...]
 
             var pagedResults = mySearch.runPaged();
             pagedResults.pageRanges.forEach(function (pageRange){
@@ -311,13 +310,18 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
 
             var equipoYRecluta = {}
 
+
+
             for(i in empReclutas){//Se recorren los presentadores 
                 log.debug('empReclutas[i]',empReclutas[i])
+                log.debug('i',i)
                if(empGrupos.hasOwnProperty(i)){
                     //Existe el presentador en la lista de grupos
                     for(j in empReclutas[i]){//Se recorren los reclutas del presentador
                         log.debug('empReclutas[i][j]',empReclutas[i][j])
+                        log.debug('empGrupos[i]',empGrupos[i])
                         if(empGrupos[i].hasOwnProperty(empReclutas[i][j])){
+                            //llenar el arreglo equipoYRecluta
                             
                             if(equipoYRecluta.hasOwnProperty(i)){
                                 equipoYRecluta[i].push(empReclutas[i][j])
@@ -407,7 +411,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                     ///log.debug('objSO',objSO)
 
                     var idSO = {}
-                    idSO[objSO.internalid] = objSO
+                    idSO[objSO.internalid] = objSO 
                     if(dateSO >= inicioPeriodoDate && dateSO <= finPeriodoDate){
                         //log.debug('esta fecha es del periodo calculado',dateSO)
                         if(thisPeriodSO.hasOwnProperty(objSO.salesrep)){
