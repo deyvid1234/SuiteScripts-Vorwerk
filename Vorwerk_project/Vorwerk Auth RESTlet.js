@@ -825,7 +825,15 @@ function(record,search,https,file,http,format,encode,email) {
             var headers = {
                 "Authorization": "Basic " + credentials
             };
-            
+            var filetypeUrl = url.split('.').reverse();
+            filetypeUrl = filetypeUrl[0]
+            log.debug('filetypeUrl',filetypeUrl)
+
+            if(filetypeUrl == 'pdf'){
+
+            }else{
+
+            }
         	log.debug("url",url);
         	log.debug("folder",folder);
         	log.debug("name",name);
@@ -860,7 +868,7 @@ function(record,search,https,file,http,format,encode,email) {
             
             var my_file = file.create({
                 name: name,
-                fileType: 'JPGIMAGE',
+                fileType: filetypeUrl,
                 contents: data,
                 folder: folder
             });
