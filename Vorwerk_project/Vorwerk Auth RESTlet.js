@@ -424,9 +424,9 @@ function(record,search,https,file,http,format,encode,email) {
 			  id_img_banco = saveItemImage(req_info["custentity_foto_comprobante_banco"],30745,req_info["custentity_ce_rfc"]+"_presentador_banco");
 			  req_info["custentity_foto_comprobante_banco"] = id_img_banco;
 
-			  //imagen comprobante bancario
-			  id_csf = saveItemImage(req_info["custentity_csf"],30745,req_info["firstname"]+'_'+req_info["lastname"]+"_presentador_csf");
-			  req_info["custentity_csf"] = id_csf;
+			  //imagen o PDF CSF
+			  /*id_csf = saveItemImage(req_info["custentity_csf"],30745,req_info["firstname"]+'_'+req_info["lastname"]+"_presentador_csf");
+			  req_info["custentity_csf"] = id_csf;*/
 			}else{
 				
 				obj_user.setValue({fieldId:'custentity_rfc',value:req_info["vatregnumber"]});
@@ -938,6 +938,10 @@ function(record,search,https,file,http,format,encode,email) {
 					    id_img_banco = saveItemImage(req_info["custentity_foto_comprobante_banco"],30745,req_info["custentity_ce_rfc"]+"_presentador_banco");
 				  		req_info["custentity_foto_comprobante_banco"] = id_img_banco;
 				  }
+
+				  //imagen o PDF CSF
+				  /*id_csf = saveItemImage(req_info["custentity_csf"],30745,req_info["firstname"]+'_'+req_info["lastname"]+"_presentador_csf");
+				  req_info["custentity_csf"] = id_csf;*/
 					 
 				}else{
 					
