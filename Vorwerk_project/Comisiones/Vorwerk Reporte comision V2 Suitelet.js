@@ -3,8 +3,8 @@
  * @NScriptType Suitelet
  * @NModuleScope SameAccount
  */
-define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file'], 
-    function(plugin,task, serverWidget, search, runtime,file){
+define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file','./Vorwerk Utils V2.js'], 
+    function(plugin,task, serverWidget, search, runtime,file,Utils){
   
     /**
      * Definition of the Suitelet script trigger point.
@@ -193,11 +193,30 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
 
             log.debug('historicoSO',historicoSO)
             log.debug('thisPeriodSO',thisPeriodSO)
+            /*
+            Extraer datos:
+            thisPeriodSO['id presentador'][indice]['id pedido']['etiqueta']
+            ejemplos:
+            var entityX= thisPeriodSO['39360'][2]['5369424']['tranid']
+            var dateX= thisPeriodSO['39360'][2]['5369424']['trandate']
+            log.debug('entityX', entityX)
+            log.debug('dateX', dateX)*/
 
             //Busqueda datos Presentadores
             const listasPresentadora = searchDataPresentadoras()
-
-
+            const allPresentadoras = listasPresentadora.allPresentadorData
+            log.debug('allPresentadoras', allPresentadoras)
+            const listaGrupos= listasPresentadora.empGrupos
+            log.debug('listaGrupos', listaGrupos)
+            const listaReclutas= listasPresentadora.empReclutas
+            log.debug('listaReclutas', listaReclutas)
+            const listaEquipoRecluta=listasPresentadora.equipoYRecluta
+            log.debug('listaEquipoRecluta', listaEquipoRecluta)
+            //Extraer miembros de X reclutadora o jdg
+            var reclutasdeX=listaReclutas['23170']
+            log.debug('reclutasdeX', reclutasdeX)
+            
+            
            return form;
           
         }catch(e){
@@ -205,7 +224,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
           log.debug('creditos 2',runtime.getCurrentScript().getRemainingUsage()); 
         }   
     }//Fin sublista
-    function searchDataPresentadoras(){
+    function searchDataPresentadoras(){ 
         try{
            
 
@@ -313,14 +332,15 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
 
 
             for(i in empReclutas){//Se recorren los presentadores 
-                log.debug('empReclutas[i]',empReclutas[i])
-                log.debug('i',i)
+               
                if(empGrupos.hasOwnProperty(i)){
+                 log.debug('empReclutas[i]',empReclutas[i])
+                 log.debug('i',i)
+                 log.debug('empGrupos[i]',empGrupos[i])
                     //Existe el presentador en la lista de grupos
                     for(j in empReclutas[i]){//Se recorren los reclutas del presentador
-                        log.debug('empReclutas[i][j]',empReclutas[i][j])
-                        log.debug('empGrupos[i]',empGrupos[i])
-                        if(empGrupos[i].hasOwnProperty(empReclutas[i][j])){
+                        
+                        if(empGrupos[i].indexOf(empReclutas[i][j]) !== -1){                          
                             //llenar el arreglo equipoYRecluta
                             
                             if(equipoYRecluta.hasOwnProperty(i)){
@@ -336,7 +356,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
             log.debug('equipoYRecluta',equipoYRecluta)
 
             
-            return {allPresentadorData:allPresentadorData,empGrupos:empGrupos,empReclutas:empReclutas}
+            return {allPresentadorData:allPresentadorData,empGrupos:empGrupos,empReclutas:empReclutas,equipoYRecluta:equipoYRecluta}
         }catch(e){
             log.error('Error en searchDataPresentadoras',e)
         }
