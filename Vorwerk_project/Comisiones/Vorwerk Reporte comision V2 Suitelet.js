@@ -3,7 +3,7 @@
  * @NScriptType Suitelet
  * @NModuleScope SameAccount
  */
-define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file','./Vorwerk Utils V2.js'], 
+define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file','SuiteScripts/Vorwerk_project/Vorwerk Utils V2.js'], 
     function(plugin,task, serverWidget, search, runtime,file,Utils){
   
     /**
@@ -18,7 +18,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
         try{
 
             log.debug('metohd',context.request.method); 
-        
+            Utils.getLog('este es un argumento desde reporte de comisiones V2')
             var form = createForm();
         
             params = context.request.parameters;
@@ -376,7 +376,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 'AND',
                 ['custbody_tipo_venta', 'anyof', '2', '19', '1'],
                 'AND',
-                ['trandate', 'after', dateToString(dHistorico)],
+                ['trandate', 'after', Utils.dateToString(dHistorico)],
                 'AND',
                 ['mainline', 'is', 'T'],
                 /*'AND',
