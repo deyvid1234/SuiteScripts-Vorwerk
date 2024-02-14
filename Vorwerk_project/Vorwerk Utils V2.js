@@ -7,7 +7,7 @@ function(record, search, runtime, format, query) {
         log.debug('llamado correcto de utils',scriptName)
     }
 
-
+    //Inicia bbusqueda de configuraciones
     function getObjCompConfigDetails(){
         var objCompensationConfig = this.getCompensationConfig();
         log.debug('objCompensationConfig',objCompensationConfig)
@@ -19,6 +19,197 @@ function(record, search, runtime, format, query) {
 
         return objWithVentasReclutamiento
     }
+    
+    function getCompensationConfig(){
+        var confCompensation = search.create({
+            type: 'customrecord_conf_de_compensaciones',
+            columns: [{ name: 'internalid'}],
+            filters: [
+                {
+                    name: 'isinactive',
+                    operator: 'is',
+                    values: false
+                }
+            ]
+        });
+        var objReturn = {};
+        confCompensation.run().each(function(r){
+            objReturn[r.getValue('internalid')] = {
+                'esquemaVentasPresentadora' : {},
+                'esquemaVentasJefaGrupo' : {
+                    'propias': {},
+                    'grupo':{}
+                },
+                'esquemaVentasTrabajaXTM' : {},
+                'esquemaVentasReclutamiento' : {}
+            };
+            return true;
+        });
+        return objReturn;
+    }
+
+    function getEsquemaVentasPresentadora(objCompensationConfig){
+        var esqVentPres = search.create({
+            type: 'customrecord_esq_ventas_pre',
+            columns: [
+                { name: 'internalid'},
+                { name: 'custrecord_esq_ventas_pre_no_ventas'},
+                { name: 'custrecord_esq_ventas_pre_compensacion'},
+                { name: 'custrecord_esq_ventas_pre_entrega'},
+                { name: 'custrecord_esq_ventas_pre_bono'},
+                { name: 'custrecord_esq_ventas_pre_conf_comp'}
+            ],
+            filters: [
+                {
+                    name: 'isinactive',
+                    operator: 'is',
+                    values: false
+                }
+            ]
+        });
+            
+        esqVentPres.run().each(function(r){
+            var thisParent = r.getValue('custrecord_esq_ventas_pre_conf_comp'),
+                internalid = r.getValue('internalid'),
+                numeroVentas = r.getValue('custrecord_esq_ventas_pre_no_ventas');
+            objCompensationConfig[thisParent]['esquemaVentasPresentadora'][numeroVentas] = {
+                'compensacion': r.getValue('custrecord_esq_ventas_pre_compensacion'),
+                'entrega': r.getValue('custrecord_esq_ventas_pre_entrega'),
+                'bonoProductividad': r.getValue('custrecord_esq_ventas_pre_bono'),
+                'internalid': internalid
+            }
+            return true;
+        });
+        return objCompensationConfig;
+    }
+    function getEsquemaVentasJefaPropias(objCompensationConfig){
+        var esqVentJefaProp = search.create({
+            type: 'customrecord_relacion_equipo_propias',
+            columns: [
+                { name: 'internalid'},
+                { name: 'custrecord_relacion_equipo_propias_desde'},
+                { name: 'custrecord_relacion_equipo_propias_hasta'},
+                { name: 'custrecord_relacion_equipo_propias_porc'},
+                { name: 'custrecord_relacion_equipo_propias_c_c'}
+            ],
+            filters: [
+                {
+                    name: 'isinactive',
+                    operator: 'is',
+                    values: false
+                }
+            ]
+        });
+            
+        esqVentJefaProp.run().each(function(r){
+            var internalid = r.getValue('internalid'),
+                thisParent = r.getValue('custrecord_relacion_equipo_propias_c_c');
+//               log.debug('internalid',internalid);
+//               log.debug('thisParent',thisParent);
+            objCompensationConfig[thisParent]['esquemaVentasJefaGrupo']['propias'][internalid] = {
+                'desde': r.getValue('custrecord_relacion_equipo_propias_desde'),
+                'hasta': r.getValue('custrecord_relacion_equipo_propias_hasta'),
+                'porcentaje': r.getValue('custrecord_relacion_equipo_propias_porc')
+            };
+            
+            return true;
+        });
+        return objCompensationConfig;
+    }
+    function getEsquemaVentasJefaGrupo(objCompensationConfig){
+        var esqVentJefaGrupo = search.create({
+            type: 'customrecord_esq_ventas_jdg',
+            columns: [
+                { name: 'internalid'},
+                { name: 'custrecord_esq_ventas_jdg_no_ventas_de'},
+                { name: 'custrecord_esq_ventas_jdg_no_ventas_a'},
+                { name: 'custrecord_esq_ventas_jdg_compensacion'},
+                { name: 'custrecord_esq_ventas_jdg_conf_comp'}
+            ],
+            filters: [
+                {
+                    name: 'isinactive',
+                    operator: 'is',
+                    values: false
+                }
+            ]
+        });
+            
+        esqVentJefaGrupo.run().each(function(r){
+            var internalid = r.getValue('internalid'),
+                thisParent = r.getValue('custrecord_esq_ventas_jdg_conf_comp');
+            objCompensationConfig[thisParent]['esquemaVentasJefaGrupo']['grupo'][internalid] = {
+                'desde': r.getValue('custrecord_esq_ventas_jdg_no_ventas_de'),
+                'hasta': r.getValue('custrecord_esq_ventas_jdg_no_ventas_a'),
+                'compensacion': r.getValue('custrecord_esq_ventas_jdg_compensacion')
+            }
+            return true;
+        });
+        return objCompensationConfig;
+    }
+    function getEsquemaVentasTrabajaXTM(objCompensationConfig){//validar los campos ya que no tiene rango de ventas
+        var esqVentTrabajaXTM = search.create({
+            type: 'customrecord_esq_ventas_txtm',
+            columns: [
+                { name: 'internalid'},
+                { name: 'custrecord_esq_ventas_txtm_no_venta'},
+                { name: 'custrecord_esq_ventas_txtm_compensacion'},
+                { name: 'custrecord_esq_ventas_txtm_retener'},
+                { name: 'custrecord_esq_ventas_txtm_conf_comp'}
+            ],
+            filters: [
+                {
+                    name: 'isinactive',
+                    operator: 'is',
+                    values: false
+                }
+            ]
+        });
+            
+        esqVentTrabajaXTM.run().each(function(r){
+            var internalid = r.getValue('internalid'),
+                thisParent = r.getValue('custrecord_esq_ventas_txtm_conf_comp'),
+                numeroVentas = r.getValue('custrecord_esq_ventas_txtm_no_venta')
+            objCompensationConfig[thisParent]['esquemaVentasTrabajaXTM'][numeroVentas] = {
+                'compensacion': r.getValue('custrecord_esq_ventas_txtm_compensacion'),
+                'retener': r.getValue('custrecord_esq_ventas_txtm_retener'),
+                'internalid' : internalid
+            }
+            return true;
+        });
+        return objCompensationConfig;
+    }
+    function getEsquemaVentasReclutamiento(objCompensationConfig){
+        var esqVentRec = search.create({
+            type: 'customrecord_esq_ventas_rec',
+            columns: [
+                { name: 'internalid'},
+                { name: 'custrecord_esq_ventas_rec_no_venta'},
+                { name: 'custrecord_esq_ventas_rec_compensacion'},
+                { name: 'custrecord_esq_ventas_rec_conf_comp'},
+            ],
+            filters: [
+                {
+                    name: 'isinactive',
+                    operator: 'is',
+                    values: false
+                }
+            ]
+        });
+            
+        esqVentRec.run().each(function(r){
+            var internalid = r.getValue('internalid'),
+                thisParent = r.getValue('custrecord_esq_ventas_rec_conf_comp'),
+                numeroVentas = r.getValue('custrecord_esq_ventas_rec_no_venta');
+            objCompensationConfig[thisParent]['esquemaVentasReclutamiento'][numeroVentas] = {
+                'compensacion': r.getValue('custrecord_esq_ventas_rec_compensacion'),
+                'internalid': internalid
+            }
+            return true;
+        });
+        return objCompensationConfig;
+    }
+    //fin busqueda de compensaciones
 
     //Inicio dateToString
     // Recive un new date y devuelve un texto con formato dd/mm/yyyy
@@ -40,6 +231,8 @@ function(record, search, runtime, format, query) {
         return fechaFormateada;
     }
     //Fin dateToString 
+
+    //inicia stringToDate: recibe una cadena de fecha tipo string y la devuelve tipo date
     function stringToDate(fechaString) {
         // Verificar si la cadena de fecha es nula o indefinida
         fechaString = fechaString.toString();
@@ -83,6 +276,9 @@ function(record, search, runtime, format, query) {
 
         return nuevaFecha;
     }
+    //fin stringToDate
+
+    //Inicia restarMeses: recibe una fecha de tipo string y la cantidad de meses que se desea restar a dicha fecha devuelve la fecha(tipo date) con la rsta correspniente
     function restarMeses(fechaString, cantidadMeses) {
         
         const nuevaFecha = stringToDate(fechaString)
@@ -99,5 +295,11 @@ function(record, search, runtime, format, query) {
         stringToDate:stringToDate,
         restarMeses:restarMeses,
         getObjCompConfigDetails:getObjCompConfigDetails,
+        getCompensationConfig:getCompensationConfig,
+        getEsquemaVentasPresentadora:getEsquemaVentasPresentadora,
+        getEsquemaVentasJefaPropias: getEsquemaVentasJefaPropias,
+        getEsquemaVentasJefaGrupo: getEsquemaVentasJefaGrupo,
+        getEsquemaVentasTrabajaXTM:getEsquemaVentasTrabajaXTM, 
+        getEsquemaVentasReclutamiento:getEsquemaVentasReclutamiento,
     };
 });

@@ -18,9 +18,11 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
         try{
 
             log.debug('metohd',context.request.method); 
-            Utils.getLog('este es un argumento desde reporte de comisiones V2')
             var form = createForm();
-        
+            var compConfigDetails = Utils.getObjCompConfigDetails();
+            var esquemaVentasJefaGrupo= compConfigDetails[3]['getEsquemaVentasJefaGrupo']
+
+            log.debug('esquemaVentasJefaGrupo', esquemaVentasJefaGrupo)
             params = context.request.parameters;
             
                 if(context.request.method == 'POST'){
@@ -192,7 +194,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             const thisPeriodSO = salesOrdersData.thisPeriodSO
 
             log.debug('historicoSO',historicoSO)
-            log.debug('thisPeriodSO',thisPeriodSO)
+            log.debug('thisPeriodSO',thisPeriodSO)//sales reo
             /*
             Extraer datos:
             thisPeriodSO['id presentador'][indice]['id pedido']['etiqueta']
@@ -213,6 +215,10 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             const listaEquipoRecluta=listasPresentadora.equipoYRecluta
             log.debug('listaEquipoRecluta', listaEquipoRecluta)
 
+            /*var datos0008=allPresentadoras['12000']
+            log.debug('datos0008',datos0008)
+            var datos008=allPresentadoras['12000']['employeetype']
+            log.debug('datos008',datos008)*/
             /*Extraer miembros de X reclutadora o jdg
             var reclutasdeX=lista['id reclutadora o jdg']
             var reclutasdeX=listaReclutas['23170']
@@ -226,7 +232,25 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 log.debug('ventasPorRecluta', ventasPorRecluta);
             });
             */
-            
+            //log.debug('Object.keys(allPresentadoras)',Object.keys(thisPeriodSO))
+            for(i in thisPeriodSO){
+              
+              if(allPresentadoras.hasOwnProperty(i))
+              var empType=allPresentadoras[i].employeetype
+              
+              }
+              if(cust_type== 3 && cust_promo == 2){
+                  log.debug('imprimir lideres de equipo TM propia')
+              } else if(cust_type== 3 && cust_promo == 1){
+                  log.debug('imprimir gana tu TM, trabaja x TM')
+                
+              }else if(cust_type== 1 && cust_promo == 2){
+                  log.debug('imprimir presentadoras, TM propia')
+                
+              }else if(cust_type== 1 && cust_promo == 1){
+                  log.debug('imprimir presentadoras, trabaja x TM')
+                
+              }
             
            return form;
           
@@ -334,9 +358,9 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 });
                       
             });
-            log.debug('empReclutas',empReclutas)
-            log.debug('empGrupos',empGrupos)
-            log.debug('allPresentadorData',allPresentadorData)
+            //log.debug('empReclutas',empReclutas)
+            //log.debug('empGrupos',empGrupos)
+            //log.debug('allPresentadorData',allPresentadorData)
 
             var equipoYRecluta = {}
 
@@ -345,9 +369,9 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             for(i in empReclutas){//Se recorren los presentadores 
                
                if(empGrupos.hasOwnProperty(i)){
-                 log.debug('empReclutas[i]',empReclutas[i])
-                 log.debug('i',i)
-                 log.debug('empGrupos[i]',empGrupos[i])
+                 //log.debug('empReclutas[i]',empReclutas[i])
+                 //log.debug('i',i)
+                 //log.debug('empGrupos[i]',empGrupos[i])
                     //Existe el presentador en la lista de grupos
                     for(j in empReclutas[i]){//Se recorren los reclutas del presentador
                         
@@ -364,7 +388,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                     }
                }
             }
-            log.debug('equipoYRecluta',equipoYRecluta)
+            //log.debug('equipoYRecluta',equipoYRecluta)
 
             
             return {allPresentadorData:allPresentadorData,empGrupos:empGrupos,empReclutas:empReclutas,equipoYRecluta:equipoYRecluta}
@@ -390,8 +414,8 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 ['trandate', 'after', Utils.dateToString(dHistorico)],
                 'AND',
                 ['mainline', 'is', 'T'],
-                /*'AND',
-                ['internalid', 'anyof', ['5100520','5397195','5424977']],*/
+                'AND',
+                ['salesrep.custentity_estructura_virtual', 'is', 'F'],
             ];
 
             const salesOrderSearchColTranDate = search.createColumn({ name: 'trandate'});
