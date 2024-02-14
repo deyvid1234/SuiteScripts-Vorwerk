@@ -201,7 +201,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             var dateX= thisPeriodSO['39360'][2]['5369424']['trandate']
             log.debug('entityX', entityX)
             log.debug('dateX', dateX)*/
-
+            
             //Busqueda datos Presentadores
             const listasPresentadora = searchDataPresentadoras()
             const allPresentadoras = listasPresentadora.allPresentadorData
@@ -212,9 +212,20 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             log.debug('listaReclutas', listaReclutas)
             const listaEquipoRecluta=listasPresentadora.equipoYRecluta
             log.debug('listaEquipoRecluta', listaEquipoRecluta)
-            //Extraer miembros de X reclutadora o jdg
+
+            /*Extraer miembros de X reclutadora o jdg
+            var reclutasdeX=lista['id reclutadora o jdg']
             var reclutasdeX=listaReclutas['23170']
             log.debug('reclutasdeX', reclutasdeX)
+            Ejemplo para obtener las ordenes de venta de este periodo de cada recluta en el arreglo de la reclutadora x
+            var reclutasdeX=listaReclutas['23170']
+            log.debug('reclutasdeX', reclutasdeX)
+            reclutasdeX.forEach(function(recluta,index) {
+                log.debug('recluta', recluta);
+                var ventasPorRecluta = thisPeriodSO[recluta];
+                log.debug('ventasPorRecluta', ventasPorRecluta);
+            });
+            */
             
             
            return form;
