@@ -309,7 +309,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                                 montoCincoDos = bonoCincoDos()
                                 montoSupercomision = bonoSupercomision()
                                 */
-                                fillTable(montoVentasPropias)
+                                fillTable(allPresentadoras[i],montoVentasPropias)
                             }
 
                         break;
@@ -354,8 +354,11 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
           log.debug('creditos 2',runtime.getCurrentScript().getRemainingUsage()); 
         }   
     }//Fin sublista
-    function fillTable(ventasPropias,bono2,bono3){
+    function fillTable(empData,ventasPropias,bono2,bono3){
 
+        if(empData){
+            
+        }
         if(ventasPropias){
             //Poner todos los campos que involucran 
 
