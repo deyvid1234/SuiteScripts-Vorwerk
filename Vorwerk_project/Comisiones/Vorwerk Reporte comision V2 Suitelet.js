@@ -20,8 +20,12 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             log.debug('metohd',context.request.method); 
             var form = createForm();
             var compConfigDetails = Utils.getObjCompConfigDetails();
-            var esquemaVentasJefaGrupo= compConfigDetails[3]['getEsquemaVentasJefaGrupo']
+            log.debug('compConfigDetails', compConfigDetails)
+            //compConfigDetails[tipo de cofiguracion][etiqueta del esquema][No de ventas][etiqueta de la compensacion monto]
+            var esquemaVentasPre= compConfigDetails[1]['esquemaVentasPresentadora'][4]['compensacion']
+            log.debug('esquemaVentasPre', esquemaVentasPre)
 
+            var esquemaVentasJefaGrupo= compConfigDetails[1]['esquemaVentasJefaGrupo']['propias'][11]['compensacion']
             log.debug('esquemaVentasJefaGrupo', esquemaVentasJefaGrupo)
             params = context.request.parameters;
             
