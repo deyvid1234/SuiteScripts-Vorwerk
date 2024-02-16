@@ -237,24 +237,84 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             });
             */
             //log.debug('Object.keys(allPresentadoras)',Object.keys(thisPeriodSO))
+
+            var tipoReporteGloobal 
+            /*
+            1 = LE
+            2 = Presentador
+            3= Trabaja x TM 
+            */
+            if(cust_type == 3 && cust_promo == 2 ){//LE y tm Propia 
+                log.debug('Generar Reporte LE')
+                tipoReporteGloobal = 1
+            } else if(cust_type== 1 && cust_promo == 2){//Presentador y tm propia 
+                log.debug('Generar Reporte Presentador')
+                tipoReporteGloobal = 2
+                
+            }else if(cust_type== 1 && cust_promo == 1){// Presentador y Trabaja x TM
+                log.debug('Generar Reporte Trabaja x TM')
+                tipoReporteGloobal = 3
+                
+            }
+
+
             for(i in thisPeriodSO){
               
-              if(allPresentadoras.hasOwnProperty(i))
-              var empType=allPresentadoras[i].employeetype
+                if(allPresentadoras.hasOwnProperty(i)){
+                    var empType=allPresentadoras[i].employeetype
+                    var empPromo=allPresentadoras[i].promocion
+
+                    var montoVentas = 0
+                    var montoTresDos = 0
+                    var montoReclutamiento = 0
+                    var montoEmerald = 0
+
+                    var testFBonos
+
+                    switch(tipoReporteGloobal){
+                        case 1: //Reporte LE
+                            
+                            if(empType == 3 && empPromo == 2){
+                                //Calcular reporte para la persona
+                                testFBonos = testBonos('Reporte LE '+i)
+                                /*
+                                montoVentas = bonoVentas()
+                                montoTresDos = bonotresdos()
+                                montoEmerald = bonoEmerald()
+                                montoReclutamiento = bonoReclutamiento()*/
+                            }
+
+                        break;
+                        case 2: //Reporte Presentadora
+                            if(empType == 1 && empPromo == 2){
+                                //Calcular reporte para la persona
+                                testFBonos = testBonos('Reporte Presentadora'+i)
+                                /*
+                                montoVentas = bonoVentas()
+                                montoTresDos = bonotresdos()
+                                montoEmerald = bonoEmerald()
+                                montoReclutamiento = bonoReclutamiento()
+                                */
+                            }
+                        
+                        break;
+                        case 3: //Reporte Trabaja x TM
+                            if(empType == 1 && empPromo == 1){
+                                //Calcular reporte para la persona
+                                testFBonos = testBonos('Reporte Trabaja TM'+i)
+                                /*
+                                montoVentas = bonoVentas()
+                                montoTresDos = bonotresdos()
+                                montoEmerald = bonoEmerald()
+                                montoReclutamiento = bonoReclutamiento()
+                                */
+                            }
+                        break;
+                    }
+                }
+                
+            }
               
-              }
-              if(cust_type== 3 && cust_promo == 2){
-                  log.debug('imprimir lideres de equipo TM propia')
-              } else if(cust_type== 3 && cust_promo == 1){
-                  log.debug('imprimir gana tu TM, trabaja x TM')
-                
-              }else if(cust_type== 1 && cust_promo == 2){
-                  log.debug('imprimir presentadoras, TM propia')
-                
-              }else if(cust_type== 1 && cust_promo == 1){
-                  log.debug('imprimir presentadoras, trabaja x TM')
-                
-              }
             
            return form;
           
@@ -263,6 +323,11 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
           log.debug('creditos 2',runtime.getCurrentScript().getRemainingUsage()); 
         }   
     }//Fin sublista
+    function testBonos(tipoReporte){
+
+        return 'Se están calculando los bonos del '+tipoReporte;
+
+    }
     function searchDataPresentadoras(){ 
         try{
            

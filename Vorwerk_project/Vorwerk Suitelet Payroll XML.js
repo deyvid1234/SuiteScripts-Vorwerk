@@ -866,14 +866,14 @@ function(record, search, email, render, file,runtime, encode, https, format, xml
             var currentDate = new Date(),
                 currentYear = currentDate.getFullYear(),
                 currentMonth = currentDate.getMonth(),
-	            currentDay = currentDate.getDate();
-	            if(currentDay > 15){//si es el mismo mes tomamos el mes en curso
-	                currentMonth = parseInt(currentMonth);
-	            }else{//si es de los primeros días del mes vamos por el mes anterior
-	                currentMonth = parseInt(currentMonth)-1
-	            }
+                currentDay = currentDate.getDate();
+                if(currentDay > 15){//si es el mismo mes tomamos el mes en curso
+                    currentMonth = parseInt(currentMonth);
+                }else{//si es de los primeros días del mes vamos por el mes anterior
+                    currentMonth = parseInt(currentMonth)-1
+                }
             if(currentMonth == -1){
-            	currentMonth = 0;
+                currentMonth = 0;
             }
             //currentYear = 2020;
             var arrMonths = [ "enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre" ];
