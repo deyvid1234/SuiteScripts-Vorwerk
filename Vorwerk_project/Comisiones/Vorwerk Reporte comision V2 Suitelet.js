@@ -21,11 +21,9 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             var form = createForm();
             var compConfigDetails = Utils.getObjCompConfigDetails();
             log.debug('compConfigDetails', compConfigDetails)
-            //compConfigDetails[tipo de cofiguracion][etiqueta del esquema][No de ventas][etiqueta de la compensacion monto]
-            var esquemaVentasPre= compConfigDetails[1]['esquemaVentasPresentadora'][4]['compensacion']
-            log.debug('esquemaVentasPre', esquemaVentasPre)
+            
 
-            var esquemaVentasJefaGrupo= compConfigDetails[1]['esquemaVentasJefaGrupo']['propias'][11]['compensacion']
+            var esquemaVentasJefaGrupo= compConfigDetails[1]['esquemaVentasJefaGrupo']['propias']
             log.debug('esquemaVentasJefaGrupo', esquemaVentasJefaGrupo)
             params = context.request.parameters;
             
@@ -259,29 +257,55 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
 
 
             for(i in thisPeriodSO){
-              
+
                 if(allPresentadoras.hasOwnProperty(i)){
                     var empType=allPresentadoras[i].employeetype
                     var empPromo=allPresentadoras[i].promocion
 
-                    var montoVentas = 0
-                    var montoTresDos = 0
-                    var montoReclutamiento = 0
+                    var montoComisionCK= 0
+                    var montoVentasPropias = 0
+                    var montoEntrega = 0
+                    var montoProductividad = 0
                     var montoEmerald = 0
+                    var montoGarantia = 0
+                    var montoReclutamiento = 0
+                    var montoTalento = 0
+                    var montoVentaEquipo = 0
+                    var montoTresDos = 0
+                    var montoCincoDos = 0
+                    var montoSupercomision = 0
+                    
 
                     var testFBonos
 
                     switch(tipoReporteGloobal){
                         case 1: //Reporte LE
-                            
                             if(empType == 3 && empPromo == 2){
                                 //Calcular reporte para la persona
+                                var configuracion= allPresentadoras[i].emp_conf
+                                log.debug('configuracion',configuracion)
+                                var ventas = thisPeriodSO[i]
+                                log.debug('ventas',ventas)
+                                var ventasNo = thisPeriodSO[i].length
+                                log.debug('ventasNo',ventasNo)
+
                                 testFBonos = testBonos('Reporte LE '+i)
+                                log.debug('testFBonos',testFBonos)
+                                montoVentasPropias = bonoVentaPropia(i)
                                 /*
-                                montoVentas = bonoVentas()
-                                montoTresDos = bonotresdos()
+                                montoComisionCK = bonoComCK()
+                                montoVentasPropias = bonoVentaPropia(i)
+                                montoEntrega = bonoEntrega()
+                                montoProductividad = bonoProductividad()
                                 montoEmerald = bonoEmerald()
-                                montoReclutamiento = bonoReclutamiento()*/
+                                montoGarantia = bonoGarantia()
+                                montoReclutamiento = bonoReclutamiento()
+                                montoTalento = bonoTalento()
+                                montoVentaEquipo = bonoVentaEquipo()
+                                montoTresDos = bonotresdos()
+                                montoCincoDos = bonoCincoDos()
+                                montoSupercomision = bonoSupercomision()
+                                */
                             }
 
                         break;
@@ -289,10 +313,14 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                             if(empType == 1 && empPromo == 2){
                                 //Calcular reporte para la persona
                                 testFBonos = testBonos('Reporte Presentadora'+i)
+                                log.debug('testFBonos',testFBonos)
                                 /*
-                                montoVentas = bonoVentas()
-                                montoTresDos = bonotresdos()
+                                montoComisionCK = bonoComCK()
+                                montoVentasPropias = bonoVentaPropia()
+                                montoEntrega = bonoEntrega()
+                                montoProductividad = bonoProductividad()
                                 montoEmerald = bonoEmerald()
+                                montoGarantia = bonoGarantia()
                                 montoReclutamiento = bonoReclutamiento()
                                 */
                             }
@@ -302,10 +330,9 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                             if(empType == 1 && empPromo == 1){
                                 //Calcular reporte para la persona
                                 testFBonos = testBonos('Reporte Trabaja TM'+i)
+                                log.debug('testFBonos',testFBonos)
                                 /*
-                                montoVentas = bonoVentas()
-                                montoTresDos = bonotresdos()
-                                montoEmerald = bonoEmerald()
+                                montoComisionCK = bonoComCK()
                                 montoReclutamiento = bonoReclutamiento()
                                 */
                             }
@@ -324,6 +351,71 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
         }   
     }//Fin sublista
     function testBonos(tipoReporte){
+
+        return 'Se están calculando los bonos del '+tipoReporte;
+
+    }
+    function bonoSupercomision(tipoReporte){
+
+        return 'Se están calculando los bonos del '+tipoReporte;
+
+    }
+    function bonoCincoDos(tipoReporte){
+
+        return 'Se están calculando los bonos del '+tipoReporte;
+
+    }
+    function bonotresdos(tipoReporte){
+
+        return 'Se están calculando los bonos del '+tipoReporte;
+
+    }
+    function bonoVentaEquipo(tipoReporte){
+
+        return 'Se están calculando los bonos del '+tipoReporte;
+
+    }
+    function bonoTalento(tipoReporte){
+
+        return 'Se están calculando los bonos del '+tipoReporte;
+
+    }
+    function bonoReclutamiento(tipoReporte){
+
+        return 'Se están calculando los bonos del '+tipoReporte;
+
+    }
+    function bonoGarantia(tipoReporte){
+
+        return 'Se están calculando los bonos del '+tipoReporte;
+
+    }
+    function bonoEmerald(tipoReporte){
+
+        return 'Se están calculando los bonos del '+tipoReporte;
+
+    }
+    function bonoProductividad(tipoReporte){
+
+        return 'Se están calculando los bonos del '+tipoReporte;
+
+    }
+    function bonoEntrega(tipoReporte){
+
+        return 'Se están calculando los bonos del '+tipoReporte;
+
+    }
+    function bonoVentaPropia(id){
+      log.debug('id desde funcion',i)
+
+      //compConfigDetails[tipo de cofiguracion][etiqueta del esquema][No de ventas][etiqueta de la compensacion monto]
+      //var esquemaVentasPre= compConfigDetails[1]['esquemaVentasPresentadora'][4]['compensacion']
+      //log.debug('esquemaVentasPre', esquemaVentasPre)
+
+        return 'Se están calculando los bonos del '+tipoReporte;
+
+    }
+    function bonoComCK(tipoReporte){
 
         return 'Se están calculando los bonos del '+tipoReporte;
 
