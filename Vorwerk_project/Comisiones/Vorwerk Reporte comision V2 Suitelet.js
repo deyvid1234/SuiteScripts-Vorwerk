@@ -50,7 +50,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
 
                     log.debug('Filtros','Tipo : '+cust_type+' Promocion : '+cust_promo+' Periodo : '+cust_period+' Entrega : '+cust_entrega)
                     try{
-                        sublista(form,cust_type,cust_promo,cust_period,cust_entrega);
+                        sublista(form,cust_type,cust_promo,cust_period,cust_entrega,compConfigDetails);
                         
                         context.response.writePage(form)
                     }catch(e){
@@ -180,7 +180,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
     }// Fin createForm
 
    
-    function sublista(form,cust_type,cust_promo,cust_period,cust_entrega){
+    function sublista(form,cust_type,cust_promo,cust_period,cust_entrega,compConfigDetails){
         try{
 
             const fechaPeriodoCalculado = search.lookupFields({ type: 'customrecord_periods', id: cust_period, columns: ['custrecord_inicio','custrecord_final']});
@@ -259,11 +259,13 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             for(i in thisPeriodSO){
 
                 if(allPresentadoras.hasOwnProperty(i)){
+                    //Datos EMP
                     var empType=allPresentadoras[i].employeetype
                     var empPromo=allPresentadoras[i].promocion
+                    const empConfiguracion = allPresentadoras[i].emp_conf
 
                     var montoComisionCK= 0
-                    var montoVentasPropias = 0
+                    var fVentasPropias = false
                     var montoEntrega = 0
                     var montoProductividad = 0
                     var montoEmerald = 0
@@ -282,8 +284,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                         case 1: //Reporte LE
                             if(empType == 3 && empPromo == 2){
                                 //Calcular reporte para la persona
-                                var configuracion= allPresentadoras[i].emp_conf
-                                log.debug('configuracion',configuracion)
+                                
                                 var ventas = thisPeriodSO[i]
                                 log.debug('ventas',ventas)
                                 var ventasNo = thisPeriodSO[i].length
@@ -291,7 +292,9 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
 
                                 testFBonos = testBonos('Reporte LE '+i)
                                 log.debug('testFBonos',testFBonos)
-                                montoVentasPropias = bonoVentaPropia(i)
+                                fVentasPropias = bonoVentaPropia(i,allPresentadoras[i],thisPeriodSO[i],compConfigDetails)
+                                montoVentasPropias.monto
+                                montoVentasPropias.data
                                 /*
                                 montoComisionCK = bonoComCK()
                                 montoVentasPropias = bonoVentaPropia(i)
@@ -306,6 +309,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                                 montoCincoDos = bonoCincoDos()
                                 montoSupercomision = bonoSupercomision()
                                 */
+                                fillTable(montoVentasPropias)
                             }
 
                         break;
@@ -350,9 +354,44 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
           log.debug('creditos 2',runtime.getCurrentScript().getRemainingUsage()); 
         }   
     }//Fin sublista
-    function testBonos(tipoReporte){
+    function fillTable(ventasPropias,bono2,bono3){
 
-        return 'Se están calculando los bonos del '+tipoReporte;
+        if(ventasPropias){
+            //Poner todos los campos que involucran 
+
+            var v
+
+            //Venta Propia
+            v = ventasPropias.monto
+            sublist.setSublistValue({
+                id : 'custentity_venta_propia',
+                line : cont_line,
+                value : v>0?v:0
+            });
+
+            v = objKeys(ventasPropias.data)
+            sublist.setSublistValue({
+                id : 'custentity_numeroventas',
+                line : cont_line,
+                value : v!=''?v:''
+            });
+
+            v = ventasPropias.data
+            sublist.setSublistValue({
+                id : 'custentity_arregloidSO',
+                line : cont_line,
+                value : v!=''?v:''
+            });
+        }
+
+        if(bono2){
+
+        }
+        if(bono3){
+            
+        }
+
+        return 'return fillTable';
 
     }
     function bonoSupercomision(tipoReporte){
@@ -405,13 +444,21 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
         return 'Se están calculando los bonos del '+tipoReporte;
 
     }
-    function bonoVentaPropia(id){
-      log.debug('id desde funcion',i)
+    function bonoVentaPropia(empId,empData,empSOThisPeriod,compConfigDetails){
 
+      log.debug('id desde funcion',i)
+      log.debug()
+
+      objkey - empSOThisPeriod
       //compConfigDetails[tipo de cofiguracion][etiqueta del esquema][No de ventas][etiqueta de la compensacion monto]
       //var esquemaVentasPre= compConfigDetails[1]['esquemaVentasPresentadora'][4]['compensacion']
       //log.debug('esquemaVentasPre', esquemaVentasPre)
 
+
+            //monto: Monto de cal cof a partir del numero de ventas 
+            //data: Arreglo de Internal id de Sales Order del EMP
+
+        return {monto:esquemaVentasPre, data:}
         return 'Se están calculando los bonos del '+tipoReporte;
 
     }
