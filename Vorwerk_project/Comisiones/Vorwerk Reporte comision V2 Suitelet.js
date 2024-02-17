@@ -254,7 +254,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 tipoReporteGloobal = 3
                 
             }
-
+            var cont_line = 0
 
             for(i in thisPeriodSO){
 
@@ -262,40 +262,40 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                     //Datos EMP
                     var empType=allPresentadoras[i].employeetype
                     var empPromo=allPresentadoras[i].promocion
+                    var dataEmp = allPresentadoras[i]
                     const empConfiguracion = allPresentadoras[i].emp_conf
 
-                    var montoComisionCK= 0
+
+                    var montoComisionCK= false
                     var fVentasPropias = false
-                    var montoEntrega = 0
-                    var montoProductividad = 0
-                    var montoEmerald = 0
-                    var montoGarantia = 0
-                    var montoReclutamiento = 0
-                    var montoTalento = 0
-                    var montoVentaEquipo = 0
-                    var montoTresDos = 0
-                    var montoCincoDos = 0
-                    var montoSupercomision = 0
+                    var montoEntrega = false
+                    var montoProductividad = false
+                    var montoEmerald = false
+                    var montoGarantia = false
+                    var montoReclutamiento = false
+                    var montoTalento = false
+                    var montoVentaEquipo = false
+                    var montoTresDos = false
+                    var montoCincoDos = false
+                    var montoSupercomision = false
                     
-
+                    cont_line++
                     var testFBonos
-
+                    
                     switch(tipoReporteGloobal){
                         case 1: //Reporte LE
                             if(empType == 3 && empPromo == 2){
                                 //Calcular reporte para la persona
                                 
-                                var ventas = thisPeriodSO[i]
-                                log.debug('ventas',ventas)
-                                var ventasNo = thisPeriodSO[i].length
-                                log.debug('ventasNo',ventasNo)
+                                fVentasPropias = bonoVentaPropia(i,dataEmp,thisPeriodSO[i],compConfigDetails)
+                                log.debug('fVentasPropias',fVentasPropias)
 
-                                testFBonos = testBonos('Reporte LE '+i)
-                                log.debug('testFBonos',testFBonos)
-                                fVentasPropias = bonoVentaPropia(i,allPresentadoras[i],thisPeriodSO[i],compConfigDetails)
+                                /*
+
                                 montoVentasPropias.monto
                                 montoVentasPropias.data
-                                /*
+
+
                                 montoComisionCK = bonoComCK()
                                 montoVentasPropias = bonoVentaPropia(i)
                                 montoEntrega = bonoEntrega()
@@ -309,7 +309,9 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                                 montoCincoDos = bonoCincoDos()
                                 montoSupercomision = bonoSupercomision()
                                 */
-                                fillTable(allPresentadoras[i],montoVentasPropias)
+                                
+                                fillTable(sublist,dataEmp,fVentasPropias,cont_line)
+                                
                             }
 
                         break;
@@ -354,50 +356,94 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
           log.debug('creditos 2',runtime.getCurrentScript().getRemainingUsage()); 
         }   
     }//Fin sublista
-    function fillTable(empData,ventasPropias,bono2,bono3){
-
-        if(empData){
+    function fillTable(sublist,dataEmp,ventasPropias,cont_line){
+        var linea = cont_line
+        
+        if(dataEmp){
+          
+          var nombre=dataEmp.internalid
+          
+          sublist.setSublistValue({
+              id : 'nombre',
+              line : linea,
+              value : nombre
+          });
+          var compensacionesDeIngreso=dataEmp.emp_conf
+         
+          sublist.setSublistValue({
+              id : 'ingreso',
+              line : linea,
+              value : compensacionesDeIngreso
+          });
+          var delegadas=dataEmp.delegada
+          sublist.setSublistValue({
+              id : 'delegadas',
+              line : linea,
+              value : delegadas
+          });
+          /*
+          var reclutadora=dataEmp.internalid
+          log.debug('name', name)
+          sublist.setSublistValue({
+              id : 'nombre',
+              line : cont_line,
+              value : reclutadora
+          });*/
+          var fechaDeContratacion=dataEmp.hiredate
+  
+          sublist.setSublistValue({
+              id : 'hiredate',
+              line : linea,
+              value : fechaDeContratacion
+          });
+          var unidad=dataEmp.unidad
+          sublist.setSublistValue({
+              id : 'custentity_nombre_unidad',
+              line : cont_line,
+              value : unidad
+          });
             
         }
         if(ventasPropias){
             //Poner todos los campos que involucran 
-
             var v
-
             //Venta Propia
             v = ventasPropias.monto
+            log.debug('vMonto',v)
             sublist.setSublistValue({
                 id : 'custentity_venta_propia',
-                line : cont_line,
+                line : linea,
                 value : v>0?v:0
             });
-
-            v = objKeys(ventasPropias.data)
+            //Ventas TM o Ventas CK
+            v = ventasPropias.data.length
+            log.debug('vData',v)
             sublist.setSublistValue({
-                id : 'custentity_numeroventas',
-                line : cont_line,
-                value : v!=''?v:''
+                id : 'custentity_odv_jdg',
+                line : linea,
+                value : v!=0?v:0
             });
-
-            v = ventasPropias.data
+            //ID ODV
+            v = JSON.stringify(ventasPropias.data)
+            log.debug('vString',v)
             sublist.setSublistValue({
-                id : 'custentity_arregloidSO',
-                line : cont_line,
+                id : 'custentity_odv_jdg_ids',
+                line : linea,
                 value : v!=''?v:''
             });
         }
 
-        if(bono2){
+        /*if(bono2){
 
         }
         if(bono3){
             
-        }
+        }*/
 
-        return 'return fillTable';
+        return fillTable;
 
     }
-    function bonoSupercomision(tipoReporte){
+   /* function bonoSupercomision(tipoReporte){
 
         return 'Se están calculando los bonos del '+tipoReporte;
 
@@ -446,30 +492,38 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
 
         return 'Se están calculando los bonos del '+tipoReporte;
 
-    }
+    }*/
     function bonoVentaPropia(empId,empData,empSOThisPeriod,compConfigDetails){
-
-      log.debug('id desde funcion',i)
-      log.debug()
-
-      objkey - empSOThisPeriod
+      
+      var ventas = empSOThisPeriod
+      log.debug('ventas',ventas)
+      var data = []
+      for (i in ventas){
+        var ventasData= Object.keys(ventas[i])
+        log.debug('ventasData',ventasData)
+        data.push(ventasData)
+      }
+      log.debug('data', data)
+      var ventasNo = empSOThisPeriod.length
+      log.debug('ventasNo',ventasNo)
+      //objkey - empSOThisPeriod
       //compConfigDetails[tipo de cofiguracion][etiqueta del esquema][No de ventas][etiqueta de la compensacion monto]
-      //var esquemaVentasPre= compConfigDetails[1]['esquemaVentasPresentadora'][4]['compensacion']
-      //log.debug('esquemaVentasPre', esquemaVentasPre)
+      var montoVentasPre= compConfigDetails[1]['esquemaVentasPresentadora'][ventasNo]['compensacion']
+      log.debug('montoVentasPre', montoVentasPre)
 
 
             //monto: Monto de cal cof a partir del numero de ventas 
             //data: Arreglo de Internal id de Sales Order del EMP
 
-        return {monto:esquemaVentasPre, data:}
-        return 'Se están calculando los bonos del '+tipoReporte;
+        return {monto:montoVentasPre, data:data}
+      
 
     }
-    function bonoComCK(tipoReporte){
+   /* function bonoComCK(tipoReporte){
 
         return 'Se están calculando los bonos del '+tipoReporte;
 
-    }
+    }*/
     function searchDataPresentadoras(){ 
         try{
            
@@ -500,7 +554,8 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             const empSearchcustentity_conf_rec = search.createColumn({ name: 'custentity_conf_rec'});
             const empSearchissalesrep = search.createColumn({ name: 'issalesrep'});
             const empSearchinternalid = search.createColumn({ name: 'internalid'});
-            
+            const empSearchdelegada = search.createColumn({ name: 'custentity_delegada'});
+            const empSearchunidad = search.createColumn({ name: 'custentity_nombre_unidad'});
 
             const mySearch = search.create({
                 type: 'employee',
@@ -522,6 +577,8 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                     empSearchcustentity_conf_rec,
                     empSearchissalesrep,
                     empSearchinternalid,
+                    empSearchdelegada,
+                    empSearchunidad,
                 ],
             });
 
@@ -551,7 +608,8 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                     objEMP.conf_reclutamiento = r.getValue('custentity_conf_rec')
                     objEMP.issalesrep = r.getValue('issalesrep')
                     objEMP.internalid = r.getValue('internalid')
-                    
+                    objEMP.delegada = r.getText('custentity_delegada')
+                    objEMP.unidad = r.getValue('custentity_nombre_unidad')
                     allPresentadorData[objEMP.internalid] = objEMP
 
                     if(empGrupos.hasOwnProperty(objEMP.supervisor)){
