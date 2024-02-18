@@ -364,49 +364,46 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
               line : linea,
               value : linea
           });
-       /* if(dataEmp){
+       if(dataEmp){
           
-          var nombre=dataEmp.internalid
-          
+          var v=dataEmp.internalid        
           sublist.setSublistValue({
               id : 'nombre',
               line : linea,
-              value : nombre
+              value : v!=''?v:''
           });
 
-          var compensacionesDeIngreso=dataEmp.emp_conf
-         
+          var v=dataEmp.emp_conf         
           sublist.setSublistValue({
               id : 'ingreso',
               line : linea,
-              value : compensacionesDeIngreso
+              value : v!=''?v:''
           });
-          var delegadas=dataEmp.delegada
+          var v=dataEmp.delegada
           sublist.setSublistValue({
               id : 'delegadas',
               line : linea,
-              value : delegadas
+              value : v!=''?v:''
           });
-          /*
-          var reclutadora=dataEmp.internalid
+          
+          /*var reclutadora=dataEmp.internalid
           log.debug('name', name)
           sublist.setSublistValue({
               id : 'nombre',
               line : cont_line,
               value : reclutadora
-          });
-          var fechaDeContratacion=dataEmp.hiredate
-  
+          });*/
+          var v=dataEmp.hiredate 
           sublist.setSublistValue({
               id : 'hiredate',
               line : linea,
-              value : fechaDeContratacion
+              value : v!=''?v:''
           });
-          var unidad=dataEmp.unidad
+          var v=dataEmp.unidad
           sublist.setSublistValue({
               id : 'custentity_nombre_unidad',
               line : cont_line,
-              value : unidad
+              value : v!=''?v:''
           });
             
         }
@@ -439,7 +436,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             });
         }
 
-        if(bono2){
+        /*if(bono2){
 
         }
         if(bono3){
