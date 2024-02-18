@@ -254,7 +254,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 tipoReporteGloobal = 3
                 
             }
-            var cont_line = 0
+            var cont_line = -1
 
             for(i in thisPeriodSO){
 
@@ -279,7 +279,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                     var montoCincoDos = false
                     var montoSupercomision = false
                     
-                    cont_line++
+
                     var testFBonos
                     
                     switch(tipoReporteGloobal){
@@ -309,7 +309,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                                 montoCincoDos = bonoCincoDos()
                                 montoSupercomision = bonoSupercomision()
                                 */
-                                
+                                cont_line++
                                 fillTable(sublist,dataEmp,fVentasPropias,cont_line)
                                 
                             }
@@ -358,8 +358,13 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
     }//Fin sublista
     function fillTable(sublist,dataEmp,ventasPropias,cont_line){
         var linea = cont_line
-        
-        if(dataEmp){
+        log.debug('linea',linea)
+        sublist.setSublistValue({
+              id : 'nombre',
+              line : linea,
+              value : linea
+          });
+       /* if(dataEmp){
           
           var nombre=dataEmp.internalid
           
@@ -368,6 +373,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
               line : linea,
               value : nombre
           });
+
           var compensacionesDeIngreso=dataEmp.emp_conf
          
           sublist.setSublistValue({
@@ -388,7 +394,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
               id : 'nombre',
               line : cont_line,
               value : reclutadora
-          });*/
+          });
           var fechaDeContratacion=dataEmp.hiredate
   
           sublist.setSublistValue({
@@ -433,7 +439,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             });
         }
 
-        /*if(bono2){
+        if(bono2){
 
         }
         if(bono3){
