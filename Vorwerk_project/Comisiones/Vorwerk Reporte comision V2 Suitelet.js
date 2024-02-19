@@ -286,7 +286,9 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                         case 1: //Reporte LE
                             if(empType == 3 && empPromo == 2){
                                 //Calcular reporte para la persona
-                                
+                                var reclutas=listaReclutas[i]
+                                var integrantesEquipo=listaGrupos[i]
+                                var reclutasEquipo=listaEquipoRecluta[i]
                                 fVentasPropias = bonoVentaPropia(i,dataEmp,thisPeriodSO[i],compConfigDetails)
                                 log.debug('fVentasPropias',fVentasPropias)
 
@@ -310,7 +312,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                                 montoSupercomision = bonoSupercomision()
                                 */
                                 cont_line++
-                                fillTable(sublist,dataEmp,fVentasPropias,cont_line)
+                                fillTable(sublist,dataEmp,fVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo)
                                 
                             }
 
@@ -356,7 +358,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
           log.debug('creditos 2',runtime.getCurrentScript().getRemainingUsage()); 
         }   
     }//Fin sublista
-    function fillTable(sublist,dataEmp,ventasPropias,cont_line){
+    function fillTable(sublist,dataEmp,ventasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo){
         var linea = cont_line
         log.debug('linea',linea)
         sublist.setSublistValue({
@@ -386,13 +388,13 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
               value : v!=''?v:''
           });
           
-          /*var reclutadora=dataEmp.internalid
-          log.debug('name', name)
+          var v=dataEmp.reclutadoraID
+          log.debug('name', v)
           sublist.setSublistValue({
-              id : 'nombre',
+              id : 'reclutadora',
               line : cont_line,
-              value : reclutadora
-          });*/
+              value : v!=''?v:''
+          });
           var v=dataEmp.hiredate 
           sublist.setSublistValue({
               id : 'hiredate',
@@ -405,6 +407,22 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
               line : cont_line,
               value : v!=''?v:''
           });
+          //Reclutas
+            v = reclutas
+            log.debug('vrec',v)
+            sublist.setSublistValue({
+                id : 'custentity_reclutas',
+                line : linea,
+                value : v!=''?v:''
+            });
+            v = integrantesEquipo
+            log.debug('vequipo',v)
+            sublist.setSublistValue({
+                id : 'custentity_presentadoras',
+                line : linea,
+                value : v!=''?v:''
+            });
+
             
         }
         if(ventasPropias){
@@ -434,6 +452,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 line : linea,
                 value : v!=''?v:''
             });
+
         }
 
         /*if(bono2){
@@ -559,6 +578,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             const empSearchinternalid = search.createColumn({ name: 'internalid'});
             const empSearchdelegada = search.createColumn({ name: 'custentity_delegada'});
             const empSearchunidad = search.createColumn({ name: 'custentity_nombre_unidad'});
+            const employeeSearchReclutadoraInternalId = search.createColumn({ name: 'internalid', join: 'custentity_reclutadora' });
 
             const mySearch = search.create({
                 type: 'employee',
@@ -582,6 +602,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                     empSearchinternalid,
                     empSearchdelegada,
                     empSearchunidad,
+                    employeeSearchReclutadoraInternalId,
                 ],
             });
 
@@ -613,6 +634,8 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                     objEMP.internalid = r.getValue('internalid')
                     objEMP.delegada = r.getText('custentity_delegada')
                     objEMP.unidad = r.getValue('custentity_nombre_unidad')
+                    objEMP.reclutadoraID = r.getValue({ name: 'internalid', join: 'custentity_reclutadora' })
+                    
                     allPresentadorData[objEMP.internalid] = objEMP
 
                     if(empGrupos.hasOwnProperty(objEMP.supervisor)){
