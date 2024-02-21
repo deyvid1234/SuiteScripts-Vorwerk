@@ -126,8 +126,24 @@ function(record, search, runtime, format) {
                     var arrReturn = [['recordtype', 'is', 'salesorder'],'and',['custbody_tipo_venta','anyof',tipo_venta],'and',['trandate','within', [start, end]],'and',['custbody_vw_recruiter','ISNOTEMPTY',true],'and',arrFilters];
 
                 }else{
-                    var H_start = this.getObjPeriod(4);
-                    var H_end = this.getObjPeriod(id_period-1);
+                    var H_start = this.getObjPeriod(66);
+                    var endPeriodHistorico
+                     switch(id_period){
+                        case '80':
+                          endPeriodHistorico = 78
+                          break;
+                        case '79': 
+                          endPeriodHistorico = 80
+                          break;
+                        case '81': 
+                          endPeriodHistorico = 79
+                          break;
+                        default : 
+                          endPeriodHistorico = id_period -1
+                          break;
+                        
+                        }
+                    var H_end = this.getObjPeriod(endPeriodHistorico);
                     var start = H_start['startDate']
                     var end = H_end['endDate']
                     log.debug('historico','start date: '+startDate+' H strat: '+start+' H End : '+end)
