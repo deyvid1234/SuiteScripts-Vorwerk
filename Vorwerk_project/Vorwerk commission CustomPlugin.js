@@ -129,13 +129,13 @@ function(record, search, runtime, format) {
                     var H_start = this.getObjPeriod(66);
                     var endPeriodHistorico
                      switch(id_period){
-                        case '80':
+                        case 80:
                           endPeriodHistorico = 78
                           break;
-                        case '79': 
+                        case 79: 
                           endPeriodHistorico = 80
                           break;
-                        case '81': 
+                        case 81: 
                           endPeriodHistorico = 79
                           break;
                         default : 
