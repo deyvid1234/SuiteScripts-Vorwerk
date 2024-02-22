@@ -1539,7 +1539,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                         f_fecha_90_rec = new Date(f_mas_2dias)
                         //Historico ODV Rec
                           if(infoODVPromo_rec_historico.hasOwnProperty(i_rec_data[arrKeys[e]][i])){
-                            
+                           
                             for (j in infoODVPromo_rec_historico[i_rec_data[arrKeys[e]][i]]){ //Recorremos las ODV para cada recluta
                                   var reac = true
                                   if (reactivacion[i_rec_data[arrKeys[e]][i]] != false){
@@ -1553,14 +1553,12 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                                     
                                     
                                   }
-                                                                     
-                                    
-                                   
+                                  
                                       if(arrKeys[e] == infoODVPromo_rec_historico[i_rec_data[arrKeys[e]][i]][j][1]['reclutadora'] && reac){//Valida el campo RECRUITER de las ODV de las reclutas
                                         ODV_rec_pagadas[infoODVPromo_rec_historico[i_rec_data[arrKeys[e]][i]][j][1]['id']]=i_rec_data[arrKeys[e]][i]
                                         cont_hist  = cont_hist +1
                                       }  
-                                         
+                                       
                                     } 
                           }
                             
@@ -1626,13 +1624,19 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                             }
                           
 //                            
- //                            if(arrKeys[e] == 2824299 ){
- //                              log.debug('infoODVPromo_rec de: '+i_rec_data[arrKeys[e]][i],infoODVPromo_rec[i_rec_data[arrKeys[e]][i]])
- //                              log.debug('infoODVPromo_tm_rec de: '+i_rec_data[arrKeys[e]][i],infoODVPromo_tm_rec[i_rec_data[arrKeys[e]][i]])
-//                               log.debug('infoODVPromo_rec_historico de: '+i_rec_data[arrKeys[e]][i],infoODVPromo_rec_historico[i_rec_data[arrKeys[e]][i]])                           
-//                               log.debug('infoODVPromo_tm_rec_historico de: '+i_rec_data[arrKeys[e]][i],infoODVPromo_tm_rec_historico[i_rec_data[arrKeys[e]][i]])
-//                             }
-//                            
+                            /* if(arrKeys[e] == 54846 ){
+                               log.debug('infoODVPromo_rec de: '+i_rec_data[arrKeys[e]][i],infoODVPromo_rec[i_rec_data[arrKeys[e]][i]])
+                               log.debug('infoODVPromo_tm_rec de: '+i_rec_data[arrKeys[e]][i],infoODVPromo_tm_rec[i_rec_data[arrKeys[e]][i]])
+                               log.debug('infoODVPromo_rec_historico de: '+i_rec_data[arrKeys[e]][i],infoODVPromo_rec_historico[i_rec_data[arrKeys[e]][i]])                           
+                               log.debug('infoODVPromo_tm_rec_historico de: '+i_rec_data[arrKeys[e]][i],infoODVPromo_tm_rec_historico[i_rec_data[arrKeys[e]][i]])
+
+                               log.debug('cont_odvs', cont_odvs)
+                               log.debug('cont_hist', cont_hist)
+                               log.debug('recluta', i_rec_data[arrKeys[e]][i])
+                               log.debug('odv_rec_comisionable', odv_rec_comisionable)
+                               log.debug('odv_comisionable_rec', odv_comisionable_rec)
+                             }
+                            */
                           //Bono reclutadora 
                             cont_hist = cont_hist +1
                             var vueltas=0
@@ -1640,19 +1644,21 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                             var configuracion_rec
                             
                             if(odv_comisionable_rec > 0){
-                            for (k = cont_hist; k <= (odv_comisionable_rec+cont_hist) && k <= 6; k++ ){//&& arrKeys[e]!= 68746
+                            for (k = cont_hist; k < (odv_comisionable_rec+cont_hist) && k <= 6; k++ ){//&& arrKeys[e]!= 68746
 //                            Acumulado de la compensacion segun su mumero de ventas por recluta
                               //log.debug('Empieza a partir de: ',cont_hist + ' Numero de ODV Comisionables: '+odv_comisionable_rec)
                               //log.debug('ID : Rec:'+i_rec_data[arrKeys[e]][i]+' Comisionables para: '+arrKeys[e],odv_rec_comisionable)
                               if(i_rec_data[arrKeys[e]][i] in conf_rec){
-                                
+                                log.debug('conf_rec[arrKeys[e]]',conf_rec[arrKeys[e]])
                                 configuracion_rec = conf_rec[i_rec_data[arrKeys[e]][i]]
                                 }else{
                                 configuracion_rec = 1
                                 }
-
                               bono_reclutadora= bono_reclutadora + Math.abs(CompConfigDetails[configuracion_rec]['esquemaVentasReclutamiento'][k]['compensacion'])
+                              /*log.debug('k configuracion_rec',configuracion_rec)
                               
+                              log.debug('bono_reclutadora',bono_reclutadora)
+                              log.debug('k Reclutamiento',k)*/
                               vueltas++
                                 }
                             }
