@@ -1268,11 +1268,11 @@ function(record,search,https,file,http,format,encode,email) {
     }
     
     function getSalesOrderSerialNumber(req_info){
-    	try{
-    		//test 20304223682601124
-    		var allValues = {};
-    		var date = new Date();
-    		var is_valid = false;
+        try{
+            //test 20304223682601124
+            var allValues = {};
+            var date = new Date();
+            var is_valid = false;
             var itemSearch = search.load({
                 id: 'customsearch_search_by_seria' // Item Search Service NS
             });
@@ -1284,41 +1284,61 @@ function(record,search,https,file,http,format,encode,email) {
             }));
 
             itemSearch.run().each(function(result) {
-            	info = result.getAllValues();
-            	log.debug('info',info)
-            	//get type 
-            	if(item fulfillment ){//Es item fulfillment
+                info = result.getAllValues();
+                log.debug('info',info)
+                
+                var type=result.getText('type')
+                log.debug('type',type)
+                if(type == 'Item Fulfillment' ){//Es item fulfillment
+                    log.debug('es fufillment')
+                                    
+                    var fdate_add = format.parse({//fecha de ejecucion con 169 dias adicionales 
+                        value: info["formuladate_1"],
+                        type: format.Type.DATE
+                    }); 
+                    log.debug('fdate_add',fdate_add);
+                    if(date < fdate_add){
+                        is_valid = true;
+                    }
+                    allValues = {
+                            internalid:result.getValue('createdfrom'),
+                            ordernumber:info["createdFrom.tranid"],
+                            name:info["createdFrom.entity"][0]['text'],
+                            trandate:info["trandate"],
+                            datetovalid :info["formuladate_1"],
+                            valid: is_valid
+                    }
 
-
-            	}else{ //Es Sales Order
-            		var fdate_add = format.parse({//fecha de ejecucion con 169 dias adicionales 
-		                value: result.getValue('formuladate'),
-		                type: format.Type.DATE
-		            }); 
-	            	log.debug('fdate_add',fdate_add);
-	            	if(date < fdate_add){
-	            		is_valid = true;
-	            	}
-	                allValues = {
-	                		internalid:result.getValue('internalid'),
-	                		ordernumber:result.getValue('tranid'),
-	                		name:result.getText('entity'),
-	                		trandate:info["fulfillingTransaction.trandate"],
-	                		datetovalid :result.getValue('formuladate'),
-	                		valid: is_valid
-	                }
-            	}
-            	log.debug('info ',info);
-            	
+                }else{ //Es Sales Order
+                    var fdate_add = format.parse({//fecha de ejecucion con 169 dias adicionales 
+                        value: result.getValue('formuladate'),
+                        type: format.Type.DATE
+                    }); 
+                    log.debug('fdate_add',fdate_add);
+                    if(date < fdate_add){
+                        is_valid = true;
+                    }
+                    allValues = {
+                            internalid:result.getValue('internalid'),
+                            ordernumber:result.getValue('tranid'),
+                            name:result.getText('entity'),
+                            trandate:info["fulfillingTransaction.trandate"],
+                            datetovalid :result.getValue('formuladate'),
+                            valid: is_valid
+                    }
+                }
+                log.debug('allValues',allValues)
+                log.debug('info ',info);
+                
                 
                 return true;
                 
             });
             return {success:true,data:allValues} ;
             
-    	}catch(err){
-    		log.error("Error getSalesOrderSerialNumber",err);
-    	}
+        }catch(err){
+            log.error("Error getSalesOrderSerialNumber",err);
+        }
     }
     function searchODVbySerie(num_serie){
     	var allValues = {};
