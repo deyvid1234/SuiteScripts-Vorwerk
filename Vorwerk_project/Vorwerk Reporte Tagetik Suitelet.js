@@ -433,19 +433,24 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 data[i]['item'] == '62431' || 
                 data[i]['item'] == '62752' ||
                 data[i]['item'] == '62959' ||
-                data[i]['item'] == 'TM6R'     ){
+                data[i]['item'] == 'TM6R'  ||
+                data[i]['item'] == 'K00190'  ){
                 isTM = true
             }
-            if(item == 62431){
-                var fechaPivote = data[i]['date'] - 1/2/2024
-                if(data contiene la propiedad fechaPivote+'-'+k009) 1/2/2024-k009{
-                    data[i]['amount']=data[i]['amount']+data[fechaPivote+'-'+k009]['amount']
+            if(data[i]['item'] == 62431){
+                var fechaPivote = data[i]['fecha']// - 1/2/2024
+                log.debug('fechaPivote',fechaPivote)
+
+                if(data.hasOwnProperty(fechaPivote+'-'+'K00190')){
+                    log.debug('sumar ')
+                    data[i]['suma']=parseInt(data[i]['suma'])+parseInt(data[fechaPivote+'-'+'K00190']['suma'])
+                    data[i]['odvs']=parseInt(data[i]['odvs'])+parseInt(data[fechaPivote+'-'+'K00190']['odvs'])
+                    log.debug('data[i]',data[i])
                 }
-                if Existe el item (kit) en data[i] {
-                    Sumar el numero de ventas/monto de venta del kit al monto/numero de ventas del articulo 62431
-                }
+                
             }
-            v = i
+            if(data[i]['item'] != 'K00190'){
+              v = i
             result.setSublistValue({
                 id : 'internalid',
                 line : line,
@@ -556,7 +561,9 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 line : line,
                 value : v
             });
-            line ++
+            line ++  
+            }
+            
         }
         
     }catch(e){
