@@ -23,7 +23,7 @@ function(runtime,config,record,render,runtime,email,search,format) {
             if (scriptContext.type == 'create') {
                 for(var x = 0; x < currentRecord.getLineCount({sublistId: 'item'}); x++){
                 	var item = currentRecord.getSublistValue({sublistId: 'item', fieldId: 'item', line:x})
-                	if( item == 2001 || item == 2170 || item == 2490 || item == 2571){
+                	if( item == 2001 || item == 2170 || item == 2490 || item == 2571){// Agregar kit
                 		var recordid = parseInt(rec.getValue('id'))
                 		var createdfrom = rec.getValue('createdfrom')
                 		var salesrep = search.lookupFields({
@@ -109,11 +109,22 @@ function(runtime,config,record,render,runtime,email,search,format) {
 		            			var mySearch = search.load({
 						            id: 'customsearch2006'
 						        });
-		            			mySearch.filters.push(search.createFilter({
-				                   name: 'internalid',
-				                   operator: 'is',
-				                   values: createdfrom
-				               	}));
+
+
+						        if(es el kit){
+						        	mySearch.filters.push(search.createFilter({
+					                   name: 'createdfrom',
+					                   operator: 'is',
+					                   values: createdfrom
+					               	}));
+						        }else{
+						        	mySearch.filters.push(search.createFilter({
+					                   name: 'internalid',
+					                   operator: 'is',
+					                   values: createdfrom
+					               	}));
+						        }
+		            			
 
 				               	mySearch.run().each(function(r){
 					                inventorydetail = r.getValue('serialnumbers')
