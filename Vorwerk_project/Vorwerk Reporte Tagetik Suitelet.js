@@ -436,6 +436,15 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 data[i]['item'] == 'TM6R'     ){
                 isTM = true
             }
+            if(item == 62431){
+                var fechaPivote = data[i]['date'] - 1/2/2024
+                if(data contiene la propiedad fechaPivote+'-'+k009) 1/2/2024-k009{
+                    data[i]['amount']=data[i]['amount']+data[fechaPivote+'-'+k009]['amount']
+                }
+                if Existe el item (kit) en data[i] {
+                    Sumar el numero de ventas/monto de venta del kit al monto/numero de ventas del articulo 62431
+                }
+            }
             v = i
             result.setSublistValue({
                 id : 'internalid',
