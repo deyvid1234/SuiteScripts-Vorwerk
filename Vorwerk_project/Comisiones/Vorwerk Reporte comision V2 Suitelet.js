@@ -216,7 +216,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             log.debug('listaReclutas', listaReclutas)
             const listaEquipoRecluta=listasPresentadora.equipoYRecluta
             log.debug('listaEquipoRecluta', listaEquipoRecluta)
-
+             
             /*var datos0008=allPresentadoras['12000']
             log.debug('datos0008',datos0008)
             var datos008=allPresentadoras['12000']['employeetype']
@@ -292,9 +292,9 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                                 fVentasPropias = bonoVentaPropia(i,dataEmp,thisPeriodSO[i],compConfigDetails)
                                 log.debug('fVentasPropias',fVentasPropias)
 
-                                montoSupercomision = bonoSupercomision(integrantesEquipo,historicoSO[i],thisPeriodSO[i])
+                                montoSupercomision = bonoSupercomision(integrantesEquipo,historicoSO,thisPeriodSO)
                                 log.debug('montoSupercomision',montoSupercomision)
-                                montoReclutamiento = bonoReclutamiento(reclutas,historicoSO[i],thisPeriodSO[i])
+                                montoReclutamiento = bonoReclutamiento(i,reclutas,historicoSO,thisPeriodSO)
                                 /*
 
                                 montoVentasPropias.monto
@@ -302,7 +302,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
 
 
                                 montoComisionCK = bonoComCK()
-                                montoVentasPropias = bonoVentaPropia(i)
+                                montoVentasPropias = bonoVentaPropia(i) 
                                 montoEntrega = bonoEntrega()
                                 montoProductividad = bonoProductividad()
                                 montoEmerald = bonoEmerald()
@@ -363,7 +363,6 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
     }//Fin sublista
     function fillTable(sublist,dataEmp,ventasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo){
         var linea = cont_line
-        log.debug('linea',linea)
         sublist.setSublistValue({
               id : 'nombre',
               line : linea,
@@ -410,18 +409,21 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
               value : v!=''?v:''
           });
           //Reclutas
+          if(reclutas){
             v = reclutas
             sublist.setSublistValue({
                 id : 'custentity_reclutas',
                 line : linea,
                 value : v!=''?v:''
             });
-            v = integrantesEquipo
-            sublist.setSublistValue({
-                id : 'custentity_presentadoras',
-                line : linea,
-                value : v!=''?v:''
-            });
+          }
+            
+          v = integrantesEquipo
+          sublist.setSublistValue({
+              id : 'custentity_presentadoras',
+              line : linea,
+              value : v!=''?v:''
+          });
 
             
         }
@@ -501,17 +503,17 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
         return fillTable;
 
     }
-   function bonoSupercomision(integrantesEquipo,emphistoricoSO,empthisPeriodSO){
+   function bonoSupercomision(integrantesEquipo,historicoSO,thisPeriodSO){
                      
         log.debug('integrantesEquipo', integrantesEquipo)
         integrantesEquipo.forEach(function(i,index) {
                 
-            var ventasPorItegranteTP = empthisPeriodSO;
-            log.debug('ventasPorIntregrantethisperiod'+i, ventasPorItegranteTP);
-            log.debug('ventasPorIntegrantethisperiodlength'+i, ventasPorItegranteTP.length);
-            var ventasPorItegranteH = emphistoricoSO;
-            log.debug('ventasPorIntegrantehistorico'+i, ventasPorItegranteH);
-            log.debug('ventasPorIntegrantehistoricolength'+i, ventasPorItegranteH.length);
+            var ventasPorItegranteTP = thisPeriodSO[i];
+            //log.debug('ventasPorIntregrantethisperiod'+i, ventasPorItegranteTP);
+            //log.debug('ventasPorIntegrantethisperiodlength'+i, ventasPorItegranteTP.length);
+            var ventasPorItegranteH = historicoSO[i];
+            //log.debug('ventasPorIntegrantehistorico'+i, ventasPorItegranteH);
+            //log.debug('ventasPorIntegrantehistoricolength'+i, ventasPorItegranteH.length);
 
 
         });
@@ -540,19 +542,26 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
         return 'Se están calculando los bonos del '+tipoReporte;
 
     }*/
-    function bonoReclutamiento(reclutas,emphistoricoSO,empthisPeriodSO){
-        log.debug('reclutas', reclutas)
-        reclutas.forEach(function(i,index) {
+    function bonoReclutamiento(empId,reclutas,historicoSO,thisPeriodSO){
+        
+        if(reclutas){
+          //log.debug('entra if reclutas',reclutas)
+          reclutas.forEach(function(i,index) {
                 
-            var ventasReclutaTP = empthisPeriodSO;
-            log.debug('ventasPorReclutathisperiod'+i, ventasReclutaTP);
-            log.debug('ventasPorReclutathisperiodlength'+i, ventasReclutaTP.length);
-            var ventasReclutaH = emphistoricoSO;
-            log.debug('ventasPorReclutahistorico'+i, ventasReclutaH);
-            log.debug('ventasPorReclutahistoricolength'+i, ventasReclutaH.length);
+            var ventasReclutaTP = thisPeriodSO[i];
+            //log.debug('ventasPorReclutathisperiod'+i, ventasReclutaTP);
+            //log.debug('ventasPorReclutathisperiodlength'+i, ventasReclutaTP.length);
+            var ventasReclutaH = historicoSO[i];
+            //log.debug('ventasPorReclutahistorico'+i, ventasReclutaH);
+            //log.debug('ventasPorReclutahistoricolength'+i, ventasReclutaH.length);
 
 
         });
+        } else{
+          log.debug('esta presentadora no tiene reclutas: '+empId)
+
+        }
+        
 
         return true;
 
@@ -580,12 +589,16 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
     function bonoVentaPropia(empId,empData,empSOThisPeriod,compConfigDetails){
       
       var ventas = empSOThisPeriod
-      log.debug('ventas',ventas)
+      //log.debug('ventas',ventas)
       var data = []
       for (i in ventas){
         var ventasData= Object.keys(ventas[i])
+        //thisPeriodSO['id presentador'][indice]['id pedido']['etiqueta']
+        var comisionables = ventas[i][ventasData]['custbody_vw_comission_status']
+        if(comisionables != 2){
+          data.push(ventasData)
+        }
         
-        data.push(ventasData)
       }
       log.debug('data', data)
       var ventasNo = empSOThisPeriod.length
@@ -784,6 +797,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             const salesOrderSearchColOTROFINANCIAMIENTO = search.createColumn({ name: 'custbody_otro_financiamiento' });
             const salesOrderSearchColReclutadoraOV = search.createColumn({ name: 'custbody_vw_recruiter' });
             const salesOrderSearchColinternalid= search.createColumn({ name: 'internalid' });
+           
 
             const mySearch = search.create({
                 type: 'salesorder',
@@ -797,7 +811,8 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                     salesOrderSearchColComissionStatus,
                     salesOrderSearchColOTROFINANCIAMIENTO,
                     salesOrderSearchColReclutadoraOV,
-                    salesOrderSearchColinternalid
+                    salesOrderSearchColinternalid,
+                   
                 ],
             });
 
@@ -820,6 +835,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                     objSO.custbody_vw_comission_status = r.getValue('custbody_vw_comission_status')
                     objSO.custbody_otro_financiamiento = r.getValue('custbody_otro_financiamiento')
                     objSO.custbody_vw_recruiter = r.getValue('custbody_vw_recruiter')
+                   
                     ///log.debug('objSO',objSO)
 
                     var idSO = {}
