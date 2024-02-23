@@ -20,7 +20,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             log.debug('metohd',context.request.method); 
             var form = createForm();
             var compConfigDetails = Utils.getObjCompConfigDetails();
-            log.debug('compConfigDetails', compConfigDetails)
+            
             
 
             var esquemaVentasJefaGrupo= compConfigDetails[1]['esquemaVentasJefaGrupo']['propias']
@@ -294,7 +294,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
 
                                 montoSupercomision = bonoSupercomision(integrantesEquipo,historicoSO,thisPeriodSO)
                                 log.debug('montoSupercomision',montoSupercomision)
-                                montoReclutamiento = bonoReclutamiento(i,reclutas,historicoSO,thisPeriodSO)
+                                montoReclutamiento = bonoReclutamiento(i,reclutas,historicoSO,thisPeriodSO,dataEmp,compConfigDetails)
                                 /*
 
                                 montoVentasPropias.monto
@@ -315,7 +315,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                                 
                                 */
                                 cont_line++
-                                fillTable(sublist,dataEmp,fVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo)
+                                fillTable(sublist,dataEmp,fVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,montoReclutamiento)
                                 
                             }
 
@@ -361,7 +361,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
           log.debug('creditos 2',runtime.getCurrentScript().getRemainingUsage()); 
         }   
     }//Fin sublista
-    function fillTable(sublist,dataEmp,ventasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo){
+    function fillTable(sublist,dataEmp,ventasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,montoReclutamiento){
         var linea = cont_line
         sublist.setSublistValue({
               id : 'nombre',
@@ -484,6 +484,13 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
         
         if(bonoReclutamiento){
           log.debug('bonoReclutamiento filltable')
+          v = montoReclutamiento.monto
+          log.debug('vbono reclutamiento',v)
+          sublist.setSublistValue({
+              id : 'custentity_bono_rec',
+              line : linea,
+              value : v!=0?v:0
+          });
           /*v = 
           log.debug('vString',v)
           sublist.setSublistValue({
@@ -491,13 +498,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
               line : linea,
               value : v!=''?v:''
           });
-          v = 
-          log.debug('vString',v)
-          sublist.setSublistValue({
-              id : 'custentity_bono_rec',
-              line : linea,
-              value : v!=''?v:''
-          });*/
+          */
         }
 
         return fillTable;
@@ -542,19 +543,42 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
         return 'Se están calculando los bonos del '+tipoReporte;
 
     }*/
-    function bonoReclutamiento(empId,reclutas,historicoSO,thisPeriodSO){
+    function bonoReclutamiento(empId,reclutas,historicoSO,thisPeriodSO,dataEmp,compConfigDetails){
         
         if(reclutas){
           //log.debug('entra if reclutas',reclutas)
           reclutas.forEach(function(i,index) {
                 
             var ventasReclutaTP = thisPeriodSO[i];
-            //log.debug('ventasPorReclutathisperiod'+i, ventasReclutaTP);
-            //log.debug('ventasPorReclutathisperiodlength'+i, ventasReclutaTP.length);
             var ventasReclutaH = historicoSO[i];
-            //log.debug('ventasPorReclutahistorico'+i, ventasReclutaH);
-            //log.debug('ventasPorReclutahistoricolength'+i, ventasReclutaH.length);
-
+            var totalVentas= 0
+            var bono_reclutadora =0
+            
+            if(ventasReclutaTP && ventasReclutaH ){
+              var ventasReclutaTP= ventasReclutaTP.length
+              totalVentas= ventasReclutaTP+ventasReclutaH.length
+              log.debug('ventasPorReclutahistorico'+i, ventasReclutaH)
+              log.debug('ventasPorReclutathisperiodlength'+i, ventasReclutaTP);
+              log.debug('totalVentas'+i, totalVentas);
+            }
+            var configraionRec = dataEmp.conf_reclutamiento
+            
+            if(configraionRec){
+              log.debug('configraionRec'+i, configraionRec);
+            }else{
+              configraionRec=1
+            }
+//          bono_reclutadora= bono_reclutadora + Math.abs(CompConfigDetails[configuracion_rec]['esquemaVentasReclutamiento'][k]['compensacion'])
+            if(totalVentas <=6 && (configraionRec == 1|| configraionRec == 5)){
+              bono_reclutadora=bono_reclutadora + compConfigDetails[configraionRec]['esquemaVentasReclutamiento'][totalVentas]['compensacion']
+              
+              log.debug('bono_reclutadora', bono_reclutadora)
+            }
+             if(totalVentas <=4 && (configraionRec == 11|| configraionRec == 12||configraionRec==13)){
+              bono_reclutadora=bono_reclutadora + compConfigDetails[configraionRec]['esquemaVentasReclutamiento'][totalVentas]['compensacion']
+              
+              log.debug('bono_reclutadora', bono_reclutadora)
+            }
 
         });
         } else{
@@ -563,7 +587,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
         }
         
 
-        return true;
+        return  {monto:bono_reclutadora, data:totalVentas};
 
     }
     /*function bonoGarantia(tipoReporte){
