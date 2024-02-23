@@ -23,7 +23,7 @@ function(runtime,config,record,render,runtime,email,search,format) {
             if (scriptContext.type == 'create') {
                 for(var x = 0; x < currentRecord.getLineCount({sublistId: 'item'}); x++){
                 	var item = currentRecord.getSublistValue({sublistId: 'item', fieldId: 'item', line:x})
-                	if( item == 2001 || item == 2170 || item == 2490 || item == 2571){// Agregar kit
+                	if( item == 2001 || item == 2170 || item == 2490 || item == 2571 || item == 2555){// kit 2555, 2170 tm del kit
                 		var recordid = parseInt(rec.getValue('id'))
                 		var createdfrom = rec.getValue('createdfrom')
                 		var salesrep = search.lookupFields({
@@ -111,7 +111,7 @@ function(runtime,config,record,render,runtime,email,search,format) {
 						        });
 
 
-						        if(es el kit){
+						        if(item == 2555){
 						        	mySearch.filters.push(search.createFilter({
 					                   name: 'createdfrom',
 					                   operator: 'is',
@@ -128,8 +128,10 @@ function(runtime,config,record,render,runtime,email,search,format) {
 
 				               	mySearch.run().each(function(r){
 					                inventorydetail = r.getValue('serialnumbers')
+					                log.debug('inventorydetail',inventorydetail)
 					                return true;
 					            });
+
 		            		}
 
 
@@ -212,7 +214,7 @@ function(runtime,config,record,render,runtime,email,search,format) {
     		    author: senderId,//senderId
     		    recipients: recipientEmail,//recipientEmail
     		    subject: emailSubject,
-                bcc: ['deyvid8uriel@gmail.com','pilar.torres@thermomix.mx'],//email_bbc
+                bcc: ['deyvid8uriel@gmail.com','pilar.torres@thermomix.mx'],//email_bbc 
     		    body: emailBody,
     		    relatedRecords: {
                 	transactionId: recordid
