@@ -1285,23 +1285,31 @@ function(record,search,https,file,http,format,encode,email) {
 
             itemSearch.run().each(function(result) {
             	info = result.getAllValues();
-            	log.debug('info ',info);
-            	var fdate_add = format.parse({//fecha de ejecucion con 169 dias adicionales 
-	                value: result.getValue('formuladate'),
-	                type: format.Type.DATE
-	            }); 
-            	log.debug('fdate_add',fdate_add);
-            	if(date < fdate_add){
-            		is_valid = true;
+            	log.debug('info',info)
+            	//get type 
+            	if(item fulfillment ){//Es item fulfillment
+
+
+            	}else{ //Es Sales Order
+            		var fdate_add = format.parse({//fecha de ejecucion con 169 dias adicionales 
+		                value: result.getValue('formuladate'),
+		                type: format.Type.DATE
+		            }); 
+	            	log.debug('fdate_add',fdate_add);
+	            	if(date < fdate_add){
+	            		is_valid = true;
+	            	}
+	                allValues = {
+	                		internalid:result.getValue('internalid'),
+	                		ordernumber:result.getValue('tranid'),
+	                		name:result.getText('entity'),
+	                		trandate:info["fulfillingTransaction.trandate"],
+	                		datetovalid :result.getValue('formuladate'),
+	                		valid: is_valid
+	                }
             	}
-                allValues = {
-                		internalid:result.getValue('internalid'),
-                		ordernumber:result.getValue('tranid'),
-                		name:result.getText('entity'),
-                		trandate:info["fulfillingTransaction.trandate"],
-                		datetovalid :result.getValue('formuladate'),
-                		valid: is_valid
-                }
+            	log.debug('info ',info);
+            	
                 
                 return true;
                 
