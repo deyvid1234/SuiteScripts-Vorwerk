@@ -420,7 +420,23 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             decimalSeparator: ",",
             precision: 0
         });
-        var line = 0
+        var line = 0 
+        for(i in data_cancelacion){
+            if(data_cancelacion[i]['item'] == 'K00190' ){
+                var fechaPivoteCan = data_cancelacion[i]['fcha_cancelacion']
+                log.debug('fechaPivoteCan',fechaPivoteCan)
+                if(data.hasOwnProperty(fechaPivoteCan+'-'+'62431')){
+                        
+                    log.debug('data antes',data_cancelacion[i]['odvs'])
+                    log.debug('data antes suma',data_cancelacion[i]['suma'])
+                    data_cancelacion[i]['odvs']= parseInt(data_cancelacion[i]['odvs'])+parseInt(data_cancelacion[fechaPivoteCan+'-'+'62431']['odvs'])
+                    data_cancelacion[i]['suma']=parseInt(data_cancelacion[i]['suma'])+parseInt(data_cancelacion[fechaPivoteCan+'-'+'62431']['suma'])
+                    log.debug('data despues',data_cancelacion[i]['odvs'])
+                    log.debug('data despues suma',data_cancelacion[i]['suma'])
+                }
+        }   
+        }
+                    
         for(i in data){
             var v = {}
             var isTM = false
@@ -443,12 +459,15 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
 
                 if(data.hasOwnProperty(fechaPivote+'-'+'K00190')){
                     log.debug('sumar ')
+
                     data[i]['suma']=parseInt(data[i]['suma'])+parseInt(data[fechaPivote+'-'+'K00190']['suma'])
                     data[i]['odvs']=parseInt(data[i]['odvs'])+parseInt(data[fechaPivote+'-'+'K00190']['odvs'])
                     log.debug('data[i]',data[i])
                 }
                 
+                                
             }
+            
             if(data[i]['item'] != 'K00190'){
               v = i
             result.setSublistValue({
