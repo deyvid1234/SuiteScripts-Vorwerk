@@ -104,18 +104,12 @@ function Orden_Venta_PDF(request,response)
                         nlapiLogExecution('debug', 'memberitem', memberitem);
                         var displayname= itemtypeSearch[j].getValue('displayname', 'memberItem')
                         nlapiLogExecution('debug', 'displayname', displayname);   
-                        atrs.push(displayname)
+                        atrs.push(displayname.replace(/&/g, "&amp;"))
                     };
                     
                     artsKits[tmp_item] = atrs
                 };
                
-
-                
-                if(typeDelItem == 'Kit'){
-                    nlapiLogExecution('debug', 'es kit', 'esto es un kit');
-                 
-                }
 
                 if(tmp_item == 2001 || tmp_item == 2170 || tmp_item == 2490 || tmp_item == 2571 || tmp_item == 2280){
                     var subrecord = salesorder.viewLineItemSubrecord('item', 'inventorydetail',i);
