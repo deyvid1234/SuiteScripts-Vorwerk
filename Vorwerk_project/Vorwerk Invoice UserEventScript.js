@@ -111,7 +111,7 @@ function(runtime,config,record,render,runtime,email,search,format) {
 						        });
 
 
-						        if(item == 2555){
+						        if(item == 2638){//id interno del kit tm en produccion es 2638 y en sandbox 2555
 						        	mySearch.filters.push(search.createFilter({
 					                   name: 'createdfrom',
 					                   operator: 'is',
