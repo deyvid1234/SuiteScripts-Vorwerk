@@ -421,22 +421,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             precision: 0
         });
         var line = 0 
-        for(i in data_cancelacion){
-            if(data_cancelacion[i]['item'] == 'K00190' ){
-                var fechaPivoteCan = data_cancelacion[i]['fcha_cancelacion']
-                log.debug('fechaPivoteCan',fechaPivoteCan)
-                if(data.hasOwnProperty(fechaPivoteCan+'-'+'62431')){
-                        
-                    log.debug('data antes',data_cancelacion[i]['odvs'])
-                    log.debug('data antes suma',data_cancelacion[i]['suma'])
-                    data_cancelacion[i]['odvs']= parseInt(data_cancelacion[i]['odvs'])+parseInt(data_cancelacion[fechaPivoteCan+'-'+'62431']['odvs'])
-                    data_cancelacion[i]['suma']=parseInt(data_cancelacion[i]['suma'])+parseInt(data_cancelacion[fechaPivoteCan+'-'+'62431']['suma'])
-                    log.debug('data despues',data_cancelacion[i]['odvs'])
-                    log.debug('data despues suma',data_cancelacion[i]['suma'])
-                }
-        }   
-        }
-                    
+               
         for(i in data){
             var v = {}
             var isTM = false
@@ -550,8 +535,11 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
 
             if(data_cancelacion[i]){
                 log.debug('Existe cancelacion')
-
-                v = data_cancelacion[i]['odvs']
+                var fechaCancelacion = data_cancelacion[i]['fecha']
+                log.debug('fechaCancelacion', fechaCancelacion)
+                var numCacelacionKit = 0
+                var montoCancelacionKit = 0
+                 v = data_cancelacion[i]['odvs']
                 result.setSublistValue({ //unidades canceladas
                 id : 'custpage_mont_canc',//out_UNITS_INVOICED_CANC
                 line : line,
@@ -562,6 +550,53 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 var sumaRegular = data[i]['suma']
                 v = numFormatter2.format({number: parseInt(sumaRegular - resta)})
                 log.debug('v cancelacion',v)
+
+                if(data_cancelacion[i]['item'] == 62431){
+                    log.debug('Existe cancelacion item')
+                    if(data_cancelacion.hasOwnProperty(fechaCancelacion + '-' + 'K00190')){
+                        log.debug('Existe cancelacion kit e item')
+                        numCacelacionKit=data_cancelacion[fechaCancelacion + '-' + 'K00190']['odvs']
+                        log.debug('numCacelacionKit', numCacelacionKit)
+                        montoCancelacionKit= data_cancelacion[fechaCancelacion + '-' + 'K00190']['suma']
+                        log.debug('montoCancelacionKit', montoCancelacionKit)
+                        v = data_cancelacion[i]['odvs'] + numCacelacionKit
+                        log.debug('v item kit', v)
+                        result.setSublistValue({ //unidades canceladas
+                            id : 'custpage_mont_canc',//out_UNITS_INVOICED_CANC
+                            line : line,
+                            value : v?v:'0'
+                        });
+
+                        var resta = data_cancelacion[i]['suma'] + montoCancelacionKit
+                        log.debug('resta item kit', resta)
+                        var sumaRegular = data[i]['suma']
+                        v = numFormatter2.format({number: parseInt(sumaRegular - resta)})
+                        log.debug('v cancelacion',v)
+                    }
+                } 
+               
+            } else if(data[i]['item'] == 62431 && data_cancelacion.hasOwnProperty(fechaPivote + '-' + 'K00190')){
+                log.debug('Existe cancelacion solo kit')
+
+                numCacelacionKit=data_cancelacion[fechaPivote + '-' + 'K00190']['odvs']
+                log.debug('numCacelacionKit', numCacelacionKit)
+                montoCancelacionKit= data_cancelacion[fechaPivote + '-' + 'K00190']['suma']
+                log.debug('montoCancelacionKit', montoCancelacionKit)
+
+                v = numCacelacionKit
+                log.debug('v kit', v)
+                result.setSublistValue({ //unidades canceladas
+                    id : 'custpage_mont_canc',//out_UNITS_INVOICED_CANC
+                    line : line,
+                    value : v?v:'0'
+                });
+
+                var resta = montoCancelacionKit
+                log.debug('resta kit', resta)
+                var sumaRegular = data[i]['suma']
+                v = numFormatter2.format({number: parseInt(sumaRegular - resta)})
+                log.debug('v cancelacion',v)
+
             }else{
                
 
