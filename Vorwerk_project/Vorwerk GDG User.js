@@ -43,67 +43,65 @@ function(record,search,Utils,Dictionary) {
      * @Since 2015.2
      */
     function afterSubmit(scriptContext) {
-    	try{
-    		log.debug("start afeter submit","start");
-    		
-    		var rec = scriptContext.newRecord;
-    		var rec_type = rec.type;
-    		var subtotal = rec.getValue('custrecord_c_jdg_subtotal');
-    		var total = 0; 
-    		var retencion = 0;
-    		var sumBonos = Utils.getBonos(3,rec);
-    		log.debug('sumBonos',sumBonos);
-    		
-    		if(subtotal != "" || subtotal >= 0){
-    			log.debug('subtotal',subtotal);
-    			subtotal= subtotal+sumBonos;
-    			var rec_related = rec.getValue('custrecord_sub__registro_compensaciones');
-    			log.debug('rec_related',rec_related);
-    			var tmp_period = search.lookupFields({
+        try{
+            log.debug("start afeter submit","start");
+            
+            var rec = scriptContext.newRecord;
+            var rec_type = rec.type;
+            var subtotal = rec.getValue('custrecord_total_reporte_jdg');
+            var total = 0; 
+            var retencion = 0;
+            var sumBonos = Utils.getBonos(3,rec);
+            log.debug('sumBonos',sumBonos);
+            
+            
+                log.debug('subtotal',subtotal);
+                subtotal= subtotal+sumBonos;
+                var rec_related = rec.getValue('custrecord_sub__registro_compensaciones');
+                log.debug('rec_related',rec_related);
+                var tmp_period = search.lookupFields({
                     type: 'customrecord_registro_compensaciones',
                     id: rec_related,
                     columns: 'custrecord_periodo_comision'
                 });
-    			log.debug('tmp_period',tmp_period);
-    			var period = tmp_period.custrecord_periodo_comision[0].value;
-    			var listISR = Utils.getISRData(period);//se extrae la lista de isr 
-    			var isr = listISR.isrList;
-    			log.debug('isr',isr);
-    			for(var x in isr){
-    				if(subtotal > parseFloat(isr[x].inferiorLimit)  && subtotal <= parseFloat(isr[x].topLimit)){//se valida que el subtotal se mayor al limite inferior y menor que el limite superior
-    					
-    					var ret_aux = subtotal -parseFloat(isr[x].inferiorLimit)//subtotal menos limite inferior
-    					var porcentaje = parseFloat(isr[x].percentOverIL)/100;//se obtiene el porcentaje de cuota
-    					var base = ret_aux*porcentaje //se extrae la base de isr
-    					retencion = base+parseFloat(isr[x].quota);//se obtiene la retencion
-    					break;
-    				}
-    			}
-    			total = subtotal-retencion;
-    			try{
-    				var rec_jdg = record.load({
-    	                type: rec_type,
-    	                id: rec.id,
-    	                isDynamic: true
-    	            });
-    				rec_jdg.setValue('custrecord_c_jdg_retencion',retencion);
-    				rec_jdg.setValue('custrecord_c_jdg_total',total);
-    				rec_jdg.setValue('custrecord_c_jdg_subtotal',subtotal);
-    				rec_jdg.save({enableSourcing: false, ignoreMandatoryFields: true });
-    			}catch(err_set){
-    				log.error("error set retencion",err_set);
-    			}
-    			
-    			
-    			log.debug('listISR',listISR);
-    			
-    		}else{
-    			log.debug("no tiene total",subtotal);
-    		}
-    		
-    	}catch(err){
-    		log.error('Error afterSubmit',err);
-    	}
+                log.debug('tmp_period',tmp_period);
+                var period = tmp_period.custrecord_periodo_comision[0].value;
+                var listISR = Utils.getISRData(period);//se extrae la lista de isr 
+                var isr = listISR.isrList;
+                log.debug('isr',isr);
+                for(var x in isr){
+                    if(subtotal > parseFloat(isr[x].inferiorLimit)  && subtotal <= parseFloat(isr[x].topLimit)){//se valida que el subtotal se mayor al limite inferior y menor que el limite superior
+                        
+                        var ret_aux = subtotal -parseFloat(isr[x].inferiorLimit)//subtotal menos limite inferior
+                        var porcentaje = parseFloat(isr[x].percentOverIL)/100;//se obtiene el porcentaje de cuota
+                        var base = ret_aux*porcentaje //se extrae la base de isr
+                        retencion = base+parseFloat(isr[x].quota);//se obtiene la retencion
+                        break;
+                    }
+                }
+                total = subtotal-retencion;
+                try{
+                    var rec_jdg = record.load({
+                        type: rec_type,
+                        id: rec.id,
+                        isDynamic: true
+                    });
+                    rec_jdg.setValue('custrecord_c_jdg_retencion',retencion);
+                    rec_jdg.setValue('custrecord_c_jdg_total',total);
+                    rec_jdg.setValue('custrecord_c_jdg_subtotal',subtotal);
+                    rec_jdg.save({enableSourcing: false, ignoreMandatoryFields: true });
+                }catch(err_set){
+                    log.error("error set retencion",err_set);
+                }
+                
+                
+                log.debug('listISR',listISR);
+                
+            
+            
+        }catch(err){
+            log.error('Error afterSubmit',err);
+        }
     }
     
     return {
