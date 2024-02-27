@@ -13,9 +13,9 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
 		function createTable(v_propia,v_equipo,data,v_rec,CompConfigDetails,id_entrega,type_emp_text,period_name,type_emp,conf_emp,promocion,rec_json,idPeriod,v_tres_dos,odv_tres_dos,odv_sc,tmp_emp,confEquipo){
 		//configuracion presentadora
 
-			var bono32 = data.bono_m_8
-			var bono52 = data.bono_m_9
-			var bonosc = data.bono_m_10
+			var bono32 = data.bono_m_4
+			var bono52 = data.bono_m_5
+			var bonosc = data.bono_m_6
 			var strTable =createHeader(data.emleado,type_emp_text,period_name,tmp_emp); 
 			log.debug('id_entrega',id_entrega)
 			//datos de prueba 
@@ -393,7 +393,7 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
 			
 			
 			log.debug('data',data.total)
-			//movimientos manuals
+			//bonos permanentes
 			var obj_bonos = {
 					bono1: {label:(data.bono_1 != '' && data.bono_1 != null? data.bono_1 : "Continuidad"),valor:(data.bono_m_1 != '' ? data.bono_m_1+'.00' : "0.00")},
 					bono2: {label:(data.bono_2 != '' && data.bono_2 != null? data.bono_2 : "Cancelación Esquema"),valor:(data.bono_m_2 != '' ? data.bono_m_2+'.00' : "0.00")},
@@ -401,10 +401,10 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
 					bono4: {label:(data.bono_4 != '' && data.bono_4 != null? data.bono_4 : "Bono Trimestral"),valor:(data.bono_m_4 != '' ? data.bono_m_4+'.00' : "0.00")},
 					bono5: {label:(data.bono_5 != '' && data.bono_5 != null? data.bono_5 : "Split"),valor:(data.bono_m_5 != '' ? data.bono_m_5+'.00' : "0.00")},
 					bono6: {label:(data.bono_6 != '' && data.bono_6 != null? data.bono_6 : "Entrega sin Ficha "),valor:(data.bono_m_6 != '' ? data.bono_m_6+'.00' : "0.00")},
-					bono7: {label:(data.bono_7 != '' && data.bono_7 != null? data.bono_7 : "Emerald"),valor:(data.bono_m_7 != '' ? data.bono_m_7+'.00' : "0.00")},
-					bono8: {label:(data.bono_8 != '' && data.bono_8 != null? data.bono_8 : "TM Ganadas "),valor:(data.bono_m_8 != '' ? data.bono_m_8+'.00' : "0.00")},
-					bono9: {label:(data.bono_9 != '' && data.bono_9 != null? data.bono_9 : "Ajuste"),valor:(data.bono_m_9 != '' ? data.bono_m_9+'.00' : "0.00")},
-					bono10: {label:(data.bono_10 != '' && data.bono_10 != null? data.bono_10 : "Desc Rec Viaje"),valor:(data.bono_m_10 != '' ? data.bono_m_10+'.00' : "0.00")},
+					bono7: {label:(data.bono_7 != '' && data.bono_7 != null? data.bono_7 : "Bono Permanente 7"),valor:(data.bono_m_7 != '' ? data.bono_m_7+'.00' : "0.00")},
+					bono8: {label:(data.bono_8 != '' && data.bono_8 != null? data.bono_8 : "Bono Permanente 8"),valor:(data.bono_m_8 != '' ? data.bono_m_8+'.00' : "0.00")},
+					bono9: {label:(data.bono_9 != '' && data.bono_9 != null? data.bono_9 : "Bono Permanente 9"),valor:(data.bono_m_9 != '' ? data.bono_m_9+'.00' : "0.00")},
+					bono10: {label:(data.bono_10 != '' && data.bono_10 != null? data.bono_10 : "Bono Permanente 10"),valor:(data.bono_m_10 != '' ? data.bono_m_10+'.00' : "0.00")},
 					bonoTotal: parseInt(data.bono_m_1 != '' ? data.bono_m_1 : 0)+parseInt(data.bono_m_2 != '' ? data.bono_m_2 : 0)+parseInt(data.bono_m_3 != '' ? data.bono_m_3 : 0)+parseInt(data.bono_m_4 != '' ? data.bono_m_4 : 0)+parseInt(data.bono_m_5 != '' ? data.bono_m_5 : 0)+parseInt(data.bono_m_6 != '' ? data.bono_m_6 : 0)+parseInt(data.bono_m_7 != '' ? data.bono_m_7 : 0)+parseInt(data.bono_m_8 != '' ? data.bono_m_8 : 0)+parseInt(data.bono_m_9 != '' ? data.bono_m_9 : 0)+parseInt(data.bono_m_10 != '' ? data.bono_m_10 : 0)
 			}
 			log.debug('Datos EMP',type_emp+'   '+promocion)
@@ -415,7 +415,7 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
 			
 			
 			log.debug('data.total',data.total)
-			strTable +="<br/><h3 align='center'>Movimientos Manuales</h3>";
+			strTable +="<br/><h3 align='center'>Bonos Permanentes</h3>";
 			strTable += "<table width='670px' page-break-inside='avoid'>";
 			strTable += "<tr>";
 			strTable += "<td border='0.5'><b>" + escapexml(obj_bonos.bono1.label) + "</b></td>";
@@ -452,7 +452,7 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
 			strTable += "<td border='0.5' border-style='dotted-narrow' align='right'>"+ currencyFormat('$',(obj_bonos.bonoTotal+'.00')) +"</td>";
 			strTable += "</tr>";
 			strTable += "</table>";
-			//fin movimientos manuals
+			//fin bonos permanentes
 			
 			
 			
@@ -975,26 +975,26 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
             		data.entrega_monto = r.getValue(config_fields.entrega_monto[type_emp])
             		data.entregas = r.getValue(config_fields.entregas[type_emp])
             		data.b_rec = r.getValue(config_fields.b_rec[type_emp])
-            		data.bono_m_1 = r.getValue(config_fields.bono_m_1[type_emp])
-        			data.bono_1 = r.getText(config_fields.bono_1[type_emp])
-            		data.bono_2 = r.getText(config_fields.bono_2[type_emp])
-            		data.bono_3 = r.getText(config_fields.bono_3[type_emp])
-            		data.bono_4 = r.getText(config_fields.bono_4[type_emp])
-            		data.bono_5 = r.getText(config_fields.bono_5[type_emp])
-            		data.bono_6 = r.getText(config_fields.bono_6[type_emp])
-            		data.bono_7 = r.getText(config_fields.bono_7[type_emp])
-            		data.bono_8 = r.getText(config_fields.bono_8[type_emp])
-            		data.bono_9 = r.getText(config_fields.bono_9[type_emp])
-            		data.bono_10 = r.getText(config_fields.bono_10[type_emp])
-            		data.bono_m_2 = r.getValue(config_fields.bono_m_2[type_emp])
-            		data.bono_m_3 = r.getValue(config_fields.bono_m_3[type_emp])
-            		data.bono_m_4 = r.getValue(config_fields.bono_m_4[type_emp])
-            		data.bono_m_5 = r.getValue(config_fields.bono_m_5[type_emp])
-            		data.bono_m_6 = r.getValue(config_fields.bono_m_6[type_emp])
-            		data.bono_m_7 = r.getValue(config_fields.bono_m_7[type_emp])
-            		data.bono_m_8 = r.getValue(config_fields.bono_m_8[type_emp])
-            		data.bono_m_9 = r.getValue(config_fields.bono_m_9[type_emp])
-            		data.bono_m_10 = r.getValue(config_fields.bono_m_10[type_emp])
+            		data.bono_m_1 = r.getValue(config_fields.bp1_monto[type_emp])
+        			data.bono_1 = r.getText(config_fields.bp1[type_emp])
+            		data.bono_2 = r.getText(config_fields.bp2[type_emp])
+            		data.bono_3 = r.getText(config_fields.bp3[type_emp])
+            		data.bono_4 = r.getText(config_fields.bp4[type_emp])
+            		data.bono_5 = r.getText(config_fields.bp5[type_emp])
+            		data.bono_6 = r.getText(config_fields.bp6[type_emp])
+            		data.bono_7 = r.getText(config_fields.bp7[type_emp])
+            		data.bono_8 = r.getText(config_fields.bp8[type_emp])
+            		data.bono_9 = r.getText(config_fields.bp9[type_emp])
+            		data.bono_10 = r.getText(config_fields.bp610[type_emp])
+            		data.bono_m_2 = r.getValue(config_fields.bp2_monto[type_emp])
+            		data.bono_m_3 = r.getValue(config_fields.bp3_monto[type_emp])
+            		data.bono_m_4 = r.getValue(config_fields.bp4_monto[type_emp])
+            		data.bono_m_5 = r.getValue(config_fields.bp5_monto[type_emp])
+            		data.bono_m_6 = r.getValue(config_fields.bp6_monto[type_emp])
+            		data.bono_m_7 = r.getValue(config_fields.bp7_monto[type_emp])
+            		data.bono_m_8 = r.getValue(config_fields.bp8_monto[type_emp])
+            		data.bono_m_9 = r.getValue(config_fields.bp9_monto[type_emp])
+            		data.bono_m_10 = r.getValue(config_fields.bp10_monto[type_emp])
             		data.retencion = r.getValue(config_fields.retencion[type_emp])
             		data.odv_entrega = r.getValue(config_fields.odv_entrega[type_emp])
             		data.emleado = r.getText(config_fields.emleado[type_emp])

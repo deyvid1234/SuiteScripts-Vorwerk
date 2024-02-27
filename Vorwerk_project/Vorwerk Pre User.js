@@ -46,11 +46,11 @@ function(record,search,Utils,Dictionary) {
     	try{
     		var rec = scriptContext.newRecord;
     		var rec_type = rec.type;
-    		var subtotal = rec.getValue('custrecord_c_pre_subtotal');
+    		var subtotal = rec.getValue('custrecord_total_reporte_pre');
     		var total = 0; 
     		var retencion = 0;
             var sumBonos = Utils.getBonos(1,rec);
-    		if(subtotal != "" || subtotal >= 0){
+    		
     			subtotal= subtotal+sumBonos;
     			var rec_related = rec.getValue('custrecord_sub_registro_compensaciones_p');
     			var tmp_period = search.lookupFields({
@@ -90,7 +90,7 @@ function(record,search,Utils,Dictionary) {
     			
     			log.debug('listISR',listISR);
     			
-    		}
+    		
     		
     	}catch(err){
     		log.error('Error afterSubmit',err);

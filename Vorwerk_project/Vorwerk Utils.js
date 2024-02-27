@@ -450,18 +450,18 @@ function(record, search, runtime, format, query,Dictionary) {
 
         getBonos: function(id_emp,rec){
             log.debug(config_fields.bono_m_1[id_emp],rec.getValue(config_fields.bono_m_1[id_emp]));
-//            var bono_m_1 = rec.getValue(config_fields.bono_m_1[id_emp])  ==    ""?0:parseFloat(rec.getValue(config_fields.bono_m_1[id_emp]));
-//            var bono_m_2 = rec.getValue(config_fields.bono_m_2[id_emp])  ==    ""?0:parseFloat(rec.getValue(config_fields.bono_m_2[id_emp]));
-//            var bono_m_3 = rec.getValue(config_fields.bono_m_3[id_emp])  ==    ""?0:parseFloat(rec.getValue(config_fields.bono_m_3[id_emp]));
+            var bono_m_1 = rec.getValue(config_fields.bono_m_1[id_emp])  ==    ""?0:parseFloat(rec.getValue(config_fields.bono_m_1[id_emp]));
+            var bono_m_2 = rec.getValue(config_fields.bono_m_2[id_emp])  ==    ""?0:parseFloat(rec.getValue(config_fields.bono_m_2[id_emp]));
+            var bono_m_3 = rec.getValue(config_fields.bono_m_3[id_emp])  ==    ""?0:parseFloat(rec.getValue(config_fields.bono_m_3[id_emp]));
             var bono_m_4 = rec.getValue(config_fields.bono_m_4[id_emp])  ==    ""?0:parseFloat(rec.getValue(config_fields.bono_m_4[id_emp]));
             var bono_m_5 = rec.getValue(config_fields.bono_m_5[id_emp])  ==    ""?0:parseFloat(rec.getValue(config_fields.bono_m_5[id_emp]));
             var bono_m_6 = rec.getValue(config_fields.bono_m_6[id_emp])  ==    ""?0:parseFloat(rec.getValue(config_fields.bono_m_6[id_emp]));
             var bono_m_7 = rec.getValue(config_fields.bono_m_7[id_emp])  ==    ""?0:parseFloat(rec.getValue(config_fields.bono_m_7[id_emp]));
-            //var bono_m_8 = rec.getValue(config_fields.bono_m_8[id_emp])  ==    ""?0:parseFloat(rec.getValue(config_fields.bono_m_8[id_emp]));
-            //var bono_m_9 = rec.getValue(config_fields.bono_m_9[id_emp])  ==    ""?0:parseFloat(rec.getValue(config_fields.bono_m_9[id_emp]));
-            //var bono_m_10 = rec.getValue(config_fields.bono_m_10[id_emp])==    ""?0:parseFloat(rec.getValue(config_fields.bono_m_10[id_emp]));
+            var bono_m_8 = rec.getValue(config_fields.bono_m_8[id_emp])  ==    ""?0:parseFloat(rec.getValue(config_fields.bono_m_8[id_emp]));
+            var bono_m_9 = rec.getValue(config_fields.bono_m_9[id_emp])  ==    ""?0:parseFloat(rec.getValue(config_fields.bono_m_9[id_emp]));
+            var bono_m_10 = rec.getValue(config_fields.bono_m_10[id_emp])==    ""?0:parseFloat(rec.getValue(config_fields.bono_m_10[id_emp]));
            
-            return bono_m_4+bono_m_5+bono_m_6+bono_m_7;
+            return bono_m_1+bono_m_2+bono_m_3+bono_m_4+bono_m_5+bono_m_6+bono_m_7+bono_m_8+bono_m_9+bono_m_10;
         }
 
     }; 

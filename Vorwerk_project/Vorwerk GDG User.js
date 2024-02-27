@@ -48,13 +48,13 @@ function(record,search,Utils,Dictionary) {
     		
     		var rec = scriptContext.newRecord;
     		var rec_type = rec.type;
-    		var subtotal = rec.getValue('custrecord_c_jdg_subtotal');
+    		var subtotal = rec.getValue('custrecord_total_reporte_jdg');
     		var total = 0; 
     		var retencion = 0;
     		var sumBonos = Utils.getBonos(3,rec);
     		log.debug('sumBonos',sumBonos);
     		
-    		if(subtotal != "" || subtotal >= 0){
+    		
     			log.debug('subtotal',subtotal);
     			subtotal= subtotal+sumBonos;
     			var rec_related = rec.getValue('custrecord_sub__registro_compensaciones');
@@ -97,9 +97,7 @@ function(record,search,Utils,Dictionary) {
     			
     			log.debug('listISR',listISR);
     			
-    		}else{
-    			log.debug("no tiene total",subtotal);
-    		}
+    		
     		
     	}catch(err){
     		log.error('Error afterSubmit',err);
