@@ -6,7 +6,7 @@
 define(['N/email','N/record', 'N/file','N/search', 'N/https', 'N/runtime','N/format','./Vorwerk Dictionary Script.js'],
 
 function(email,record, file, search, https, runtime,format,Dictionary) {
-	var config_fields = Dictionary.getDictionayFields();
+    var config_fields = Dictionary.getDictionayFields();
     /**
      * Marks the beginning of the Map/Reduce process and generates input data.
      *
@@ -17,11 +17,11 @@ function(email,record, file, search, https, runtime,format,Dictionary) {
      * @return {Array|Object|Search|RecordRef} inputSummary
      * @since 2015.1
      */
-	var field_id = {
-    		customrecord_comisiones_presentadora:	['custrecord_c_pre_empleado','custrecord_sub_registro_compensaciones_p','custrecord_sub_compensaciones_pre'], 	
-    		customrecord_compensaciones_jdg: 		['custrecord_c_jdg_empleado','custrecord_sub__registro_compensaciones','custrecord_sub__compensaciones_jdg'],
-			customrecord_compensaciones_gtm: 		['custrecord_c_gtm_empleado','custrecord_sub_registro_compensaciones_g','custrecord_sub_compensaciones_tm']
-	}
+    var field_id = {
+            customrecord_comisiones_presentadora:   ['custrecord_c_pre_empleado','custrecord_sub_registro_compensaciones_p','custrecord_sub_compensaciones_pre'],   
+            customrecord_compensaciones_jdg:        ['custrecord_c_jdg_empleado','custrecord_sub__registro_compensaciones','custrecord_sub__compensaciones_jdg'],
+            customrecord_compensaciones_gtm:        ['custrecord_c_gtm_empleado','custrecord_sub_registro_compensaciones_g','custrecord_sub_compensaciones_tm']
+    }
    
     
     function getInputData() {
@@ -188,29 +188,29 @@ function(email,record, file, search, https, runtime,format,Dictionary) {
                 });
                 //Emerald
                 registerEmp.setValue({
-                    fieldId: config_fields.bono_1[config.type],
+                    fieldId: config_fields.bp1[config.type],
                     value: 34   
                 });
                 registerEmp.setValue({
-                    fieldId: config_fields.bono_m_1[config.type],
+                    fieldId: config_fields.bp1_monto[config.type],
                     value: comissionInfo.bono_emerald   
                 });
                 //Entrega
                 registerEmp.setValue({
-                    fieldId: config_fields.bono_2[config.type],
+                    fieldId: config_fields.bp2[config.type],
                     value: 18   
                 });
                 registerEmp.setValue({
-                    fieldId: config_fields.bono_m_2[config.type],
+                    fieldId: config_fields.bp2_monto[config.type],
                     value: comissionInfo.entrega    
                 });
                 //CK
                 registerEmp.setValue({
-                    fieldId: config_fields.bono_3[config.type],
+                    fieldId: config_fields.bp3[config.type],
                     value: 82  
                 });
                 registerEmp.setValue({
-                    fieldId: config_fields.bono_m_3[config.type],
+                    fieldId: config_fields.bp3_monto[config.type],
                     value: comissionInfo.total_ck    
                 });
                 //Garantia
@@ -221,7 +221,7 @@ function(email,record, file, search, https, runtime,format,Dictionary) {
                 registerEmp.setValue({
                     fieldId: config_fields.ids_garantia[config.type],
                     value: comissionInfo.ids_garantia    
-                }); 	
+                });     
                 
                 //3+2
                 registerEmp.setValue({
@@ -229,12 +229,16 @@ function(email,record, file, search, https, runtime,format,Dictionary) {
                     value: comissionInfo.odv_rec_del_periodo    
                 });
                 registerEmp.setValue({
-                    fieldId: config_fields.bono_8[config.type],
+                    fieldId: config_fields.bp4[config.type],
                     value: 142  // BONO ADICIONAL 3+2
                 });
                 registerEmp.setValue({
-                    fieldId: config_fields.bono_m_8[config.type],
+                    fieldId: config_fields.bp4_monto[config.type],
                     value: comissionInfo.bono_tres_dos  
+                });
+                registerEmp.setValue({
+                    fieldId: 'custrecord_reclutas_ventas',
+                    value: comissionInfo.rec_con_ventas  
                 });
                 //rec_period_LE
                 registerEmp.setValue({
@@ -242,11 +246,11 @@ function(email,record, file, search, https, runtime,format,Dictionary) {
                     value: comissionInfo.rec_period_le    
                 }); 
                 registerEmp.setValue({
-                    fieldId: config_fields.bono_9[config.type],
+                    fieldId: config_fields.bp5[config.type],
                     value: 143  //  BONO ADICIONAL 5+2
                 });
                 registerEmp.setValue({
-                    fieldId: config_fields.bono_m_9[config.type],
+                    fieldId: config_fields.bp5_monto[config.type],
                     value: comissionInfo.bono_cinco_dos  
                 });
                 //sc
@@ -255,11 +259,11 @@ function(email,record, file, search, https, runtime,format,Dictionary) {
                     value: comissionInfo.odv_pre_supercomision    
                 }); 
                 registerEmp.setValue({
-                    fieldId: config_fields.bono_10[config.type],
+                    fieldId: config_fields.bp6[config.type],
                     value: 144  //  SUPERCOMISIÓN
                 });
                 registerEmp.setValue({
-                    fieldId: config_fields.bono_m_10[config.type],
+                    fieldId: config_fields.bp6_monto[config.type],
                     value: comissionInfo.bono_sc  
                 });
 
@@ -347,15 +351,15 @@ function(email,record, file, search, https, runtime,format,Dictionary) {
      */
     function summarize(summary) {
         try{
-        	try{
-        		email.send({
-            		author: '317077',
-        			recipients: 'pilar.torres@vorwerk.de',
-        			subject: 'Información de Items',
-        			body: 'Proceso de guardado terminado'
-        		}); 
+            try{
+                email.send({
+                    author: '344096',
+                    recipients: 'pilar.torres@vorwerk.de',
+                    subject: 'Información de Items',
+                    body: 'Proceso de guardado terminado'
+                }); 
             }
-        	
+            
             catch(e){
                 log.error('reduce',e);
             }
