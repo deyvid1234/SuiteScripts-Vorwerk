@@ -228,8 +228,8 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                      },
                      {
                          name: 'trandate',
-                         operator: 'within',
-                         values: [startDate, endDate]
+                         operator: 'ONORAFTER',
+                         values: startDate
                      }
                  ],
            columns: [
@@ -274,8 +274,8 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                      },
                      {
                          name: 'trandate',
-                         operator: 'within',
-                         values: [startDate, endDate]
+                         operator: 'ONORAFTER',
+                         values: startDate
                      }
                  ],
            columns: [
@@ -362,10 +362,136 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
         var fdate = new Date(fdate[2],fdate[1]-1,fdate[0])
         return fdate;
    }
+   function stringtodateGuion(date){
+        var fdate = date.split('-')
+        var fdate = new Date(fdate[2],fdate[1]-1,fdate[0])
+        return fdate;
+   }
    function ddmmyyyydate(date){
         var fdate = date.split('/')
         var fdate = fdate[2]+'/'+fdate[1]-1+'/'+fdate[0]
         return fdate;
+   }
+   function ddmmyyyydateGuion(date){
+        var fdate = date.split('-')
+        var fdate = fdate[2]+'/'+fdate[1]-1+'/'+fdate[0]
+        return fdate;
+   }
+   function searchReclutasTresmasDos(info_data,cust_period){
+     
+        try{
+            var presentadorasActivas = {}
+            var ventasPresentadoraHistorico = {}
+            var ventasPresentadoraPeriodoCalculado = {}
+
+            var fechasPeriodo = Utils.getObjPeriod(cust_period)
+            var fechaPeriodMin = fechasPeriodo['startDate']
+            var fechaPeriodMax = fechasPeriodo['endDate']
+
+            
+            var historicoVentasPre = search.load({
+                id: 'customsearch2108'
+            });
+            //Añadir filtro para que la fecha sea antes del inicio del periodo
+            historicoVentasPre.filters.push(search.createFilter({//Ventas post septiembre 2023
+                 name: 'trandate',
+                 operator: 'BEFORE',
+                 values: fechaPeriodMin//fecha inicio
+            }));
+            
+
+            var pagedResults = historicoVentasPre.runPaged();
+            pagedResults.pageRanges.forEach(function (pageRange){
+            var currentPage = pagedResults.fetch({index: pageRange.index});
+                currentPage.data.forEach(function (result) {
+
+                    var idPresentador = result.getValue({name: 'salesrep', summary: 'GROUP'})
+                    var cantidad = result.getValue({name: 'internalid', summary: 'COUNT'})
+
+
+                    ventasPresentadoraHistorico[idPresentador] = cantidad
+                     
+                    return true; 
+                });
+
+            });
+
+            log.debug('ventasPresentadoraHistorico', ventasPresentadoraHistorico)
+
+
+            var periodoCalculadoVentasPre = search.load({ //Ventas post septiembre 2023
+                id: 'customsearch2109'
+            });
+            //Añadir filtro para que la fecha sea antes del inicio del periodo
+            periodoCalculadoVentasPre.filters.push(search.createFilter({
+                 name: 'trandate',
+                 operator: 'within', 
+                 values: [fechaPeriodMin, fechaPeriodMax]//fecha de inicio y fecha fin
+            }));
+            
+
+            var pagedResults = periodoCalculadoVentasPre.runPaged();
+            pagedResults.pageRanges.forEach(function (pageRange){
+            var currentPage = pagedResults.fetch({index: pageRange.index});
+                currentPage.data.forEach(function (result) {
+
+                    //Datos
+                    var presentadorasTotal = []
+                    var datosPedido= new Object();
+
+                    var pedido= result.getValue('internalid')
+                    
+                    var fechaTransaction1 = result.getValue('trandate')
+                    
+                    datosPedido.fechaTransaction = stringtodate(fechaTransaction1)
+                    var fechaFinObjetivo1 = result.getValue({name : 'custentity_fin_objetivo_1',join : 'salesrep'})
+                   
+                    datosPedido.fechaFinObjetivo= stringtodate(fechaFinObjetivo1)
+                    datosPedido.noDocument = result.getValue('tranid')
+                    
+                    var idPresentador = result.getValue({name : 'internalid',join : 'salesrep'})
+                    
+                    datosPedido.fechaContratacion = result.getValue({name : 'hiredate',join : 'salesrep'})
+                    
+                    datosPedido.fechaReactivacion = result.getValue({name : 'custentity72',join : 'salesrep'})
+                    
+                    datosPedido.reclutadoraSO = result.getValue('custbody_vw_recruiter')
+                    
+                    datosPedido.reclutadoraSR = result.getValue({name : 'custentity_reclutadora',join : 'salesrep'})
+                    
+                    datosPedido.jdg = result.getValue('custbody_jefa_grupo')
+                    
+
+                   var testSO ={}
+
+                    if (presentadorasTotal.hasOwnProperty(idPresentador)){
+                        ventasPresentadoraPeriodoCalculado[idPresentador].push([{idpedido:pedido},{data:datosPedido}])
+                    }else{
+                        ventasPresentadoraPeriodoCalculado[idPresentador] = ([{idpedido:pedido},{data:datosPedido}])
+                    }
+                                  
+                     
+                    if(  ventasPresentadoraHistorico.hasOwnProperty(idPresentador) == false && datosPedido.fechaTransaction < datosPedido.fechaFinObjetivo){
+                        testSO[pedido] = datosPedido
+                      presentadorasActivas[idPresentador] = testSO// ([{idpedido:pedido},{data:datosPedido}])
+                      //log.debug('keys 1', Object.keys(presentadorasActivas[idPresentador]))
+                    }
+
+                    //log.debug('keys 2', Object.keys(presentadorasActivas))
+                   
+
+                    return true; 
+                });
+
+            });
+            log.debug('ventasPresentadoraPeriodoCalculado',ventasPresentadoraPeriodoCalculado)
+            log.debug('presentadorasActivas',presentadorasActivas)
+            return presentadorasActivas;
+        }catch(e){
+            log.debug('error ',e)
+        }
+     
+    
    }
    function searchReclutas(info_data,cust_period){
      try {
@@ -798,11 +924,11 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
              });
              venta_equipo.updateDisplayType({displayType : serverWidget.FieldDisplayType.READONLY});
 
-             //3+2 y 5+2
+             //3+2 y 5+2 EQUIPO ESPECIAL - DEBEN PERTENECER AL EQUIPO Y APARTE DEBIERON SER RECLUTADAS POR LA LIDER DE EQUIPO 
             var odv_rec_del_periodo = sublist.addField({
               id : 'custentity_odv_rec_del_periodo',
               type : serverWidget.FieldType.TEXTAREA,
-              label : 'Reclutas y ODV del periodo mismo equipo'
+              label : 'Reclutas y ODV del periodo mismo equipo'//2134324:56645653
             });
             odv_rec_del_periodo.updateDisplayType({displayType : serverWidget.FieldDisplayType.READONLY});
 
@@ -973,14 +1099,17 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                var items_promo_rec = Utils.matchEmpCompItems(structure_info_rec);
 //             log.debug('items_promo rec',items_promo_rec);
                //var reclutas_tres_dos = information_rec.tres_dos;//Trabajar searchReclutas32
-               var reclutas_tres_dos = searchReclutas32(info_data,cust_period)
-               var recporLE = reclutas_tres_dos.reclutaporLE
-               reclutas_tres_dos = reclutas_tres_dos.tres_dos;
+               //var reclutas_tres_dos = searchReclutas32(info_data,cust_period)
+
+               var ventasPresentadorareclutas_tres_dos = searchReclutasTresmasDos(info_data,cust_period)
+               log.debug('ventasPresentadorareclutas_tres_dos',ventasPresentadorareclutas_tres_dos)
+               //var recporLE = reclutas_tres_dos.reclutaporLE
+               //reclutas_tres_dos = reclutas_tres_dos.tres_dos;
                var rec_sc = searchReclutas_sc()
                rec_sc = rec_sc.rec_sc
                log.debug('rec_sc',rec_sc)
-               log.debug('recporLE',recporLE)
-               log.debug('reclutas_tres_dos',reclutas_tres_dos)
+               //log.debug('recporLE',recporLE)
+               //log.debug('reclutas_tres_dos',reclutas_tres_dos)
                var fileinfoODVPromo_rec = Utils.getFileId("search_aux_3"+cust_type+"_"+cust_period+"_"+cust_promo+".json");
                if(fileinfoODVPromo_rec == false){
                    log.debug("no se encontro el archivo","search_aux_3"+cust_type+"_"+cust_period+"_"+cust_promo+".json");
@@ -1120,8 +1249,8 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
               var objInfo = info_data[arrKeys[e]];  //extrae la información por presentador arrKeys[e]= [1234,1112] e= 1  info_data[arrKeys[e]] = {1234:{:name,id,type,data...etc}}
                   //proceso para llenar la informacion de la tabla
           
-            if(arrKeys[e] == 92303){
-                log.debug('92303',objInfo)
+            if(arrKeys[e] == 3464510){
+                log.debug('3464510',objInfo)
             }  
               //Se asigna la configuracion 
             var  numero_para_comisionar = 6
@@ -1151,6 +1280,10 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                     conf = 12
                     numero_para_comisionar = 4
                     break;
+                case '13': 
+                    conf = 13
+                    numero_para_comisionar = 4
+                    break;
                 }
               }
             //Variables principales
@@ -1170,6 +1303,10 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
             var odv_rec = 0
             var odv_rec_comisionable ={}
             var odv_reclutas_tres_dos = {}
+
+            var presentadorasActivasDelLE = 0
+            var ventasTresdosData = new Object();
+
             var odvPIds =[]
             var odvPNumber = 0;
             var odvTMganada = 0;
@@ -1183,7 +1320,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
             var Supercomision = 0
               try{
               //ODV DE LA JEFA DE GRUPO
-                if(arrKeys[e] == 92303){
+                if(arrKeys[e] == 3464510){
                     log.debug('infoODVPromo.hasOwnProperty(arrKeys[e])',infoODVPromo.hasOwnProperty(arrKeys[e]))
                     log.debug('parseInt(Object.keys(infoODVPromo[arrKeys[e]]).length) ', infoODVPromo[arrKeys[e]])
                     //log.debug(' Object.keys(infoODVPromo[arrKeys[e]]).join(',')', Object.keys(infoODVPromo[arrKeys[e]]).join(','))
@@ -1229,17 +1366,17 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                        if(cust_type == 1 && cust_promo == 2 && result_odv_pre){
                      if(result_odv_pre.hasOwnProperty(arrKeys[e])){
                            comisiona_desde = result_odv_pre[arrKeys[e]]['trandate']
-                           log.debug('fecha',comisiona_desde[2]+comisiona_desde[1]+comisiona_desde[0])
+                           //log.debug('fecha',comisiona_desde[2]+comisiona_desde[1]+comisiona_desde[0])
                            f_filtro = new Date(comisiona_desde[2],comisiona_desde[1]-1,comisiona_desde[0])
                            for(i in infoODVPromo[arrKeys[e]]){
-                             log.debug('fecha odv -',infoODVPromo[arrKeys[e]][i][1]['trandate'][2]+infoODVPromo[arrKeys[e]][i][1]['trandate'][1]+infoODVPromo[arrKeys[e]][i][1]['trandate'][0])
+                             //log.debug('fecha odv -',infoODVPromo[arrKeys[e]][i][1]['trandate'][2]+infoODVPromo[arrKeys[e]][i][1]['trandate'][1]+infoODVPromo[arrKeys[e]][i][1]['trandate'][0])
                              f_odv = new Date(infoODVPromo[arrKeys[e]][i][1]['trandate'][2],infoODVPromo[arrKeys[e]][i][1]['trandate'][1]-1,infoODVPromo[arrKeys[e]][i][1]['trandate'][0])
-                             if (f_odv >= f_filtro ){
+                             if (f_odv >= f_filtro && infoODVPromo[arrKeys[e]][i][1]['comission_status'] != 2){ // Filtro para no considerar como comisionable la orden con la que gana su TM 
                                odv_propias_filtrado[infoODVPromo[arrKeys[e]][i][1]['id']] = infoODVPromo[arrKeys[e]][i][1]['trandate']
                              }
                            }
-                           log.debug('numero de odv filtradas',Object.keys(odv_propias_filtrado).length)
-                           log.debug('odv_propias_filtrado',odv_propias_filtrado)
+                           //log.debug('numero de odv filtradas',Object.keys(odv_propias_filtrado).length)
+                           //log.debug('odv_propias_filtrado',odv_propias_filtrado)
                            odvPNumber=Object.keys(odv_propias_filtrado).length
                            odvPIds=Object.keys(odv_propias_filtrado).join(',')
                          }else if(cust_type == 1 && cust_promo == 2 &&  structure_tipo_ingreso.hasOwnProperty(arrKeys[e])){
@@ -1247,7 +1384,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                                  if(Object.keys(infoODVPromo_historico_pre[arrKeys[e]]).length < 7){
                                  cont_pre = Object.keys(infoODVPromo_historico_pre[arrKeys[e]]).length
                                  
-                                 log.debug('se hara resta: '+arrKeys[e]+' campo: '+objInfo.tipo_ingreso+' numero de casos: '+cont_pre,Object.keys(infoODVPromo_historico_pre[arrKeys[e]]).length)
+                                 //log.debug('se hara resta: '+arrKeys[e]+' campo: '+objInfo.tipo_ingreso+' numero de casos: '+cont_pre,Object.keys(infoODVPromo_historico_pre[arrKeys[e]]).length)
                                  if(cont_pre <=numero_para_comisionar){
                                    cont_pre = numero_para_comisionar - cont_pre
                                  }else{cont_pre = 0}
@@ -1264,8 +1401,8 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                   
                   
                  
-                  if(arrKeys[e] == 92303){
-                      log.debug('92303','odvPNumber '+odvPNumber+' odvTMpagada  '+odvTMpagada+' cust_promo '+cust_promo+' objInfo.e_virtual '+objInfo.e_virtual+' cont_pre '+cont_pre+' venta total propia '+(odvPNumber+odvTMpagada-cont_pre))
+                  if(arrKeys[e] == 3464510){
+                      log.debug('3464510','odvPNumber '+odvPNumber+' odvTMpagada  '+odvTMpagada+' cust_promo '+cust_promo+' objInfo.e_virtual '+objInfo.e_virtual+' cont_pre '+cont_pre+' venta total propia '+(odvPNumber+odvTMpagada-cont_pre))
                   }  
                   if(odvPNumber+odvTMpagada > 0 && cust_promo !=1 && objInfo.e_virtual == false){
                    var total_venta_p =(odvPNumber+odvTMpagada-cont_pre)>0?(odvPNumber+odvTMpagada-cont_pre):0
@@ -1402,6 +1539,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                         f_fecha_90_rec = new Date(f_mas_2dias)
                         //Historico ODV Rec
                           if(infoODVPromo_rec_historico.hasOwnProperty(i_rec_data[arrKeys[e]][i])){
+                           
                             for (j in infoODVPromo_rec_historico[i_rec_data[arrKeys[e]][i]]){ //Recorremos las ODV para cada recluta
                                   var reac = true
                                   if (reactivacion[i_rec_data[arrKeys[e]][i]] != false){
@@ -1409,14 +1547,18 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                                     f2 = reactivacion[i_rec_data[arrKeys[e]][i]].split('/')
                                     f_odv =new Date(f1[2],f1[1],f1[0])
                                     f_rec = new Date(f2[2],f2[1],f2[0])
-                                    if( f_odv < f_rec){
+                                    if( f_odv <= f_rec){
                                       reac = false
                                     }
+                                    
+                                    
                                   }
+                                  
                                       if(arrKeys[e] == infoODVPromo_rec_historico[i_rec_data[arrKeys[e]][i]][j][1]['reclutadora'] && reac){//Valida el campo RECRUITER de las ODV de las reclutas
                                         ODV_rec_pagadas[infoODVPromo_rec_historico[i_rec_data[arrKeys[e]][i]][j][1]['id']]=i_rec_data[arrKeys[e]][i]
                                         cont_hist  = cont_hist +1
-                                      }      
+                                      }  
+                                       
                                     } 
                           }
                             
@@ -1432,7 +1574,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                                     f2 = reactivacion[i_rec_data[arrKeys[e]][i]].split('/')
                                     f_odv =new Date(f1[2],f1[1],f1[0])
                                     f_rec = new Date(f2[2],f2[1],f2[0])
-                                    if( f_odv < f_rec){
+                                    if( f_odv <= f_rec){
                                       reac = false
                                     }
                                   }
@@ -1482,14 +1624,19 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                             }
                           
 //                            
-//                            if(arrKeys[e] == 39686 ){
-//                              log.debug('infoODVPromo_rec de: '+i_rec_data[arrKeys[e]][i],infoODVPromo_rec[i_rec_data[arrKeys[e]][i]])
-//                              log.debug('infoODVPromo_tm_rec de: '+i_rec_data[arrKeys[e]][i],infoODVPromo_tm_rec[i_rec_data[arrKeys[e]][i]])
-//                              log.debug('infoODVPromo_rec_historico de: '+i_rec_data[arrKeys[e]][i],infoODVPromo_rec_historico[i_rec_data[arrKeys[e]][i]])
-//                              log.debug('infoODVPromo_tm_rec_historico de: '+i_rec_data[arrKeys[e]][i],infoODVPromo_tm_rec_historico[i_rec_data[arrKeys[e]][i]])
-//
-//                            }
-                            
+                            /* if(arrKeys[e] == 54846 ){
+                               log.debug('infoODVPromo_rec de: '+i_rec_data[arrKeys[e]][i],infoODVPromo_rec[i_rec_data[arrKeys[e]][i]])
+                               log.debug('infoODVPromo_tm_rec de: '+i_rec_data[arrKeys[e]][i],infoODVPromo_tm_rec[i_rec_data[arrKeys[e]][i]])
+                               log.debug('infoODVPromo_rec_historico de: '+i_rec_data[arrKeys[e]][i],infoODVPromo_rec_historico[i_rec_data[arrKeys[e]][i]])                           
+                               log.debug('infoODVPromo_tm_rec_historico de: '+i_rec_data[arrKeys[e]][i],infoODVPromo_tm_rec_historico[i_rec_data[arrKeys[e]][i]])
+
+                               log.debug('cont_odvs', cont_odvs)
+                               log.debug('cont_hist', cont_hist)
+                               log.debug('recluta', i_rec_data[arrKeys[e]][i])
+                               log.debug('odv_rec_comisionable', odv_rec_comisionable)
+                               log.debug('odv_comisionable_rec', odv_comisionable_rec)
+                             }
+                            */
                           //Bono reclutadora 
                             cont_hist = cont_hist +1
                             var vueltas=0
@@ -1502,12 +1649,16 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                               //log.debug('Empieza a partir de: ',cont_hist + ' Numero de ODV Comisionables: '+odv_comisionable_rec)
                               //log.debug('ID : Rec:'+i_rec_data[arrKeys[e]][i]+' Comisionables para: '+arrKeys[e],odv_rec_comisionable)
                               if(i_rec_data[arrKeys[e]][i] in conf_rec){
-                                //log.debug('conf_rec[arrKeys[e]]',conf_rec[arrKeys[e]])
+                                log.debug('conf_rec[arrKeys[e]]',conf_rec[arrKeys[e]])
                                 configuracion_rec = conf_rec[i_rec_data[arrKeys[e]][i]]
                                 }else{
                                 configuracion_rec = 1
                                 }
                               bono_reclutadora= bono_reclutadora + Math.abs(CompConfigDetails[configuracion_rec]['esquemaVentasReclutamiento'][k]['compensacion'])
+                              /*log.debug('k configuracion_rec',configuracion_rec)
+                              
+                              log.debug('bono_reclutadora',bono_reclutadora)
+                              log.debug('k Reclutamiento',k)*/
                               vueltas++
                                 }
                             }
@@ -1546,7 +1697,9 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                 var recluta_LE = {}
                 var odv_reclutas_sc = {}
                 var Supercomision = 0
+                var arrODVSC = {}
                   for(i in i_pre_data[arrKeys[e]] ){//Recorremos a las presentadoras del equipo de la LE
+                    var pre_aiux = i_pre_data[arrKeys[e]][i] //id Presentadora 
                     
                     if(infoODVPromo_pre[i_pre_data[arrKeys[e]][i]] != null){//Valida si la presentadora tiene ventas en el arreglo infoODVPromo_pre
                       sum =sum + Object.keys(infoODVPromo_pre[i_pre_data[arrKeys[e]][i]]).length  
@@ -1554,13 +1707,13 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                       // Se llena el arreglo odv_reclutas_tres_dos
                       //if(arrKeys[e] == 905233){
                         //log.debug('reclutas_tres_dos',reclutas_tres_dos)
-                      if(arrKeys[e] in reclutas_tres_dos){//Valida si existe la lider en el resultado de la busqueda de presentadoras 3 + 2, Arreglo con presentadoras reclutadas en el mismo periodo calculado
-                        //log.debug('reclutas_tres_dos[arrKeys[e]]',reclutas_tres_dos[arrKeys[e]])
-                        //log.debug('i_pre_data[arrKeys[e]][i]',i_pre_data[arrKeys[e]][i])
-                        //log.debug('reclutas_tres_dos[arrKeys[e]].indexOf(i_pre_data[arrKeys[e]][i])',reclutas_tres_dos[arrKeys[e]].indexOf(i_pre_data[arrKeys[e]][i]))
+                      /*if(arrKeys[e] in reclutas_tres_dos){//Valida si existe la lider en el resultado de la busqueda de presentadoras 3 + 2, Arreglo con presentadoras reclutadas en el mismo periodo calculado
+                        
+                        
+                        
                         if(reclutas_tres_dos[arrKeys[e]].indexOf(i_pre_data[arrKeys[e]][i]) >= 0){//Valida si la recluta existe en el arreglo de reclutas del mismo periodo
                         odv_reclutas_tres_dos[i_pre_data[arrKeys[e]][i]] = Object.keys(infoODVPromo_pre[i_pre_data[arrKeys[e]][i]])
-                        
+                       
                         if(arrKeys[e] in recporLE){
                           if(recporLE[arrKeys[e]].indexOf(i_pre_data[arrKeys[e]][i]) >= 0){
                                 recluta_LE[i_pre_data[arrKeys[e]][i]] = Object.keys(infoODVPromo_pre[i_pre_data[arrKeys[e]][i]])
@@ -1568,35 +1721,52 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                         }
                             
                         }
-                      }
+                      }*/
+                      //Nuevo y renovado y fresco 3+2 
+                      if( ventasPresentadorareclutas_tres_dos.hasOwnProperty(i_pre_data[arrKeys[e]][i]) ){
+                            
+                            presentadorasActivasDelLE ++
+                            var presentador  = i_pre_data[arrKeys[e]][i]
+                            var internalidPedidoPresentador = Object.keys(ventasPresentadorareclutas_tres_dos[presentador])
+                            var nopedido = ventasPresentadorareclutas_tres_dos[presentador][Object.keys(ventasPresentadorareclutas_tres_dos[presentador])]['noDocument']
+                            ventasTresdosData[internalidPedidoPresentador] = {NoPedido:nopedido, Presentador:presentador}
+                            log.debug('ventasTresdosData',ventasTresdosData)
+                        }
                       //Supercomision
                       if(arrKeys[e] in rec_sc){//Valida si existe la lider en el resultado de la busqueda de presentadoras SC, Arreglo con presentadoras reclutadas despues de 1/2/2022 sin importar recluta
                         
                         if(rec_sc[arrKeys[e]].indexOf(i_pre_data[arrKeys[e]][i]) >= 0 ){//Valida si la recluta existe en el arreglo de reclutas post febrero
                        
-                        var pre_aiux = i_pre_data[arrKeys[e]][i]
+                        
+                        
                         odv_reclutas_sc[i_pre_data[arrKeys[e]][i]] = Object.keys(infoODVPromo_pre[i_pre_data[arrKeys[e]][i]])
                             var ovd_pre_object_keys = Object.keys(infoODVPromo_pre[i_pre_data[arrKeys[e]][i]])
-                            //log.debug('ovd_pre_object_keys',ovd_pre_object_keys)
                             var cont_odv_pre = 0
+                            var scODV = []
                             for(p in ovd_pre_object_keys){
-                               // log.debug('ovd_pre_object_keys[i]',ovd_pre_object_keys[i])
+
                                 if(ovd_pre_object_keys[p] in odv_objetivo_2 || odv_objetivo_2.hasOwnProperty(ovd_pre_object_keys[p]) ){
+                                   
                                     cont_odv_pre += 1//Ventas del periodo y dentro de la fecha de objetivo
+                                    //log.debug('4 ovd_pre_object_keys[p] Esta orden comision SC del presentador: '+pre_aiux,ovd_pre_object_keys[p])
+                                    scODV.push(ovd_pre_object_keys[p])
+                                    arrODVSC[pre_aiux] = scODV
                                 }
+
                             }
+                            
+
                             if(i_pre_data[arrKeys[e]][i] in pre_num_ventas || pre_num_ventas.hasOwnProperty(i_pre_data[arrKeys[e]][i]) ){
                                 var odp_pre = cont_odv_pre
-                                
                                 var falta = pre_num_ventas[i_pre_data[arrKeys[e]][i]]['falta']
                                 if(odp_pre >= falta ){
                                     Supercomision += falta
-                                    //log.debug('ostia','odp_pre '+odp_pre+' falta '+falta)
                                 }else{
                                     Supercomision +=   odp_pre 
                                 }
                                
                             }else{
+                                
                                 Supercomision += cont_odv_pre
                             }
                         
@@ -1611,11 +1781,23 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                       odv_pre_comisionables.push(Object.keys(infoODVPromo_tm_pre[i_pre_data[arrKeys[e]][i]]))
                           odvTMpagada_pre = odvTMpagada_pre + parseInt(Object.keys(infoODVPromo_tm_pre[i_pre_data[arrKeys[e]][i]]).length)
                         // Se llena el arreglo odv_reclutas_tres_dos
-                      if(arrKeys[e] in reclutas_tres_dos){
+                     /* if(arrKeys[e] in reclutas_tres_dos){
                         if(reclutas_tres_dos[arrKeys[e]].indexOf(i_pre_data[arrKeys[e]][i]) > 0 ){
                         odv_reclutas_tres_dos[i_pre_data[arrKeys[e]][i]] += Object.keys(infoODVPromo_tm_pre[i_pre_data[arrKeys[e]][i]])
                         }
-                      }
+                      }*/
+
+                      //Nuevo y renovado y fresco 3+2 
+                      if( ventasPresentadorareclutas_tres_dos.hasOwnProperty(i_pre_data[arrKeys[e]][i]) ){
+                            presentadorasActivasDelLE ++
+                            var presentador  = i_pre_data[arrKeys[e]][i]
+                            var internalidPedidoPresentador = Object.keys(ventasPresentadorareclutas_tres_dos[presentador])
+                            var nopedido = ventasPresentadorareclutas_tres_dos[presentador][Object.keys(ventasPresentadorareclutas_tres_dos[presentador])]['noDocument']
+                            ventasTresdosData[internalidPedidoPresentador] = {NoPedido:nopedido, Presentador:presentador}
+                            log.debug('ventasTresdosData',ventasTresdosData)
+                        }
+
+
                       if(arrKeys[e] in rec_sc){
                         if(rec_sc[arrKeys[e]].indexOf(i_pre_data[arrKeys[e]][i]) > 0 ){
                         odv_reclutas_sc[i_pre_data[arrKeys[e]][i]] += Object.keys(infoODVPromo_tm_pre[i_pre_data[arrKeys[e]][i]])
@@ -1624,9 +1806,12 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
 
                         var ovd_pre_object_keys = Object.keys(infoODVPromo_tm_pre[i_pre_data[arrKeys[e]][i]])
                             var cont_odv_pre = 0
+                            var scODV_TM = []
                             for(i in ovd_pre_object_keys){
                                 if(ovd_pre_object_keys[i] in odv_objetivo_2 || odv_objetivo_2.hasOwnProperty(ovd_pre_object_keys[i]) ){
                                     cont_odv_pre += 1
+                                    scODV_TM.push(ovd_pre_object_keys[i])
+                                    arrODVSC[pre_aiux] = scODV_TM
                                 }
                             }
                         
@@ -1648,6 +1833,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                       }
                         
                     }
+
                       
                   }
                   //Venta equipo
@@ -1693,11 +1879,12 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                 log.debug('Error ODV DE LAS PRESENTADORAS',e)
               } 
               // Fin ODV DE LAS PRESENTADORAS
+              
               //3 + 2 
               var v_total = odvPNumber+(odvTMpagada>0?odvTMpagada:0)+(odvTMganada>0?odvTMganada:0)
-              try{
+              /*try{
                 var bono_tres_dos = 0
-                if(Object.keys(odv_reclutas_tres_dos).length >=2 && v_total > 2 && Object.keys(recluta_LE).length >=1){
+                if(Object.keys(odv_reclutas_tres_dos).length >=2 && v_total > 2 && Object.keys(recluta_LE).length >=1){//Reclutas juntan almenos 2 ventas y el LE tiene al menos 3 ventas 
                     
                     bono_tres_dos = 5000
                 }
@@ -1718,6 +1905,21 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
               }catch(e){
                 Log.debug('Error 5 + 2 ',e)
               }
+                */
+
+
+
+              //log.debug('Valores antes de nuevo 3+2','bono_cinco_dos '+bono_cinco_dos+' bono_tres_dos '+bono_tres_dos)
+
+              if(presentadorasActivasDelLE >=2 && v_total > 4){
+                    bono_cinco_dos = 8000
+                    bono_tres_dos = 0
+              }else if(presentadorasActivasDelLE >=2 && v_total > 2){
+                bono_tres_dos = 5000
+                bono_cinco_dos = 0
+              }
+
+            //log.debug('Valores post nuevo 3+2','bono_cinco_dos '+bono_cinco_dos+' bono_tres_dos '+bono_tres_dos)
               //Fin 3 + 2
               //Parche 
               /*if(arrKeys[e] == 15355 || arrKeys[e] == 37453 || arrKeys[e] == 2141633 || arrKeys[e] == 2227423 || arrKeys[e] == 2227424 || arrKeys[e] == 2235478 || arrKeys[e] == 2236907 || arrKeys[e] == 2276457 || arrKeys[e] == 2279300 || arrKeys[e] == 2425369 ){
@@ -1732,7 +1934,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                 Supercomision = 0
               }
               subtotal = (parseInt(venta_propia)+parseInt(entrega)+parseInt(venta_equipo)+parseInt(bono_productividad)+parseInt(bono_emerald)+parseInt(bono_talento)+parseInt(bono_reclutadora)+parseInt(comision_ck)+parseInt(comisionGarantia)+parseInt(bono_tres_dos)+parseInt(bono_cinco_dos)+parseInt(Supercomision*500))
-              if(arrKeys[e] == 92303){
+              if(arrKeys[e] == 3464510){
                 log.debug('venta_propia',venta_propia
                 +' entrega: '+entrega
                 +' venta_equipo: '+venta_equipo
@@ -2022,9 +2224,9 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                           value :JSON.stringify(odv_rec_comisionable)
                         });
                     }
-                    if(Object.keys(odv_reclutas_tres_dos).length > 0 ){
+                    if(/*Object.keys(odv_reclutas_tres_dos).length > 0*/ bono_tres_dos>0 || bono_cinco_dos > 0 ){
                     //ODV comisionables 3+2 
-                        sublist.setSublistValue({//'Reclutas y ODV del periodo mismo equipo'
+                        /*sublist.setSublistValue({//'Reclutas y ODV del periodo mismo equipo'
                           id : 'custentity_odv_rec_del_periodo',
                           line : cont_line,
                           value :JSON.stringify(odv_reclutas_tres_dos)
@@ -2039,7 +2241,13 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                           line : cont_line,
                           value :Object.keys(odv_reclutas_tres_dos).length
                         });
-                        
+                        */
+                        sublist.setSublistValue({//'Reclutas con ventas'
+                          id : 'custentity_rec_con_ventas',
+                          line : cont_line,
+                          value :JSON.stringify(ventasTresdosData)
+                        });
+                    
                         sublist.setSublistValue({//'Bono 3 + 2'
                           id : 'custentity_bono_tres_dos',
                           line : cont_line,
@@ -2057,7 +2265,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                         sublist.setSublistValue({//'ODV Por recluta del mes del Equipo SC'
                           id : 'custentity_odv_pre_supercomision',
                           line : cont_line,
-                          value :JSON.stringify(odv_reclutas_sc)
+                          value :JSON.stringify(arrODVSC)
                         });
                         
                         sublist.setSublistValue({//'Numero de ventas SC'
@@ -2220,7 +2428,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
            mySearch.filters.push(search.createFilter({
                    name: 'trandate',
                    operator: 'within',
-                   values: ['01/11/2022',period['startDate']]
+                   values: ['01/06/2023',period['startDate']]
                }));
            var pagedResults = mySearch.runPaged();
            pagedResults.pageRanges.forEach(function (pageRange){
@@ -2233,7 +2441,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                 tmR = parseInt(values['GROUP(salesRep.custentity_conf_rec)'][0]['value'])
                 var comisionan = 0
                 var falta = 0
-                if(tmR == 11 ){//Si su TM es R solo comisiona 4 ventas
+                if(tmR == 11 || tmR == 12 || tmR == 13){//Si su TM es R o CC12 solo comisiona 4 ventas
                     tmR = true
                     comisionan = 4
                     falta = comisionan - num_h
@@ -2241,6 +2449,9 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                     tmR = false
                     comisionan = 6
                     falta = comisionan - num_h
+                }
+                if(falta < 0){
+                    falta=0
                 }
                 historico_pre_sc[presentadora] = {
                     num_h:num_h, //ODV historico
@@ -2250,7 +2461,8 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                     falta:falta// Ordenes que comisionan menos ordenes que tiene 
                 }
                         return true;    
-                   });
+                
+                });
 
          });
            return historico_pre_sc;
@@ -2271,7 +2483,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
            mySearch.filters.push(search.createFilter({
                    name: 'trandate',
                    operator: 'within',
-                   values: ['01/11/2022',period['startDate']]
+                   values: ['01/06/2023',period['startDate']]
                }));
            var pagedResults = mySearch.runPaged();
            pagedResults.pageRanges.forEach(function (pageRange){
@@ -2284,7 +2496,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                 tmR = parseInt(values['GROUP(salesRep.custentity_conf_rec)'][0]['value'])
                 var comisionan = 0
                 var falta = 0
-                if(tmR == 11 ){//Si su TM es R solo comisiona 4 ventas
+                if(tmR == 11 || tmR == 12 || tmR == 13){//Si su TM es R o CC12 solo comisiona 4 ventas
                     tmR = true
                     comisionan = 4
                     falta = comisionan - num_h
@@ -2292,6 +2504,9 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                     tmR = false
                     comisionan = 6
                     falta = comisionan - num_h
+                }
+                if(falta < 0){
+                    falta=0
                 }
                 historico_pre_sc[presentadora] = {
                     num_h:num_h, //ODV historico
