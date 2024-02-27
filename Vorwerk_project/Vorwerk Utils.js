@@ -461,7 +461,7 @@ function(record, search, runtime, format, query,Dictionary) {
             var bono_m_9 = rec.getValue(config_fields.bono_m_9[id_emp])  ==    ""?0:parseFloat(rec.getValue(config_fields.bono_m_9[id_emp]));
             var bono_m_10 = rec.getValue(config_fields.bono_m_10[id_emp])==    ""?0:parseFloat(rec.getValue(config_fields.bono_m_10[id_emp]));
            
-            return bono_m_1+bono_m_2+bono_m_3+bono_m_4+bono_m_5+bono_m_6+bono_m_7+bono_m_8+bono_m_9+bono_m_10+;
+            return bono_m_1+bono_m_2+bono_m_3+bono_m_4+bono_m_5+bono_m_6+bono_m_7+bono_m_8+bono_m_9+bono_m_10;
         }
 
     }; 
