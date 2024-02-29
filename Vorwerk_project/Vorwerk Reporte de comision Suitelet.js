@@ -1934,7 +1934,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                 Supercomision = 0
               }
               subtotal = (parseInt(venta_propia)+parseInt(entrega)+parseInt(venta_equipo)+parseInt(bono_productividad)+parseInt(bono_emerald)+parseInt(bono_talento)+parseInt(bono_reclutadora)+parseInt(comision_ck)+parseInt(comisionGarantia)+parseInt(bono_tres_dos)+parseInt(bono_cinco_dos)+parseInt(Supercomision*500))
-              if(arrKeys[e] == 3464510){
+              if(arrKeys[e] == 3749925 || arrKeys[e] == 3864070){
                 log.debug('venta_propia',venta_propia
                 +' entrega: '+entrega
                 +' venta_equipo: '+venta_equipo
@@ -2151,18 +2151,21 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                                   value : id_vp
                               });
                     }else if (cust_promo ==1){//TxTM No tiene entrega por lo que no aplica la misma regla 
-                        var ids_txtm = Object.keys(infoODVPromo[arrKeys[e]])
-                        if(typeof ids_txtm == "object" ){
-                            id_vp = ids_txtm.join(',')
-                          }else{
-                            id_vp = ids_txtm
-                          }
-                        sublist.setSublistValue({
-                            id : 'custentity_odv_jdg_ids',
-                            line : cont_line,
-                            value : id_vp
-                        });
-                        
+                        try{
+                            var ids_txtm = Object.keys(infoODVPromo[arrKeys[e]])
+                            if(typeof ids_txtm == "object" ){
+                                id_vp = ids_txtm.join(',')
+                              }else{
+                                id_vp = ids_txtm
+                              }
+                            sublist.setSublistValue({
+                                id : 'custentity_odv_jdg_ids',
+                                line : cont_line,
+                                value : id_vp
+                            });
+                        }catch(e){
+
+                        }
                     }
            }
                  if(bono_productividad > 0 && cust_promo !=1){
