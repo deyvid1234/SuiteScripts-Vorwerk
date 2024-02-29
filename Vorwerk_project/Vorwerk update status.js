@@ -102,14 +102,14 @@ function(search,record,format,runtime) {
                 log.debug('key', key)
                 log.debug('saved', saved)
                 if (saved == 'true') {
-                    savedItems++;
+                    savedItems+= key + '\n';;
                 } else {
                     
                     failedItems += key + '\n';
                     
                 }
                
-                totalItemsProcessed++
+                totalItemsProcessed+= key + '\n';
 
                 return true;
             });
@@ -119,23 +119,24 @@ function(search,record,format,runtime) {
 
             }
 
-            failedItems += "\n\nTransaccion ID: " + transactionId + "\nUsage: " + summary.usage +
-                "\nConcurrency: " + summary.concurrency +
-                "\nNumber of yields: " + summary.yields + "\nTotal Items Processed: " + totalItemsProcessed +
-                "\nTotal Saved Items:" + savedItems;
+            
                  
             if (totalItemsProcessed) {
                 log.debug({
-                    title: 'summarize/totalItemsProcessed',
-                    details: totalItemsProcessed
+                    title: 'Transacciones cerradas',
+                    details: 'Transacciones cerradas: \n' + savedItems
                 });
             } 
             if(failedItems) {
                 log.debug({
-                    title: 'summarize/failedItems',
+                    title: 'Transacciones no cerradas',
                     details: failedItems
                 });
             }
+            log.debug({
+                    title: 'Total de datos procesados',
+                    details: totalItemsProcessed
+                });
     }
    
 
