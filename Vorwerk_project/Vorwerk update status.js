@@ -23,18 +23,8 @@ function(search,record,format,runtime) {
         log.debug('paramsInfoget', paramsInfo)
         var ids = paramsInfo.split(",");
         log.debug('ids',ids)
-        for(i in ids){
-            var rec= record.load({
-                type: 'salesorder',
-                id: ids[i],
-                isDynamic: true,
-            });
-            var status =rec.getValue('status')
-            log.debug('status', status)
-            var deletedId = record.delete({ type: 'salesorder', id: ids[i] });
-            log.debug('deletedId',deletedId)
-        }
-        return JSON.parse(deletedId);
+        
+          return ids;  
     
     }
 
@@ -46,60 +36,29 @@ function(search,record,format,runtime) {
      */
     function map(context) {
     	try{
-            log.debug('rec inicia map', context)
-    		
-        	/*var idPre = registeInfo.values.custbody_presentadora_tm_paga.value;
-        	var date_limit = registeInfo.values.trandate;
-        	if(idPre != 12000 && idPre != 16581){
-        		var fdate_close = format.parse({
-	                value: date_limit,
-	                type: format.Type.DATE
-	            }); 
-        		var d = new Date(fdate_close);
-        		d.setDate(d.getDate()-1); 
-        		var fdate_end = format.format({
-	                value: d,
-	                type: format.Type.DATE
-	            }); 
-        		log.debug('fdate_ends',fdate_end)
-        		 var searchData = search.create({
-     	            type: 'salesorder',
-     	            columns: ['internalid','trandate','salesrep'],
-     	            filters: [
-     	                ['salesrep', 'anyof', idPre],'and',
-     	                ['trandate','within','1/1/2019',fdate_end],'and',
-     	                ['custbody_vw_comission_status','noneof',2],'and',
-     	                ['mainline','is',true]
-     	            ]
-     	        });
-     	        var obj = {};
-     	        searchData.run().each(function(r){
-     	        	if(r.getValue('salesrep') in obj){
-     	        		obj[r.getValue('salesrep')].push({id:r.getValue('internalid'),date:r.getValue('trandate')})
-     	        		
-     	        	}else{
-     	        		obj[r.getValue('salesrep')] = [{id:r.getValue('internalid'),date:r.getValue('trandate')}]
-     	        	}
-     	            return true;
-     	        });
-     	        
-     	        for(var x in obj[idPre]){
-     	        	try{
-     	        		var submitFields = record.submitFields({
-			                type: record.Type.SALES_ORDER,
-			                id: obj[idPre][x].id,
-			                values: {'custbody_vw_comission_status':'2'}
-			            });
-     	        	}catch(error){
-     	        		log.error('error for',error)
-     	        	}
-     	        	
-     	        }
-     	        log.debug('obj',obj);
-        	}*/
-	       
+            
+            var idRec= context.value
+            log.debug('idRec', idRec)
+            var saved= false
+             var rec= record.load({
+                type: 'salesorder',
+                id: idRec,
+                isDynamic: true,
+            });
+            var count = rec.getLineCount('item');
+
+            for (var i = 0; i < count; i++) {
+                   rec.selectLine({ sublistId: 'item', line: i });
+                   rec.setCurrentSublistValue({ sublistId: 'item', fieldId: 'isclosed', value: true });
+                   rec.commitLine('item')
+                   saved = true
+            }
+
+            rec.save();
+            context.write(idRec, saved);      
     	}catch(err){
     		log.error("err map",err);
+            context.write(idRec, saved);
     	}
     	
 
@@ -114,6 +73,7 @@ function(search,record,format,runtime) {
      */
     function reduce(context) {
     	log.debug("reduce",context);
+        
     }
 
 
@@ -125,6 +85,57 @@ function(search,record,format,runtime) {
      */
     function summarize(summary) {
     	log.debug("summary",summary);
+
+        var scriptObj = runtime.getCurrentScript();
+            var transactionId = scriptObj.getParameter({ name: 'custscript_transaccion' });
+
+            log.debug({
+                title: 'summarize/transactionId',
+                details: transactionId
+            });
+
+            var failedItems = ''
+            var savedItems = 0 
+            var totalItemsProcessed = 0
+            
+            summary.output.iterator().each(function (key, saved) {
+                log.debug('key', key)
+                log.debug('saved', saved)
+                if (saved == 'true') {
+                    savedItems++;
+                } else {
+                    
+                    failedItems += key + '\n';
+                    
+                }
+               
+                totalItemsProcessed++
+
+                return true;
+            });
+
+            if (failedItems) {
+                failedItems = 'Transacciones no cerradas: \n' + failedItems
+
+            }
+
+            failedItems += "\n\nTransaccion ID: " + transactionId + "\nUsage: " + summary.usage +
+                "\nConcurrency: " + summary.concurrency +
+                "\nNumber of yields: " + summary.yields + "\nTotal Items Processed: " + totalItemsProcessed +
+                "\nTotal Saved Items:" + savedItems;
+                 
+            if (totalItemsProcessed) {
+                log.debug({
+                    title: 'summarize/totalItemsProcessed',
+                    details: totalItemsProcessed
+                });
+            } 
+            if(failedItems) {
+                log.debug({
+                    title: 'summarize/failedItems',
+                    details: failedItems
+                });
+            }
     }
    
 
