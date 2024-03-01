@@ -292,7 +292,7 @@ function(record, search, email, render, file,runtime, encode, https, format, xml
 
             email.send({
                 author: -5,
-                recipients: 'eomar_ol@hotmail.com',
+                recipients: 'deyvid8uriel@gmail.com',
                 subject: subject,
                 body: emailBody
             });
@@ -480,7 +480,8 @@ function(record, search, email, render, file,runtime, encode, https, format, xml
                     responseCode: 'custrecord_c_gtm_codigo_respuesta',
                     responseMessage: 'custrecord_c_gtm_mensaje_respuesta',
                     responseDetails: 'custrecord_c_gtm_response_details',
-                    idRecordDetail: 'custrecord_sub_compensaciones_tm'
+                    idRecordDetail: 'custrecord_sub_compensaciones_tm',
+                    estatusTimbrado: 'custrecord_estatus_timbrado_gtm'
                 },
                 'customrecord_compensaciones_jdg': {
                     employeeField: 'custrecord_c_jdg_empleado',
@@ -494,7 +495,8 @@ function(record, search, email, render, file,runtime, encode, https, format, xml
                     responseCode: 'custrecord_c_jdg_codigo_respuesta',
                     responseMessage: 'custrecord_c_jdg_mensaje_respuesta',
                     responseDetails: 'custrecord_c_jdg_response_details',
-                    idRecordDetail: 'custrecord_sub__compensaciones_jdg'
+                    idRecordDetail: 'custrecord_sub__compensaciones_jdg',
+                    estatusTimbrado: 'custrecord_estatus_timbrado'
 
                 },
                 'customrecord_comisiones_presentadora': {
@@ -509,7 +511,8 @@ function(record, search, email, render, file,runtime, encode, https, format, xml
                     responseCode: 'custrecord_c_pre_codigo_respuesta',
                     responseMessage: 'custrecord_c_pre_mensaje_respuesta',
                     responseDetails: 'custrecord_c_pre_response_details',
-                    idRecordDetail: 'custrecord_sub_compensaciones_pre'
+                    idRecordDetail: 'custrecord_sub_compensaciones_pre',
+                    estatusTimbrado: 'custrecord_estatus_timbrado_pre'
                 }
             }
             return createObjReturn(objEquivalence[recordType],'getRecordEquivalence OK',false);
@@ -866,14 +869,14 @@ function(record, search, email, render, file,runtime, encode, https, format, xml
             var currentDate = new Date(),
                 currentYear = currentDate.getFullYear(),
                 currentMonth = currentDate.getMonth(),
-	            currentDay = currentDate.getDate();
-	            if(currentDay > 15){//si es el mismo mes tomamos el mes en curso
-	                currentMonth = parseInt(currentMonth);
-	            }else{//si es de los primeros días del mes vamos por el mes anterior
-	                currentMonth = parseInt(currentMonth)-1
-	            }
+                currentDay = currentDate.getDate();
+                if(currentDay > 15){//si es el mismo mes tomamos el mes en curso
+                    currentMonth = parseInt(currentMonth);
+                }else{//si es de los primeros días del mes vamos por el mes anterior
+                    currentMonth = parseInt(currentMonth)-1
+                }
             if(currentMonth == -1){
-            	currentMonth = 0;
+                currentMonth = 0;
             }
             //currentYear = 2020;
             var arrMonths = [ "enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre" ];
