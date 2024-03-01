@@ -63,6 +63,17 @@ function(email,record, file, search, https, runtime,format,payroll) {
         	EmailLib.sendEmail(email_emp,objReport);*/
     	}catch(err){
     		log.error("Error map",err);
+            var campo= payroll.getRecordEquivalence(type_to_add)
+            var equivalencia= campo['data']
+            let id = record.submitFields({
+                    type: type_to_add,
+                    id: registeInfo.idReg,
+                    values: equivalenceData['estatusTimbrado']: err,
+                    options: {
+                        enableSourcing: true,
+                        ignoreMandatoryFields: true,
+                    },
+                });
     	}
     	
     	

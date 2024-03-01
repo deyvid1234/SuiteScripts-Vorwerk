@@ -132,6 +132,17 @@ function(record, search, email, render, file,runtime, encode, https, format, xml
                 var xmlProcessed = sendProcess(objData,base64XML);
                 if(xmlProcessed.error){
                     sendErrorNotification('errorService',{errorDetails: xmlProcessed.message, regName: compensationData['name']});
+                    objUpdate[equivalenceData['estatusTimbrado']]= xmlProcessed.message
+                    record.submitFields({
+                        type: recordType,
+                        id: recordId,
+                        values: objUpdate,
+                        options: {
+                            enableSourcing: false,
+                            ignoreMandatoryFields : true
+                        }
+                    });
+
                     throw xmlProcessed.message;//error producto de la función
                 }
                 else{
