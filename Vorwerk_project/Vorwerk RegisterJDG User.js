@@ -161,6 +161,12 @@ function(serverWidget,search,record,runtime,redirect,url) {
                 label : 'TOTAL'
             });
             
+            var estatus_timbrado = sublist.addField({
+                id : 'custpage_estatus_timbrado',
+                type : serverWidget.FieldType.TEXT,
+                label : 'ESTATUS TIMBRADO'
+            });
+
             var response_code = sublist.addField({
                 id : 'custpage_response_code',
                 type : serverWidget.FieldType.TEXT,
