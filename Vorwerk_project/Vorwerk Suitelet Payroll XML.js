@@ -208,6 +208,16 @@ function(record, search, email, render, file,runtime, encode, https, format, xml
                                 }
                             });*/
 //                            updateSalesOrder(arrSalesOrder);
+                            objUpdate[equivalenceData['estatusTimbrado']]= 'Proceso de Timbrado exitoso'
+                            record.submitFields({
+                                type: recordType,
+                                id: recordId,
+                                values: objUpdate,
+                                options: {
+                                    enableSourcing: false,
+                                    ignoreMandatoryFields : true
+                                }
+                            });
                         }
                         else{
                             log.debug('Result false, verify me','ño');
