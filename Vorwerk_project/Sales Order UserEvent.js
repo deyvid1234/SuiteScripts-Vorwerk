@@ -1225,7 +1225,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 	     		 log.debug('configuracion',configuracion)
 	             for (i = 0; i < configuracion.length ; i++){
 	             	log.debug('configuracion[i].value',configuracion[i].value)
-	                if(configuracion[i].value == 11 || configuracion[i].value == 12 ){//TM6R o TM4U
+	                if(configuracion[i].value == 11 || configuracion[i].value == 12 || configuracion[i].value == 13 ){//TM6R o TM4U
 	                    odv_ganaTM = 4
 	                }
 	             }
@@ -1350,7 +1350,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 	    		                     fieldId: 'location',
 	    		                     line: e
 	    		                 })
-	    						if(tmp_id != 2170 && tmp_id != 2001 && tmp_id != 2280 && tmp_id != 2490 && tmp_id != 2571){
+	    						if(tmp_id != 2170 && tmp_id != 2001 && tmp_id != 2280 && tmp_id != 2490 && tmp_id != 2571 && tmp_id !=2638){//2170=TM6 & Varoma 120V UL USA CA MX (24),2001=TM6 & Varoma 120V UL MX US,2280=TM6R,2490= Black,2571=Spark,2638=kit k00190
 	    							var tmp_amount = salesorder.getSublistValue({
 		    		                     sublistId: 'item',
 		    		                     fieldId: 'amount',
@@ -1386,7 +1386,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 	    		                     line: x
 	    		                 })
                                 log.debug('tmp_id',tmp_id+'  line  '+i)
-                                if(tmp_id != 2170 && tmp_id != 2001 && tmp_id != 2280 && tmp_id != 2490 && tmp_id != 2571 ){
+                                if(tmp_id != 2170 && tmp_id != 2001 && tmp_id != 2280 && tmp_id != 2490 && tmp_id != 2571 && tmp_id !=2638){//2170=TM6 & Varoma 120V UL USA CA MX (24),2001=TM6 & Varoma 120V UL MX US,2280=TM6R,2490= Black,2571=Spark, 2638 = kit 00190
                                     try{
 										salesorder.removeLine({
 	                                        sublistId: 'item',
