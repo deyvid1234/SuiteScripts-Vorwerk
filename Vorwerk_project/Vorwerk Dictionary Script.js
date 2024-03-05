@@ -14,9 +14,9 @@ function() {
 				3:'custrecord_c_jdg_odv_rec',
 			},
 			total:{
-				1:'custrecord_total_reporte_pre',
-				2:'custrecord_total_reporte_gtm',
-				3:'custrecord_total_reporte_jdg',
+				1:'custrecord_c_pre_subtotal',
+				2:'custrecord_c_gtm_subtotal',
+				3:'custrecord_c_jdg_subtotal',
 			},
 			productividad:{
 				1:'custrecord_c_pre_monto_bono_pr',
