@@ -160,6 +160,11 @@ function(serverWidget,search,record,runtime,redirect,url) {
                 type : serverWidget.FieldType.FLOAT,
                 label : 'TOTAL'
             });
+            var estatus_timbrado = sublist.addField({
+                id : 'custpage_estatus_timbrado',
+                type : serverWidget.FieldType.TEXT,
+                label : 'ESTATUS TIMBRADO'
+            });
             
             var response_code = sublist.addField({
                 id : 'custpage_response_code',
@@ -367,6 +372,11 @@ function(serverWidget,search,record,runtime,redirect,url) {
                         line:x,
                         value:info[x].total
                     });
+                    sublist.setSublistValue({
+                        id:'custpage_estatus_timbrado',
+                        line:x,
+                        value:info[x].estatusTimbrado
+                    });
                     if(info[x].response_code != ""){
                         sublist.setSublistValue({
                             id:'custpage_response_code',
@@ -536,6 +546,7 @@ function(serverWidget,search,record,runtime,redirect,url) {
                           'custrecord_c_jdg_subtotal',
                           'custrecord_c_jdg_retencion',
                           'custrecord_c_jdg_total',
+                          'custrecord_estatus_timbrado',
                           'custrecord_c_jdg_codigo_respuesta',
                           'custrecord_c_jdg_mensaje_respuesta',
                           'custrecord_c_jdg_xml_sat',
@@ -600,6 +611,7 @@ function(serverWidget,search,record,runtime,redirect,url) {
                      subtotal : !r.getValue('custrecord_c_jdg_subtotal')?0:r.getValue('custrecord_c_jdg_subtotal'),
                      retentione : !r.getValue('custrecord_c_jdg_retencion')?0:r.getValue('custrecord_c_jdg_retencion'),
                      total:!r.getValue('custrecord_c_jdg_total')?0:r.getValue('custrecord_c_jdg_total'),
+                     estatusTimbrado:!r.getValue('custrecord_estatus_timbrado')?0:r.getValue('custrecord_estatus_timbrado'),
                      response_code : !r.getValue('custrecord_c_jdg_codigo_respuesta')?"":r.getValue('custrecord_c_jdg_codigo_respuesta'),    
                      message_response : r.getValue('custrecord_c_jdg_mensaje_respuesta'),   
                      xml_sat : url_file+'&idfile='+r.getValue('custrecord_c_jdg_xml_sat'),        
@@ -655,6 +667,7 @@ function(serverWidget,search,record,runtime,redirect,url) {
                           'custrecord_c_pre_subtotal',
                           'custrecord_c_pre_retencion',
                           'custrecord_c_pre_total',
+                          'custrecord_estatus_timbrado_pre',
                           'custrecord_c_pre_codigo_respuesta',
                           'custrecord_c_pre_mensaje_respuesta',
                           'custrecord_c_pre_xml_sat',
@@ -719,6 +732,7 @@ function(serverWidget,search,record,runtime,redirect,url) {
                      subtotal : !r.getValue('custrecord_c_pre_subtotal')?0:r.getValue('custrecord_c_pre_subtotal'),
                      retentione : !r.getValue('custrecord_c_pre_retencion')?0:r.getValue('custrecord_c_pre_retencion'),
                      total:!r.getValue('custrecord_c_pre_total')?0:r.getValue('custrecord_c_pre_total'),
+                     estatusTimbrado:!r.getValue('custrecord_estatus_timbrado_pre')?0:r.getValue('custrecord_estatus_timbrado_pre'),
                      response_code : !r.getValue('custrecord_c_pre_codigo_respuesta')?"":r.getValue('custrecord_c_pre_codigo_respuesta'),    
                      message_response : r.getValue('custrecord_c_pre_mensaje_respuesta'),   
                      xml_sat : url_file+'&idfile='+r.getValue('custrecord_c_pre_xml_sat'),        
@@ -773,6 +787,7 @@ function(serverWidget,search,record,runtime,redirect,url) {
                           'custrecord_c_gtm_subtotal',
                           'custrecord_c_gtm_retencion',
                           'custrecord_c_gtm_total',
+                          'custrecord_estatus_timbrado_gtm',
                           'custrecord_c_gtm_codigo_respuesta',
                           'custrecord_c_gtm_mensaje_respuesta',
                           'custrecord_c_gtm_xml_sa',
@@ -851,6 +866,7 @@ function(serverWidget,search,record,runtime,redirect,url) {
                      subtotal : !r.getValue('custrecord_c_gtm_subtotal')?0:r.getValue('custrecord_c_gtm_subtotal'),
                      retentione : !r.getValue('custrecord_c_gtm_retencion')?0:r.getValue('custrecord_c_gtm_retencion'),
                      total:!r.getValue('custrecord_c_gtm_total')?0:r.getValue('custrecord_c_gtm_total'),
+                     estatusTimbrado:!r.getValue('custrecord_estatus_timbrado_gtm')?0:r.getValue('custrecord_estatus_timbrado_gtm'),
                      response_code : !r.getValue('custrecord_c_gtm_codigo_respuesta')?"":r.getValue('custrecord_c_gtm_codigo_respuesta'),    
                      message_response : r.getValue('custrecord_c_gtm_mensaje_respuesta'),   
                      xml_sat :url_file+'&idfile='+ r.getValue('custrecord_c_gtm_xml_sa'),        
