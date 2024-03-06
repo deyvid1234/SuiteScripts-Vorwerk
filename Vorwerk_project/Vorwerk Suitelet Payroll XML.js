@@ -209,6 +209,7 @@ function(record, search, email, render, file,runtime, encode, https, format, xml
                             objUpdate[equivalenceData['responseMessage']] = lastResult;
                             objUpdate[equivalenceData['responseDetails']] = resultDescription;
                         }
+                        objUpdate[equivalenceData['estatusTimbrado']] = 'OK';
                         if(context){
                             context.response.write(JSON.stringify(bodyResult));
                         }
@@ -218,12 +219,56 @@ function(record, search, email, render, file,runtime, encode, https, format, xml
                         if(context){
                             context.response.write(JSON.stringify(xmlProcessResult));
                         }
+                        var globalStatusField 
+                        switch(recordType){
+                            case "customrecord_comisiones_presentadora"://presentadora
+                                globalStatusField = 'custrecord_estatus_timbrado_pre';
+                            break;
+                            case "customrecord_compensaciones_gtm":
+                                globalStatusField = 'custrecord_estatus_timbrado_gtm';
+                            break;
+                            case "customrecord_compensaciones_jdg"://JDG
+                                globalStatusField = 'custrecord_estatus_timbrado';
+                            break;
+                        }
+                        record.submitFields({
+                            type: recordType,
+                            id: recordId,
+                            values: {globalStatusField:'Request Error: '+xmlProcessed},
+                            options: {
+                                enableSourcing: false,
+                                ignoreMandatoryFields : true
+                            }
+                        });
                     }
                 }
             }
         }
         catch(e){
             log.error('There is an error in XMLProcess',e);
+            var globalStatusField 
+            switch(recordType){
+                case "customrecord_comisiones_presentadora"://presentadora
+                    globalStatusField = 'custrecord_estatus_timbrado_pre';
+                break;
+                case "customrecord_compensaciones_gtm":
+                    globalStatusField = 'custrecord_estatus_timbrado_gtm';
+                break;
+                case "customrecord_compensaciones_jdg"://JDG
+                    globalStatusField = 'custrecord_estatus_timbrado';
+                break;
+            }
+
+            record.submitFields({
+                type: recordType,
+                id: recordId,
+                values: {globalStatusField:'Process error'+e},
+                options: {
+                    enableSourcing: false,
+                    ignoreMandatoryFields : true
+                }
+            });
+            
         }
         finally{
             if(Object.keys(objUpdate).length > 0){
@@ -480,7 +525,8 @@ function(record, search, email, render, file,runtime, encode, https, format, xml
                     responseCode: 'custrecord_c_gtm_codigo_respuesta',
                     responseMessage: 'custrecord_c_gtm_mensaje_respuesta',
                     responseDetails: 'custrecord_c_gtm_response_details',
-                    idRecordDetail: 'custrecord_sub_compensaciones_tm'
+                    idRecordDetail: 'custrecord_sub_compensaciones_tm',
+                    estatusTimbrado: 'custrecord_estatus_timbrado_gtm'
                 },
                 'customrecord_compensaciones_jdg': {
                     employeeField: 'custrecord_c_jdg_empleado',
@@ -494,7 +540,8 @@ function(record, search, email, render, file,runtime, encode, https, format, xml
                     responseCode: 'custrecord_c_jdg_codigo_respuesta',
                     responseMessage: 'custrecord_c_jdg_mensaje_respuesta',
                     responseDetails: 'custrecord_c_jdg_response_details',
-                    idRecordDetail: 'custrecord_sub__compensaciones_jdg'
+                    idRecordDetail: 'custrecord_sub__compensaciones_jdg',
+                    estatusTimbrado: 'custrecord_estatus_timbrado'
 
                 },
                 'customrecord_comisiones_presentadora': {
@@ -509,7 +556,8 @@ function(record, search, email, render, file,runtime, encode, https, format, xml
                     responseCode: 'custrecord_c_pre_codigo_respuesta',
                     responseMessage: 'custrecord_c_pre_mensaje_respuesta',
                     responseDetails: 'custrecord_c_pre_response_details',
-                    idRecordDetail: 'custrecord_sub_compensaciones_pre'
+                    idRecordDetail: 'custrecord_sub_compensaciones_pre',
+                    estatusTimbrado: 'custrecord_estatus_timbrado_pre'
                 }
             }
             return createObjReturn(objEquivalence[recordType],'getRecordEquivalence OK',false);
