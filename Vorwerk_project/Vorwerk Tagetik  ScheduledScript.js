@@ -212,116 +212,168 @@ function(record,search,https,file,http,format,encode,email,runtime,format) {
                     data[i]['item'] == '62431' || 
                     data[i]['item'] == '62752' ||
                     data[i]['item'] == '62959' ||
-                    data[i]['item'] == 'TM6R'     ){
+                    data[i]['item'] == 'TM6R'  ||
+                    data[i]['item'] == 'K00190' ){
                     isTM = true
                 }
-                
+                if(data[i]['item'] == 62431){
+                    var fechaPivote = data[i]['fecha']// - 1/2/2024
+                    log.debug('fechaPivote',fechaPivote)
 
-                v = 'MX'
-                var custpage_country = v
-                
+                    if(data.hasOwnProperty(fechaPivote+'-'+'K00190')){
+                        log.debug('sumar ')
 
-                v = data[i]['fecha'].split('.')
-                var mes = v[1].length === 1 ? '0' + v[1] : v[1];
-
-                v = v[2] + '-' + mes;
-                var custpage_booking_period = v
-                
-
-                v = data[i]['fecha']
-                var custpage_reference_date = v
-                
-
-                 v = data[i]['item']
-                
-                v = quitarAcentos(v)
-                var custpage_product = v
-               
-
-                var custpage_chanel = 'Sales Organization TM'
-                               
-                    
-                var custpage_division = 'TM'
-                
-
-                v = isTM == true?data[i]['odvs']:'0'
-                var custpage_out_uoe = v
-                                
-
-                v = isTM == true?data[i]['odvs']:'0'
-                var custpage_out_uin = v
-               
-
-                v = isTM == false?data[i]['suma']:'0'
-                v = redondearNumero(v)
-                if(v >=1){
-                    log.debug('custpage_out_noo',v)
+                        data[i]['suma']=parseInt(data[i]['suma'])+parseInt(data[fechaPivote+'-'+'K00190']['suma'])
+                        data[i]['odvs']=parseInt(data[i]['odvs'])+parseInt(data[fechaPivote+'-'+'K00190']['odvs'])
+                        log.debug('data[i]',data[i])
+                    }
+                        
                 }
-                var custpage_out_noo = v
-                
-
-
-                 if(data_cancelacion[i]){
-                    log.debug('Existe cancelacion')
-
-                    v = data_cancelacion[i]['odvs']
-                    var custpage_mont_canc = v
+                if(data[i]['item'] != 'K00190'){
+                       v = 'MX'
+                    var custpage_country = v
                     
 
-                    var resta = data_cancelacion[i]['suma']
-                    var sumaRegular = data[i]['suma']
-                    v = numFormatter2.format({number: parseInt(sumaRegular - resta)})
-                    log.debug('v cancelacion',v)
-                }else{
+                    v = data[i]['fecha'].split('.')
+                    var mes = v[1].length === 1 ? '0' + v[1] : v[1];
+
+                    v = v[2] + '-' + mes;
+                    var custpage_booking_period = v
+                    
+
+                    v = data[i]['fecha']
+                    var custpage_reference_date = v
+                    
+
+                     v = data[i]['item']
+                    
+                    v = quitarAcentos(v)
+                    var custpage_product = v
                    
-                    var custpage_mont_canc = '0'
+
+                    var custpage_chanel = 'Sales Organization TM'
+                                   
+                        
+                    var custpage_division = 'TM'
                     
 
-                    v = isTM == true?data[i]['suma']:'0'//monto total sin restar
-                    //log.debug('v 0',v)
-                    v = v > 1 ? numFormatter2.format({number:parseInt(v)}):'0'
+                    v = isTM == true?data[i]['odvs']:'0'
+                    var custpage_out_uoe = v
+                                    
+
+                    v = isTM == true?data[i]['odvs']:'0'
+                    var custpage_out_uin = v
+                   
+
+                    v = isTM == false?data[i]['suma']:'0'
+                    v = redondearNumero(v)
+                    if(v >=1){
+                        log.debug('custpage_out_noo',v)
+                    }
+                    var custpage_out_noo = v
+                    
+
+
+                    if(data_cancelacion[i]){
+                        log.debug('Existe cancelacion')
+                        var fechaCancelacion = data_cancelacion[i]['fecha']
+                        var numCacelacionKit = 0
+                        var montoCancelacionKit = 0
+
+                        v = data_cancelacion[i]['odvs']
+                        var custpage_mont_canc = v
+                        
+
+                        var resta = data_cancelacion[i]['suma']
+                        var sumaRegular = data[i]['suma']
+                        v = numFormatter2.format({number: parseInt(sumaRegular - resta)})
+                        log.debug('v cancelacion',v)
+                        if(data_cancelacion[i]['item'] == 62431){
+                            if(data_cancelacion.hasOwnProperty(fechaCancelacion + '-' + 'K00190')){
+                            
+                                numCacelacionKit=data_cancelacion[fechaCancelacion + '-' + 'K00190']['odvs']
+                                
+                                montoCancelacionKit= data_cancelacion[fechaCancelacion + '-' + 'K00190']['suma']
+                                
+                                v = data_cancelacion[i]['odvs'] + numCacelacionKit
+                                var custpage_mont_canc = v
+                                var resta = data_cancelacion[i]['suma'] + montoCancelacionKit
+                                log.debug('resta item kit', resta)
+                                var sumaRegular = data[i]['suma']
+                                v = numFormatter2.format({number: parseInt(sumaRegular - resta)})
+                                log.debug('v cancelacion',v)
+                            }
+                        }
+                    }else if(data[i]['item'] == 62431 && data_cancelacion.hasOwnProperty(fechaPivote + '-' + 'K00190')){
+                        log.debug('Existe cancelacion solo kit')
+
+                        numCacelacionKit=data_cancelacion[fechaPivote + '-' + 'K00190']['odvs']
+                        log.debug('numCacelacionKit', numCacelacionKit)
+                        montoCancelacionKit= data_cancelacion[fechaPivote + '-' + 'K00190']['suma']
+                        log.debug('montoCancelacionKit', montoCancelacionKit)
+
+                        v = numCacelacionKit
+                        var custpage_mont_canc = v
+                        log.debug('v kit', v)
+
+                        var resta = montoCancelacionKit
+                        log.debug('resta kit', resta)
+                        var sumaRegular = data[i]['suma']
+                        v = numFormatter2.format({number: parseInt(sumaRegular - resta)})
+                        log.debug('v cancelacion',v)
+
+                    }else{
+                           
+                            var custpage_mont_canc = '0'
+                            
+
+                            v = isTM == true?data[i]['suma']:'0'//monto total sin restar
+                            //log.debug('v 0',v)
+                            v = v > 1 ? numFormatter2.format({number:parseInt(v)}):'0'
+                    }
+                    var custpage_out_nmo = v
+
+                    
+                    
+                    
+                    object_fill.push({
+                        source          :   'CSV',
+                        custpage_country        :   custpage_country,//OK
+                        custpage_booking_period               : custpage_booking_period,//OK
+                        custpage_reference_date               : custpage_reference_date,//ok
+                        custpage_product               : custpage_product,//ok
+                        custpage_chanel               : custpage_chanel,//ok
+
+                        AREA_NAME : '',
+                        AREA_LAND : '',
+                        AREA_PLZ : '',
+                        AREA_LOCATION : '',
+                        BRANCH_NAME : '',
+                        BRANCH_LAND : '',
+                        BRANCH_PLZ : '',
+                        BRANCH_LOCATION : '',
+                        TEAM_NAME : '',
+                        TEAM_LAND :'',
+                        TEAM_PLZ : '',
+                        TEAM_LOCATION : '',
+
+                        custpage_division               : custpage_division,//ok
+                        custpage_out_uoe               : custpage_out_uoe,//ok
+                        custpage_out_uin               : custpage_out_uin,//ok
+                        custpage_mont_canc             :custpage_mont_canc,//ok
+                        custpage_out_nmo               : custpage_out_nmo,//ok
+                        custpage_out_noo               : custpage_out_noo,//ok
+                    })
+                
+
+
+                    //Aqui debe de terminar el objectfil 
+
+                    
+
+                    line ++ 
                 }
-                var custpage_out_nmo = v
-
-                
-                
-                
-                object_fill.push({
-                    source          :   'CSV',
-                    custpage_country        :   custpage_country,//OK
-                    custpage_booking_period               : custpage_booking_period,//OK
-                    custpage_reference_date               : custpage_reference_date,//ok
-                    custpage_product               : custpage_product,//ok
-                    custpage_chanel               : custpage_chanel,//ok
-
-                    AREA_NAME : '',
-                    AREA_LAND : '',
-                    AREA_PLZ : '',
-                    AREA_LOCATION : '',
-                    BRANCH_NAME : '',
-                    BRANCH_LAND : '',
-                    BRANCH_PLZ : '',
-                    BRANCH_LOCATION : '',
-                    TEAM_NAME : '',
-                    TEAM_LAND :'',
-                    TEAM_PLZ : '',
-                    TEAM_LOCATION : '',
-
-                    custpage_division               : custpage_division,//ok
-                    custpage_out_uoe               : custpage_out_uoe,//ok
-                    custpage_out_uin               : custpage_out_uin,//ok
-                    custpage_mont_canc             :custpage_mont_canc,//ok
-                    custpage_out_nmo               : custpage_out_nmo,//ok
-                    custpage_out_noo               : custpage_out_noo,//ok
-                })
-            
-
-
-                //Aqui debe de terminar el objectfil 
-
-                
-
-                line ++
+               
             }// fin for 
 
             log.debug('object_fill',object_fill)
