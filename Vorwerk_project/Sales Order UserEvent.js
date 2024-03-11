@@ -156,7 +156,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
     		                     fieldId: 'item',
     		                     line: e
     		                 })
-    		                 if(tmp_id == 1126 || tmp_id == 1757 || tmp_id == 2001|| tmp_id == 2170|| tmp_id == 2035 || tmp_id == 2571){
+    		                 if(tmp_id == 1126 || tmp_id == 1757 || tmp_id == 2001|| tmp_id == 2170|| tmp_id == 2035 || tmp_id == 2571 || tmp_id == 2280){
     		                	 var subrec = rec.getSublistSubrecord({
      	                            sublistId: 'item',
      	                            fieldId: 'inventorydetail',
