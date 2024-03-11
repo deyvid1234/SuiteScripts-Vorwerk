@@ -372,11 +372,14 @@ function(serverWidget,search,record,runtime,redirect,url) {
                         line:x,
                         value:info[x].total
                     });
-                    sublist.setSublistValue({
+                    if(info[x].estatusTimbrado != ""){
+                        sublist.setSublistValue({
                         id:'custpage_estatus_timbrado',
                         line:x,
                         value:info[x].estatusTimbrado
                     });
+                    }
+                    
                     if(info[x].response_code != ""){
                         sublist.setSublistValue({
                             id:'custpage_response_code',
