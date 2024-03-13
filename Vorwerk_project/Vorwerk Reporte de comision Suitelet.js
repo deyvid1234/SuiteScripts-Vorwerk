@@ -159,10 +159,6 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
              value : 3,
              text : 'Lideres de Equipo'
          });
-         select.addSelectOption({
-             value : 5,
-             text : 'TM en Prestamo'
-         });
          var entrega = form.addField({
              id: 'custpage_entrega',
              type: serverWidget.FieldType.SELECT,
