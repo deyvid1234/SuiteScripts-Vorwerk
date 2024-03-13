@@ -315,7 +315,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                                 
                                 */
                                 cont_line++
-                                fillTable(sublist,dataEmp,fVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,montoReclutamiento)
+                                fillTable(sublist,dataEmp,fVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,montoSupercomision,montoReclutamiento)
                                 
                             }
 
@@ -361,7 +361,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
           log.debug('creditos 2',runtime.getCurrentScript().getRemainingUsage()); 
         }   
     }//Fin sublista
-    function fillTable(sublist,dataEmp,ventasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,montoReclutamiento){
+    function fillTable(sublist,dataEmp,ventasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,montoSupercomision,montoReclutamiento){
         var linea = cont_line
         sublist.setSublistValue({
               id : 'nombre',
@@ -454,18 +454,18 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
 
         }
 
-        if(bonoSupercomision){
+        if(montoSupercomision){
           log.debug('bonoSupercomision filltable')
           //ODV Por recluta del mes del Equipo SC
-          /*v = 
-          log.debug('vString',v)
+          v = montoReclutamiento.data
+          //log.debug('vString',v)
           sublist.setSublistValue({
               id : 'custentity_odv_pre_supercomision',
               line : linea,
               value : v!=''?v:''
           });
           //Numero de ventas SC
-          v = 
+          v = montoReclutamiento.ventasNo
           log.debug('vString',v)
           sublist.setSublistValue({
               id : 'custentity_ventas_sc',
@@ -473,16 +473,16 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
               value : v!=''?v:''
           });
           //Bono supercomision
-          v = 
+          v = montoReclutamiento.monto
           log.debug('vString',v)
           sublist.setSublistValue({
               id : 'custentity_bono_sc',
               line : linea,
-              value : v!=''?v:''
-          });*/
+              value : v!=0?v:0
+          });
         }
         
-        if(bonoReclutamiento){
+        if(montoReclutamiento){
           log.debug('bonoReclutamiento filltable')
           v = montoReclutamiento.monto
           log.debug('vbono reclutamiento',v)
@@ -507,20 +507,38 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
    function bonoSupercomision(integrantesEquipo,historicoSO,thisPeriodSO){
                      
         log.debug('integrantesEquipo', integrantesEquipo)
+        var ventasTotal=0
+        var montoSC=0
+        var ventasPeriodo=[]
         integrantesEquipo.forEach(function(i,index) {
                 
             var ventasPorItegranteTP = thisPeriodSO[i];
-            //log.debug('ventasPorIntregrantethisperiod'+i, ventasPorItegranteTP);
-            //log.debug('ventasPorIntegrantethisperiodlength'+i, ventasPorItegranteTP.length);
             var ventasPorItegranteH = historicoSO[i];
-            //log.debug('ventasPorIntegrantehistorico'+i, ventasPorItegranteH);
-            //log.debug('ventasPorIntegrantehistoricolength'+i, ventasPorItegranteH.length);
 
+            if(ventasPorItegranteTP && ventasPorItegranteH){
+              log.debug('ventasPorIntregrantethisperiod'+i, ventasPorItegranteTP);
+              log.debug('ventasPorIntegrantehistorico'+i, ventasPorItegranteH);
+             
+              ventasPeriodo.push(ventasPorItegranteTP)
+              
+              ventasTotal = ventasPorItegranteTP.length+ ventasPorItegranteH.length
+              log.debug('ventasTotal historico y tperiod'+i, ventasTotal);
+            }else if(!ventasPorItegranteH && ventasPorItegranteTP){
+              log.debug('ventasPorIntregrantethisperiod'+i, ventasPorItegranteTP);
+              ventasPeriodo.push(ventasPorItegranteTP)
+              ventasTotal = ventasPorItegranteTP.length
+              log.debug('ventasTotal this period'+i, ventasTotal)
+            }
+            
 
         });
+        montoSC= ventasNo*500
+        log.debug('ventasPeriodo', Object.keys(ventasPeriodo))
+        log.debug('montoSC', montoSC)
+        log.debug('ventasPeriodo', ventasPeriodo.length)
 
-
-        return true;
+        var ventasNo = ventasPeriodo.length
+        return  {monto:montoSC, data:ventasPeriodo, ventasNo:ventasNo};;
 
     }
     /*function bonoCincoDos(tipoReporte){
@@ -544,49 +562,45 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
 
     }*/
     function bonoReclutamiento(empId,reclutas,historicoSO,thisPeriodSO,dataEmp,compConfigDetails){
-        
+        log.debug('reclutas lista '+ empId,reclutas)
+        var totalVentas= 0
+        var bono_reclutadora =0
         if(reclutas){
-          //log.debug('entra if reclutas',reclutas)
           reclutas.forEach(function(i,index) {
-                
+            //log.debug('recluta', i)    
             var ventasReclutaTP = thisPeriodSO[i];
             var ventasReclutaH = historicoSO[i];
-            var totalVentas= 0
-            var bono_reclutadora =0
             
             if(ventasReclutaTP && ventasReclutaH ){
               var ventasReclutaTP= ventasReclutaTP.length
               totalVentas= ventasReclutaTP+ventasReclutaH.length
-              log.debug('ventasPorReclutahistorico'+i, ventasReclutaH)
-              log.debug('ventasPorReclutathisperiodlength'+i, ventasReclutaTP);
-              log.debug('totalVentas'+i, totalVentas);
-            }
-            var configraionRec = dataEmp.conf_reclutamiento
-            
-            if(configraionRec){
-              log.debug('configraionRec'+i, configraionRec);
-            }else{
-              configraionRec=1
-            }
-//          bono_reclutadora= bono_reclutadora + Math.abs(CompConfigDetails[configuracion_rec]['esquemaVentasReclutamiento'][k]['compensacion'])
-            if(totalVentas <=6 && (configraionRec == 1|| configraionRec == 5)){
-              bono_reclutadora=bono_reclutadora + compConfigDetails[configraionRec]['esquemaVentasReclutamiento'][totalVentas]['compensacion']
-              
-              log.debug('bono_reclutadora', bono_reclutadora)
-            }
-             if(totalVentas <=4 && (configraionRec == 11|| configraionRec == 12||configraionRec==13)){
-              bono_reclutadora=bono_reclutadora + compConfigDetails[configraionRec]['esquemaVentasReclutamiento'][totalVentas]['compensacion']
-              
-              log.debug('bono_reclutadora', bono_reclutadora)
-            }
+              //log.debug('ventasPorReclutahistorico'+i, ventasReclutaH)
+              //log.debug('ventasPorReclutathisperiodlength'+i, ventasReclutaTP);
+              //log.debug('totalVentas'+i, totalVentas);
 
-        });
+              var configuracionRec = dataEmp.conf_reclutamiento
+            
+              if(configuracionRec){
+                log.debug('configuracionRec'+i, configuracionRec);
+              }else{
+                configuracionRec=1
+              }
+  //          bono_reclutadora= bono_reclutadora + Math.abs(CompConfigDetails[configuracion_rec]['esquemaVentasReclutamiento'][k]['compensacion'])
+              if(totalVentas <=6 && configuracionRec != 11&& configuracionRec != 12&&configuracionRec!=13){ 
+                bono_reclutadora=bono_reclutadora + Math.abs(compConfigDetails[configuracionRec]['esquemaVentasReclutamiento'][totalVentas]['compensacion'])
+              }
+              if(totalVentas <=4 && configuracionRec == 11 && configuracionRec == 12 && configuracionRec==13){
+                bono_reclutadora=bono_reclutadora + Math.abs(compConfigDetails[configuracionRec]['esquemaVentasReclutamiento'][totalVentas]['compensacion'])
+                
+              }
+            }
+            
+
+          });
         } else{
           log.debug('esta presentadora no tiene reclutas: '+empId)
 
         }
-        
-
         return  {monto:bono_reclutadora, data:totalVentas};
 
     }
@@ -619,13 +633,14 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
         var ventasData= Object.keys(ventas[i])
         //thisPeriodSO['id presentador'][indice]['id pedido']['etiqueta']
         var comisionables = ventas[i][ventasData]['custbody_vw_comission_status']
+        //log.debug('comisionables',comisionables)
         if(comisionables != 2){
           data.push(ventasData)
         }
         
       }
       log.debug('data', data)
-      var ventasNo = empSOThisPeriod.length
+      var ventasNo = data.length
       log.debug('ventasNo',ventasNo)
       //objkey - empSOThisPeriod
       //compConfigDetails[tipo de cofiguracion][etiqueta del esquema][No de ventas][etiqueta de la compensacion monto]
