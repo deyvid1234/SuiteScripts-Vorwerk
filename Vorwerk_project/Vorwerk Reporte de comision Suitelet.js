@@ -159,6 +159,10 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
              value : 3,
              text : 'Lideres de Equipo'
          });
+         select.addSelectOption({
+             value : 5,
+             text : 'TM en Prestamo'
+         });
          var entrega = form.addField({
              id: 'custpage_entrega',
              type: serverWidget.FieldType.SELECT,
@@ -705,7 +709,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                label: 'Fecha de Contratacion'
            });
            hiredate.updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
-          if(cust_promo == 1){
+          if(cust_promo == 1 ||cust_promo == 5){
              var fecha_reactivacion = sublist.addField({
                    id: 'fecha_reactivacion',
                    type: serverWidget.FieldType.TEXT,
@@ -751,7 +755,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
            });
            cookkey_ids.updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
            
-         if(cust_promo != 1){
+         if(cust_promo != 1|| cust_promo != 5){
            var venta_propia = sublist.addField({
                id: 'custentity_venta_propia',
                type: serverWidget.FieldType.CURRENCY,
@@ -857,7 +861,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                label: 'Bono Reclutadora'
            });
            bono_rec.updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
-           if(cust_promo == 1){
+           if(cust_promo == 1 || cust_promo == 5 ){
              var ck = sublist.addField({
                    id: 'custentity_ck',
                    type: serverWidget.FieldType.CURRENCY,
@@ -1207,7 +1211,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
            // CK trabaja x TM
 
 
-          if  (cust_promo == 1){
+          if  (cust_promo == 1 || cust_promo == 5){
             var items_promo_ck = {}
               for(i in arrKeys){
                items_promo_ck[arrKeys[i]]=[55847,57221]
@@ -1404,7 +1408,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                   if(arrKeys[e] == 3464510){
                       log.debug('3464510','odvPNumber '+odvPNumber+' odvTMpagada  '+odvTMpagada+' cust_promo '+cust_promo+' objInfo.e_virtual '+objInfo.e_virtual+' cont_pre '+cont_pre+' venta total propia '+(odvPNumber+odvTMpagada-cont_pre))
                   }  
-                  if(odvPNumber+odvTMpagada > 0 && cust_promo !=1 && objInfo.e_virtual == false){
+                  if(odvPNumber+odvTMpagada > 0 && cust_promo !=1 && cust_promo !=5 && objInfo.e_virtual == false){
                    var total_venta_p =(odvPNumber+odvTMpagada-cont_pre)>0?(odvPNumber+odvTMpagada-cont_pre):0
                       // Venta propia 
                        
@@ -1950,7 +1954,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                        )
               }
               
-              if(subtotal > 0 || cust_promo ==1){               //excluye a las presentadoras que no generaron ningun tipo de bono
+              if(subtotal > 0 || cust_promo ==1 || cust_promo ==5){               //excluye a las presentadoras que no generaron ningun tipo de bono
 
                 cont_line ++
                   if(objInfo.altname != ""){
@@ -2047,7 +2051,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                            value : objInfo.hiredate
                       });
                     }
-                    if(objInfo.hiredate != "" && cust_promo==1){
+                    if(objInfo.hiredate != "" && (cust_promo==1 || cust_promo==5) ){
                       if(objInfo.fecha_reactivacion != ''){
                         sublist.setSublistValue({
                                 id : 'fecha_reactivacion',
@@ -2125,7 +2129,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                             value : entrega
                         });
                     }
-                    if(odv_ent >0 && cust_promo !=1){
+                    if(odv_ent >0 && (cust_promo !=1 || cust_promo!=5)){
                       //Num Entregas pagadas
                         sublist.setSublistValue({
                             id : 'custentity_num_entrega',
@@ -2133,7 +2137,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                             value : odv_ent
                         });
                     }
-                    if(ids_odv_ent != '' && cust_promo !=1 ){
+                    if(ids_odv_ent != '' && (cust_promo !=1 || cust_promo!=5)){
                       if(typeof ids_odv_ent == "object" ){
                         id_vp = ids_odv_ent.join(',')
                       }else{
@@ -2150,7 +2154,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                                   line : cont_line,
                                   value : id_vp
                               });
-                    }else if (cust_promo ==1){//TxTM No tiene entrega por lo que no aplica la misma regla 
+                    }else if (cust_promo ==1 || cust_promo ==5){//TxTM No tiene entrega por lo que no aplica la misma regla 
                         try{
                             var ids_txtm = Object.keys(infoODVPromo[arrKeys[e]])
                             if(typeof ids_txtm == "object" ){
@@ -2168,7 +2172,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                         }
                     }
            }
-                 if(bono_productividad > 0 && cust_promo !=1){
+                 if(bono_productividad > 0 && (cust_promo !=1 || cust_promo!=5)){
                   sublist.setSublistValue({
                          id : 'custentity_bono_productividad',
                          line : cont_line,
@@ -2177,7 +2181,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                  }else{
                   bono_productividad = 0 
                  }
-                 if(bono_emerald > 0 && cust_promo !=1){
+                 if(bono_emerald > 0 && (cust_promo !=1 || cust_promo!=5)){
                    sublist.setSublistValue({
                          id : 'custentity_bono_emerald',
                          line : cont_line,
@@ -2186,7 +2190,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                  }else{
                    bono_emerald =0 
                  }
-                 if(bono_talento > 0 && cust_promo !=1){
+                 if(bono_talento > 0 && (cust_promo !=1 || cust_promo!=5)){
                    sublist.setSublistValue({
                          id : 'custentity_bono_talento',
                              line : cont_line,
@@ -2284,7 +2288,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                         });
 
                     }
-                    if(cust_type == 3  && cust_promo !=1){
+                    if(cust_type == 3  && (cust_promo !=1 || cust_promo!=5)){
                       if(  arrKeys[e] in information_pre.data){
                             //ids de las presentadoras
                             sublist.setSublistValue({
