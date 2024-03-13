@@ -1214,7 +1214,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 	                id: rec.getValue('salesrep'),
 	                columns: ['altname','custentity_promocion']
 	            });
-	             delegate = type_promotion.custentity_promocion;
+	             delegate = type_promotion.custentity_promocion[0]['value'];
 	             
 	             var salesRep = search.lookupFields({//busqueda de presentadora
 	                 type: 'employee',
@@ -1285,9 +1285,26 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 	              var numOdv = internals.length;//extrallendo numero de valores en el arreglo
 	              log.debug('numOdv',numOdv) 
 	              log.debug('info debug','count'+count+' firstso '+firstso+' type '+scriptContext.type );
-	              
+	              log.debug('delegate',delgate)
 	              log.debug('context',runtime.executionContext);
+                    if (scriptContext.type == 'create' && rec.getValue('custbody_tipo_venta') == 2 && delegate == 5){
+                        log.debug('tm en prestamo id',rec.id)
+                        log.debug('tm en prestamo count',count)
+                        log.debug('tm en prestamo ganaTM',odv_ganaTM)
+                        log.debug('tm en prestamo delegate',delegate)
+                        if(count == odv_ganaTM && delegate==5 ){
+                          log.debug('tm en prestamo id 2',rec.id
+                           var objEmployee = record.load({//Cargar registro 
+                              type: 'employee',
+                              id: rec.getValue('salesrep'),
+                              isDynamic: false
+                          });
+                            
+                          objEmployee.setValue('custentity_promocion','2')
+                          objEmployee.save();
+                       }
 
+                    }
 	              	if(scriptContext.type == 'create' && rec.getValue('custbody_tipo_venta') != 19){
 	              		log.debug('cuantos',count)
 		            	if(count == odv_ganaTM && firstso != '' ){
