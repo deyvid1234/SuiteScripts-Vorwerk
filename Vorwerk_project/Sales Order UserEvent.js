@@ -1285,16 +1285,13 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 	              var numOdv = internals.length;//extrallendo numero de valores en el arreglo
 	              log.debug('numOdv',numOdv) 
 	              log.debug('info debug','count'+count+' firstso '+firstso+' type '+scriptContext.type );
-	              log.debug('delegate',delgate)
 	              log.debug('context',runtime.executionContext);
-                    if (scriptContext.type == 'create' && rec.getValue('custbody_tipo_venta') == 2 && delegate == 5){
-                        log.debug('tm en prestamo id',rec.id)
-                        log.debug('tm en prestamo count',count)
-                        log.debug('tm en prestamo ganaTM',odv_ganaTM)
-                        log.debug('tm en prestamo delegate',delegate)
-                        if(count == odv_ganaTM && delegate==5 ){
-                          log.debug('tm en prestamo id 2',rec.id
-                           var objEmployee = record.load({//Cargar registro 
+                  //AJUSTE PARA CONSIDERAR PROMOCION TM EN PRESTAMO
+                    if (scriptContext.type == 'create' && rec.getValue('custbody_tipo_venta') == 2 && delegate == 5){//TIPO DE VENTA 'VENTAS TM', PROMO 'TM EN PRESTAMO'
+                        
+                        if(count == odv_ganaTM && delegate==5 ){//CONTADOR ES IGUAL AL NUMERO DE VENTAS DE LA CONFIGURACION
+                          
+                           var objEmployee = record.load({//CARGAR REGISTRO DEL EMPLOYEE PARA CAMBIAR LA PROMOCION DE TM EN PRESTAMO A TM PROPIA
                               type: 'employee',
                               id: rec.getValue('salesrep'),
                               isDynamic: false
@@ -1302,10 +1299,17 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                             
                           objEmployee.setValue('custentity_promocion','2')
                           objEmployee.save();
+                          for(inter in internals){//RECORRE LAS VENTAS Y ASIGAN COMMISSION STATUS 2(NO COMISIONABLE)
+                              record.submitFields({
+                                  type: 'salesorder',
+                                  id: internals[inter].internalodv,
+                                  values: {'custbody_vw_comission_status':'2'}
+                              })
+                            }
                        }
 
                     }
-	              	if(scriptContext.type == 'create' && rec.getValue('custbody_tipo_venta') != 19){
+	              	if(scriptContext.type == 'create' && rec.getValue('custbody_tipo_venta') != 19 && delegate != 5){
 	              		log.debug('cuantos',count)
 		            	if(count == odv_ganaTM && firstso != '' ){
 		            	  
