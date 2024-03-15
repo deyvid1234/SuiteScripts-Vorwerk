@@ -3,8 +3,8 @@
  * @NScriptType Suitelet
  * @NModuleScope SameAccount
  */
-define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file','SuiteScripts/Vorwerk_project/Vorwerk Utils V2.js'], 
-    function(plugin,task, serverWidget, search, runtime,file,Utils){
+define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file','N/query','SuiteScripts/Vorwerk_project/Vorwerk Utils V2.js'], 
+    function(plugin,task, serverWidget, search, runtime,file,query,Utils){
   
     /**
      * Definition of the Suitelet script trigger point.
@@ -505,13 +505,43 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
 
     }
    function bonoSupercomision(integrantesEquipo,historicoSO,thisPeriodSO){
-                     
+               
+
+
+
         log.debug('integrantesEquipo', integrantesEquipo)
         var ventasTotal=0
         var montoSC=0
         var ventasPeriodo=[]
+        4 historico 
+        1 actual 
+        ordenesSupercomisionTotal
         integrantesEquipo.forEach(function(i,index) {
+                ordenes supercomision = 0
+            if(integrantesEquipo[i] existe en SalesOrderThisperiod && SalesOrderhistorico[integrantesEquipo[i]].legth menor a 6){
+
                 
+                var ordenesFaltantes = 6 - SalesOrderhistorico[integrantesEquipo[i]].legth = 2
+
+                if(SalesOrderThisperiod menores o iguales ordenesfaltantes){1 menor o igual 2
+                    ordenes supercomision = SalesOrderThisperiod
+                    
+                }else{
+                    ordenes supercomision = ordenesFaltantes
+                    cont = 0 
+                    
+                    for(i in SalesOrderThisperiod){
+                        cont ++
+                        ordenes supercomision push   SalesOrderThisperiod[i]  
+                        if(cont mayor o igual ordenesFaltantes){
+                            break
+                        }
+                    }
+                }
+                
+            }
+
+        ordenesSupercomisionTotal.push ordenes supercomision
             var ventasPorItegranteTP = thisPeriodSO[i];
             var ventasPorItegranteH = historicoSO[i];
 
@@ -811,7 +841,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             const finPeriodoDate = Utils.stringToDate(finPeriodo)
             var dHistorico = Utils.restarMeses(inicioPeriodo, 3); //Fecha 3 meses antes del periodo calculado
 
-            const salesOrderSearchFilters = [
+           /* const salesOrderSearchFilters = [
                 ['type', 'anyof', 'SalesOrd'],
                 'AND',
                 ['item', 'noneof', '920'],
@@ -898,7 +928,53 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                     }
                 });
                       
+            });*/
+            log.debug('pre query')
+            var myTransactionQuery = query.create({
+                type: query.Type.TRANSACTION
             });
+
+            
+            myTransactionQuery.condition = myTransactionQuery.createCondition({
+                fieldId: 'type',
+                operator: query.Operator.IS,
+                values: "SalesOrd",
+            });
+            myTransactionQuery.condition = myTransactionQuery.createCondition({
+                fieldId: 'custbody_tipo_venta',
+                operator: query.Operator.ANY_OF,
+                values: ['2', '19', '1']
+            });
+            myTransactionQuery.condition = myTransactionQuery.createCondition({
+                fieldId: 'trandate',
+                operator: query.Operator.AFTER,
+                values: Utils.dateToString(dHistorico)
+            });
+            
+
+            myTransactionQuery.columns = [
+                myTransactionQuery.createColumn({ fieldId: "id" }),
+                myTransactionQuery.createColumn({ fieldId: "custbody_vw_recruiter" }),
+            ];
+
+
+            var  mySQLCustomerQuery = myTransactionQuery.toSuiteQL();
+
+
+            var results = mySQLCustomerQuery.run();
+           
+            log.debug('results',results) ;
+
+/*
+            var pagedResults = mySQLCustomerQuery.runPaged();
+            pagedResults.pageRanges.forEach(function (pageRange){
+                var currentPage = pagedResults.fetch({index: pageRange.index});
+                currentPage.data.forEach(function (r) {
+                    log.debug('test query',r)
+                    log.debug('test query value',r.value)
+                });
+                      
+            });*/
 
             
             return {historicoSO:historicoSO,thisPeriodSO:thisPeriodSO}
