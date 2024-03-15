@@ -1214,7 +1214,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 	                id: rec.getValue('salesrep'),
 	                columns: ['altname','custentity_promocion']
 	            });
-	             delegate = type_promotion.custentity_promocion;
+	             delegate = type_promotion.custentity_promocion[0]['value'];
 	             
 	             var salesRep = search.lookupFields({//busqueda de presentadora
 	                 type: 'employee',
@@ -1287,8 +1287,30 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 	              log.debug('info debug','count'+count+' firstso '+firstso+' type '+scriptContext.type );
 	              
 	              log.debug('context',runtime.executionContext);
+                  //AJUSTE PARA CONSIDERAR PROMOCION TM EN PRESTAMO
+                    if (scriptContext.type == 'create' && rec.getValue('custbody_tipo_venta') == 2 && delegate == 5){//TIPO DE VENTA 'VENTAS TM', PROMO 'TM EN PRESTAMO'
+                        
+                        if(count == odv_ganaTM && delegate==5 ){//CONTADOR ES IGUAL AL NUMERO DE VENTAS DE LA CONFIGURACION
+                          
+                           var objEmployee = record.load({//CARGAR REGISTRO DEL EMPLOYEE PARA CAMBIAR LA PROMOCION DE TM EN PRESTAMO A TM PROPIA
+                              type: 'employee',
+                              id: rec.getValue('salesrep'),
+                              isDynamic: false
+                          });
+                            
+                          objEmployee.setValue('custentity_promocion','2')
+                          objEmployee.save();
+                          for(inter in internals){//RECORRE LAS VENTAS Y ASIGAN COMMISSION STATUS 2(NO COMISIONABLE)
+                              record.submitFields({
+                                  type: 'salesorder',
+                                  id: internals[inter].internalodv,
+                                  values: {'custbody_vw_comission_status':'2'}
+                              })
+                            }
+                       }
 
-	              	if(scriptContext.type == 'create' && rec.getValue('custbody_tipo_venta') != 19){
+                    }
+                    if(scriptContext.type == 'create' && rec.getValue('custbody_tipo_venta') != 19 && delegate != 5){
 	              		log.debug('cuantos',count)
 		            	if(count == odv_ganaTM && firstso != '' ){
 		            	  
