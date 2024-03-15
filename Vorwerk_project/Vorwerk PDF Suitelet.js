@@ -75,7 +75,7 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
 					log.debug('id_entrega',id_entrega)
 					/*cuerpo de tabla*/
 					for(var i in v_propia){
-						if(type_emp == 1 && promocion == 1){
+						if(type_emp == 1 && (promocion == 1||promocion == 5) ){
 							monto = "$0.00"
 						}else if(objCKRep.hasOwnProperty(v_propia[i].internalid)){
 //							log.debug('ODV encontrada en ck')
@@ -83,7 +83,7 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
 						}
 						lineaRec++
 						var b_produc = (CompConfigDetails['1']['esquemaVentasPresentadora'][lineaRec]['bonoProductividad'])-(CompConfigDetails['1']['esquemaVentasPresentadora'][lineaRec-1]['bonoProductividad'])
-						if(promocion == 1){
+						if(promocion == 1 || promocion == 5){
 							b_produc = 0
 						}
 						//& 
@@ -98,7 +98,7 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
 							strTable += "<td border='0.5' border-style='dotted-narrow'>" + v_propia[i].internalid		+ "</td>";
 							strTable += "<td border='0.5' border-style='dotted-narrow' align='right'>" + monto	+ "</td>";
 							strTable += "<td border='0.5' border-style='dotted-narrow' align='right'>" + currencyFormat('$',(b_produc)+'.00')+ "</td>";
-							if(type_emp == 1 && promocion == 1){
+							if(type_emp == 1 && (promocion == 1|| promocion == 5)){
 								strTable += "<td border='0.5' border-style='dotted-narrow' align='right'>" + '$0.00'	+ "</td>";
 							}else{
 								if(id_entrega.indexOf(v_propia[i].internalid) >= 0 ){
@@ -728,23 +728,23 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
                 switch(type_emp){
                 	case '1':{
                 		var type_emp_text = 'Presentadora'
-                		var promocion = 2
+                		//var promocion = 2
                 		break;
                 	}
                 	case '2':{
                 		var type_emp_text = 'Gana tu TM'
-                		var promocion = 1
+                		//var promocion = 1
                 		break;
                 	}
                 	case '3':{
                 		var type_emp_text = 'Lider de Equipo'
-                		var promocion = 2
+                		//var promocion = 2
                 		break;
                 	}
                 }
                 log.debug('type_emp_text',type_emp_text)
                 var conf_emp = tmp_emp.custentity123[0].value;
-                //var promocion = tmp_emp.custentity_promocion[0].value;
+                var promocion = tmp_emp.custentity_promocion[0].value;
                 log.debug('promocion',promocion)
                 var c_record = search_crecord(params.comp,type_emp,promocion)
                 if(type_emp== 3){
