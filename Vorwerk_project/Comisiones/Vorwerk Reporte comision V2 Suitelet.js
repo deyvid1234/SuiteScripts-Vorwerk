@@ -289,12 +289,17 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                                 var reclutas=listaReclutas[i]
                                 var integrantesEquipo=listaGrupos[i]
                                 var reclutasEquipo=listaEquipoRecluta[i]
-                                fVentasPropias = bonoVentaPropia(i,dataEmp,thisPeriodSO[i],compConfigDetails)
+                                var ventasEmp =thisPeriodSO[i]
+                                log.debug('ventasEmp',ventasEmp)
+                                fVentasPropias = bonoVentaPropia(i,dataEmp,ventasEmp,compConfigDetails)
                                 log.debug('fVentasPropias',fVentasPropias)
-
+                                montoEntrega = bonoEntrega(i,dataEmp,ventasEmp)
+                                log.debug('montoEntrega',montoEntrega)
                                 montoSupercomision = bonoSupercomision(integrantesEquipo,historicoSO,thisPeriodSO)
                                 log.debug('montoSupercomision',montoSupercomision)
                                 montoReclutamiento = bonoReclutamiento(i,reclutas,historicoSO,thisPeriodSO,dataEmp,compConfigDetails)
+                                log.debug('montoReclutamiento',montoReclutamiento)
+
                                 /*
 
                                 montoVentasPropias.monto
@@ -303,7 +308,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
 
                                 montoComisionCK = bonoComCK()
                                 montoVentasPropias = bonoVentaPropia(i) 
-                                montoEntrega = bonoEntrega()
+                                
                                 montoProductividad = bonoProductividad()
                                 montoEmerald = bonoEmerald()
                                 montoGarantia = bonoGarantia()
@@ -315,7 +320,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                                 
                                 */
                                 cont_line++
-                                fillTable(sublist,dataEmp,fVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,montoSupercomision,montoReclutamiento)
+                                fillTable(sublist,dataEmp,fVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,montoSupercomision,montoReclutamiento,montoEntrega)
                                 
                             }
 
@@ -361,7 +366,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
           log.debug('creditos 2',runtime.getCurrentScript().getRemainingUsage()); 
         }   
     }//Fin sublista
-    function fillTable(sublist,dataEmp,ventasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,montoSupercomision,montoReclutamiento){
+    function fillTable(sublist,dataEmp,ventasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,montoSupercomision,montoReclutamiento,montoEntrega){
         var linea = cont_line
         sublist.setSublistValue({
               id : 'nombre',
@@ -453,28 +458,51 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             });
 
         }
+        if(montoEntrega){
+            //Poner todos los campos que involucran 
+            var v
+            //ntrega monto
+            v = montoEntrega.monto
+            sublist.setSublistValue({
+                id : 'custentity_entrega',
+                line : linea,
+                value : v>0?v:0
+            });
+            //entrega numero
+            v = montoEntrega.data.length
+            sublist.setSublistValue({
+                id : 'custentity_num_entrega',
+                line : linea,
+                value : v!=0?v:0
+            });
+            //entrega odv
+            v = JSON.stringify(montoEntrega.data)
+            sublist.setSublistValue({
+                id : 'custentity_odv_entrega',
+                line : linea,
+                value : v!=''?v:''
+            });
+
+        }
 
         if(montoSupercomision){
-          log.debug('bonoSupercomision filltable')
           //ODV Por recluta del mes del Equipo SC
-          v = montoReclutamiento.data
-          //log.debug('vString',v)
+          v = JSON.stringify(montoSupercomision.data)
+          //log.debug('vdata',v)
           sublist.setSublistValue({
               id : 'custentity_odv_pre_supercomision',
               line : linea,
               value : v!=''?v:''
           });
           //Numero de ventas SC
-          v = montoReclutamiento.ventasNo
-          log.debug('vString',v)
+          v = montoSupercomision.ventasNo
           sublist.setSublistValue({
               id : 'custentity_ventas_sc',
               line : linea,
-              value : v!=''?v:''
+              value : v!=0?v:0
           });
           //Bono supercomision
-          v = montoReclutamiento.monto
-          log.debug('vString',v)
+          v = montoSupercomision.monto
           sublist.setSublistValue({
               id : 'custentity_bono_sc',
               line : linea,
@@ -505,70 +533,56 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
 
     }
    function bonoSupercomision(integrantesEquipo,historicoSO,thisPeriodSO){
-               
 
-
-
-        log.debug('integrantesEquipo', integrantesEquipo)
-        var ventasTotal=0
+        var ventasNo =0
         var montoSC=0
         var ventasPeriodo=[]
-        4 historico 
-        1 actual 
-        ordenesSupercomisionTotal
+        var ordenesSupercomisionTotal=[]
         integrantesEquipo.forEach(function(i,index) {
-                ordenes supercomision = 0
-            if(integrantesEquipo[i] existe en SalesOrderThisperiod && SalesOrderhistorico[integrantesEquipo[i]].legth menor a 6){
-
+          var ventasHistorico
+          if(historicoSO[i]){
+            ventasHistorico = historicoSO[i].length
+          }else{
+            ventasHistorico =0
+          }
+            var ordenesSCintegrante=[]
+            if(thisPeriodSO.hasOwnProperty(i) && ventasHistorico < 6){
+                var ordenesFaltantes = 6-ventasHistorico 
                 
-                var ordenesFaltantes = 6 - SalesOrderhistorico[integrantesEquipo[i]].legth = 2
-
-                if(SalesOrderThisperiod menores o iguales ordenesfaltantes){1 menor o igual 2
-                    ordenes supercomision = SalesOrderThisperiod
-                    
+                if(thisPeriodSO[i].length <= ordenesFaltantes){
+                    ordenesSCintegrante = thisPeriodSO[i]
+                                       
                 }else{
-                    ordenes supercomision = ordenesFaltantes
+                    
                     cont = 0 
                     
-                    for(i in SalesOrderThisperiod){
+                    for(j in thisPeriodSO[i]){
                         cont ++
-                        ordenes supercomision push   SalesOrderThisperiod[i]  
-                        if(cont mayor o igual ordenesFaltantes){
+                        ordenesSCintegrante.push(thisPeriodSO[i][j]) 
+                           
+                        if(cont >= ordenesFaltantes){
                             break
                         }
                     }
                 }
-                
+                ordenesSupercomisionTotal.push(ordenesSCintegrante)
             }
-
-        ordenesSupercomisionTotal.push ordenes supercomision
-            var ventasPorItegranteTP = thisPeriodSO[i];
-            var ventasPorItegranteH = historicoSO[i];
-
-            if(ventasPorItegranteTP && ventasPorItegranteH){
-              log.debug('ventasPorIntregrantethisperiod'+i, ventasPorItegranteTP);
-              log.debug('ventasPorIntegrantehistorico'+i, ventasPorItegranteH);
-             
-              ventasPeriodo.push(ventasPorItegranteTP)
-              
-              ventasTotal = ventasPorItegranteTP.length+ ventasPorItegranteH.length
-              log.debug('ventasTotal historico y tperiod'+i, ventasTotal);
-            }else if(!ventasPorItegranteH && ventasPorItegranteTP){
-              log.debug('ventasPorIntregrantethisperiod'+i, ventasPorItegranteTP);
-              ventasPeriodo.push(ventasPorItegranteTP)
-              ventasTotal = ventasPorItegranteTP.length
-              log.debug('ventasTotal this period'+i, ventasTotal)
-            }
-            
 
         });
-        montoSC= ventasNo*500
-        log.debug('ventasPeriodo', Object.keys(ventasPeriodo))
-        log.debug('montoSC', montoSC)
-        log.debug('ventasPeriodo', ventasPeriodo.length)
-
-        var ventasNo = ventasPeriodo.length
-        return  {monto:montoSC, data:ventasPeriodo, ventasNo:ventasNo};;
+            for(x in ordenesSupercomisionTotal){
+              for(y in ordenesSupercomisionTotal[x])
+              log.debug('1',ordenesSupercomisionTotal[x][y])
+              var keys = Object.keys(ordenesSupercomisionTotal[x][y])
+              ventasPeriodo.push(keys)
+            }
+          montoSC= ordenesSupercomisionTotal.length*500
+          ventasNo= ventasPeriodo.length
+        
+        if(montoSC == 0 && ventasNo== 0 ) {
+          ventasPeriodo=''
+        }          
+        
+        return  {monto:montoSC, data:ventasPeriodo, ventasNo:ventasNo};
 
     }
     /*function bonoCincoDos(tipoReporte){
@@ -648,12 +662,31 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
 
         return 'Se están calculando los bonos del '+tipoReporte;
 
-    }
-    function bonoEntrega(tipoReporte){
-
-        return 'Se están calculando los bonos del '+tipoReporte;
-
     }*/
+    function bonoEntrega(i,dataEmp,empSOThisPeriod){
+      var ventaEntrega = empSOThisPeriod
+      var dataEnt = []
+      for (i in ventaEntrega){
+        var ventasKeys= Object.keys(ventaEntrega[i])
+        //thisPeriodSO['id presentador'][indice]['id pedido']['etiqueta']
+        var comisionables = ventaEntrega[i][ventasKeys]['custbody_vw_comission_status']
+        
+        if(comisionables != 2){
+          dataEnt.push(ventasKeys)
+        }
+        
+      }
+      var ventasNo = dataEnt.length
+            
+      var montoEntrega= parseInt(ventasNo)*500
+   
+            //monto: Monto a partir del numero de ventas 
+            //data: Arreglo de Internal id de Sales Order del EMP
+
+        return {monto:montoEntrega, data:dataEnt}
+      
+
+    }
     function bonoVentaPropia(empId,empData,empSOThisPeriod,compConfigDetails){
       
       var ventas = empSOThisPeriod
@@ -669,15 +702,10 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
         }
         
       }
-      log.debug('data', data)
       var ventasNo = data.length
-      log.debug('ventasNo',ventasNo)
-      //objkey - empSOThisPeriod
       //compConfigDetails[tipo de cofiguracion][etiqueta del esquema][No de ventas][etiqueta de la compensacion monto]
       var montoVentasPre= compConfigDetails[1]['esquemaVentasPresentadora'][ventasNo]['compensacion']
       log.debug('montoVentasPre', montoVentasPre)
-
-
             //monto: Monto de cal cof a partir del numero de ventas 
             //data: Arreglo de Internal id de Sales Order del EMP
 
@@ -841,7 +869,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             const finPeriodoDate = Utils.stringToDate(finPeriodo)
             var dHistorico = Utils.restarMeses(inicioPeriodo, 3); //Fecha 3 meses antes del periodo calculado
 
-           /* const salesOrderSearchFilters = [
+           const salesOrderSearchFilters = [
                 ['type', 'anyof', 'SalesOrd'],
                 'AND',
                 ['item', 'noneof', '920'],
@@ -928,8 +956,8 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                     }
                 });
                       
-            });*/
-            log.debug('pre query')
+            });
+            /*log.debug('pre query')
             var myTransactionQuery = query.create({
                 type: query.Type.TRANSACTION
             });
@@ -965,7 +993,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
            
             log.debug('results',results) ;
 
-/*
+
             var pagedResults = mySQLCustomerQuery.runPaged();
             pagedResults.pageRanges.forEach(function (pageRange){
                 var currentPage = pagedResults.fetch({index: pageRange.index});
