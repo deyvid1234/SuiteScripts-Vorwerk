@@ -163,6 +163,12 @@ function(file,search,plugin,runtime,task) {
 
     function busquedaPrincipal(cust_type,cust_promo,idPeriod){
         try{
+          var promo = cust_promo
+          if(promo == 1){
+            promo = [1,5]
+          }else{
+            promo= cust_promo
+          }
           var info_data= {};
           var jdg_promo= {};
           var arr_aux = {}
@@ -209,8 +215,8 @@ function(file,search,plugin,runtime,task) {
                 },
                 {
                     name: 'custentity_promocion',
-                    operator: 'is',
-                    values: cust_promo
+                    operator: 'anyof',
+                    values: promo
                 },
                 {
                     name: 'salesrep',
