@@ -79,13 +79,13 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 	                functionName : 'requestTraking(\"'+idSalesORder+'\",\"'+companyname+'\",\"'+phone+'\",\"'+email+'\",\"'+address+'\",\"'+legalname+'\")'
 	            });
         	}
-        	if(rec.getValue('custbody_tipo_venta') == 35){
+        	/*if(rec.getValue('custbody_tipo_venta') == 35){
 	    		form.addButton({
 	                id : 'custpage_bt_update_sales_order',
 	                label : 'Modificar TM ganada',
 	                functionName :'updateTm(\"'+idSalesORder+'\")'
 	            });
-    		}
+    		}*/
         	
     	}catch(err){
     		log.error("Error Aftersbumit",err);
