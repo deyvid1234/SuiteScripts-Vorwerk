@@ -1307,6 +1307,14 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                                   values: {'custbody_vw_comission_status':'2'}
                               })
                             }
+                       }else if(count < odv_ganaTM && delegate==5){//si aun no se cumplen las ventas asigna no comisionble a las que ya existan
+                            for(inter in internals){//RECORRE LAS VENTAS Y ASIGAN COMMISSION STATUS 2(NO COMISIONABLE)
+                                  record.submitFields({
+                                      type: 'salesorder',
+                                      id: internals[inter].internalodv,
+                                      values: {'custbody_vw_comission_status':'2'}
+                                  })
+                            }
                        }
 
                     }
