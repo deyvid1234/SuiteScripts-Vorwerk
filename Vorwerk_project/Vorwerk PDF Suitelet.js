@@ -692,7 +692,7 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
                 //var type_emp_text = tmp_emp.employeetype[0].text;
                 log.debug('type_emp_text',type_emp_text)
                 var tipoTexto = '';
-
+                var promoTMPrestamo = tmp_emp.custentity_promocion[0].value;
                 switch(type_emp){
                 	case '1':{
                 		var type_emp_text = 'Presentadora'
@@ -715,7 +715,7 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
                 }
                 log.debug('type_emp_text',type_emp_text)
                 var conf_emp = tmp_emp.custentity123[0].value;
-                var promoTMPrestamo = tmp_emp.custentity_promocion[0].value;
+                
                 log.debug('promocion',promocion)
                 var c_record = search_crecord(params.comp,type_emp,promocion)
                 if(type_emp== 3){
