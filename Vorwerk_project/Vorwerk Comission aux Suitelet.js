@@ -62,45 +62,45 @@ function(file,search,plugin,runtime,task) {
               log.debug('secondName',secondName);
               var idFile2 = getFileId(secondName);
               if(!idFile2){
-            	  	
-	            	  var mapTask = task.create({
-		                  taskType: task.TaskType.SCHEDULED_SCRIPT,
-		                  scriptId: 'customscript_vorwerk_aux_comission_sched',
-		                  params: {
-		                	  custscript_cust_period_s:cust_period,
-		                	  custscript_cust_type_s:cust_type,
-		                	  custscript_cust_promo_s:cust_promo,
-		                	  custscript_secondname: secondName
-		                	  
-		                  }
-		            }).submit();
-	            	  log.debug("dispare schedule",":S");
+                  
+                  var mapTask = task.create({
+                      taskType: task.TaskType.SCHEDULED_SCRIPT,
+                      scriptId: 'customscript_vorwerk_aux_comission_sched',
+                      params: {
+                        custscript_cust_period_s:cust_period,
+                        custscript_cust_type_s:cust_type,
+                        custscript_cust_promo_s:cust_promo,
+                        custscript_secondname: secondName
+                        
+                      }
+                }).submit();
+                  log.debug("dispare schedule",":S");
               }else{
                 intFileId2 = idFile2
                 log.debug("ya existe busqueda ",idFile2);
                 
               }
               try{
-            	  if(idFile2 && idFile1){
-            		  var mapTask = task.create({
-    	                  taskType: task.TaskType.MAP_REDUCE,
-    	                  scriptId: 'customscript_comission_structure_map',
-    	                  params: {
-    	                	  custscriptid_file_one: intFileId,
-    	                	  custscript_id_file_two: intFileId,
-    	                	  custscript_cust_period:cust_period,
-    	                	  custscript_cust_type:cust_type,
-    	                	  custscript_cust_promo:cust_promo
-    	                	  
-    	                  }
-    	            }).submit();
-            	  }else{
-            		  context.response.write(JSON.stringify({error:"Debe esperar a que las estructuras se actualicen"})); 
-            	  }
+                if(idFile2 && idFile1){
+                  var mapTask = task.create({
+                        taskType: task.TaskType.MAP_REDUCE,
+                        scriptId: 'customscript_comission_structure_map',
+                        params: {
+                          custscriptid_file_one: intFileId,
+                          custscript_id_file_two: intFileId,
+                          custscript_cust_period:cust_period,
+                          custscript_cust_type:cust_type,
+                          custscript_cust_promo:cust_promo
+                          
+                        }
+                  }).submit();
+                }else{
+                  context.response.write(JSON.stringify({error:"Debe esperar a que las estructuras se actualicen"})); 
+                }
               }catch(err_mp){
-            	  log.error('error structur map',err_mp);
+                log.error('error structur map',err_mp);
               }
-	              
+                
                 context.response.write(JSON.stringify({idFile1:intFileId,idFile2:intFileId2}));
         }catch(err){
           log.error("err post",err);
@@ -163,6 +163,15 @@ function(file,search,plugin,runtime,task) {
 
     function busquedaPrincipal(cust_type,cust_promo,idPeriod){
         try{
+          var promo = cust_promo
+          log.debug('promo',promo)
+          if(promo == 1){
+            log.debug('entra if prono 1')
+            promo = [1,5]
+          }else{
+            promo= cust_promo
+          }
+          log.debug('promo after if',promo)
           var info_data= {};
           var jdg_promo= {};
           var arr_aux = {}
@@ -209,8 +218,8 @@ function(file,search,plugin,runtime,task) {
                 },
                 {
                     name: 'custentity_promocion',
-                    operator: 'is',
-                    values: cust_promo
+                    operator: 'anyof',
+                    values: promo
                 },
                 {
                     name: 'salesrep',
@@ -222,9 +231,9 @@ function(file,search,plugin,runtime,task) {
                     operator: 'anyof',
                     values: [1,2,3,4,5,6,7,8]
                 },
-              /*{
+                /*{
                   name: 'internalid',
-                  operator: 'is',
+                  operator: 'anyof',
                   values: [11512]
                },*/
                 
