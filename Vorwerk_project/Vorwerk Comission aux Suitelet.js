@@ -164,11 +164,14 @@ function(file,search,plugin,runtime,task) {
     function busquedaPrincipal(cust_type,cust_promo,idPeriod){
         try{
           var promo = cust_promo
+          log.debug('promo',promo)
           if(promo == 1){
+            log.debug('entra if prono 1')
             promo = [1,5]
           }else{
             promo= cust_promo
           }
+          log.debug('promo after if',promo)
           var info_data= {};
           var jdg_promo= {};
           var arr_aux = {}
