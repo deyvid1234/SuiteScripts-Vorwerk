@@ -31,7 +31,7 @@ function(record, search, email, render, file,runtime, encode, https, format, xml
         }
     }
 
-    function XMLProcess(recordType,recordId,context){
+    function XMLProcess(recordType,recordId,periodoComision,context){
         try{
             //Objeto que contienen los campos a actualizar en el record
             var objUpdate = {};
@@ -66,7 +66,7 @@ function(record, search, email, render, file,runtime, encode, https, format, xml
                 throw objReceptor.message;
             }
             //Objeto calendario que determina las fechas de timbrado -> validar el inicio de periodo
-            var objCalendar = getObjCalendar();
+            var objCalendar = getObjCalendar(periodoComision);
             if(objCalendar.error){
                 throw objCalendar.message;
             }
@@ -895,17 +895,17 @@ function(record, search, email, render, file,runtime, encode, https, format, xml
         }
     }
 
-    function getObjCalendar(){
+    function getObjCalendar(periodoComision){
         try{
-            var currentDate = new Date(),
-                currentYear = currentDate.getFullYear(),
-                currentMonth = currentDate.getMonth(),
-                currentDay = currentDate.getDate();
+            var currentDate = periodoComision.split('/')
+                currentYear = currentDate[1],
+                currentMonth = currentDate[0],
+                /*currentDay = currentDate.getDate();
                 if(currentDay > 15){//si es el mismo mes tomamos el mes en curso
                     currentMonth = parseInt(currentMonth);
                 }else{//si es de los primeros días del mes vamos por el mes anterior
                     currentMonth = parseInt(currentMonth)-1
-                }
+                }*/
             if(currentMonth == -1){
                 currentMonth = 0;
             }
