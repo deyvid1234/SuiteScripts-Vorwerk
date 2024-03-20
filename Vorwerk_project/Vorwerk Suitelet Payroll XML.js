@@ -231,15 +231,8 @@ function(record, search, email, render, file,runtime, encode, https, format, xml
                                 globalStatusField = 'custrecord_estatus_timbrado';
                             break;
                         }
-                        record.submitFields({
-                            type: recordType,
-                            id: recordId,
-                            values: {globalStatusField:'Request Error: '+xmlProcessed},
-                            options: {
-                                enableSourcing: false,
-                                ignoreMandatoryFields : true
-                            }
-                        });
+                        
+                        objUpdate[globalStatusField] = 'Enviado, Error SAT: '+xmlProcessed;
                     }
                 }
             }
@@ -247,27 +240,20 @@ function(record, search, email, render, file,runtime, encode, https, format, xml
         catch(e){
             log.error('There is an error in XMLProcess',e);
             var globalStatusField 
+            log.debug('recordType',recordType)
             switch(recordType){
                 case "customrecord_comisiones_presentadora"://presentadora
-                    globalStatusField = 'custrecord_estatus_timbrado_pre';
+                    globalStatusField = "custrecord_estatus_timbrado_pre";
                 break;
                 case "customrecord_compensaciones_gtm":
-                    globalStatusField = 'custrecord_estatus_timbrado_gtm';
+                    globalStatusField = "custrecord_estatus_timbrado_gtm";
                 break;
                 case "customrecord_compensaciones_jdg"://JDG
-                    globalStatusField = 'custrecord_estatus_timbrado';
+                    globalStatusField = "custrecord_estatus_timbrado";
                 break;
             }
-
-            record.submitFields({
-                type: recordType,
-                id: recordId,
-                values: {globalStatusField:'Process error'+e},
-                options: {
-                    enableSourcing: false,
-                    ignoreMandatoryFields : true
-                }
-            });
+            var messageError = e.split('\\\\\\"')
+            objUpdate[globalStatusField] = 'NO enviado, Error proceso Netsuite: '+messageError[1];
             
         }
         finally{
