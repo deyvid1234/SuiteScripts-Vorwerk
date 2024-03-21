@@ -252,8 +252,11 @@ function(record, search, email, render, file,runtime, encode, https, format, xml
                     globalStatusField = "custrecord_estatus_timbrado";
                 break;
             }
-            var messageError = e.split('\\\\\\"')
-            objUpdate[globalStatusField] = 'NO enviado, Error proceso Netsuite: '+messageError[1];
+
+            var partes = e.split('"');
+            var ultimoTextoEntreComillas = partes[partes.length - 3];
+            
+            objUpdate[globalStatusField] = 'NO enviado, Error proceso Netsuite: '+ultimoTextoEntreComillas;
             
         }
         finally{
@@ -898,27 +901,20 @@ function(record, search, email, render, file,runtime, encode, https, format, xml
     function getObjCalendar(periodoComision){
         try{
             var currentDate = periodoComision.split('/')
-                currentYear = currentDate[1],
-                currentMonth = currentDate[0],
-                /*currentDay = currentDate.getDate();
-                if(currentDay > 15){//si es el mismo mes tomamos el mes en curso
-                    currentMonth = parseInt(currentMonth);
-                }else{//si es de los primeros días del mes vamos por el mes anterior
-                    currentMonth = parseInt(currentMonth)-1
-                }*/
-            if(currentMonth == -1){
-                currentMonth = 0;
-            }
+            var currentYear = currentDate[1]
+
+            var currentMonth = currentDate[0]
+            currentMonth = parseInt(currentMonth)
             //currentYear = 2020;
             var arrMonths = [ "enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre" ];
-
+            log.debug('arrMonths[currentMonth]',arrMonths[1])
             var busqueda = search.create({
                 type: 'customrecord_nso_calendar_vorwerk',
                 filters: [
                     {
                         name: 'custrecord_nso_year',
                         operator: 'is',
-                        values: currentYear
+                        values: currentYear 
                     }
                 ],
                 columns: [
