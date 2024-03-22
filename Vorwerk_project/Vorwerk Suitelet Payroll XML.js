@@ -904,7 +904,7 @@ function(record, search, email, render, file,runtime, encode, https, format, xml
             var currentYear = currentDate[1]
 
             var currentMonth = currentDate[0]
-            currentMonth = parseInt(currentMonth)
+            currentMonth = parseInt(currentMonth)-1
             //currentYear = 2020;
             var arrMonths = [ "enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre" ];
             log.debug('arrMonths[currentMonth]',arrMonths[1])
