@@ -900,6 +900,7 @@ function(record, search, email, render, file,runtime, encode, https, format, xml
 
     function getObjCalendar(periodoComision){
         try{
+            log.debug('periodoComision',periodoComision)
             var currentDate = periodoComision.split('/')
             var currentYear = currentDate[1]
 
@@ -907,7 +908,7 @@ function(record, search, email, render, file,runtime, encode, https, format, xml
             currentMonth = parseInt(currentMonth)-1
             //currentYear = 2020;
             var arrMonths = [ "enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre" ];
-            log.debug('arrMonths[currentMonth]',arrMonths[1])
+            log.debug('arrMonths[currentMonth]',arrMonths[currentMonth])
             var busqueda = search.create({
                 type: 'customrecord_nso_calendar_vorwerk',
                 filters: [
