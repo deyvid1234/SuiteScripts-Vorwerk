@@ -117,9 +117,25 @@ function(record, search, runtime, format) {
             }
             if (historico){
                 if(h_ingreso == true){
+                    var endPeriodHistorico
+                     switch(id_period){
+                        case 80:
+                          endPeriodHistorico = 78
+                          break;
+                        case 79: 
+                          endPeriodHistorico = 80
+                          break;
+                        case 81: 
+                          endPeriodHistorico = 79
+                          break;
+                        default : 
+                          endPeriodHistorico = id_period -1
+                          break;
+                        
+                        }
                     tipo_venta = [2,19]
                     var H_start = this.getObjPeriod(id_period-5);
-                    var H_end = this.getObjPeriod(id_period-1);
+                    var H_end = this.getObjPeriod(endPeriodHistorico);
                     var start = H_start['startDate']
                     var end = H_end['endDate']
                     log.debug('h_ingreso','start periodo actual: '+startDate+' H strat: '+start+' H End : '+end)
