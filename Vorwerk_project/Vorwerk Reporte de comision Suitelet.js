@@ -1305,6 +1305,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
             var odv_reclutas_tres_dos = {}
 
             var presentadorasActivasDelLE = 0
+            var preEquipoyRecluta = 0
             var ventasTresdosData = new Object();
 
             var odvPIds =[]
@@ -1732,11 +1733,16 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                             var presentador  = i_pre_data[arrKeys[e]][i]
                             var internalidPedidoPresentador = Object.keys(ventasPresentadorareclutas_tres_dos[presentador])
                             var nopedido = ventasPresentadorareclutas_tres_dos[presentador][Object.keys(ventasPresentadorareclutas_tres_dos[presentador])]['noDocument']
+                            var reclutadoraSO = ventasPresentadorareclutas_tres_dos[presentador][Object.keys(ventasPresentadorareclutas_tres_dos[presentador])]['reclutadoraSO']
+                            var reclutadoraSR = ventasPresentadorareclutas_tres_dos[presentador][Object.keys(ventasPresentadorareclutas_tres_dos[presentador])]['reclutadoraSR']
                             ventasTresdosData[internalidPedidoPresentador] = {NoPedido:nopedido, Presentador:presentador}
+                            log.debug('reclutadoraSO',reclutadoraSO)
                             log.debug('ventasTresdosData',ventasTresdosData)
-                            if (v1 == v2 ){
-                                presentadorasmismoEquipoyRecluta ++
+
+                            if (reclutadoraSO == arrKeys[e] ){
+                                preEquipoyRecluta ++
                             }
+                            log.debug('preEquipoyRecluta',preEquipoyRecluta)
                         }
                       //Supercomision
                       if(arrKeys[e] in rec_sc){//Valida si existe la lider en el resultado de la busqueda de presentadoras SC, Arreglo con presentadoras reclutadas despues de 1/2/2022 sin importar recluta
@@ -1799,8 +1805,15 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                             var presentador  = i_pre_data[arrKeys[e]][i]
                             var internalidPedidoPresentador = Object.keys(ventasPresentadorareclutas_tres_dos[presentador])
                             var nopedido = ventasPresentadorareclutas_tres_dos[presentador][Object.keys(ventasPresentadorareclutas_tres_dos[presentador])]['noDocument']
+                            var reclutadoraSO = ventasPresentadorareclutas_tres_dos[presentador][Object.keys(ventasPresentadorareclutas_tres_dos[presentador])]['reclutadoraSO']
+                            var reclutadoraSR = ventasPresentadorareclutas_tres_dos[presentador][Object.keys(ventasPresentadorareclutas_tres_dos[presentador])]['reclutadoraSR']
                             ventasTresdosData[internalidPedidoPresentador] = {NoPedido:nopedido, Presentador:presentador}
+                            log.debug('reclutadoraSO',reclutadoraSO)
                             log.debug('ventasTresdosData',ventasTresdosData)
+                            if (reclutadoraSO == arrKeys[e] ){
+                                preEquipoyRecluta ++
+                            }
+                            log.debug('preEquipoyRecluta',preEquipoyRecluta)
                         }
 
 
@@ -1917,10 +1930,10 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
 
               //log.debug('Valores antes de nuevo 3+2','bono_cinco_dos '+bono_cinco_dos+' bono_tres_dos '+bono_tres_dos)
 
-              if(presentadorasActivasDelLE >=2 && v_total > 4 && presentadorasmismoEquipoyRecluta mayor a 0){
+              if(presentadorasActivasDelLE >=2 && v_total > 4 && preEquipoyRecluta > 0){
                     bono_cinco_dos = 8000
                     bono_tres_dos = 0
-              }else if(presentadorasActivasDelLE >=2 && v_total > 2 && presentadorasmismoEquipoyRecluta mayor a 0){
+              }else if(presentadorasActivasDelLE >=2 && v_total > 2 && preEquipoyRecluta > 0){
                 bono_tres_dos = 5000
                 bono_cinco_dos = 0
               }
