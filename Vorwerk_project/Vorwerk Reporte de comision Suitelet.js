@@ -1741,11 +1741,11 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                             if (reclutadoraSO == arrKeys[e] ){
                                 preEquipoyRecluta ++
                             }
-                             if(arrKeys[e] == 22663){
+                             /*if(arrKeys[e] == 22663){
                                 log.debug('reclutadoraSO',reclutadoraSO)
                                 log.debug('ventasTresdosData',ventasTresdosData)
                                 log.debug('preEquipoyRecluta',preEquipoyRecluta)
-                              }
+                              }*/
                         }
                       //Supercomision
                       if(arrKeys[e] in rec_sc){//Valida si existe la lider en el resultado de la busqueda de presentadoras SC, Arreglo con presentadoras reclutadas despues de 1/2/2022 sin importar recluta
@@ -1815,11 +1815,11 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                             if (reclutadoraSO == arrKeys[e] ){
                                 preEquipoyRecluta ++
                             }
-                             if(arrKeys[e] == 22663){
+                             /*if(arrKeys[e] == 22663){
                                 log.debug('reclutadoraSO',reclutadoraSO)
                                 log.debug('ventasTresdosData',ventasTresdosData)
                                 log.debug('preEquipoyRecluta',preEquipoyRecluta)
-                              }
+                              }*/
                         }
 
 
@@ -1935,12 +1935,12 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
 
 
               //log.debug('Valores antes de nuevo 3+2','bono_cinco_dos '+bono_cinco_dos+' bono_tres_dos '+bono_tres_dos)
-              if(arrKeys[e] == 22663){
+              /*if(arrKeys[e] == 22663){
                 log.debug('presentadorasActivasDelLE',presentadorasActivasDelLE)
                 log.debug('v_total',v_total)
                 log.debug('preEquipoyRecluta',preEquipoyRecluta)
                 log.debug('000',000)
-              }
+              }*/
               if(presentadorasActivasDelLE >=2 && v_total > 4 && preEquipoyRecluta > 0){
                     bono_cinco_dos = 8000
                     bono_tres_dos = 0
