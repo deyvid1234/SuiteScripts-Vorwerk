@@ -1548,7 +1548,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                                     f_odv =new Date(f1[2],f1[1],f1[0])
                                     f_rec = new Date(f2[2],f2[1],f2[0])
                                     if( f_odv <= f_rec){
-                                      reac = false
+                                      reac = true
                                     }
                                     
                                     
@@ -1575,7 +1575,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                                     f_odv =new Date(f1[2],f1[1],f1[0])
                                     f_rec = new Date(f2[2],f2[1],f2[0])
                                     if( f_odv <= f_rec){
-                                      reac = false
+                                      reac = true
                                     }
                                   }
                                       if(arrKeys[e] == infoODVPromo_tm_rec_historico[i_rec_data[arrKeys[e]][i]][j][1]['reclutadora'] && reac){//Valida el campo RECRUITER de las ODV de las reclutas
@@ -1606,7 +1606,8 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                                 }  
                               //ODV Rec TM Pagadas
                                 for (j in infoODVPromo_tm_rec[i_rec_data[arrKeys[e]][i]]){ //Recorremos las ODV para cada recluta
-                                    //log.debug('all odv rec',infoODVPromo_tm_rec[i_rec_data[arrKeys[e]][i]][j])
+                                    //log.debug('all odv rec',arrKeys[e])
+                                    //log.debug('all odv rec array',infoODVPromo_tm_rec[i_rec_data[arrKeys[e]][i]][j][1]['reclutadora'])
                                       if(arrKeys[e] == infoODVPromo_tm_rec[i_rec_data[arrKeys[e]][i]][j][1]['reclutadora']){//Valida el campo RECRUITER de las ODV de las reclutas
                                         cont_odvs++
                                         odv_rec_comisionable[infoODVPromo_tm_rec[i_rec_data[arrKeys[e]][i]][j][1]['id']]=cont_odvs+cont_hist
@@ -1624,7 +1625,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                             }
                           
 //                            
-                            /* if(arrKeys[e] == 54846 ){
+                            /*if(arrKeys[e] == 3017601 ){
                                log.debug('infoODVPromo_rec de: '+i_rec_data[arrKeys[e]][i],infoODVPromo_rec[i_rec_data[arrKeys[e]][i]])
                                log.debug('infoODVPromo_tm_rec de: '+i_rec_data[arrKeys[e]][i],infoODVPromo_tm_rec[i_rec_data[arrKeys[e]][i]])
                                log.debug('infoODVPromo_rec_historico de: '+i_rec_data[arrKeys[e]][i],infoODVPromo_rec_historico[i_rec_data[arrKeys[e]][i]])                           
@@ -1635,8 +1636,8 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                                log.debug('recluta', i_rec_data[arrKeys[e]][i])
                                log.debug('odv_rec_comisionable', odv_rec_comisionable)
                                log.debug('odv_comisionable_rec', odv_comisionable_rec)
-                             }
-                            */
+                             }*/
+                            
                           //Bono reclutadora 
                             cont_hist = cont_hist +1
                             var vueltas=0
@@ -1649,11 +1650,12 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                               //log.debug('Empieza a partir de: ',cont_hist + ' Numero de ODV Comisionables: '+odv_comisionable_rec)
                               //log.debug('ID : Rec:'+i_rec_data[arrKeys[e]][i]+' Comisionables para: '+arrKeys[e],odv_rec_comisionable)
                               if(i_rec_data[arrKeys[e]][i] in conf_rec){
-                                log.debug('conf_rec[arrKeys[e]]',conf_rec[arrKeys[e]])
+                                //log.debug('conf_rec[arrKeys[e]]',conf_rec[arrKeys[e]])
                                 configuracion_rec = conf_rec[i_rec_data[arrKeys[e]][i]]
                                 }else{
                                 configuracion_rec = 1
                                 }
+                                
                               bono_reclutadora= bono_reclutadora + Math.abs(CompConfigDetails[configuracion_rec]['esquemaVentasReclutamiento'][k]['compensacion'])
                               /*log.debug('k configuracion_rec',configuracion_rec)
                               
@@ -1726,11 +1728,15 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                       if( ventasPresentadorareclutas_tres_dos.hasOwnProperty(i_pre_data[arrKeys[e]][i]) ){
                             
                             presentadorasActivasDelLE ++
+
                             var presentador  = i_pre_data[arrKeys[e]][i]
                             var internalidPedidoPresentador = Object.keys(ventasPresentadorareclutas_tres_dos[presentador])
                             var nopedido = ventasPresentadorareclutas_tres_dos[presentador][Object.keys(ventasPresentadorareclutas_tres_dos[presentador])]['noDocument']
                             ventasTresdosData[internalidPedidoPresentador] = {NoPedido:nopedido, Presentador:presentador}
                             log.debug('ventasTresdosData',ventasTresdosData)
+                            if (v1 == v2 ){
+                                presentadorasmismoEquipoyRecluta ++
+                            }
                         }
                       //Supercomision
                       if(arrKeys[e] in rec_sc){//Valida si existe la lider en el resultado de la busqueda de presentadoras SC, Arreglo con presentadoras reclutadas despues de 1/2/2022 sin importar recluta
@@ -1911,10 +1917,10 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
 
               //log.debug('Valores antes de nuevo 3+2','bono_cinco_dos '+bono_cinco_dos+' bono_tres_dos '+bono_tres_dos)
 
-              if(presentadorasActivasDelLE >=2 && v_total > 4){
+              if(presentadorasActivasDelLE >=2 && v_total > 4 && presentadorasmismoEquipoyRecluta mayor a 0){
                     bono_cinco_dos = 8000
                     bono_tres_dos = 0
-              }else if(presentadorasActivasDelLE >=2 && v_total > 2){
+              }else if(presentadorasActivasDelLE >=2 && v_total > 2 && presentadorasmismoEquipoyRecluta mayor a 0){
                 bono_tres_dos = 5000
                 bono_cinco_dos = 0
               }
