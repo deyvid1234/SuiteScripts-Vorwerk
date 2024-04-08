@@ -3,9 +3,9 @@
  * @NScriptType UserEventScript
  * @NModuleScope SameAccount
  */
-define(['N/record','N/search','./Vorwerk Utils.js','./Vorwerk Dictionary Script.js'],
+define(['N/record','N/search','./Vorwerk Utils.js','./Vorwerk Dictionary Script.js','N/file','N/xml'],
 
-function(record,search,Utils,Dictionary) {
+function(record,search,Utils,Dictionary,file,xml) {
    
     /**
      * Function definition to be triggered before record is loaded.
@@ -30,7 +30,36 @@ function(record,search,Utils,Dictionary) {
      * @Since 2015.2
      */
     function beforeSubmit(scriptContext) {
+        try{
+            var thisRecord = scriptContext.newRecord;
+            var oldrecord = scriptContext.oldRecord;
+            var xmlSatOld= oldrecord.getValue('custrecord_c_jdg_xml_sat') 
+            log.debug('xmlSatOld',xmlSatOld)
+            var xmlSatNew= oldrecord.getValue('custrecord_c_jdg_xml_sat')  
+            log.debug('xmlSatNew',xmlSatNew)
+            if(xmlSatNew!= ''){
+                var xmlSat = file.load({
+                  id: xmlSatNew
+                });
+                log.debug('xmlSat',xmlSat)
+                var xmls = xmlSat.getContents();
+                log.debug('xmls',xmls)
+                var xmlDocument = xml.Parser.fromString({
+                            text : xmls
+                        });
+                log.debug('xmlDocument',xmlDocument)
+                var bookNode = xml.XPath.select({
+                    node : xmlDocument,
+                    xpath : 'Timbrado de Nominas/JDG/xml_JDGD004331.xml'
+                });
+                log.debug('bookNode',bookNode)
 
+                
+                
+            }     
+        }catch(err){
+                    log.error("error folio",err);
+        }
     }
 
     /**
