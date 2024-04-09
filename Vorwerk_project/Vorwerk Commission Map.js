@@ -186,10 +186,10 @@ function(email,record, file, search, https, runtime,format,Dictionary) {
                     fieldId: config_fields.odv_entrega[config.type],
                     value: comissionInfo.odv_entrega    
                 });
-                //Emerald
+                //bono Joya
                 registerEmp.setValue({
                     fieldId: config_fields.bp1[config.type],
-                    value: 34   
+                    value: 176   
                 });
                 registerEmp.setValue({
                     fieldId: config_fields.bp1_monto[config.type],
