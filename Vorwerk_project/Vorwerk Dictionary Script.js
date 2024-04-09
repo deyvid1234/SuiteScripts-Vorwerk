@@ -13,6 +13,11 @@ function() {
 				2:'custrecord_c_gtm_odv_rec',
 				3:'custrecord_c_jdg_odv_rec',
 			},
+			totalReporte:{
+				1:'custrecord_total_reporte_pre',
+				2:'custrecord_total_reporte_gtm',
+				3:'custrecord_total_reporte_jdg',
+			},
 			total:{
 				1:'custrecord_c_pre_subtotal',
 				2:'custrecord_c_gtm_subtotal',

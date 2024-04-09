@@ -162,10 +162,10 @@ function(email,record, file, search, https, runtime,format,Dictionary) {
                     value: comissionInfo.total
                 });
                
-//                    registerEmp.setValue({
-//                        fieldId: 'custrecord_c_jdg_idcom',
-//                        value: comissionInfo.ingreso
-//                    });
+                registerEmp.setValue({
+                    fieldId: config_fields.totalReporte[config.type],
+                    value: comissionInfo.total
+                });
                 registerEmp.setValue({
                     fieldId: config_fields.retencion[config.type],
                     value: comissionInfo.retencion
