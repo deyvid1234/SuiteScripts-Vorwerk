@@ -34,28 +34,35 @@ function(record,search,Utils,Dictionary,file,xml) {
             var thisRecord = scriptContext.newRecord;
             var oldrecord = scriptContext.oldRecord;
             var xmlSatOld= oldrecord.getValue('custrecord_c_jdg_xml_sat') 
-            log.debug('xmlSatOld',xmlSatOld)
             var xmlSatNew= oldrecord.getValue('custrecord_c_jdg_xml_sat')  
-            log.debug('xmlSatNew',xmlSatNew)
             if(xmlSatNew!= ''){
                 var xmlSat = file.load({
                   id: xmlSatNew
                 });
-                log.debug('xmlSat',xmlSat)
                 var xmls = xmlSat.getContents();
-                log.debug('xmls',xmls)
                 var xmlDocument = xml.Parser.fromString({
                             text : xmls
                         });
-                log.debug('xmlDocument',xmlDocument)
                 var bookNode = xml.XPath.select({
-                    node : xmlDocument,
-                    xpath : 'Timbrado de Nominas/JDG/xml_JDGD004331.xml'
+                    node: xmlDocument,
+                    xpath: '//tfd:TimbreFiscalDigital'
                 });
-                log.debug('bookNode',bookNode)
-
+                for (var i = 0; i < bookNode.length; i++) {
+                    
+                    var folio = bookNode[i].getElementsByTagName({
+                        tagName: 'UUID'
+                    });
                 
-                
+                }
+                log.debug('folio',folio)
+            /*
+                var xmlResult = xmlDocument.getElementsByTagName({
+                        tagName : 'Folio'
+                        })
+                log.debug('xmlResult',xmlResult.length);
+                                
+                cfdi:Comprobante  Folio
+                tfd:TimbreFiscalDigital   UUID*/
             }     
         }catch(err){
                     log.error("error folio",err);
