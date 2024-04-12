@@ -30,6 +30,44 @@ function(record,search,Utils,Dictionary) {
      * @Since 2015.2
      */
     function beforeSubmit(scriptContext) {
+        try{
+            var thisRecord = scriptContext.newRecord;
+            var oldrecord = scriptContext.oldRecord;
+            var xmlSatOld= oldrecord.getValue('custrecord_c_pre_xml_sat') 
+            var xmlSatNew= oldrecord.getValue('custrecord_c_pre_xml_sat')  
+            if(xmlSatNew!= ''){
+                var xmlSat = file.load({
+                  id: xmlSatNew
+                });
+                
+                var xmls = xmlSat.getContents();
+                var xmlDocument = xml.Parser.fromString({
+                            text : xmls
+                        });              
+               
+                var elementTFD = xmlDocument.getElementsByTagNameNS({
+                    namespaceURI : '*',
+                    localName : 'TimbreFiscalDigital'
+                })[0];
+                
+                var uuid = elementTFD.getAttribute("UUID");
+                log.debug('UUID', uuid);
+                var elementComprobante = xmlDocument.getElementsByTagNameNS({
+                    namespaceURI : '*',
+                    localName : 'Comprobante'
+                })[0];
+                 
+                var folio = elementComprobante.getAttribute("Folio");
+                log.debug('folio', folio);
+
+                thisRecord.setValue('custrecord_folio_sat_pre',folio)
+                thisRecord.setValue('custrecord_folio_fiscal_pre',uuid)
+
+                
+            }     
+        }catch(err){
+                    log.error("error folio",err);
+        }
 
     }
 
