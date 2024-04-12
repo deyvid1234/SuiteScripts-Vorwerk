@@ -39,22 +39,39 @@ function(record,search,Utils,Dictionary,file,xml) {
                 var xmlSat = file.load({
                   id: xmlSatNew
                 });
+
+                
                 var xmls = xmlSat.getContents();
                 var xmlDocument = xml.Parser.fromString({
                             text : xmls
                         });
+                var xmlStringContent = xml.Parser.toString({//Devuelve el XML como texto, No se ve porque es muy grande 
+                    document : xmlDocument
+                });
+                log.debug('xmlStringContent',xmlStringContent)
+                log.debug('xmlStringContent.length',xmlStringContent.length)
+                xmlStringContent = xmlStringContent.split('Folio="')
+                log.debug('xmlStringContent 1',xmlStringContent[1])
+                xmlStringContent = xmlStringContent[1].split('"')
+                log.debug('xmlStringContent 2',xmlStringContent[0])
                 var bookNode = xml.XPath.select({
                     node: xmlDocument,
-                    xpath: '//tfd:TimbreFiscalDigital'
+                    xpath: '//*'
                 });
+                log.debug('bookNode.length',bookNode.length)
                 for (var i = 0; i < bookNode.length; i++) {
+                    log.debug('Config content', bookNode[i].textContent);
                     
-                    var folio = bookNode[i].getElementsByTagName({
-                        tagName: 'UUID'
+                    log.debug('Config value', bookNode[i].value);
+                    log.debug('bookNode tag ', bookNode[i]);
+    
+                   
+                    /*var folio = bookNode[i].getElementsByTagName({
+                        tagName: '@folio'
                     });
-                
+                    log.debug('folio '+i,folio)*/
                 }
-                log.debug('folio',folio)
+                
             /*
                 var xmlResult = xmlDocument.getElementsByTagName({
                         tagName : 'Folio'
