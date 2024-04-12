@@ -3,9 +3,9 @@
  * @NScriptType UserEventScript
  * @NModuleScope SameAccount
  */
-define(['N/record','N/search','./Vorwerk Utils.js','./Vorwerk Dictionary Script.js'],
+define(['N/record','N/search','./Vorwerk Utils.js','./Vorwerk Dictionary Script.js','N/file','N/xml'],
 
-function(record,search,Utils,Dictionary) {
+function(record,search,Utils,Dictionary,file,xml) {
    var config_fields = Dictionary.getDictionayFields();
     /**
      * Function definition to be triggered before record is loaded.
