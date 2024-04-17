@@ -270,6 +270,12 @@ function(record, search, email, render, file,runtime, encode, https, format, xml
                         ignoreMandatoryFields : true
                     }
                 });
+                var editFolio= record.load({
+                    id: recordid,
+                    type: recordType,
+                    isDynamic: false
+                });
+                editFolio.save();
             }
         }
     }
