@@ -461,7 +461,7 @@ function(record, search, runtime, format, query,Dictionary) {
             var bono_m_9 = rec.getValue(config_fields.bono_m_9[id_emp])  ==    ""?0:parseFloat(rec.getValue(config_fields.bono_m_9[id_emp]));
             var bono_m_10 = rec.getValue(config_fields.bono_m_10[id_emp])==    ""?0:parseFloat(rec.getValue(config_fields.bono_m_10[id_emp]));
 
-            var bono_p_1 = rec.getValue(config_fields.bp1_monto[id_emp])==    ""?0:parseFloat(rec.getValue(config_fields.bp1_monto[id_emp]));
+            /*var bono_p_1 = rec.getValue(config_fields.bp1_monto[id_emp])==    ""?0:parseFloat(rec.getValue(config_fields.bp1_monto[id_emp]));
             var bono_p_2 = rec.getValue(config_fields.bp2_monto[id_emp])==    ""?0:parseFloat(rec.getValue(config_fields.bp2_monto[id_emp]));
             var bono_p_3 = rec.getValue(config_fields.bp3_monto[id_emp])==    ""?0:parseFloat(rec.getValue(config_fields.bp3_monto[id_emp]));
             var bono_p_4 = rec.getValue(config_fields.bp4_monto[id_emp])==    ""?0:parseFloat(rec.getValue(config_fields.bp4_monto[id_emp]));
@@ -470,9 +470,9 @@ function(record, search, runtime, format, query,Dictionary) {
             var bono_p_7 = rec.getValue(config_fields.bp7_monto[id_emp])==    ""?0:parseFloat(rec.getValue(config_fields.bp7_monto[id_emp]));
             var bono_p_8 = rec.getValue(config_fields.bp8_monto[id_emp])==    ""?0:parseFloat(rec.getValue(config_fields.bp8_monto[id_emp]));
             var bono_p_9 = rec.getValue(config_fields.bp9_monto[id_emp])==    ""?0:parseFloat(rec.getValue(config_fields.bp9_monto[id_emp]));
-            var bono_p_10 = rec.getValue(config_fields.bp10_monto[id_emp])==    ""?0:parseFloat(rec.getValue(config_fields.bp10_monto[id_emp]));
+            var bono_p_10 = rec.getValue(config_fields.bp10_monto[id_emp])==    ""?0:parseFloat(rec.getValue(config_fields.bp10_monto[id_emp]));*/
            
-            return bono_m_1+bono_m_2+bono_m_3+bono_m_4+bono_m_5+bono_m_6+bono_m_7+bono_m_8+bono_m_9+bono_m_10+bono_p_1+bono_p_2+bono_p_3+bono_p_4+bono_p_5+bono_p_6+bono_p_7+bono_p_8+bono_p_9+bono_p_10;
+            return bono_m_1+bono_m_2+bono_m_3+bono_m_4+bono_m_5+bono_m_6+bono_m_7+bono_m_8+bono_m_9+bono_m_10;
         }
 
     }; 
