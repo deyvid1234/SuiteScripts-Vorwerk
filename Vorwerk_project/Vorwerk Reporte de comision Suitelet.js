@@ -1758,6 +1758,10 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                             var ovd_pre_object_keys = Object.keys(infoODVPromo_pre[i_pre_data[arrKeys[e]][i]])
                             var cont_odv_pre = 0
                             var scODV = []
+                            if(arrKeys[e] == 12531){
+                                    log.debug('ovd_pre_object_keys test',ovd_pre_object_keys)
+                                    log.debug('presentador test',i_pre_data[arrKeys[e]][i])
+                            }
                             for(p in ovd_pre_object_keys){
 
                                 if(ovd_pre_object_keys[p] in odv_objetivo_2 || odv_objetivo_2.hasOwnProperty(ovd_pre_object_keys[p]) ){
@@ -1770,11 +1774,12 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
 
                             }
                             
-
+                           
                             if(i_pre_data[arrKeys[e]][i] in pre_num_ventas || pre_num_ventas.hasOwnProperty(i_pre_data[arrKeys[e]][i]) ){
                                 var odp_pre = cont_odv_pre
                                 var falta = pre_num_ventas[i_pre_data[arrKeys[e]][i]]['falta']
-                                if(i_pre_data[arrKeys[e]][i] == 3913025){
+                                if(arrKeys[e] == 12531){
+                                    log.debug('presentador test',i_pre_data[arrKeys[e]][i])
                                     log.debug('falta test',falta)
                                     log.debug('odp_pre test',odp_pre)
                                     log.debug('pre_num_ventas[i_pre_data[arrKeys[e]][i]] test',pre_num_ventas[i_pre_data[arrKeys[e]][i]])
@@ -1785,10 +1790,14 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                                     Supercomision +=   odp_pre 
                                 }
                                
-                               if(i_pre_data[arrKeys[e]][i] == 3913025){
+                               if(arrKeys[e] == 12531){
+                                    log.debug('presentador test',i_pre_data[arrKeys[e]][i])
                                     log.debug('Supercomision test',Supercomision)
                                }
                             }else{
+                                if(arrKeys[e] == 12531){
+                                    log.debug('Error SC ventas')
+                                }
                                 
                                 Supercomision += cont_odv_pre
                             }
@@ -1840,6 +1849,10 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                         var ovd_pre_object_keys = Object.keys(infoODVPromo_tm_pre[i_pre_data[arrKeys[e]][i]])
                             var cont_odv_pre = 0
                             var scODV_TM = []
+                            if(arrKeys[e] == 12531){
+                                    log.debug('ovd_pre_object_keys test',ovd_pre_object_keys)
+                                    log.debug('presentador test',i_pre_data[arrKeys[e]][i])
+                            }
                             for(i in ovd_pre_object_keys){
                                 if(ovd_pre_object_keys[i] in odv_objetivo_2 || odv_objetivo_2.hasOwnProperty(ovd_pre_object_keys[i]) ){
                                     cont_odv_pre += 1
@@ -1852,15 +1865,31 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                                 var odp_pre = cont_odv_pre
                                 //log.debug('pre_num_ventas_tm_p[i_pre_data[arrKeys[e]][i]]',pre_num_ventas_tm_p[i_pre_data[arrKeys[e]][i]])
                                 var falta = pre_num_ventas_tm_p[i_pre_data[arrKeys[e]][i]]['falta']
+                                if(arrKeys[e] == 12531){
+                                    
+                                    log.debug('presentador test',i_pre_data[arrKeys[e]][i])
+                                    log.debug('falta test',falta)
+                                    log.debug('odp_pre test',odp_pre)
+                                    log.debug('pre_num_ventas[i_pre_data[arrKeys[e]][i]] test',pre_num_ventas_tm_p[i_pre_data[arrKeys[e]][i]])
+                               }
                                 if(odp_pre > falta ){
                                     Supercomision +=   odp_pre - (odp_pre - falta)
                                     //log.debug('ostia','odp_pre '+odp_pre+' falta '+falta)
                                 }else{
                                     Supercomision +=   odp_pre 
                                 }
+                                if(arrKeys[e] == 12531){
+                                    log.debug('presentador test',i_pre_data[arrKeys[e]][i])
+                                    log.debug('Supercomision test',Supercomision)
+                                }
                                
                             }else{
+
+                                
                                 Supercomision += cont_odv_pre
+                                if(arrKeys[e] == 12531){
+                                    log.debug('Error SC ventas TM',Supercomision)
+                                }
                             }
                         }
                       }
@@ -2461,7 +2490,8 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
    function historico_pre_sc(idPeriod){//busqueda de presentadoras y sus ventas desde que inicia SC para validar si las ventas del periodo comisionan
          try{
            var period = Utils.getObjPeriod(idPeriod);
-           //log.debug('historico_pre_sc period',period);
+           log.debug('historico_pre_sc period',period);
+           log.debug('period[startDate]',period['startDate'])
            var historico_pre_sc = {};
            var mySearch = search.load({
                    id: 'customsearch_odv_pre_sc'
@@ -2469,19 +2499,28 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
            mySearch.filters.push(search.createFilter({
                    name: 'trandate',
                    operator: 'within',
-                   values: ['01/06/2023',period['startDate']]
+                   values: ['01/09/2023',period['startDate']]
                }));
+           /*mySearch.filters.push(search.createFilter({
+                   name: 'salesrep',
+                   operator: 'is',
+                   values: 3913025
+               }));*/
            var pagedResults = mySearch.runPaged();
            pagedResults.pageRanges.forEach(function (pageRange){
                var currentPage = pagedResults.fetch({index: pageRange.index});
                currentPage.data.forEach(function (r) {
                 var values = r.getAllValues();
+                
                 //log.debug('values',values)
                 num_h = parseInt(values['COUNT(tranid)'][0])
                 presentadora = parseInt(values['GROUP(salesrep)'][0]['value'])
                 tmR = parseInt(values['GROUP(salesRep.custentity_conf_rec)'][0]['value'])
                 var comisionan = 0
                 var falta = 0
+                if(presentadora == 3913025){
+                    log.debug('values',values)
+                }
                 if(tmR == 11 || tmR == 12 || tmR == 13){//Si su TM es R o CC12 solo comisiona 4 ventas
                     tmR = true
                     comisionan = 4
