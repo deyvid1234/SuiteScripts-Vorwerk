@@ -1774,12 +1774,20 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                             if(i_pre_data[arrKeys[e]][i] in pre_num_ventas || pre_num_ventas.hasOwnProperty(i_pre_data[arrKeys[e]][i]) ){
                                 var odp_pre = cont_odv_pre
                                 var falta = pre_num_ventas[i_pre_data[arrKeys[e]][i]]['falta']
+                                if(i_pre_data[arrKeys[e]][i] == 3913025){
+                                    log.debug('falta test',falta)
+                                    log.debug('odp_pre test',odp_pre)
+                                    log.debug('pre_num_ventas[i_pre_data[arrKeys[e]][i]] test',pre_num_ventas[i_pre_data[arrKeys[e]][i]])
+                               }
                                 if(odp_pre >= falta ){
                                     Supercomision += falta
                                 }else{
                                     Supercomision +=   odp_pre 
                                 }
                                
+                               if(i_pre_data[arrKeys[e]][i] == 3913025){
+                                    log.debug('Supercomision test',Supercomision)
+                               }
                             }else{
                                 
                                 Supercomision += cont_odv_pre
