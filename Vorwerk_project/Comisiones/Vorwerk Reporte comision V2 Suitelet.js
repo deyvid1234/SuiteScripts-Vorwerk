@@ -280,7 +280,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                     
                     switch(tipoReporteGloobal){
                         case 1: //Reporte LE
-                            if(empType == 3 && empPromo == 2 && allPresentadoras[i].internalid == '12531'){
+                            if(empType == 3 && empPromo == 2 /*&& allPresentadoras[i].internalid == '12531'*/){
                                 //Calcular reporte para la persona
                                 
                                 var reclutas=listaReclutas[i]
@@ -320,6 +320,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                                 
                                 
                                 */
+                                // -fix El contador no debe incrementar antes de agregar datos en la linea, Debes declararlo en 0 e incrementar al final de la funcion fill
                                 cont_line++
                                 fillTable(sublist,dataEmp,fVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,montoSupercomision,montoReclutamiento,montoEntrega,montoTresDos,montoCincoDos,montoProductividad)
                                 
@@ -639,7 +640,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                           var desde= compConfigDetails[conf]['esquemaVentasJefaGrupo']['grupo'][num_]['desde']
                         if(sum >= desde && sum <= hasta){
                           venta_equipo = (compConfigDetails[conf]['esquemaVentasJefaGrupo']['grupo'][num_]['compensacion'])*(parseInt(porcentaje)/100)
-                          logdebug('venta_equipo',venta_equipo)
+                          log.debug('venta_equipo',venta_equipo)
                            break;
                         }
                       }
@@ -1160,6 +1161,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
     function searchDataPresentadoras(){ 
         try{
            
+            // -fix añadir campos VOR-74
 
             const employeeSearchFilters = [
                 ['isinactive', 'is', 'F'],
@@ -1168,7 +1170,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 'AND',
                 ['salesrep', 'is', 'T'],
                 'AND',
-                ['employeetype', 'anyof', '3', '1', '8', '5', '9'],//tipos
+                ['employeetype', 'anyof', '3', '1', '8', '5', '9'],//tipos -fix Agregar los tipos en texto como comentario
             ];
 
             const empSearchentityid = search.createColumn({ name: 'entityid'});
@@ -1216,6 +1218,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                     employeeSearchReclutadoraInternalId,
                 ],
             });
+            // -fix nuevo arreglo VOR-75
 
             var allPresentadorData = {} //Todos los datos de todos los presentadores activos arreglo[presentadora] = {obj1:20/01/2024, conf: CC01...}
             var empGrupos = {} //Arreglo de lideres de equipo y sus integrantes arreglo[liderGrupo] = [integrante1,integrante2...]
@@ -1308,6 +1311,8 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             const finPeriodoDate = Utils.stringToDate(finPeriodo)
             var dHistorico = Utils.restarMeses(inicioPeriodo, 3); //Fecha 3 meses antes del periodo calculado
             log.debug('dHistorico',dHistorico)
+            
+            // -fix Pasar a funcion en utils
             var artComisionables=[]
             var artComSearch = search.load({
                id: 'customsearch_art_comisionables'
@@ -1323,13 +1328,14 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 });
             });
             log.debug('artComisionables',artComisionables)
+            // -fix
            const salesOrderSearchFilters = [
                 ['type', 'anyof', 'SalesOrd'],
                 'AND',
                 ['item', 'noneof', '920'],
                 'AND',
-                /*['item.internalid', 'anyof', artComisionables],
-                'AND',*/
+                ['item', 'anyof', JSON.stringify(artComisionables)],
+                'AND',
                 ['account', 'anyof', '124'],
                 'AND',
                 ['custbody_tipo_venta', 'anyof', '2', '19', '1'],
