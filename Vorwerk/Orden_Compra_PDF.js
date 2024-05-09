@@ -35,7 +35,7 @@ function Orden_Compra_PDF(request, response) {
         }
 
         if (nlapiGetContext().getEnvironment() == "SANDBOX") {
-            companyInfoLogoURL = '/core/media/media.nl?id=2461144&c=3367613_SB1&h=eEB3Zn7T6vRFsbPljmmuN0ORPNQ5jSQGt3ys437w_kszrBvh'
+            companyInfoLogoURL = '/core/media/media.nl?id=2576941&c=3367613&h=EVQpFOUkyARO0Xup5ue_KhGuik1V9R-xb--eYG7FiF_7YPaV'
         }
         else {
             companyInfoLogoURL = '/core/media/media.nl?id=2576941&c=3367613&h=EVQpFOUkyARO0Xup5ue_KhGuik1V9R-xb--eYG7FiF_7YPaV'
@@ -145,7 +145,7 @@ function Orden_Compra_PDF(request, response) {
             'total': total
         }));
         var numberLines = transaccion.getLineItemCount('expense');//obtiene las lineas de la subtab expense
-       
+        var numberLinesItem=transaccion.getLineItemCount('item');
         var Encabezado = '';
 
         Encabezado += "<p align='center'><img width=\"100%\" height=\"100%\" " + companyInfoLogoURL + "><br/></p>";
@@ -235,8 +235,7 @@ function Orden_Compra_PDF(request, response) {
         strName += "<td colspan='10'>&nbsp;</td>";
         strName += "</tr>";
         
-        
-        if(searchTransaction.length>1){  
+        if(searchTransaction.length>0 && numberLinesItem != 0){  
             strName += "<tr>";
             strName += "<td align='center' colspan='10'><b>Articulos</b></td>";
             strName += "</tr>";
@@ -264,14 +263,16 @@ function Orden_Compra_PDF(request, response) {
                 var precio_tot = returnNumber(searchTransaction[x].getValue('fxamount'));
                 if (precio_tot * 1 < 0)
                     precio_tot = precio_tot * -1
-
-                strName += "<tr>";
-                strName += "<td width='50%' border='0.5'>" + articulo + " " + descripcion + "</td>";
-                strName += "<td width='10%' border='0.5'>" + unidades + "</td>";
-                strName += "<td width='10%' border='0.5'>" + cantidad + "</td>";
-                strName += "<td width='15%' border='0.5'>" + currencyFormat(precio_uni, 2, simbolo) + "</td>";
-                strName += "<td width='15%' border='0.5'>" + currencyFormat(precio_tot, 2, simbolo) + "</td>";
-                strName += "</tr>";
+                if(unidades!=''){
+                    strName += "<tr>";
+                    strName += "<td width='50%' border='0.5'>" + articulo + " " + descripcion + "</td>";
+                    strName += "<td width='10%' border='0.5'>" + unidades + "</td>";
+                    strName += "<td width='10%' border='0.5'>" + cantidad + "</td>";
+                    strName += "<td width='15%' border='0.5'>" + currencyFormat(precio_uni, 2, simbolo) + "</td>";
+                    strName += "<td width='15%' border='0.5'>" + currencyFormat(precio_tot, 2, simbolo) + "</td>";
+                    strName += "</tr>";
+                }
+                
             }
             strName += "</table>";
             strName += "</td>";
