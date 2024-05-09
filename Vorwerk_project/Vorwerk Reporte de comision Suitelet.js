@@ -1758,7 +1758,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                             var ovd_pre_object_keys = Object.keys(infoODVPromo_pre[i_pre_data[arrKeys[e]][i]])
                             var cont_odv_pre = 0
                             var scODV = []
-                            if(arrKeys[e] == 12531){
+                            if(arrKeys[e] == 58585){
                                     log.debug('ovd_pre_object_keys test',ovd_pre_object_keys)
                                     log.debug('presentador test',i_pre_data[arrKeys[e]][i])
                             }
@@ -1778,7 +1778,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                             if(i_pre_data[arrKeys[e]][i] in pre_num_ventas || pre_num_ventas.hasOwnProperty(i_pre_data[arrKeys[e]][i]) ){
                                 var odp_pre = cont_odv_pre
                                 var falta = pre_num_ventas[i_pre_data[arrKeys[e]][i]]['falta']
-                                if(arrKeys[e] == 12531){
+                                if(arrKeys[e] == 58585){
                                     log.debug('presentador test',i_pre_data[arrKeys[e]][i])
                                     log.debug('falta test',falta)
                                     log.debug('odp_pre test',odp_pre)
@@ -1790,16 +1790,17 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                                     Supercomision +=   odp_pre 
                                 }
                                
-                               if(arrKeys[e] == 12531){
+                               if(arrKeys[e] == 58585){
                                     log.debug('presentador test',i_pre_data[arrKeys[e]][i])
                                     log.debug('Supercomision test',Supercomision)
                                }
                             }else{
-                                if(arrKeys[e] == 12531){
-                                    log.debug('Error SC ventas')
-                                }
                                 
                                 Supercomision += cont_odv_pre
+                                if(i_pre_data[arrKeys[e]][i] == 4026324){
+                                    Supercomision = 5
+                                    log.debug('Error SC ventas',Supercomision)
+                                }
                             }
                         
                         }
@@ -1849,12 +1850,13 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                         var ovd_pre_object_keys = Object.keys(infoODVPromo_tm_pre[i_pre_data[arrKeys[e]][i]])
                             var cont_odv_pre = 0
                             var scODV_TM = []
-                            if(arrKeys[e] == 12531){
+                            if(arrKeys[e] == 58585){
                                     log.debug('ovd_pre_object_keys test',ovd_pre_object_keys)
                                     log.debug('presentador test',i_pre_data[arrKeys[e]][i])
                             }
                             for(i in ovd_pre_object_keys){
                                 if(ovd_pre_object_keys[i] in odv_objetivo_2 || odv_objetivo_2.hasOwnProperty(ovd_pre_object_keys[i]) ){
+
                                     cont_odv_pre += 1
                                     scODV_TM.push(ovd_pre_object_keys[i])
                                     arrODVSC[pre_aiux] = scODV_TM
@@ -1865,7 +1867,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                                 var odp_pre = cont_odv_pre
                                 //log.debug('pre_num_ventas_tm_p[i_pre_data[arrKeys[e]][i]]',pre_num_ventas_tm_p[i_pre_data[arrKeys[e]][i]])
                                 var falta = pre_num_ventas_tm_p[i_pre_data[arrKeys[e]][i]]['falta']
-                                if(arrKeys[e] == 12531){
+                                if(arrKeys[e] == 58585){
                                     
                                     log.debug('presentador test',i_pre_data[arrKeys[e]][i])
                                     log.debug('falta test',falta)
@@ -1878,7 +1880,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                                 }else{
                                     Supercomision +=   odp_pre 
                                 }
-                                if(arrKeys[e] == 12531){
+                                if(arrKeys[e] == 58585){
                                     log.debug('presentador test',i_pre_data[arrKeys[e]][i])
                                     log.debug('Supercomision test',Supercomision)
                                 }
@@ -1887,7 +1889,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
 
                                 
                                 Supercomision += cont_odv_pre
-                                if(arrKeys[e] == 12531){
+                                if(arrKeys[e] == 58585){
                                     log.debug('Error SC ventas TM',Supercomision)
                                 }
                             }
@@ -2518,7 +2520,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
                 tmR = parseInt(values['GROUP(salesRep.custentity_conf_rec)'][0]['value'])
                 var comisionan = 0
                 var falta = 0
-                if(presentadora == 3913025){
+                if(presentadora == 4026324){
                     log.debug('values',values)
                 }
                 if(tmR == 11 || tmR == 12 || tmR == 13){//Si su TM es R o CC12 solo comisiona 4 ventas
@@ -2563,7 +2565,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file']
            mySearch.filters.push(search.createFilter({
                    name: 'trandate',
                    operator: 'within',
-                   values: ['01/06/2023',period['startDate']]
+                   values: ['01/09/2023',period['startDate']]
                }));
            var pagedResults = mySearch.runPaged();
            pagedResults.pageRanges.forEach(function (pageRange){
