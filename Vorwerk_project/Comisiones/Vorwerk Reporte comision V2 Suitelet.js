@@ -88,10 +88,10 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
     function createForm (){
         try{
            
-           var form = serverWidget.createForm({
+            var form = serverWidget.createForm({
                 title: 'Reporte de Comisiones V2'
             });
-
+            //form.clientScriptFileId = 2832773;
             //Grupo para campos
             form.addFieldGroup({
                 id: 'custpage_filters',
@@ -263,17 +263,17 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                     var conf=Utils.getConf(empConfiguracion);
 
                     var montoComisionCK= false
-                    var fVentasPropias = false
-                    var montoEntrega = false
-                    var montoProductividad = false
+                    var objVentasPropias = false
+                    var objEntrega = false
+                    var objProductividad = false
                     var montoEmerald = false
                     var montoGarantia = false
-                    var montoReclutamiento = false
+                    var objReclutamiento = false
                     var montoTalento = false
-                    var montoVentaEquipo = false
-                    var montoTresDos = false
-                    var montoCincoDos = false
-                    var montoSupercomision = false
+                    var objVentaEquipo = false
+                    var objTresDos = false
+                    var objCincoDos = false
+                    var objSupercomision = false
                     
 
                     var testFBonos
@@ -287,21 +287,22 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                                 var reclutasEquipo=listaEquipoRecluta[i]
                                 var ventasEmp =thisPeriodSO[i] 
                                 log.debug('ventasEmp',ventasEmp)
-                                fVentasPropias = bonoVentaPropia(dataEmp,ventasEmp,compConfigDetails)
-                                log.debug('fVentasPropias',fVentasPropias)
-                                montoSupercomision = bonoSupercomision(integrantesEquipo,historicoSO,thisPeriodSO,allPresentadoras,dHistorico)
-                                log.debug('montoSupercomision',montoSupercomision)
-                                montoReclutamiento = bonoReclutamiento(reclutas,historicoSO,thisPeriodSO,dataEmp,compConfigDetails,allPresentadoras,dHistorico)
-                                log.debug('montoReclutamiento',montoReclutamiento)
-                                montoEntrega = bonoEntrega(dataEmp,ventasEmp,cust_entrega)
-                                log.debug('montoEntrega',montoEntrega)
-                                montoTresDos = bonotresdos(dataEmp,reclutasEquipo,thisPeriodSO,ventasEmp,historicoSO,allPresentadoras,dHistorico,integrantesEquipo)
-                                log.debug('montoTresDos',montoTresDos)
-                                montoCincoDos = bonoCincoDos(dataEmp,reclutasEquipo,thisPeriodSO,ventasEmp,historicoSO,allPresentadoras,dHistorico,integrantesEquipo)
-                                montoProductividad = bonoProductividad(dataEmp,ventasEmp,compConfigDetails)
-                                log.debug('montoProductividad',montoProductividad)
-                                montoVentaEquipo = bonoVentaEquipo(fVentasPropias,compConfigDetails,dataEmp,conf,integrantesEquipo,thisPeriodSO)
-                                log.debug('montoVentaEquipo',montoVentaEquipo)
+                                objVentasPropias = bonoVentaPropia(dataEmp,ventasEmp,compConfigDetails)
+                                log.debug('objVentasPropias',objVentasPropias)
+                                objSupercomision = bonoSupercomision(integrantesEquipo,historicoSO,thisPeriodSO,allPresentadoras,dHistorico)
+                                log.debug('objSupercomision',objSupercomision)
+                                objReclutamiento = bonoReclutamiento(reclutas,historicoSO,thisPeriodSO,dataEmp,compConfigDetails,allPresentadoras,dHistorico)
+                                log.debug('objReclutamiento',objReclutamiento)
+                                objEntrega = bonoEntrega(dataEmp,ventasEmp,cust_entrega)
+                                log.debug('objEntrega',objEntrega)
+                                objTresDos = bonotresdos(dataEmp,reclutasEquipo,thisPeriodSO,ventasEmp,historicoSO,allPresentadoras,dHistorico,integrantesEquipo)
+                                log.debug('objTresDos',objTresDos)
+                                objCincoDos = bonoCincoDos(dataEmp,reclutasEquipo,thisPeriodSO,ventasEmp,historicoSO,allPresentadoras,dHistorico,integrantesEquipo)
+                                log.debug('objCincoDos',objCincoDos)
+                                objProductividad = bonoProductividad(dataEmp,ventasEmp,compConfigDetails)
+                                log.debug('objProductividad',objProductividad)
+                                objVentaEquipo = bonoVentaEquipo(objVentasPropias,compConfigDetails,dataEmp,conf,integrantesEquipo,thisPeriodSO)
+                                log.debug('objVentaEquipo',objVentaEquipo)
                                 /*
 
                                 
@@ -322,8 +323,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                                 */
                                 // -fix El contador no debe incrementar antes de agregar datos en la linea, Debes declararlo en 0 e incrementar al final de la funcion fill
                                 
-                                fillTable(sublist,dataEmp,fVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,montoSupercomision,montoReclutamiento,montoEntrega,montoTresDos,montoCincoDos,montoProductividad,montoVentaEquipo)
-                                cont_line++
+                                
                             }
 
                         break;
@@ -335,28 +335,24 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                                 var reclutasEquipo=listaEquipoRecluta[i]
                                 var ventasEmp =thisPeriodSO[i] 
                                 log.debug('ventasEmp',ventasEmp)
-                                fVentasPropias = bonoVentaPropia(dataEmp,ventasEmp,compConfigDetails)
-                                log.debug('fVentasPropias',fVentasPropias)
+                                objVentasPropias = bonoVentaPropia(dataEmp,ventasEmp,compConfigDetails)
+                                log.debug('objVentasPropias',objVentasPropias)
                                 
-                                montoReclutamiento = bonoReclutamiento(reclutas,historicoSO,thisPeriodSO,dataEmp,compConfigDetails,allPresentadoras,dHistorico)
-                                log.debug('montoReclutamiento',montoReclutamiento)
-                                montoEntrega = bonoEntrega(dataEmp,ventasEmp,cust_entrega)
-                                log.debug('montoEntrega',montoEntrega)
+                                objReclutamiento = bonoReclutamiento(reclutas,historicoSO,thisPeriodSO,dataEmp,compConfigDetails,allPresentadoras,dHistorico)
+                                log.debug('objReclutamiento',objReclutamiento)
+                                objEntrega = bonoEntrega(dataEmp,ventasEmp,cust_entrega)
+                                log.debug('objEntrega',objEntrega)
                                 
-                                montoProductividad = bonoProductividad(dataEmp,ventasEmp,compConfigDetails)
-                                log.debug('montoProductividad',montoProductividad)
+                                objProductividad = bonoProductividad(dataEmp,ventasEmp,compConfigDetails)
+                                log.debug('objProductividad',objProductividad)
+                                objReclutamiento = bonoReclutamiento(reclutas,historicoSO,thisPeriodSO,dataEmp,compConfigDetails,allPresentadoras,dHistorico)
+                                log.debug('objReclutamiento',objReclutamiento)
                                 /*
                                 montoComisionCK = bonoComCK()
-                                montoVentasPropias = bonoVentaPropia()
-                                montoEntrega = bonoEntrega()
-                                montoProductividad = bonoProductividad()
+                                
                                 montoEmerald = bonoEmerald()
                                 montoGarantia = bonoGarantia()
-                                montoReclutamiento = bonoReclutamiento()
                                 */
-                                
-                                fillTable(sublist,dataEmp,fVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,montoSupercomision,montoReclutamiento,montoEntrega,montoTresDos,montoCincoDos,montoProductividad)
-                                cont_line++
                             }
 
                         
@@ -364,15 +360,16 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                         case 3: //Reporte Trabaja x TM
                             if(empType == 1 && empPromo == 1){
                                 //Calcular reporte para la persona
-                                testFBonos = testBonos('Reporte Trabaja TM'+i)
-                                log.debug('testFBonos',testFBonos)
+                                objReclutamiento = bonoReclutamiento(reclutas,historicoSO,thisPeriodSO,dataEmp,compConfigDetails,allPresentadoras,dHistorico)
+                                log.debug('objReclutamiento',objReclutamiento)
                                 /*
                                 montoComisionCK = bonoComCK()
-                                montoReclutamiento = bonoReclutamiento()
                                 */
                             }
                         break;
                     }
+                    fillTable(sublist,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objSupercomision,objReclutamiento,objEntrega,objTresDos,objCincoDos,objProductividad,objVentaEquipo)
+                                cont_line++
                 }
                 
             }
@@ -385,8 +382,9 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
           log.debug('creditos 2',runtime.getCurrentScript().getRemainingUsage()); 
         }   
     }//Fin sublista
-    function fillTable(sublist,dataEmp,ventasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,montoSupercomision,montoReclutamiento,montoEntrega,montoTresDos,montoCincoDos,montoProductividad,montoVentaEquipo){
+    function fillTable(sublist,dataEmp,ventasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,supercomision,reclutamiento,entrega,tresDos,cincoDos,productividad,ventaEquipo){
         var linea = cont_line
+        var subtotal=0
         sublist.setSublistValue({
               id : 'nombre',
               line : linea,
@@ -456,11 +454,12 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
         if(ventasPropias){  
             var v
             //Venta Propia
-            v = ventasPropias.monto
+            v = ventasPropias.monto>0?ventasPropias.monto:0
+            subtotal+=parseInt(v)
             sublist.setSublistValue({
                 id : 'custentity_venta_propia',
                 line : linea,
-                value : v>0?v:0
+                value : v
             });
             //Ventas TM o Ventas CK
             v = ventasPropias.data.length
@@ -478,24 +477,26 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             });
 
         }
-        if(montoEntrega){
+        if(entrega){
             var v
+            
             //ntrega monto
-            v = montoEntrega.monto
+            v = entrega.monto>0?entrega.monto:0
+            subtotal+=parseInt(v)
             sublist.setSublistValue({
                 id : 'custentity_entrega',
                 line : linea,
-                value : v>0?v:0
+                value : v
             });
             //entrega numero
-            v = montoEntrega.data.length
+            v = entrega.data.length
             sublist.setSublistValue({
                 id : 'custentity_num_entrega',
                 line : linea,
                 value : v!=0?v:0
             });
             //entrega odv
-            v = JSON.stringify(montoEntrega.data)
+            v = JSON.stringify(entrega.data)
             sublist.setSublistValue({
                 id : 'custentity_odv_entrega',
                 line : linea,
@@ -504,40 +505,43 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
 
         }
 
-        if(montoSupercomision){
+        if(supercomision){
+           
           //ODV Por recluta del mes del Equipo SC
-          v = JSON.stringify(montoSupercomision.data)
+          v = JSON.stringify(supercomision.data)
           sublist.setSublistValue({
               id : 'custentity_odv_pre_supercomision',
               line : linea,
               value : v!=''?v:''
           });
           //Numero de ventas SC
-          v = montoSupercomision.ventasNo
+          v = supercomision.ventasNo
           sublist.setSublistValue({
               id : 'custentity_ventas_sc',
               line : linea,
               value : v!=0?v:0
           });
           //Bono supercomision
-          v = montoSupercomision.monto
+          v = supercomision.monto>0?supercomision.monto:0
+          subtotal+=parseInt(v)
           sublist.setSublistValue({
               id : 'custentity_bono_sc',
               line : linea,
-              value : v!=0?v:0
+              value : v
           });
         }
         
-        if(montoReclutamiento){
-          //log.debug('bonoReclutamiento filltable')
-          v = montoReclutamiento.monto
+        if(reclutamiento){
+          //log.debug('bonoReclutamiento filltable')          
+          v = reclutamiento.monto>0?reclutamiento.monto:0
+          subtotal+=parseInt(v)
           log.debug('vbono reclutamiento',v)
           sublist.setSublistValue({
               id : 'custentity_bono_rec',
               line : linea,
-              value : v!=0?v:0
+              value : v
           });
-          v = JSON.stringify(montoReclutamiento.data)
+          v = JSON.stringify(reclutamiento.data)
           log.debug('vStringRec',v)
           sublist.setSublistValue({
               id : 'custentity_odv_rec',
@@ -546,10 +550,10 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
           });
           
         }
-        if(montoTresDos){
+        if(tresDos){
           
-          //log.debug('32 filltable',montoTresDos )
-          v = JSON.stringify(montoTresDos.data)
+          //log.debug('32 filltable',tresDos )
+          v = JSON.stringify(tresDos.data)
           //log.debug('vdata',v)
           //Reclutas con ventas
           sublist.setSublistValue({
@@ -558,7 +562,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
               value : v!=""?v:""
           });
           //equipo 
-          v = JSON.stringify(montoTresDos.equipo)
+          v = JSON.stringify(tresDos.equipo)
           //log.debug('vdata',v)
           sublist.setSublistValue({
               id : 'custentity_odv_rec_del_periodo',
@@ -566,17 +570,18 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
               value : v!=""?v:""
           });
           //Bono 3+2
-          v = montoTresDos.monto
+          v = tresDos.monto>0?tresDos.monto:0
+          subtotal+=parseInt(v)
           sublist.setSublistValue({
               id : 'custentity_bono_tres_dos',
               line : linea,
-              value : v!=0?v:0
+              value : v
           });
         }
-        if(montoCincoDos){
+        if(cincoDos){
           
-          //log.debug('52 filltable',montoCincoDos )
-          v = JSON.stringify(montoCincoDos.data)
+          //log.debug('52 filltable',cincoDos )
+          v = JSON.stringify(cincoDos.data)
           //log.debug('vdata52',v)
           //Reclutas con ventas
           sublist.setSublistValue({
@@ -585,7 +590,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
               value : v!=""?v:""
           });
           //equipo 
-          v = JSON.stringify(montoCincoDos.equipo)
+          v = JSON.stringify(cincoDos.equipo)
           //log.debug('vdata',v)
           sublist.setSublistValue({
               id : 'custentity_odv_rec_del_periodo',
@@ -593,42 +598,51 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
               value : v!=""?v:""
           });
           //Bono 5+2
-          v = montoCincoDos.monto
+          v = cincoDos.monto>0?cincoDos.monto:0
+          subtotal+=parseInt(v)
           sublist.setSublistValue({
               id : 'custentity_bono_cinco_dos',
               line : linea,
-              value : v!=0?v:0
+              value : v
           });
         }
-        if(montoProductividad){
+        if(productividad){
           //log.debug('bonoReclutamiento filltable')
-          v = montoProductividad.monto
-          log.debug('vmontoProductividad',v)
+          v = productividad.monto>0?productividad.monto:0
+          subtotal+=parseInt(v)
+          //log.debug('vmontoProductividad',v)
           sublist.setSublistValue({
               id : 'custentity_bono_productividad',
               line : linea,
-              value : v!=0?v:0
+              value : v
           });
           
         }
-        if(montoVentaEquipo){
+        if(ventaEquipo){
           //log.debug('bonoReclutamiento filltable')
-          v = montoVentaEquipo.porcentaje
-          log.debug('vmontoProductividad',v)
+          v = ventaEquipo.porcentaje
           sublist.setSublistValue({
               id : 'custentity_porcentaje',
               line : linea,
               value : v!=''?v:''
           });
-          v = montoVentaEquipo.monto
-          log.debug('vmontoProductividad',v)
+          
+          v = ventaEquipo.monto>0?ventaEquipo.monto:0
+          subtotal+=parseInt(v)
           sublist.setSublistValue({
               id : 'custentity_venta_equipo',
               line : linea,
-              value : v!=0?v:0
+              value : v
           });
           
         }
+        var v = subtotal>0?subtotal:0
+        log.debug('subtotal v',v)
+          sublist.setSublistValue({
+              id : 'custentity_total',
+              line : linea,
+              value : v
+          });
         return fillTable;
 
     }
@@ -638,25 +652,25 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
         var sum=0
         var t_venta_propia=ventasPropias.data.length
         var venta_equipo = 0
-        log.debug('t_venta_propia',t_venta_propia)
-        log.debug('conf',conf)
+        //log.debug('t_venta_propia',t_venta_propia)
+        //log.debug('conf',conf)
         for(n in integrantesEquipo){
             var ventasint= thisPeriodSO[integrantesEquipo[n]]
-            log.debug('ventasint',ventasint)
+            //log.debug('ventasint',ventasint)
             if(ventasint){
-                log.debug('ventasint length',ventasint.length)
+               // log.debug('ventasint length',ventasint.length)
                 sum += ventasint.length
             }
         }
-        log.debug('sum',sum)
+        //log.debug('sum',sum)
             for ( i in compConfigDetails[1]['esquemaVentasJefaGrupo']['propias'] ){
                 var desde = compConfigDetails[1]['esquemaVentasJefaGrupo']['propias'][i]['desde']
                 var hasta = compConfigDetails[1]['esquemaVentasJefaGrupo']['propias'][i]['hasta']
-                log.debug('desde',desde)
-                log.debug('hasta',hasta)
+                //log.debug('desde',desde)
+                //log.debug('hasta',hasta)
                 if (t_venta_propia >= desde && t_venta_propia <= hasta){
                     porcentaje = compConfigDetails[1]['esquemaVentasJefaGrupo']['propias'][i]['porcentaje']
-                    log.debug('porcentaje',porcentaje)
+                   // log.debug('porcentaje',porcentaje)
                     break;
                 }
             }
@@ -670,7 +684,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                           var desde= compConfigDetails[conf]['esquemaVentasJefaGrupo']['grupo'][num_]['desde']
                         if(sum >= desde && sum <= hasta){
                           venta_equipo = (compConfigDetails[conf]['esquemaVentasJefaGrupo']['grupo'][num_]['compensacion'])*(parseInt(porcentaje)/100)
-                          log.debug('venta_equipo',venta_equipo)
+                         // log.debug('venta_equipo',venta_equipo)
                            break;
                         }
                       }
@@ -701,10 +715,9 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
       
       // bono_productividad = CompConfigDetails['1']['esquemaVentasPresentadora'][total_venta_p]['bonoProductividad']
       var montoProductividad= compConfigDetails[1]['esquemaVentasPresentadora'][ventasNo]['bonoProductividad']
-      log.debug('montoProductividad', montoProductividad)
+      //log.debug('montoProductividad', montoProductividad)
             //monto: Monto de cal cof a partir del numero de ventas 
             //data: Arreglo de Internal id de Sales Order del EMP
-
         return {monto:montoProductividad, data:data}
       
 
@@ -958,8 +971,6 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                     ordenesSupercomisionTotal.push(ordenesSCintegrante)
                 } 
             }
-            
-
         });
            //log.debug('ordenesSupercomisionTotal',ordenesSupercomisionTotal)
             for(x in ordenesSupercomisionTotal){
@@ -1363,17 +1374,17 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             
                    var id = r.getValue('custrecord_id')
                    //log.debug('id',id)
-                   artComisionables.push(id)
+                   artComisionables.push(parseInt(id))
                 });
             });
-            log.debug('artComisionables',artComisionables)
+            log.debug('artComisionables',artComisionables.join(", "))
             // -fix
            const salesOrderSearchFilters = [
                 ['type', 'anyof', 'SalesOrd'],
                 'AND',
                 ['item', 'noneof', '920'],
                 'AND',
-                ['item', 'anyof', JSON.stringify(artComisionables)],
+                ['item', 'anyof', artComisionables.join(", ")],
                 'AND',
                 ['account', 'anyof', '124'],
                 'AND',
@@ -1381,7 +1392,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 'AND',
                 ['trandate', 'after', Utils.dateToString(dHistorico)],
                 'AND',
-                ['mainline', 'is', 'T'],
+                ['mainline', 'is', 'F'],
                 'AND',
                 ['salesrep.custentity_estructura_virtual', 'is', 'F'],
             ];
