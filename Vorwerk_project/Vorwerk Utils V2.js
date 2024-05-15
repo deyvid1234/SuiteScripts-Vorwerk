@@ -6,7 +6,85 @@ function(record, search, runtime, format, query) {
     function getLog(scriptName){
         log.debug('llamado correcto de utils',scriptName)
     }
+    function getConf(configuracion){
+        log.debug('entre utils',configuracion)
+        var x=configuracion.split(',')
+        log.debug('x',x)
+        var conf
+        for(n in x){
+            log.debug('configuracion[n] for desde utils',configuracion[n])
+            switch(configuracion[n]){
+                case '1':
+                    conf = 1
+                    break;
+                case '5': 
+                    conf = 5
+                    break;
+                case '6': 
+                    conf = 6
+                    break;
+                case '7': 
+                    conf = 7
+                    break;
+                case '8': 
+                    conf = 8
+                    break;
+                case '11': 
+                    conf = 11
+                    break;
+                case '12': 
+                    conf = 12
+                    break;
+                case '13': 
+                    conf = 13
+                    break;
+            }
+        }
+        return conf
+    }
+    function getObjPeriod(idPeriod){
+            var currentDate = new Date(),
+                currentYear = currentDate.getFullYear();
+            var fDate = format.format({value:currentDate,type:format.Type.DATE});
+            var monthlyPeriod = search.create({
+                type: 'customrecord_periods',
+                columns: [
+                    { name: 'internalid'},
+                    { name: 'custrecord_inicio'},
+                    { name: 'custrecord_final'},
+                    { name: 'custrecord_cerrado'},
+                    { name: 'custrecord_calendario'},
 
+                ],
+                filters: [
+                    {
+                        name: 'internalid',
+                        operator: 'anyof',
+                        values: idPeriod
+                    }
+                    /*{
+                        name: 'custrecord_inicio',
+                        operator: 'onorafter',
+                        values: fDate
+                    },
+                    {
+                        name: 'custrecord_final',
+                        operator: 'onorbefore',
+                        values: fDate
+                    }*/
+                ]
+            });
+            var objReturn = {};
+            monthlyPeriod.run().each(function(r){
+                objReturn['internalid'] = r.getValue('internalid'),
+                objReturn['startDate'] = r.getValue('custrecord_inicio'),
+                objReturn['endDate'] = r.getValue('custrecord_final'),
+                objReturn['isClosed'] = r.getValue('custrecord_cerrado'),
+                objReturn['parentCalendar'] = r.getValue('custrecord_calendario');
+                return true;
+            });
+            return objReturn;
+        }
     //Inicia bbusqueda de configuraciones
     function getObjCompConfigDetails(){
         var objCompensationConfig = this.getCompensationConfig();
@@ -291,6 +369,7 @@ function(record, search, runtime, format, query) {
 
     return {
         getLog: getLog,
+        getConf:getConf,
         dateToString:dateToString,
         stringToDate:stringToDate,
         restarMeses:restarMeses,
