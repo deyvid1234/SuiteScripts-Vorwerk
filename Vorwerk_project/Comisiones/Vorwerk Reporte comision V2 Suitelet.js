@@ -261,7 +261,6 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                     var dataEmp = allPresentadoras[i]
                     var empConfiguracion = allPresentadoras[i].emp_conf
                     var conf=Utils.getConf(empConfiguracion);
-                    log.debug('conf que viene de utils',conf)
 
                     var montoComisionCK= false
                     var fVentasPropias = false
@@ -281,10 +280,8 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                     
                     switch(tipoReporteGloobal){
                         case 1: //Reporte LE
-                            if(empType == 3 && empPromo == 2 /*&& allPresentadoras[i].internalid == '12531'*/){
+                            if(empType == 3 && empPromo == 2 /*&& allPresentadoras[i].internalid == '11512'*/){
                                 //Calcular reporte para la persona
-                                log.debug('empConfiguracion',empConfiguracion)
-                                log.debug('conf antes de bonos',conf)
                                 var reclutas=listaReclutas[i]
                                 var integrantesEquipo=listaGrupos[i]   
                                 var reclutasEquipo=listaEquipoRecluta[i]
@@ -303,7 +300,8 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                                 montoCincoDos = bonoCincoDos(dataEmp,reclutasEquipo,thisPeriodSO,ventasEmp,historicoSO,allPresentadoras,dHistorico,integrantesEquipo)
                                 montoProductividad = bonoProductividad(dataEmp,ventasEmp,compConfigDetails)
                                 log.debug('montoProductividad',montoProductividad)
-                                montoVentaEquipo = bonoVentaEquipo(fVentasPropias,compConfigDetails,dataEmp,conf)
+                                montoVentaEquipo = bonoVentaEquipo(fVentasPropias,compConfigDetails,dataEmp,conf,integrantesEquipo,thisPeriodSO)
+                                log.debug('montoVentaEquipo',montoVentaEquipo)
                                 /*
 
                                 
@@ -324,7 +322,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                                 */
                                 // -fix El contador no debe incrementar antes de agregar datos en la linea, Debes declararlo en 0 e incrementar al final de la funcion fill
                                 
-                                fillTable(sublist,dataEmp,fVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,montoSupercomision,montoReclutamiento,montoEntrega,montoTresDos,montoCincoDos,montoProductividad)
+                                fillTable(sublist,dataEmp,fVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,montoSupercomision,montoReclutamiento,montoEntrega,montoTresDos,montoCincoDos,montoProductividad,montoVentaEquipo)
                                 cont_line++
                             }
 
@@ -387,7 +385,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
           log.debug('creditos 2',runtime.getCurrentScript().getRemainingUsage()); 
         }   
     }//Fin sublista
-    function fillTable(sublist,dataEmp,ventasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,montoSupercomision,montoReclutamiento,montoEntrega,montoTresDos,montoCincoDos,montoProductividad){
+    function fillTable(sublist,dataEmp,ventasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,montoSupercomision,montoReclutamiento,montoEntrega,montoTresDos,montoCincoDos,montoProductividad,montoVentaEquipo){
         var linea = cont_line
         sublist.setSublistValue({
               id : 'nombre',
@@ -613,47 +611,75 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
           });
           
         }
+        if(montoVentaEquipo){
+          //log.debug('bonoReclutamiento filltable')
+          v = montoVentaEquipo.porcentaje
+          log.debug('vmontoProductividad',v)
+          sublist.setSublistValue({
+              id : 'custentity_porcentaje',
+              line : linea,
+              value : v!=''?v:''
+          });
+          v = montoVentaEquipo.monto
+          log.debug('vmontoProductividad',v)
+          sublist.setSublistValue({
+              id : 'custentity_venta_equipo',
+              line : linea,
+              value : v!=0?v:0
+          });
+          
+        }
         return fillTable;
 
     }
-    function bonoVentaEquipo(ventasPropias,compConfigDetails,dataEmp,conf){
+    function bonoVentaEquipo(ventasPropias,compConfigDetails,dataEmp,conf,integrantesEquipo,thisPeriodSO){
         try{
-            var porcentaje
-            var sum=0
-            var t_venta_propia=ventasPropias.data.length
-            
-            log.debug('conf',conf)
-                for ( i in compConfigDetails[1]['esquemaVentasJefaGrupo']['propias'] ){
-                        var desde = compConfigDetails[1]['esquemaVentasJefaGrupo']['propias'][i]['desde']
-                        var hasta = compConfigDetails[1]['esquemaVentasJefaGrupo']['propias'][i]['hasta']
-                        log.debug('desde',desde)
-                        log.debug('hasta',hasta)
-                    if (t_venta_propia >= desde && t_venta_propia <= hasta){
-                        porcentaje = compConfigDetails[1]['esquemaVentasJefaGrupo']['propias'][i]['porcentaje']
-                        log.debug('porcentaje',porcentaje)
-                        break;
-                    }
-                }
-                    
-                if(t_venta_propia >0 ){
-                    num_=Object.keys(compConfigDetails[conf]['esquemaVentasJefaGrupo']['grupo'])
-                    inf=compConfigDetails[conf]['esquemaVentasJefaGrupo']['grupo']
-                    for(num_ in inf ){//Recorre la configuracion hasta entrar en el rango de ventas
-                        var hasta= compConfigDetails[conf]['esquemaVentasJefaGrupo']['grupo'][num_]['hasta']
-                        var desde= compConfigDetails[conf]['esquemaVentasJefaGrupo']['grupo'][num_]['desde']
-                        if(sum >= desde && sum <= hasta){
-                            venta_equipo = (compConfigDetails[conf]['esquemaVentasJefaGrupo']['grupo'][num_]['compensacion'])*(parseInt(porcentaje)/100)
-                            log.debug('venta_equipo',venta_equipo)
-                            break;
-                        }
-                    }
-                       
-                }
-                          
-        }catch(e){
-            log.debug('error odv pre  ', e)
+        var porcentaje
+        var sum=0
+        var t_venta_propia=ventasPropias.data.length
+        var venta_equipo = 0
+        log.debug('t_venta_propia',t_venta_propia)
+        log.debug('conf',conf)
+        for(n in integrantesEquipo){
+            var ventasint= thisPeriodSO[integrantesEquipo[n]]
+            log.debug('ventasint',ventasint)
+            if(ventasint){
+                log.debug('ventasint length',ventasint.length)
+                sum += ventasint.length
+            }
         }
-            return true
+        log.debug('sum',sum)
+            for ( i in compConfigDetails[1]['esquemaVentasJefaGrupo']['propias'] ){
+                var desde = compConfigDetails[1]['esquemaVentasJefaGrupo']['propias'][i]['desde']
+                var hasta = compConfigDetails[1]['esquemaVentasJefaGrupo']['propias'][i]['hasta']
+                log.debug('desde',desde)
+                log.debug('hasta',hasta)
+                if (t_venta_propia >= desde && t_venta_propia <= hasta){
+                    porcentaje = compConfigDetails[1]['esquemaVentasJefaGrupo']['propias'][i]['porcentaje']
+                    log.debug('porcentaje',porcentaje)
+                    break;
+                }
+            }
+                
+                  
+                      if(t_venta_propia >0 ){
+                      num_=Object.keys(compConfigDetails[conf]['esquemaVentasJefaGrupo']['grupo'])
+                      inf=compConfigDetails[conf]['esquemaVentasJefaGrupo']['grupo']
+                      for(num_ in inf ){//Recorre la configuracion hasta entrar en el rango de ventas
+                        var hasta= compConfigDetails[conf]['esquemaVentasJefaGrupo']['grupo'][num_]['hasta']
+                          var desde= compConfigDetails[conf]['esquemaVentasJefaGrupo']['grupo'][num_]['desde']
+                        if(sum >= desde && sum <= hasta){
+                          venta_equipo = (compConfigDetails[conf]['esquemaVentasJefaGrupo']['grupo'][num_]['compensacion'])*(parseInt(porcentaje)/100)
+                          log.debug('venta_equipo',venta_equipo)
+                           break;
+                        }
+                      }
+                    }
+                      
+                  }catch(e){
+                      log.debug('bonoVentaEquipo ', e)
+                  }
+        return {monto:venta_equipo, porcentaje:porcentaje}
 
     }
     function bonoProductividad(dataEmp,ventasEmp,compConfigDetails){
@@ -1113,7 +1139,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             }
             var ventasNo = dataEnt.length
                     
-             parseInt(ventasNo)*500
+            montoEntrega=parseInt(ventasNo)*500
                                     
         }else if (cust_entrega == 2){
             log.debug('No pagar entrega')
@@ -1655,7 +1681,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             //Campos compartidos
             sublist.addField({
                 id: 'custentity_reclutas',
-                type: serverWidget.FieldType.TEXT,
+                type: serverWidget.FieldType.TEXTAREA,
                 label: 'Reclutas'
             }).updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
                

@@ -7,13 +7,10 @@ function(record, search, runtime, format, query) {
         log.debug('llamado correcto de utils',scriptName)
     }
     function getConf(configuracion){
-        log.debug('entre utils',configuracion)
         var x=configuracion.split(',')
-        log.debug('x',x)
         var conf
         for(n in x){
-            log.debug('configuracion[n] for desde utils',configuracion[n])
-            switch(configuracion[n]){
+            switch(x[n]){
                 case '1':
                     conf = 1
                     break;
