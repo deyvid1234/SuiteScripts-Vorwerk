@@ -1436,7 +1436,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                    
                 ],
             });*/
-           var searchSalesOrder = search.load({
+           /*var searchSalesOrder = search.load({
                 id: 'customsearch2180'
             });
             
@@ -1490,52 +1490,65 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 });
                       
             });
-            /*log.debug('pre query')
-            var myTransactionQuery = query.create({
-                type: query.Type.TRANSACTION
-            });
-
             
-            myTransactionQuery.condition = myTransactionQuery.createCondition({
-                fieldId: 'type',
-                operator: query.Operator.IS,
-                values: "SalesOrd",
-            });
-            myTransactionQuery.condition = myTransactionQuery.createCondition({
-                fieldId: 'custbody_tipo_venta',
-                operator: query.Operator.ANY_OF,
-                values: ['2', '19', '1']
-            });
-            myTransactionQuery.condition = myTransactionQuery.createCondition({
+            */
+
+            var myLoadedQuery = query.load({ id: 'custworkbook3'}); 
+
+            /* Ejemplo agregar filtro - Pierde main line
+            myLoadedQuery.condition = myLoadedQuery.createCondition({
                 fieldId: 'trandate',
                 operator: query.Operator.AFTER,
                 values: Utils.dateToString(dHistorico)
-            });
-            
-
-            myTransactionQuery.columns = [
-                myTransactionQuery.createColumn({ fieldId: "id" }),
-                myTransactionQuery.createColumn({ fieldId: "custbody_vw_recruiter" }),
-            ];
-
-
-            var  mySQLCustomerQuery = myTransactionQuery.toSuiteQL();
-
-
-            var results = mySQLCustomerQuery.run();
-           
-            log.debug('results',results) ;
-
-
-            var pagedResults = mySQLCustomerQuery.runPaged();
-            pagedResults.pageRanges.forEach(function (pageRange){
-                var currentPage = pagedResults.fetch({index: pageRange.index});
-                currentPage.data.forEach(function (r) {
-                    log.debug('test query',r)
-                    log.debug('test query value',r.value)
-                });
-                      
             });*/
+
+
+            var mySuiteQLQuery = myLoadedQuery.toSuiteQL();
+            var myResultSet = mySuiteQLQuery.run();
+            var results = myResultSet.asMappedResults();
+
+            log.debug('results Search SO',results)
+            log.debug('Total SO',Object.keys(results).length)
+            
+            var historicoSO = {}
+            var thisPeriodSO = {}
+            for(t in results){
+                var dateSO = Utils.stringToDate(results[t].trandate)
+                   
+                var objSO = new Object();
+                objSO.internalid = results[t].id
+                objSO.trandate = results[t].trandate
+                //objSO.tranid = r.getValue('tranid')
+                objSO.entity = results[t].entity
+                objSO.salesrep = results[t].id_1
+                objSO.custbody_tipo_venta = results[t].custbody_tipo_venta
+                objSO.custbody_vw_comission_status = results[t].custbody_vw_comission_status
+                objSO.custbody_otro_financiamiento = results[t].custbody_otro_financiamiento
+                objSO.custbody_vw_recruiter = results[t].custbody_vw_recruiter
+               
+                ///log.debug('objSO',objSO)
+
+                var idSO = {}
+                idSO[objSO.internalid] = objSO 
+                if(dateSO >= inicioPeriodoDate && dateSO <= finPeriodoDate){
+                    //log.debug('esta fecha es del periodo calculado',dateSO)
+                    if(thisPeriodSO.hasOwnProperty(objSO.salesrep)){
+                        thisPeriodSO[objSO.salesrep].push(idSO)
+                    }else{
+                        thisPeriodSO[objSO.salesrep] = [idSO]  
+                    }
+
+                }else if(dateSO < inicioPeriodoDate){
+                    //log.debug('Esta fecha es Historicio',dateSO)
+                    if(historicoSO.hasOwnProperty(objSO.salesrep)){
+                        historicoSO[objSO.salesrep].push(idSO)
+                    }else{
+                        historicoSO[objSO.salesrep] = [idSO]  
+                    }
+                }
+
+            }
+            
 
             
             return {historicoSO:historicoSO,thisPeriodSO:thisPeriodSO,dHistorico:dHistorico}
