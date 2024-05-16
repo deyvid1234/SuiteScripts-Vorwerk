@@ -826,9 +826,11 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
            equipoActivas52=Object.keys(salesOrdersEq)//presentadoras que son equipo activas
            //log.debug('preActivas52',preActivas52)
            //log.debug('equipoActivas52',equipoActivas52)
-           if(ventasEmp.length>4 && equipoActivas52.length >= 2 && preActivas52.length > 0){
-            monto = 8000
-           }
+           if(ventasEmp){
+               if(ventasEmp.length>4 && equipoActivas52.length >= 2 && preActivas52.length > 0){
+                monto = 8000
+               }
+            }   
         } 
         return {monto:monto, data:preActivas52,equipo:equipoActivas52} 
     }catch(e){
@@ -921,10 +923,13 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
            preActivas= Object.keys(salesOrders)//presentadoras que son recluta y equipo activas
            equipoActivas=Object.keys(salesOrdersEq)//presentadoras que son equipo activas
            //log.debug('preActivas',preActivas)
-           //log.debug('equipoActivas',equipoActivas)
-           if(ventasEmp.length> 2 && ventasEmp.length<5 && equipoActivas.length >= 2 && preActivas.length > 0){
+           log.debug('ventasEmp',ventasEmp)
+           if(ventasEmp){
+            if(ventasEmp.length> 2 && ventasEmp.length<5 && equipoActivas.length >= 2 && preActivas.length > 0){
             monto = 5000
            }
+           }
+           
         }   
         return {monto:monto, data:preActivas,equipo:equipoActivas} 
     }catch(e){
