@@ -47,7 +47,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                     custpage_entrega.defaultValue = cust_entrega;
                       
 
-                    log.debug('Filtros','Tipo : '+cust_type+' Promocion : '+cust_promo+' Periodo : '+cust_period+' Entrega : '+cust_entrega)
+                    log.audit('Filtros','Tipo : '+cust_type+' Promocion : '+cust_promo+' Periodo : '+cust_period+' Entrega : '+cust_entrega)
                     try{
                         sublista(form,cust_type,cust_promo,cust_period,cust_entrega,compConfigDetails);
                         
@@ -243,6 +243,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             if(cust_type == 3 && cust_promo == 2 ){//LE y tm Propia 
                 log.debug('Generar Reporte LE')
                 tipoReporteGloobal = 1
+                listadoEmployee = 
             } else if(cust_type== 1 && cust_promo == 2){//Presentador y tm propia 
                 log.debug('Generar Reporte Presentador')
                 tipoReporteGloobal = 2
@@ -1331,7 +1332,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 });
                       
             });
-            log.debug('nombradsPor',nombradsPor)
+            //log.debug('nombradsPor',nombradsPor)
             //log.debug('empGrupos',empGrupos)
             //log.debug('allPresentadorData',allPresentadorData)
 
