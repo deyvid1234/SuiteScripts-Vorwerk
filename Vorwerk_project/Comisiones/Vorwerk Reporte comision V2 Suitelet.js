@@ -712,7 +712,8 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
 
     }
     function bonoProductividad(dataEmp,ventasEmp,compConfigDetails){
-      var config=dataEmp.emp_conf
+    try{
+       var config=dataEmp.emp_conf
       var ventas = ventasEmp
       //log.debug('ventas',ventas)
       var data = []
@@ -733,12 +734,15 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
       //log.debug('montoProductividad', montoProductividad)
             //monto: Monto de cal cof a partir del numero de ventas 
             //data: Arreglo de Internal id de Sales Order del EMP
-        return {monto:montoProductividad, data:data}
+        return {monto:montoProductividad, data:data} 
+    }catch(e){
+        log.debug('Error bono productividad', e)
+    }
       
-
     }
     function bonoCincoDos(dataEmp,reclutasEquipo,thisPeriodSO,ventasEmp,historicoSO,allPresentadoras,dHistorico,integrantesEquipo){
-        var lider= dataEmp.internalid        
+    try{
+       var lider= dataEmp.internalid        
         var salesOrders={}
         var salesOrdersEq={}
         var preActivas52=''
@@ -826,10 +830,15 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             monto = 8000
            }
         } 
-        return {monto:monto, data:preActivas52,equipo:equipoActivas52}
+        return {monto:monto, data:preActivas52,equipo:equipoActivas52} 
+    }catch(e){
+        log.debug('error 5+2',e)
+    }    
+        
     }
     function bonotresdos(dataEmp,reclutasEquipo,thisPeriodSO,ventasEmp,historicoSO,allPresentadoras,dHistorico,integrantesEquipo){
-        var lider= dataEmp.internalid
+    try{
+       var lider= dataEmp.internalid
         var salesOrders={}
         var salesOrdersEq={}
         var preActivas=''
@@ -917,10 +926,15 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             monto = 5000
            }
         }   
-        return {monto:monto, data:preActivas,equipo:equipoActivas}
+        return {monto:monto, data:preActivas,equipo:equipoActivas} 
+    }catch(e){
+        log.debug('error 3+2',e)
+    }    
+        
     }
    function bonoSupercomision(integrantesEquipo,historicoSO,thisPeriodSO,allPresentadoras,dHistorico){
-        var ventasNo =0
+    try{
+      var ventasNo =0
         var montoSC=0
         var ventasPeriodo=[]
         var ordenesSupercomisionTotal=[]
@@ -1008,7 +1022,11 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
         //log.debug('montoSC',montoSC)
         //log.debug('ventasPeriodo',ventasPeriodo)
         //log.debug('ventasNo',ventasNo)
-        return  {monto:montoSC, data:ventasPeriodo, ventasNo:ventasNo}; 
+        return  {monto:montoSC, data:ventasPeriodo, ventasNo:ventasNo};  
+    }catch(e){
+        log.debug('error Supercomision', e)
+    }
+         
     }
     /*function bonoCincoDos(tipoReporte){
 
@@ -1028,6 +1046,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
     }*/
 
     function bonoReclutamiento(reclutas,historicoSO,thisPeriodSO,dataEmp,compConfigDetails,allPresentadoras,dHistorico){
+    try{
        // log.debug('reclutas lista ',dataEmp)
         var totalVentas= 0
         var bono_reclutadora =0
@@ -1130,7 +1149,11 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
          // log.debug('esta presentadora no tiene reclutas: '+dataEmp.internalid)
 
         }
-        return  {monto:bono_reclutadora, data:ordenes};
+        return  {monto:bono_reclutadora, data:ordenes}; 
+    }catch(e){
+        log.debug('error reclutamiento',e)
+    }                          
+       
 
     }
     /*function bonoGarantia(tipoReporte){
@@ -1149,6 +1172,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
 
     }*/
     function bonoEntrega(dataEmp,empSOThisPeriod,cust_entrega){
+    try{
         //log.debug('cust_entrega',cust_entrega)
         var dataEnt = []
         var montoEntrega=0
@@ -1176,12 +1200,14 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             //data: Arreglo de Internal id de Sales Order del EMP
 
         return {monto:montoEntrega, data:dataEnt}
-      
+    }catch(e){
+        log.debug('error entrega',e)
+    }
 
     }
     function bonoVentaPropia(dataEmp,empSOThisPeriod,compConfigDetails){
-      
-      var ventas = empSOThisPeriod
+    try{
+       var ventas = empSOThisPeriod
       //log.debug('ventas',ventas)
       var data = []
       for (i in ventas){
@@ -1202,7 +1228,12 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             //monto: Monto de cal cof a partir del numero de ventas 
             //data: Arreglo de Internal id de Sales Order del EMP
 
-        return {monto:montoVentasPre, data:data}
+        return {monto:montoVentasPre, data:data} 
+    }catch(e){
+        log.debug('error venta propia',e)
+    }
+      
+      
       
 
     }
