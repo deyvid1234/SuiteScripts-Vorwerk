@@ -1525,19 +1525,60 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             });
             
             */
+            var historicoSO = {}
+            var thisPeriodSO = {}
 
             var myLoadedQuery = query.load({ id: 'custworkbook3'}); 
 
-            /* Ejemplo agregar filtro - Pierde main line
-            myLoadedQuery.condition = myLoadedQuery.createCondition({
-                fieldId: 'trandate',
-                operator: query.Operator.AFTER,
-                values: Utils.dateToString(dHistorico)
-            });*/
-
-
             var mySuiteQLQuery = myLoadedQuery.toSuiteQL();
-            var myResultSet = mySuiteQLQuery.run();
+
+            var pagedResults = query.runSuiteQLPaged({
+                query: mySuiteQLQuery.query,
+                params: mySuiteQLQuery.params,
+                pageSize: 1000
+            });
+
+            pagedResults.pageRanges.forEach(function (pageRange){
+                var currentPage = pagedResults.fetch({index: pageRange.index});
+                currentPage.data.asMappedResults().forEach(function (r) {
+                    var dateSO = Utils.stringToDate(r.trandate)
+                   
+                    var objSO = new Object();
+                    objSO.internalid = r.id
+                    objSO.trandate = r.trandate
+                    objSO.tranid = r.tranid
+                    objSO.entity = r.entity
+                    objSO.salesrep = r.id_1
+                    objSO.custbody_tipo_venta = r.custbody_tipo_venta
+                    objSO.custbody_vw_comission_status = r.custbody_vw_comission_status
+                    objSO.custbody_otro_financiamiento = r.custbody_otro_financiamiento
+                    objSO.custbody_vw_recruiter = r.custbody_vw_recruiter
+                   
+                    ///log.debug('objSO',objSO)
+
+                    var idSO = {}
+                    idSO[objSO.internalid] = objSO 
+                    if(dateSO >= inicioPeriodoDate && dateSO <= finPeriodoDate){
+                        //log.debug('esta fecha es del periodo calculado',dateSO)
+                        if(thisPeriodSO.hasOwnProperty(objSO.salesrep)){
+                            thisPeriodSO[objSO.salesrep].push(idSO)
+                        }else{
+                            thisPeriodSO[objSO.salesrep] = [idSO]  
+                        }
+
+                    }else if(dateSO < inicioPeriodoDate){
+                        //log.debug('Esta fecha es Historicio',dateSO)
+                        if(historicoSO.hasOwnProperty(objSO.salesrep)){
+                            historicoSO[objSO.salesrep].push(idSO)
+                        }else{
+                            historicoSO[objSO.salesrep] = [idSO]  
+                        }
+                    }
+                });
+                      
+            });
+
+            /*
             var results = myResultSet.asMappedResults();
 
             log.debug('results Search SO',results)
@@ -1545,44 +1586,35 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             
             var historicoSO = {}
             var thisPeriodSO = {}
-            for(t in results){
-                var dateSO = Utils.stringToDate(results[t].trandate)
-                   
-                var objSO = new Object();
-                objSO.internalid = results[t].id
-                objSO.trandate = results[t].trandate
-                objSO.tranid = results[t].tranid
-                objSO.entity = results[t].entity
-                objSO.salesrep = results[t].id_1
-                objSO.custbody_tipo_venta = results[t].custbody_tipo_venta
-                objSO.custbody_vw_comission_status = results[t].custbody_vw_comission_status
-                objSO.custbody_otro_financiamiento = results[t].custbody_otro_financiamiento
-                objSO.custbody_vw_recruiter = results[t].custbody_vw_recruiter
-               
-                ///log.debug('objSO',objSO)
+           
 
-                var idSO = {}
-                idSO[objSO.internalid] = objSO 
-                if(dateSO >= inicioPeriodoDate && dateSO <= finPeriodoDate){
-                    //log.debug('esta fecha es del periodo calculado',dateSO)
-                    if(thisPeriodSO.hasOwnProperty(objSO.salesrep)){
-                        thisPeriodSO[objSO.salesrep].push(idSO)
-                    }else{
-                        thisPeriodSO[objSO.salesrep] = [idSO]  
-                    }
-
-                }else if(dateSO < inicioPeriodoDate){
-                    //log.debug('Esta fecha es Historicio',dateSO)
-                    if(historicoSO.hasOwnProperty(objSO.salesrep)){
-                        historicoSO[objSO.salesrep].push(idSO)
-                    }else{
-                        historicoSO[objSO.salesrep] = [idSO]  
-                    }
-                }
-
-            }
             
 
+            var myLoadedQuery = query.load({ id: 'custworkbook3'}); 
+            log.debug('myLoadedQuery',myLoadedQuery)
+            var mySuiteQLQuery = myLoadedQuery.toSuiteQL();
+            log.debug('mySuiteQLQuery',mySuiteQLQuery)
+
+            log.debug('mySuiteQLQuery.query',mySuiteQLQuery.query)
+            var objPagedData = query.runSuiteQLPaged({
+                query: mySuiteQLQuery.query,
+                params: mySuiteQLQuery.params,
+                pageSize: 1000
+            });
+
+            var arrResults = [];
+            objPagedData.pageRanges.forEach(function(pageRange) {
+                //fetch
+                var objPage = objPagedData.fetch({
+                    index: pageRange.index
+                }).data;
+                // Map results to columns
+                arrResults.push.apply(arrResults, objPage.asMappedResults());
+            });
+            log.debug('arrResults',arrResults)
+            
+            log.debug('Total arrResults',Object.keys(arrResults).length)
+            */
             
             return {historicoSO:historicoSO,thisPeriodSO:thisPeriodSO,dHistorico:dHistorico}
         }catch(e){
