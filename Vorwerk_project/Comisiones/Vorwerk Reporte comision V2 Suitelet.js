@@ -243,7 +243,6 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             if(cust_type == 3 && cust_promo == 2 ){//LE y tm Propia 
                 log.debug('Generar Reporte LE')
                 tipoReporteGloobal = 1
-                listadoEmployee = 
             } else if(cust_type== 1 && cust_promo == 2){//Presentador y tm propia 
                 log.debug('Generar Reporte Presentador')
                 tipoReporteGloobal = 2
@@ -251,6 +250,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 log.debug('Generar Reporte Trabaja x TM')
                 tipoReporteGloobal = 3  
             }
+
             var cont_line = 0
 
             for(i in thisPeriodSO){
