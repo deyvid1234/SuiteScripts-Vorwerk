@@ -280,7 +280,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                     
                     switch(tipoReporteGloobal){
                         case 1: //Reporte LE
-                            if(empType == 3 && empPromo == 2 /*&& allPresentadoras[i].internalid == '11512'*/){
+                            if(empType == 3 && empPromo == 2 /*&& allPresentadoras[i].internalid == '640993'*/){
                                 //Calcular reporte para la persona
                                 var reclutas=listaReclutas[i]
                                 var integrantesEquipo=listaGrupos[i]   
@@ -321,8 +321,9 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                                 
                                 
                                 */
-                                // -fix El contador no debe incrementar antes de agregar datos en la linea, Debes declararlo en 0 e incrementar al final de la funcion fill
                                 
+                                fillTable(sublist,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objSupercomision,objReclutamiento,objEntrega,objTresDos,objCincoDos,objProductividad,objVentaEquipo)
+                                cont_line++
                                 
                             }
 
@@ -368,8 +369,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                             }
                         break;
                     }
-                    fillTable(sublist,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objSupercomision,objReclutamiento,objEntrega,objTresDos,objCincoDos,objProductividad,objVentaEquipo)
-                                cont_line++
+                    
                 }
                 
             }
@@ -652,25 +652,38 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
         var sum=0
         var t_venta_propia=ventasPropias.data.length
         var venta_equipo = 0
-        //log.debug('t_venta_propia',t_venta_propia)
-        //log.debug('conf',conf)
+        log.debug('t_venta_propia',t_venta_propia)
+        log.debug('conf',conf)
         for(n in integrantesEquipo){
+            var ventas=[]
             var ventasint= thisPeriodSO[integrantesEquipo[n]]
-            //log.debug('ventasint',ventasint)
-            if(ventasint){
-               // log.debug('ventasint length',ventasint.length)
-                sum += ventasint.length
+            for(x in ventasint){
+                var key = Object.keys(ventasint[x])
+                var tipoVenta=ventasint[x][key]['custbody_tipo_venta'] 
+                log.debug('key',key)
+                log.debug('tipoVenta',tipoVenta)
+                if(tipoVenta!=1){
+                ventas.push(key)
+                }
+            }
+            
+            log.debug('ventasint',ventasint)
+            
+            log.debug('ventas',ventas)
+            if(ventas!=''){
+               log.debug('ventas length',ventas.length)
+                sum += ventas.length
             }
         }
-        //log.debug('sum',sum)
+        log.debug('sum',sum)
             for ( i in compConfigDetails[1]['esquemaVentasJefaGrupo']['propias'] ){
                 var desde = compConfigDetails[1]['esquemaVentasJefaGrupo']['propias'][i]['desde']
                 var hasta = compConfigDetails[1]['esquemaVentasJefaGrupo']['propias'][i]['hasta']
-                //log.debug('desde',desde)
-                //log.debug('hasta',hasta)
+                log.debug('desde',desde)
+                log.debug('hasta',hasta)
                 if (t_venta_propia >= desde && t_venta_propia <= hasta){
                     porcentaje = compConfigDetails[1]['esquemaVentasJefaGrupo']['propias'][i]['porcentaje']
-                   // log.debug('porcentaje',porcentaje)
+                    log.debug('porcentaje',porcentaje)
                     break;
                 }
             }
@@ -684,7 +697,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                           var desde= compConfigDetails[conf]['esquemaVentasJefaGrupo']['grupo'][num_]['desde']
                         if(sum >= desde && sum <= hasta){
                           venta_equipo = (compConfigDetails[conf]['esquemaVentasJefaGrupo']['grupo'][num_]['compensacion'])*(parseInt(porcentaje)/100)
-                         // log.debug('venta_equipo',venta_equipo)
+                         log.debug('venta_equipo',venta_equipo)
                            break;
                         }
                       }
@@ -911,6 +924,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
         var ordenesSupercomisionTotal=[]
         if(integrantesEquipo){
             integrantesEquipo.forEach(function(i,index) {
+                //log.debug('integrante',i)
             var hiredate=allPresentadoras[i]['hiredate']
             var reactivacion=allPresentadoras[i]['fechaReactivacion']
             var conf=allPresentadoras[i]['conf_reclutamiento']
@@ -931,6 +945,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 dcontratacion = Utils.stringToDate(hiredate)
             }else{
                 dcontratacion = Utils.stringToDate(reactivacion)
+                dObjetivo2=allPresentadoras[i]['obj_2_reactivacion']
             }
             if(dcontratacion > dHistorico){
                 var ventasHistorico
@@ -941,7 +956,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 }
                 //log.debug('ventasHistorico',ventasHistorico)
                 var ordenesSCintegrante=[]
-                if(thisPeriodSO.hasOwnProperty(i) && ventasHistorico < noComisiona){
+                if(thisPeriodSO[i] && ventasHistorico < noComisiona){
                     var ordenesFaltantes= noComisiona-ventasHistorico
                     
                     //log.debug('ordenesFaltantes',ordenesFaltantes)
@@ -954,8 +969,8 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                             ordenesPeriodo.push(thisPeriodSO[i][x])
                         }
                     }
-                    //log.debug('ordenesPeriodo',ordenesPeriodo)
-                    if(ordenesPeriodo.length <= ordenesFaltantes){
+                   // log.debug('ordenesPeriodo',ordenesPeriodo)
+                    if(ordenesPeriodo.length <= ordenesFaltantes  ){
                         ordenesSCintegrante = ordenesPeriodo                 
                     }else{
                         var cont = 0 
@@ -967,7 +982,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                             }
                         }
                     }
-                    //log.debug('ordenesSCintegrante',ordenesSCintegrante)
+                   // log.debug('ordenesSCintegrante',ordenesSCintegrante)
                     ordenesSupercomisionTotal.push(ordenesSCintegrante)
                 } 
             }
@@ -976,7 +991,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             for(x in ordenesSupercomisionTotal){
                 for(y in ordenesSupercomisionTotal[x]){
                     var keys = Object.keys(ordenesSupercomisionTotal[x][y])
-                    //log.debug('keys',keys)
+                    log.debug('keys',keys)
                     ventasPeriodo.push(keys)
                 }
                 //log.debug('ordenesSupercomisionTotal',ordenesSupercomisionTotal[x][y])
@@ -988,9 +1003,9 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 ventasPeriodo=''
             }                  
         }
-        /*log.debug('montoSC',montoSC)
-        log.debug('ventasPeriodo',ventasPeriodo)
-        log.debug('ventasNo',ventasNo)*/
+        //log.debug('montoSC',montoSC)
+        //log.debug('ventasPeriodo',ventasPeriodo)
+        //log.debug('ventasNo',ventasNo)
         return  {monto:montoSC, data:ventasPeriodo, ventasNo:ventasNo}; 
     }
     /*function bonoCincoDos(tipoReporte){
@@ -1011,19 +1026,19 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
     }*/
 
     function bonoReclutamiento(reclutas,historicoSO,thisPeriodSO,dataEmp,compConfigDetails,allPresentadoras,dHistorico){
-        //log.debug('reclutas lista ',dataEmp)
+        log.debug('reclutas lista ',dataEmp)
         var totalVentas= 0
         var bono_reclutadora =0
         var ordenes={}
         if(reclutas){
           reclutas.forEach(function(i,index) {
-            //log.debug('recluta', i)   
+            log.debug('recluta', i)   
             var totalVentas= 0
             var bono_rec =0 
             var ventasReclutaTP = thisPeriodSO[i];
             var ventasReclutaH = historicoSO[i];
-            //log.debug('reclutatp', ventasReclutaTP)
-            //log.debug('ventasReclutaH', ventasReclutaH)
+            log.debug('reclutatp', ventasReclutaTP)
+            log.debug('ventasReclutaH', ventasReclutaH)
             var configuracionRec = allPresentadoras[i]['conf_reclutamiento']
             var hiredate=allPresentadoras[i]['hiredate']
             var reactivacion=allPresentadoras[i]['fechaReactivacion']
@@ -1035,20 +1050,20 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             }
             if(dcontratacion > dHistorico){
                 if(configuracionRec){
-                //log.debug('configuracionRec'+i, configuracionRec);
+                log.debug('configuracionRec'+i, configuracionRec);
             }else{
                 configuracionRec=1
             }
             if(ventasReclutaTP){
-                //log.debug('recluta entra tp', i)
+                log.debug('recluta entra tp', i)
                 if(ventasReclutaH){
-                    //log.debug('recluta entra his', i)
+                    log.debug('recluta entra his', i)
                     for(j in ventasReclutaTP){
                         var key = Object.keys(ventasReclutaTP[j])
                         var salesRep=ventasReclutaTP[j][key]['salesrep']
                         var idSO=ventasReclutaTP[j][key]['internalid']
-                        //log.debug('salesRep',salesRep)
-                        //log.debug('idSO',idSO)
+                        log.debug('salesRep',salesRep)
+                        log.debug('idSO',idSO)
                         if(ordenes.hasOwnProperty(key)){
                             ordenes.push(key)
                         }else{
@@ -1058,16 +1073,16 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                     }
                     totalVentas= ventasReclutaTP.length+ventasReclutaH.length 
                     if(totalVentas <=6 && configuracionRec != 11&& configuracionRec != 12&&configuracionRec!=13 &&configuracionRec!=14){ 
-                        //log.debug('if 6')
+                        log.debug('if 6')
                         bono_rec=bono_rec + Math.abs(compConfigDetails[configuracionRec]['esquemaVentasReclutamiento'][totalVentas]['compensacion'])
                       }
                       if(totalVentas <=4 && (configuracionRec == 11 || configuracionRec == 12 || configuracionRec==13 || configuracionRec==14)){
-                        //log.debug('if 4')
+                        log.debug('if 4')
                         bono_rec=bono_rec + Math.abs(compConfigDetails[configuracionRec]['esquemaVentasReclutamiento'][totalVentas]['compensacion'])
                         
                       }
                 }else{
-                   // log.debug('no hay historico')
+                    log.debug('no hay historico')
                     
                     for(j in ventasReclutaTP){
                         var montoInd=0
@@ -1075,8 +1090,8 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                         var tipoVenta=ventasReclutaTP[j][key]['custbody_tipo_venta']
                         var salesRep=ventasReclutaTP[j][key]['salesrep']
                         var idSO=ventasReclutaTP[j][key]['internalid']
-                        //log.debug('salesRep',salesRep)
-                        //log.debug('idSO',idSO)
+                        log.debug('salesRep',salesRep)
+                        log.debug('idSO',idSO)
                         if(ordenes.hasOwnProperty(key)){
                             ordenes.push(key)
                         }else{
@@ -1084,28 +1099,27 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                         }
                         if(tipoVenta!=1){
                             totalVentas++
-                            //log.debug('totalVentas'+i, totalVentas);
+                            log.debug('totalVentas'+i, totalVentas);
                             if(totalVentas <=6 && configuracionRec != 11&& configuracionRec != 12&&configuracionRec!=13 &&configuracionRec!=14){ 
-                                //log.debug('6')
+                            log.debug('6')
                                 montoInd= montoInd + Math.abs(compConfigDetails[configuracionRec]['esquemaVentasReclutamiento'][totalVentas]['compensacion'])
                             }
                             if(totalVentas <=4 && (configuracionRec == 11 || configuracionRec == 12 || configuracionRec==13|| configuracionRec==14)){
-                                //log.debug('4')
+                                log.debug('4')
                                 montoInd= Math.abs(compConfigDetails[configuracionRec]['esquemaVentasReclutamiento'][totalVentas]['compensacion'])
                             }
-                            //log.debug('montoInd',montoInd)
+                            log.debug('montoInd',montoInd)
                             bono_rec+=montoInd
-                            //log.debug('bono_rec'+i, bono_rec);
+                            log.debug('bono_rec'+i, bono_rec);
 
                         }
                         
                     }
                     
                 }
-  //          bono_reclutadora= bono_reclutadora + Math.abs(CompConfigDetails[configuracion_rec]['esquemaVentasReclutamiento'][k]['compensacion'])
               bono_reclutadora+= bono_rec
-              //log.debug('bono_reclutadora',bono_reclutadora)
-              //log.debug('ordenes',ordenes)
+              log.debug('bono_reclutadora',bono_reclutadora)
+              log.debug('ordenes',ordenes)
             }
             }
             
@@ -1192,13 +1206,11 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
     }
    /* function bonoComCK(tipoReporte){
 
-        return 'Se están calculando los bonos del '+tipoReporte;
-
     }*/
     function searchDataPresentadoras(){ 
         try{
            
-            // -fix añadir campos VOR-74
+           
 
             const employeeSearchFilters = [
                 ['isinactive', 'is', 'F'],
@@ -1263,7 +1275,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
 
                 ],
             });
-            // -fix nuevo arreglo VOR-75
+            
 
             var allPresentadorData = {} //Todos los datos de todos los presentadores activos arreglo[presentadora] = {obj1:20/01/2024, conf: CC01...}
             var empGrupos = {} //Arreglo de lideres de equipo y sus integrantes arreglo[liderGrupo] = [integrante1,integrante2...]
@@ -1360,9 +1372,9 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             const inicioPeriodoDate =  Utils.stringToDate(inicioPeriodo)
             const finPeriodoDate = Utils.stringToDate(finPeriodo)
             var dHistorico = Utils.restarMeses(inicioPeriodo, 3); //Fecha 3 meses antes del periodo calculado
-            log.debug('dHistorico',dHistorico)
+            log.debug('dHistorico',Utils.dateToString(dHistorico))
             
-            // -fix Pasar a funcion en utils
+           /* // -fix Pasar a funcion en utils
             var artComisionables=[]
             var artComSearch = search.load({
                id: 'customsearch_art_comisionables'
@@ -1408,7 +1420,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             const salesOrderSearchColinternalid= search.createColumn({ name: 'internalid' });
            
 
-            const mySearch = search.create({
+            const searchSales = search.create({
                 type: 'salesorder',
                 filters: salesOrderSearchFilters,
                 columns: [
@@ -1423,12 +1435,21 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                     salesOrderSearchColinternalid,
                    
                 ],
+            });*/
+           var searchSalesOrder = search.load({
+                id: 'customsearch2180'
             });
+            
+            searchSalesOrder.filters.push(search.createFilter({
+                 name: 'trandate',
+                 operator: 'AFTER',
+                 values: Utils.dateToString(dHistorico)//fecha inicio
+            }));
 
             var historicoSO = {}
             var thisPeriodSO = {}
 
-            var pagedResults = mySearch.runPaged();
+            var pagedResults = searchSalesOrder.runPaged();
             pagedResults.pageRanges.forEach(function (pageRange){
                 var currentPage = pagedResults.fetch({index: pageRange.index});
                 currentPage.data.forEach(function (r) {
@@ -1437,7 +1458,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                     var objSO = new Object();
                     objSO.internalid = r.getValue('internalid')
                     objSO.trandate = r.getValue('trandate')
-                    objSO.tranid = r.getValue('tranid')
+                    //objSO.tranid = r.getValue('tranid')
                     objSO.entity = r.getValue('entity')
                     objSO.salesrep = r.getValue('salesrep')
                     objSO.custbody_tipo_venta = r.getValue('custbody_tipo_venta')
