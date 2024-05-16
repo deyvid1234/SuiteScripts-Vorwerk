@@ -261,7 +261,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                     var empPromo=allPresentadoras[i].promocion
                     var dataEmp = allPresentadoras[i]
                     var empConfiguracion = allPresentadoras[i].emp_conf
-                    var conf=Utils.getConf(empConfiguracion);
+                    
 
                     var montoComisionCK= false
                     var objVentasPropias = false
@@ -287,6 +287,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                                 var integrantesEquipo=listaGrupos[i]   
                                 var reclutasEquipo=listaEquipoRecluta[i]
                                 var ventasEmp =thisPeriodSO[i] 
+                                var conf=Utils.getConf(empConfiguracion);
                                 log.debug('ventasEmp',ventasEmp)
                                 objVentasPropias = bonoVentaPropia(dataEmp,ventasEmp,compConfigDetails)
                                 log.debug('objVentasPropias',objVentasPropias)
@@ -638,7 +639,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
           
         }
         var v = subtotal>0?subtotal:0
-        log.debug('subtotal v',v)
+       // log.debug('subtotal v',v)
           sublist.setSublistValue({
               id : 'custentity_total',
               line : linea,
@@ -653,35 +654,35 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
         var sum=0
         var t_venta_propia=ventasPropias.data.length
         var venta_equipo = 0
-        log.debug('t_venta_propia',t_venta_propia)
-        log.debug('conf',conf)
+        //log.debug('t_venta_propia',t_venta_propia)
+        //log.debug('conf',conf)
         for(n in integrantesEquipo){
             var ventas=[]
             var ventasint= thisPeriodSO[integrantesEquipo[n]]
             for(x in ventasint){
                 var key = Object.keys(ventasint[x])
                 var tipoVenta=ventasint[x][key]['custbody_tipo_venta'] 
-                log.debug('key',key)
-                log.debug('tipoVenta',tipoVenta)
+                //log.debug('key',key)
+                //log.debug('tipoVenta',tipoVenta)
                 if(tipoVenta!=1){
                 ventas.push(key)
                 }
             }
             
-            log.debug('ventasint',ventasint)
+           // log.debug('ventasint',ventasint)
             
-            log.debug('ventas',ventas)
+           // log.debug('ventas',ventas)
             if(ventas!=''){
-               log.debug('ventas length',ventas.length)
+               //log.debug('ventas length',ventas.length)
                 sum += ventas.length
             }
         }
-        log.debug('sum',sum)
+        //log.debug('sum',sum)
             for ( i in compConfigDetails[1]['esquemaVentasJefaGrupo']['propias'] ){
                 var desde = compConfigDetails[1]['esquemaVentasJefaGrupo']['propias'][i]['desde']
                 var hasta = compConfigDetails[1]['esquemaVentasJefaGrupo']['propias'][i]['hasta']
-                log.debug('desde',desde)
-                log.debug('hasta',hasta)
+                //log.debug('desde',desde)
+                //log.debug('hasta',hasta)
                 if (t_venta_propia >= desde && t_venta_propia <= hasta){
                     porcentaje = compConfigDetails[1]['esquemaVentasJefaGrupo']['propias'][i]['porcentaje']
                     log.debug('porcentaje',porcentaje)
@@ -698,14 +699,14 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                           var desde= compConfigDetails[conf]['esquemaVentasJefaGrupo']['grupo'][num_]['desde']
                         if(sum >= desde && sum <= hasta){
                           venta_equipo = (compConfigDetails[conf]['esquemaVentasJefaGrupo']['grupo'][num_]['compensacion'])*(parseInt(porcentaje)/100)
-                         log.debug('venta_equipo',venta_equipo)
+                        // log.debug('venta_equipo',venta_equipo)
                            break;
                         }
                       }
                     }
                       
                   }catch(e){
-                      log.debug('bonoVentaEquipo ', e)
+                    //  log.debug('bonoVentaEquipo ', e)
                   }
         return {monto:venta_equipo, porcentaje:porcentaje}
 
@@ -992,7 +993,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             for(x in ordenesSupercomisionTotal){
                 for(y in ordenesSupercomisionTotal[x]){
                     var keys = Object.keys(ordenesSupercomisionTotal[x][y])
-                    log.debug('keys',keys)
+                    //log.debug('keys',keys)
                     ventasPeriodo.push(keys)
                 }
                 //log.debug('ordenesSupercomisionTotal',ordenesSupercomisionTotal[x][y])
@@ -1027,19 +1028,19 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
     }*/
 
     function bonoReclutamiento(reclutas,historicoSO,thisPeriodSO,dataEmp,compConfigDetails,allPresentadoras,dHistorico){
-        log.debug('reclutas lista ',dataEmp)
+       // log.debug('reclutas lista ',dataEmp)
         var totalVentas= 0
         var bono_reclutadora =0
         var ordenes={}
         if(reclutas){
           reclutas.forEach(function(i,index) {
-            log.debug('recluta', i)   
+            //log.debug('recluta', i)   
             var totalVentas= 0
             var bono_rec =0 
             var ventasReclutaTP = thisPeriodSO[i];
             var ventasReclutaH = historicoSO[i];
-            log.debug('reclutatp', ventasReclutaTP)
-            log.debug('ventasReclutaH', ventasReclutaH)
+            //log.debug('reclutatp', ventasReclutaTP)
+            //log.debug('ventasReclutaH', ventasReclutaH)
             var configuracionRec = allPresentadoras[i]['conf_reclutamiento']
             var hiredate=allPresentadoras[i]['hiredate']
             var reactivacion=allPresentadoras[i]['fechaReactivacion']
@@ -1051,20 +1052,20 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             }
             if(dcontratacion > dHistorico){
                 if(configuracionRec){
-                log.debug('configuracionRec'+i, configuracionRec);
+                //log.debug('configuracionRec'+i, configuracionRec);
             }else{
                 configuracionRec=1
             }
             if(ventasReclutaTP){
-                log.debug('recluta entra tp', i)
+                //log.debug('recluta entra tp', i)
                 if(ventasReclutaH){
-                    log.debug('recluta entra his', i)
+                    //log.debug('recluta entra his', i)
                     for(j in ventasReclutaTP){
                         var key = Object.keys(ventasReclutaTP[j])
                         var salesRep=ventasReclutaTP[j][key]['salesrep']
                         var idSO=ventasReclutaTP[j][key]['internalid']
-                        log.debug('salesRep',salesRep)
-                        log.debug('idSO',idSO)
+                        //log.debug('salesRep',salesRep)
+                        //log.debug('idSO',idSO)
                         if(ordenes.hasOwnProperty(key)){
                             ordenes.push(key)
                         }else{
@@ -1074,16 +1075,16 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                     }
                     totalVentas= ventasReclutaTP.length+ventasReclutaH.length 
                     if(totalVentas <=6 && configuracionRec != 11&& configuracionRec != 12&&configuracionRec!=13 &&configuracionRec!=14){ 
-                        log.debug('if 6')
+                        //log.debug('if 6')
                         bono_rec=bono_rec + Math.abs(compConfigDetails[configuracionRec]['esquemaVentasReclutamiento'][totalVentas]['compensacion'])
                       }
                       if(totalVentas <=4 && (configuracionRec == 11 || configuracionRec == 12 || configuracionRec==13 || configuracionRec==14)){
-                        log.debug('if 4')
+                        //log.debug('if 4')
                         bono_rec=bono_rec + Math.abs(compConfigDetails[configuracionRec]['esquemaVentasReclutamiento'][totalVentas]['compensacion'])
                         
                       }
                 }else{
-                    log.debug('no hay historico')
+                    //log.debug('no hay historico')
                     
                     for(j in ventasReclutaTP){
                         var montoInd=0
@@ -1091,8 +1092,8 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                         var tipoVenta=ventasReclutaTP[j][key]['custbody_tipo_venta']
                         var salesRep=ventasReclutaTP[j][key]['salesrep']
                         var idSO=ventasReclutaTP[j][key]['internalid']
-                        log.debug('salesRep',salesRep)
-                        log.debug('idSO',idSO)
+                        //log.debug('salesRep',salesRep)
+                       // log.debug('idSO',idSO)
                         if(ordenes.hasOwnProperty(key)){
                             ordenes.push(key)
                         }else{
@@ -1100,18 +1101,18 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                         }
                         if(tipoVenta!=1){
                             totalVentas++
-                            log.debug('totalVentas'+i, totalVentas);
+                           // log.debug('totalVentas'+i, totalVentas);
                             if(totalVentas <=6 && configuracionRec != 11&& configuracionRec != 12&&configuracionRec!=13 &&configuracionRec!=14){ 
-                            log.debug('6')
+                            //log.debug('6')
                                 montoInd= montoInd + Math.abs(compConfigDetails[configuracionRec]['esquemaVentasReclutamiento'][totalVentas]['compensacion'])
                             }
                             if(totalVentas <=4 && (configuracionRec == 11 || configuracionRec == 12 || configuracionRec==13|| configuracionRec==14)){
-                                log.debug('4')
+                                //log.debug('4')
                                 montoInd= Math.abs(compConfigDetails[configuracionRec]['esquemaVentasReclutamiento'][totalVentas]['compensacion'])
                             }
-                            log.debug('montoInd',montoInd)
+                            //log.debug('montoInd',montoInd)
                             bono_rec+=montoInd
-                            log.debug('bono_rec'+i, bono_rec);
+                            //log.debug('bono_rec'+i, bono_rec);
 
                         }
                         
@@ -1119,14 +1120,14 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                     
                 }
               bono_reclutadora+= bono_rec
-              log.debug('bono_reclutadora',bono_reclutadora)
-              log.debug('ordenes',ordenes)
+              //log.debug('bono_reclutadora',bono_reclutadora)
+              //log.debug('ordenes',ordenes)
             }
             }
             
          });
         } else{
-          log.debug('esta presentadora no tiene reclutas: '+dataEmp.internalid)
+         // log.debug('esta presentadora no tiene reclutas: '+dataEmp.internalid)
 
         }
         return  {monto:bono_reclutadora, data:ordenes};
@@ -1519,7 +1520,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 var objSO = new Object();
                 objSO.internalid = results[t].id
                 objSO.trandate = results[t].trandate
-                //objSO.tranid = r.getValue('tranid')
+                objSO.tranid = results[t].tranid
                 objSO.entity = results[t].entity
                 objSO.salesrep = results[t].id_1
                 objSO.custbody_tipo_venta = results[t].custbody_tipo_venta
