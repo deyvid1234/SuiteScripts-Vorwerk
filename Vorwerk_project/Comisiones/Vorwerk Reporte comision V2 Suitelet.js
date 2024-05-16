@@ -253,9 +253,9 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
 
             var cont_line = 0
 
-            for(i in thisPeriodSO){
+            for(i in allPresentadoras){
 
-                if(allPresentadoras.hasOwnProperty(i)){
+                
                     //Datos EMP
                     var empType=allPresentadoras[i].employeetype
                     var empPromo=allPresentadoras[i].promocion
@@ -372,7 +372,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                         break;
                     }
                     
-                }
+                
                 
             }
                           
