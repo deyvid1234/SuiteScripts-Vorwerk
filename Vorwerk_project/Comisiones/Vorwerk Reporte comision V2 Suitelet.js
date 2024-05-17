@@ -89,10 +89,9 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
         try{
            
             var form = serverWidget.createForm({
-                title: 'Reporte de Comisiones V2'
+                title: 'Reporte de Comisiones V2'  
             });
-            //form.serverWidgetUtility = 2832773;
-            form.clientScriptFileId = 2832773;
+            form.clientScriptFileId = 2834284;//1163010;
             //Grupo para campos
             form.addFieldGroup({
                 id: 'custpage_filters',
