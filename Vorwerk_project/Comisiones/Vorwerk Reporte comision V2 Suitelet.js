@@ -28,7 +28,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             
                 if(context.request.method == 'POST'){
 
-                    context.response.writePage(form);
+                     context.response.writePage(form);
                     //Obtiene los datos ingresados de los campos
                     cust_promo = params.custpage_promo;
                     cust_type = params.custpage_type_;
@@ -91,6 +91,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             var form = serverWidget.createForm({
                 title: 'Reporte de Comisiones V2'
             });
+            form.clientScriptFileId = 2832773;
             //form.clientScriptFileId = 2832773;
             //Grupo para campos
             form.addFieldGroup({

@@ -3,9 +3,9 @@
  * @NScriptType ClientScript
  * @NModuleScope SameAccount
  */
-define(['N/record','N/https','N/currentRecord','N/runtime','N/file','N/search'],
+define(['N/record','N/https','N/currentRecord','N/runtime','N/file','N/search','N/ui/message'],
 
-function(record,https,currentRecord,runtime,file,search) {
+function(record,https,currentRecord,runtime,file,search,message) {
     
     /**
      * Function to be executed after page is initialized.
@@ -149,7 +149,60 @@ function(record,https,currentRecord,runtime,file,search) {
      * @returns {boolean} Return true if record is valid
      *
      * @since 2015.2
-     */ 
+     */
+    function saveRecord(scriptContext) {
+        try{
+            
+            console.log(scriptContext);
+            var record = scriptContext.currentRecord
+            var period = record.getValue('custpage_date');  
+            console.log('period',period);
+            var promo = record.getValue('custpage_promo');  
+            console.log('promo',promo);
+            var type = record.getValue('custpage_type_');  
+            if(record =="" || promo =="" || type ==""){
+                alert("Debe ingresar valores");
+                return false;
+            }
+            var myMsg = message.create({
+                title: "Reporte de comisiones",
+                message: "Por favor, espere mientras se ejecuta la estructura inicial",
+                type: message.Type.CONFIRMATION
+            });
+            myMsg.show({
+                duration: 10000
+            });
+            try{
+                if(runtime.envType != 'PRODUCTION'){ 
+                    url = 'https://3367613-sb1.app.netsuite.com/app/site/hosting/scriptlet.nl?script=578&deploy=1';//cambiar para sandbox
+                }else{
+                    url = 'https://3367613.app.netsuite.com/app/site/hosting/scriptlet.nl?script=578&deploy=1';
+                }
+                var headers = {'Content-Type': 'application/json'};
+                var response = https.post({
+                    url: url,
+                    body : JSON.stringify({period:period,promo:promo,type:type}),
+                    headers: {
+                        "Content-Type": "application/json"
+                    }
+                }).body;
+                
+                var rep = JSON.parse(response);
+                record.setValue('custpage_search_aux1',rep.idFile1);
+                record.setValue('custpage_search_aux2',rep.idFile2);
+                return true;
+            }catch(e){
+                console.log('error file',e);
+                alert("Memoria de Netsuite tiene problemas para generar estructura 1");
+                return false;
+            }
+        }catch(err){
+            console.log(err);
+            alert("Memoria de Netsuite tiene problemas");
+        }
+        
+    }
+    
     
     function getData(){
         try{
@@ -184,22 +237,22 @@ function(record,https,currentRecord,runtime,file,search) {
                      line: i
                 });
                 if(check == true){
-                	var num_garantia = record.getSublistValue({
+                    var num_garantia = record.getSublistValue({
                         sublistId: "sublist",
                         fieldId: "custentity_garantia_num",
                         line: i
                     });
-                	var monto_garantia = record.getSublistValue({
+                    var monto_garantia = record.getSublistValue({
                         sublistId: "sublist",
                         fieldId: "custentity_garantia_monto",
                         line: i
                     });
-                	var ids_garantia = record.getSublistValue({
+                    var ids_garantia = record.getSublistValue({
                         sublistId: "sublist",
                         fieldId: "custentity_bono_garantia_ids",
                         line: i
                     });
-                	var num_ck = record.getSublistValue({
+                    var num_ck = record.getSublistValue({
                         sublistId: "sublist",
                         fieldId: "custentity_cookkey",
                         line: i
@@ -437,11 +490,11 @@ function(record,https,currentRecord,runtime,file,search) {
                             tm_pagadas_rec        :tm_pagadas_rec,
                             tm_ganadas            :tm_ganadas,
                             acumulado_de_ventas   :acumulado_de_ventas,
-                            num_ck				  :num_ck,
-                            total_ck			  :total_ck,
-                            num_garantia		  :num_garantia,
-                            monto_garantia		  :monto_garantia,
-                            ids_garantia		  :ids_garantia,
+                            num_ck                :num_ck,
+                            total_ck              :total_ck,
+                            num_garantia          :num_garantia,
+                            monto_garantia        :monto_garantia,
+                            ids_garantia          :ids_garantia,
                             odv_rec_del_periodo   :odv_rec_del_periodo,
                             rec_con_ventas        :rec_con_ventas,
                             bono_tres_dos         :bono_tres_dos,
@@ -491,9 +544,9 @@ function(record,https,currentRecord,runtime,file,search) {
                 var objet_full = getData();
                 var url = '';
                 if(runtime.envType != 'PRODUCTION'){ 
-                    url = 'https://3367613-sb1.app.netsuite.com/app/site/hosting/scriptlet.nl?script=571&deploy=1';
+                    url = 'https://3367613.app.netsuite.com/app/site/hosting/scriptlet.nl?script=1406&deploy=1';
                 }else{
-                    url = 'https://3367613.app.netsuite.com/app/site/hosting/scriptlet.nl?script=571&deploy=1';
+                    url = 'https://3367613.app.netsuite.com/app/site/hosting/scriptlet.nl?script=1406&deploy=1';
                 }
                 log.debug("getexcel",url);
                 log.debug('objet_full',objet_full);
