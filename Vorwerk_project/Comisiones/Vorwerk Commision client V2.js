@@ -544,9 +544,9 @@ function(record,https,currentRecord,runtime,file,search,message) {
                 var objet_full = getData();
                 var url = '';
                 if(runtime.envType != 'PRODUCTION'){ 
-                    url = 'https://3367613.app.netsuite.com/app/site/hosting/scriptlet.nl?script=1406&deploy=1';
+                    url = 'https://3367613-sb1.app.netsuite.com/app/site/hosting/scriptlet.nl?script=571&deploy=1';
                 }else{
-                    url = 'https://3367613.app.netsuite.com/app/site/hosting/scriptlet.nl?script=1406&deploy=1';
+                    url = 'https://3367613.app.netsuite.com/app/site/hosting/scriptlet.nl?script=571&deploy=1';
                 }
                 log.debug("getexcel",url);
                 log.debug('objet_full',objet_full);
@@ -588,8 +588,8 @@ function(record,https,currentRecord,runtime,file,search,message) {
 //        validateLine: validateLine,
 //        validateInsert: validateInsert,
 //        validateDelete: validateDelete,
-        //saveRecord: saveRecord,
-        //saveData:saveData,
+        saveRecord: saveRecord,
+        saveData:saveData,
         createExcel: createExcel
     };
     
