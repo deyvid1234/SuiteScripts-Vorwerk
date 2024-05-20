@@ -363,6 +363,15 @@ function(record, search, runtime, format, query) {
 
         return nuevaFecha;
     }
+    function sumarMeses(fechaString, cantidadMeses) {
+        
+        const nuevaFecha = stringToDate(fechaString)
+        
+        // Restar la cantidad de meses
+        nuevaFecha.setMonth(nuevaFecha.getMonth() + cantidadMeses);
+
+        return nuevaFecha;
+    }
 
     return {
         getLog: getLog,
@@ -370,6 +379,7 @@ function(record, search, runtime, format, query) {
         dateToString:dateToString,
         stringToDate:stringToDate,
         restarMeses:restarMeses,
+        sumarMeses:sumarMeses,
         getObjCompConfigDetails:getObjCompConfigDetails,
         getCompensationConfig:getCompensationConfig,
         getEsquemaVentasPresentadora:getEsquemaVentasPresentadora,
