@@ -328,7 +328,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                     case 2: //Reporte Presentadora
                         if(empType == 1 && empPromo == 2){
                             //Calcular reporte para la persona
-                           var reclutas=listaReclutas[i]
+                            var reclutas=listaReclutas[i]
                             var integrantesEquipo=listaGrupos[i]   
                             var reclutasEquipo=listaEquipoRecluta[i]
                             var ventasEmp =thisPeriodSO[i] 
@@ -696,7 +696,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
         var comisionables = ventasP[i][ventasData]['custbody_vw_comission_status']
         var tipoVenta = ventasP[i][ventasData]['custbody_tipo_venta']
         //log.debug('comisionables',comisionables)
-        if(comisionables != 2 && tipoVenta != 1){
+        if( tipoVenta != 'TM Ganada'){
           data.push(ventasData)
         }
         
@@ -711,20 +711,20 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
         var ventas=[]
         var ventasint= thisPeriodSO[integrantesEquipo[n]]
         for(x in ventasint){
-             var key = Object.keys(ventasint[x])
+            var key = Object.keys(ventasint[x])
             var tipoVenta=ventasint[x][key]['custbody_tipo_venta'] 
             //log.debug('key',key)
             //log.debug('tipoVenta',tipoVenta)
-            if(tipoVenta!=1){
+            if(tipoVenta!='TM Ganada'){
             ventas.push(key)
             }
         }
             
-           // log.debug('ventasint',ventasint)
+            //log.debug('ventasint',ventasint)
             
-           // log.debug('ventas',ventas)
+            //log.debug('ventas',ventas)
             if(ventas!=''){
-               //log.debug('ventas length',ventas.length)
+                //log.debug('ventas length',ventas.length)
                 sum += ventas.length
             }
         }
@@ -747,17 +747,17 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                       inf=compConfigDetails[conf]['esquemaVentasJefaGrupo']['grupo']
                       for(num_ in inf ){//Recorre la configuracion hasta entrar en el rango de ventas
                         var hasta= compConfigDetails[conf]['esquemaVentasJefaGrupo']['grupo'][num_]['hasta']
-                          var desde= compConfigDetails[conf]['esquemaVentasJefaGrupo']['grupo'][num_]['desde']
+                        var desde= compConfigDetails[conf]['esquemaVentasJefaGrupo']['grupo'][num_]['desde']
                         if(sum >= desde && sum <= hasta){
-                          venta_equipo = (compConfigDetails[conf]['esquemaVentasJefaGrupo']['grupo'][num_]['compensacion'])*(parseInt(porcentaje)/100)
-                        // log.debug('venta_equipo',venta_equipo)
-                           break;
+                            venta_equipo = (compConfigDetails[conf]['esquemaVentasJefaGrupo']['grupo'][num_]['compensacion'])*(parseInt(porcentaje)/100)
+                            //log.debug('venta_equipo',venta_equipo)
+                            break;
                         }
                       }
                     }
                       
                   }catch(e){
-                     log.debug('bonoVentaEquipo ', e)
+                     log.error('bonoVentaEquipo ', e)
                   }
         return {monto:venta_equipo, porcentaje:porcentaje}
 
@@ -811,6 +811,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                     var valiDate
                     if(reactivacion){
                         valiDate=Utils.stringToDate(reactivacion)
+                        fechaObjetivo=allPresentadoras[i]['obj_1_reactivacion']
                     }else{
                         valiDate=Utils.stringToDate(hiredate)
                     }
@@ -878,14 +879,15 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                
                preActivas= Object.keys(salesOrders)//presentadoras que son recluta y equipo activas
                equipoActivas=Object.keys(salesOrdersEq)//presentadoras que son equipo activas
-               //log.debug('preActivas',preActivas)
+               /*log.debug('preActivas',preActivas)
                log.debug('ventasEmp',ventasEmp)
+               log.debug('equipoActivas',equipoActivas)*/
                if(ventasEmp){
                 if(ventasEmp.length> 2 && ventasEmp.length<5 && equipoActivas.length >= 2 && preActivas.length > 0){
                     monto32 = 5000
                     monto52 = 0
                 }
-                if(ventasEmp.length>4 && equipoActivas52.length >= 2 && preActivas52.length > 0){
+                if(ventasEmp.length>4 && equipoActivas.length >= 2 && preActivas.length > 0){
                     monto32 = 0
                     monto52 = 8000
                 }
@@ -894,7 +896,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             }   
             return {monto52:monto52,monto32:monto32, data:preActivas,equipo:equipoActivas} 
         }catch(e){
-            log.debug('error 3+2',e)
+            log.debug('error X+2',e)
         }    
         
     }
@@ -1038,17 +1040,15 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                             }else{
                                 faltantesRec = noComisiona
                             }
-
                             if(faltantesRec > 0){ 
                                 for(j in ventasReclutaTP){//Se recorren las Ordenes de cada recluta del Presentador
                                     key = Object.keys(ventasReclutaTP[j])
                                     var tipoVenta=ventasReclutaTP[j][key]['custbody_tipo_venta']
                                     if(tipoVenta == 'Ventas TM'){
-                                        cont ++
-                                        
+                                        cont ++  
                                         montoInd = montoInd + Math.abs(compConfigDetails[configuracionRec]['esquemaVentasReclutamiento'][cont]['compensacion'])
                                         salesReclutaTP.push(ventasReclutaTP[j][key]['internalid'])
-                                        if(cont >= faltantesRec){
+                                        if(cont >= noComisiona){
                                             break
                                         }
                                     }
