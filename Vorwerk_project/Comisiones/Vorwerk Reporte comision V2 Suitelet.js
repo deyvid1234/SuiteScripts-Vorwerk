@@ -16,69 +16,64 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
      */
     function onRequest(context) {
         try{
-            log.debug('metohd',context.request.method); 
             var form = createForm();
             var compConfigDetails = Utils.getObjCompConfigDetails();
             
+            const params = context.request.parameters;
             
+            if(context.request.method == 'POST'){
 
-            var esquemaVentasJefaGrupo= compConfigDetails[1]['esquemaVentasJefaGrupo']['propias']
-            log.debug('esquemaVentasJefaGrupo', esquemaVentasJefaGrupo)
-            params = context.request.parameters;
-            
-                if(context.request.method == 'POST'){
+                context.response.writePage(form);
+                //Obtiene los datos ingresados de los campos
+                cust_promo = params.custpage_promo;
+                cust_type = params.custpage_type_;
+                cust_period = params.custpage_date;
+                cust_entrega = params.custpage_entrega;
+                
 
-                    context.response.writePage(form);
-                    //Obtiene los datos ingresados de los campos
-                    cust_promo = params.custpage_promo;
-                    cust_type = params.custpage_type_;
-                    cust_period = params.custpage_date;
-                    cust_entrega = params.custpage_entrega;
+                //Asignacion de valores
+                var custpage_date = form.getField({ id:'custpage_date'});
+                custpage_date.defaultValue = cust_period;
+                var custpage_type_ = form.getField({ id:'custpage_type_'});
+                custpage_type_.defaultValue = cust_type;
+                var custpage_promo = form.getField({ id:'custpage_promo'});
+                custpage_promo.defaultValue = cust_promo;
+                var custpage_entrega = form.getField({ id:'custpage_entrega'});
+                custpage_entrega.defaultValue = cust_entrega;
+                  
+
+                log.audit('Filtros','Tipo : '+cust_type+' Promocion : '+cust_promo+' Periodo : '+cust_period+' Entrega : '+cust_entrega)
+                try{
+                    sublista(form,cust_type,cust_promo,cust_period,cust_entrega,compConfigDetails);
                     
-
-                    //Asignacion de valores
-                    var custpage_date = form.getField({ id:'custpage_date'});
-                    custpage_date.defaultValue = cust_period;
-                    var custpage_type_ = form.getField({ id:'custpage_type_'});
-                    custpage_type_.defaultValue = cust_type;
-                    var custpage_promo = form.getField({ id:'custpage_promo'});
-                    custpage_promo.defaultValue = cust_promo;
-                    var custpage_entrega = form.getField({ id:'custpage_entrega'});
-                    custpage_entrega.defaultValue = cust_entrega;
-                      
-
-                    log.audit('Filtros','Tipo : '+cust_type+' Promocion : '+cust_promo+' Periodo : '+cust_period+' Entrega : '+cust_entrega)
-                    try{
-                        sublista(form,cust_type,cust_promo,cust_period,cust_entrega,compConfigDetails);
-                        
-                        context.response.writePage(form)
-                    }catch(e){
-                        log.error('error al crear form',e);
-                    }
-              
+                    context.response.writePage(form)
+                }catch(e){
+                    log.error('error al crear form',e);
                 }
-                if(context.request.method == 'PUT'){ //
-                    try{
-                    //recibe la informacion de la tabla para ejecutar el map y enviar los parametros con la informacion
-                        var body = JSON.parse(context.request.body);
-                        log.debug('params',body);
-                        var obj_comission = body.obj;
-                        var config = body.obj_conf;
-                        var mapTask = task.create({
-                            taskType: task.TaskType.MAP_REDUCE,
-                            scriptId: 'customscript_vorwerk_commission_map',
-                            params: {
-                                custscript_data_commision: JSON.stringify(obj_comission),
-                                custscript_config_comission: JSON.stringify(config)
-                            }
-                        }).submit();
-                    }catch(err){
-                        log.debug("error task ",err);
-                    }
-                }else{
-
-                    context.response.writePage(form);
+          
+            }
+            if(context.request.method == 'PUT'){ //
+                try{
+                //recibe la informacion de la tabla para ejecutar el map y enviar los parametros con la informacion
+                    var body = JSON.parse(context.request.body);
+                    log.debug('params',body);
+                    var obj_comission = body.obj;
+                    var config = body.obj_conf;
+                    var mapTask = task.create({
+                        taskType: task.TaskType.MAP_REDUCE,
+                        scriptId: 'customscript_vorwerk_commission_map',
+                        params: {
+                            custscript_data_commision: JSON.stringify(obj_comission),
+                            custscript_config_comission: JSON.stringify(config)
+                        }
+                    }).submit();
+                }catch(err){
+                    log.debug("error task ",err);
                 }
+            }else{
+
+                context.response.writePage(form);
+            }
           
         }catch(e){
             log.error('error form',e);
@@ -208,13 +203,13 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             //Busqueda datos Presentadores
             const listasPresentadora = searchDataPresentadoras(namePeriodo)
             const allPresentadoras = listasPresentadora.allPresentadorData
-            log.debug('allPresentadoras', allPresentadoras)
+            //log.debug('allPresentadoras', allPresentadoras)
             const listaGrupos= listasPresentadora.empGrupos
-            log.debug('listaGrupos', listaGrupos)
+            //log.debug('listaGrupos', listaGrupos)
             const listaReclutas= listasPresentadora.empReclutas
-            log.debug('listaReclutas', listaReclutas)
+            //log.debug('listaReclutas', listaReclutas)
             const listaEquipoRecluta=listasPresentadora.equipoYRecluta
-            log.debug('listaEquipoRecluta', listaEquipoRecluta)
+            //log.debug('listaEquipoRecluta', listaEquipoRecluta)
             const listaNombramientos=listasPresentadora.nombramiento
              
             /*var datos0008=allPresentadoras['12000']
@@ -243,139 +238,119 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             3= Trabaja x TM 
             */
             if(cust_type == 3 && cust_promo == 2 ){//LE y tm Propia 
-                log.debug('Generar Reporte LE')
+                log.audit('Generar Reporte LE')
                 tipoReporteGloobal = 1
             } else if(cust_type== 1 && cust_promo == 2){//Presentador y tm propia 
-                log.debug('Generar Reporte Presentador')
+                log.audit('Generar Reporte Presentador')
                 tipoReporteGloobal = 2
             }else if(cust_type== 1 && cust_promo == 1){// Presentador y Trabaja x TM
-                log.debug('Generar Reporte Trabaja x TM')
+                log.audit('Generar Reporte Trabaja x TM')
                 tipoReporteGloobal = 3  
             }
 
             var cont_line = 0
 
             for(i in allPresentadoras){
-
+                //Datos EMP
+                var empType=allPresentadoras[i].employeetype
+                var empPromo=allPresentadoras[i].promocion
+                var dataEmp = allPresentadoras[i]
+                var empConfiguracion = allPresentadoras[i].emp_conf
                 
-                    //Datos EMP
-                    var empType=allPresentadoras[i].employeetype
-                    var empPromo=allPresentadoras[i].promocion
-                    var dataEmp = allPresentadoras[i]
-                    var empConfiguracion = allPresentadoras[i].emp_conf
+                //fix Revisar bonos faltantes - los validados a 0 borrarlos 
+                var montoComisionCK= false 
+                var objVentasPropias = false
+                var objEntrega = false
+                var objProductividad = false
+                var montoEmerald = false
+                var montoGarantia = false
+                var objReclutamiento = false
+                var montoTalento = false
+                var objVentaEquipo = false
+                var objTresDos = false
+                var objCincoDos = false
+                var objSupercomision = false
+                var objVentasEquipoNLE= false
+                
+                switch(tipoReporteGloobal){
+                    case 1: //Reporte LE
+                        if(empType == 3 && empPromo == 2 && allPresentadoras[i].internalid == '640993'){
+                            //Calcular reporte para la persona
+                            var reclutas = listaReclutas[i]
+                            var integrantesEquipo = listaGrupos[i]   
+                            var reclutasEquipo = listaEquipoRecluta[i]
+                            var ventasEmp = thisPeriodSO[i] 
+                            var conf = Utils.getConf(empConfiguracion);
+                            //log.debug('ventasEmp',ventasEmp)
+                            
+                            objVentasPropias = bonoVentaPropia(dataEmp,ventasEmp,compConfigDetails)
+                            //log.debug('objVentasPropias',objVentasPropias)
+                            
+                            objSupercomision = bonoSupercomision(integrantesEquipo,historicoSO,thisPeriodSO,allPresentadoras,dHistorico)
+                            //log.debug('objSupercomision',objSupercomision)
+                            
+                            objReclutamiento = bonoReclutamiento(reclutas,historicoSO,thisPeriodSO,dataEmp,compConfigDetails,allPresentadoras,dHistorico)
+                            //log.debug('objReclutamiento',objReclutamiento)
+                            objEntrega = bonoEntrega(dataEmp,ventasEmp,cust_entrega)
+                            //log.debug('objEntrega',objEntrega)
+                            objTresDos = bonotresdos(dataEmp,reclutasEquipo,thisPeriodSO,ventasEmp,historicoSO,allPresentadoras,dHistorico,integrantesEquipo)
+                            //log.debug('objTresDos',objTresDos)
+                            objCincoDos = bonoCincoDos(dataEmp,reclutasEquipo,thisPeriodSO,ventasEmp,historicoSO,allPresentadoras,dHistorico,integrantesEquipo)
+                            //log.debug('objCincoDos',objCincoDos)
+                            objProductividad = bonoProductividad(dataEmp,ventasEmp,compConfigDetails)
+                            //log.debug('objProductividad',objProductividad)
+                            objVentaEquipo = bonoVentaEquipo(ventasEmp,compConfigDetails,conf,integrantesEquipo,thisPeriodSO)
+                            log.debug('objVentaEquipo',objVentaEquipo)
+                            objVentasEquipoNLE=bonoVentaEquipoNLE(listaNombramientos,dataEmp,thisPeriodSO,listaGrupos,allPresentadoras,compConfigDetails,finPeriodo)
+                            log.debug('objVentasEquipoNLE',objVentasEquipoNLE)
+
+                            fillTable(sublist,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objSupercomision,objReclutamiento,objEntrega,objTresDos,objCincoDos,objProductividad,objVentaEquipo,objVentasEquipoNLE)
+                            cont_line++
+                            
+                        }
+
+                    break;
+                    case 2: //Reporte Presentadora
+                        if(empType == 1 && empPromo == 2){
+                            //Calcular reporte para la persona
+                           var reclutas=listaReclutas[i]
+                            var integrantesEquipo=listaGrupos[i]   
+                            var reclutasEquipo=listaEquipoRecluta[i]
+                            var ventasEmp =thisPeriodSO[i] 
+                            log.debug('ventasEmp',ventasEmp)
+                            objVentasPropias = bonoVentaPropia(dataEmp,ventasEmp,compConfigDetails)
+                            log.debug('objVentasPropias',objVentasPropias)
+                            
+                            objReclutamiento = bonoReclutamiento(reclutas,historicoSO,thisPeriodSO,dataEmp,compConfigDetails,allPresentadoras,dHistorico)
+                            log.debug('objReclutamiento',objReclutamiento)
+                            objEntrega = bonoEntrega(dataEmp,ventasEmp,cust_entrega)
+                            log.debug('objEntrega',objEntrega)
+                            
+                            objProductividad = bonoProductividad(dataEmp,ventasEmp,compConfigDetails)
+                            log.debug('objProductividad',objProductividad)
+                            objReclutamiento = bonoReclutamiento(reclutas,historicoSO,thisPeriodSO,dataEmp,compConfigDetails,allPresentadoras,dHistorico)
+                            log.debug('objReclutamiento',objReclutamiento)
+                            /*
+                            montoComisionCK = bonoComCK()
+                            
+                            montoEmerald = bonoEmerald()
+                            montoGarantia = bonoGarantia()
+                            */
+                        }
+
                     
-
-                    var montoComisionCK= false
-                    var objVentasPropias = false
-                    var objEntrega = false
-                    var objProductividad = false
-                    var montoEmerald = false
-                    var montoGarantia = false
-                    var objReclutamiento = false
-                    var montoTalento = false
-                    var objVentaEquipo = false
-                    var objTresDos = false
-                    var objCincoDos = false
-                    var objSupercomision = false
-                    var objVentasEquipoNLE= false
-                    
-
-                    var testFBonos
-                    
-                    switch(tipoReporteGloobal){
-                        case 1: //Reporte LE
-                            if(empType == 3 && empPromo == 2 /*&& allPresentadoras[i].internalid == '640993'*/){
-                                //Calcular reporte para la persona
-                                var reclutas=listaReclutas[i]
-                                var integrantesEquipo=listaGrupos[i]   
-                                var reclutasEquipo=listaEquipoRecluta[i]
-                                var ventasEmp =thisPeriodSO[i] 
-                                var conf=Utils.getConf(empConfiguracion);
-                                log.debug('ventasEmp',ventasEmp)
-                                objVentasPropias = bonoVentaPropia(dataEmp,ventasEmp,compConfigDetails)
-                                log.debug('objVentasPropias',objVentasPropias)
-                                objSupercomision = bonoSupercomision(integrantesEquipo,historicoSO,thisPeriodSO,allPresentadoras,dHistorico)
-                                //log.debug('objSupercomision',objSupercomision)
-                                objReclutamiento = bonoReclutamiento(reclutas,historicoSO,thisPeriodSO,dataEmp,compConfigDetails,allPresentadoras,dHistorico)
-                                //log.debug('objReclutamiento',objReclutamiento)
-                                objEntrega = bonoEntrega(dataEmp,ventasEmp,cust_entrega)
-                                //log.debug('objEntrega',objEntrega)
-                                objTresDos = bonotresdos(dataEmp,reclutasEquipo,thisPeriodSO,ventasEmp,historicoSO,allPresentadoras,dHistorico,integrantesEquipo)
-                                //log.debug('objTresDos',objTresDos)
-                                objCincoDos = bonoCincoDos(dataEmp,reclutasEquipo,thisPeriodSO,ventasEmp,historicoSO,allPresentadoras,dHistorico,integrantesEquipo)
-                                //log.debug('objCincoDos',objCincoDos)
-                                objProductividad = bonoProductividad(dataEmp,ventasEmp,compConfigDetails)
-                                //log.debug('objProductividad',objProductividad)
-                                objVentaEquipo = bonoVentaEquipo(ventasEmp,compConfigDetails,conf,integrantesEquipo,thisPeriodSO)
-                                log.debug('objVentaEquipo',objVentaEquipo)
-                                objVentasEquipoNLE=bonoVentaEquipoNLE(listaNombramientos,dataEmp,thisPeriodSO,listaGrupos,allPresentadoras,compConfigDetails,finPeriodo)
-                                log.debug('objVentasEquipoNLE',objVentasEquipoNLE)
-                                /*
-
-                                
-
-
-                                montoComisionCK = bonoComCK()
-                                montoVentasPropias = bonoVentaPropia(i) 
-                                
-                                montoProductividad = bonoProductividad()
-                                montoEmerald = bonoEmerald()
-                                montoGarantia = bonoGarantia()
-                                
-                                montoTalento = bonoTalento()
-                                
-                                
-                                
-                                
-                                */
-                                
-                                fillTable(sublist,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objSupercomision,objReclutamiento,objEntrega,objTresDos,objCincoDos,objProductividad,objVentaEquipo,objVentasEquipoNLE)
-                                cont_line++
-                                
-                            }
-
-                        break;
-                        case 2: //Reporte Presentadora
-                            if(empType == 1 && empPromo == 2){
-                                //Calcular reporte para la persona
-                               var reclutas=listaReclutas[i]
-                                var integrantesEquipo=listaGrupos[i]   
-                                var reclutasEquipo=listaEquipoRecluta[i]
-                                var ventasEmp =thisPeriodSO[i] 
-                                log.debug('ventasEmp',ventasEmp)
-                                objVentasPropias = bonoVentaPropia(dataEmp,ventasEmp,compConfigDetails)
-                                log.debug('objVentasPropias',objVentasPropias)
-                                
-                                objReclutamiento = bonoReclutamiento(reclutas,historicoSO,thisPeriodSO,dataEmp,compConfigDetails,allPresentadoras,dHistorico)
-                                log.debug('objReclutamiento',objReclutamiento)
-                                objEntrega = bonoEntrega(dataEmp,ventasEmp,cust_entrega)
-                                log.debug('objEntrega',objEntrega)
-                                
-                                objProductividad = bonoProductividad(dataEmp,ventasEmp,compConfigDetails)
-                                log.debug('objProductividad',objProductividad)
-                                objReclutamiento = bonoReclutamiento(reclutas,historicoSO,thisPeriodSO,dataEmp,compConfigDetails,allPresentadoras,dHistorico)
-                                log.debug('objReclutamiento',objReclutamiento)
-                                /*
-                                montoComisionCK = bonoComCK()
-                                
-                                montoEmerald = bonoEmerald()
-                                montoGarantia = bonoGarantia()
-                                */
-                            }
-
-                        
-                        break;
-                        case 3: //Reporte Trabaja x TM
-                            if(empType == 1 && empPromo == 1){
-                                //Calcular reporte para la persona
-                                objReclutamiento = bonoReclutamiento(reclutas,historicoSO,thisPeriodSO,dataEmp,compConfigDetails,allPresentadoras,dHistorico)
-                                log.debug('objReclutamiento',objReclutamiento)
-                                /*
-                                montoComisionCK = bonoComCK()
-                                */
-                            }
-                        break;
-                    }
+                    break;
+                    case 3: //Reporte Trabaja x TM
+                        if(empType == 1 && empPromo == 1){
+                            //Calcular reporte para la persona
+                            objReclutamiento = bonoReclutamiento(reclutas,historicoSO,thisPeriodSO,dataEmp,compConfigDetails,allPresentadoras,dHistorico)
+                            log.debug('objReclutamiento',objReclutamiento)
+                            /*
+                            montoComisionCK = bonoComCK()
+                            */
+                        }
+                    break;
+                }
                     
                 
                 
@@ -673,37 +648,42 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
     }
     
     function bonoVentaEquipoNLE(listaNombramientos,dataEmp,thisPeriodSO,listaGrupos,allPresentadoras,compConfigDetails,finPeriodo){
-    try{
-        var liderM=dataEmp.internalid//lider madre
-        var montoTotal= 0
-        var liderHijo = {}
-        if(listaNombramientos.hasOwnProperty(liderM)){Se valida si la lider tiene lideres hijos
-            //log.debug('liderM',liderM)
-            //log.debug('listaNombramientos de la lider ', listaNombramientos[liderM])
-            for(i in listaNombramientos[liderM]){//por cada lider hijo se obtiene su configuracion, equipo y ventas y se llama al bono Venta equpi para calcular el monto
-                var empConf=allPresentadoras[listaNombramientos[liderM][i]].emp_conf
-                   // log.debug('lista empConf', empConf)
-                var configH=Utils.getConf(empConf);
-                    //log.debug('lista configH', configH)
-                var equipoH=listaGrupos[listaNombramientos[liderM][i]]
-                   // log.debug('lista equipoH', equipoH)
-                var ventasH= thisPeriodSO[listaNombramientos[liderM][i]]
-                    //log.debug('lista ventasH', ventasH)
-                
-                var ventaEquipoH=bonoVentaEquipo(ventasH,compConfigDetails,configH,equipoH,thisPeriodSO)
-                   // log.debug('ventaEquipoH',ventaEquipoH)
-                var montoNLE=ventaEquipoH.monto
-                montoTotal += montoNLE//se suman los montos de cada lider hijo para obtener el monto total a pagar a la lider madre
-                
+        try{
+            var liderM=dataEmp.internalid//lider madre
+            var montoTotal= 0
+            
+            if(listaNombramientos.hasOwnProperty(liderM)){//Se valida si la lider tiene lideres hijos
+                var liderHijo = {}
+                //log.debug('liderM',liderM)
+                //log.debug('listaNombramientos de la lider ', listaNombramientos[liderM])
+                for(i in listaNombramientos[liderM]){//por cada lider hijo se obtiene su configuracion, equipo y ventas y se llama al bono Venta equpi para calcular el monto
+                    var empConf=allPresentadoras[listaNombramientos[liderM][i]].emp_conf
+                       // log.debug('lista empConf', empConf)
+                    var configH=Utils.getConf(empConf);
+                        //log.debug('lista configH', configH)
+                    var equipoH=listaGrupos[listaNombramientos[liderM][i]]
+                       // log.debug('lista equipoH', equipoH)
+                    var ventasH= thisPeriodSO[listaNombramientos[liderM][i]]
+                        //log.debug('lista ventasH', ventasH)
+                    
+                    var ventaEquipoH=bonoVentaEquipo(ventasH,compConfigDetails,configH,equipoH,thisPeriodSO)
+                       // log.debug('ventaEquipoH',ventaEquipoH)
+                    var montoNLE=ventaEquipoH.monto
+                    montoTotal += montoNLE//se suman los montos de cada lider hijo para obtener el monto total a pagar a la lider madre
+                    
+                }
+                liderHijo= listaNombramientos[liderM]
+                return {monto:montoTotal, data:liderHijo}
+            }else{
+                return false
             }
-            liderHijo= listaNombramientos[liderM]
+            //log.debug('lista montoTotal', montoTotal)
+                          
+        }catch(e){
+            log.error('bonoVentaEquipoNLE ', e)
+            return false
         }
-        //log.debug('lista montoTotal', montoTotal)
-                      
-    }catch(e){
-        log.debug('bonoVentaEquipoNLE ', e)
-    }
-        return {monto:montoTotal, data:liderHijo}
+        
 
     }
     function bonoVentaEquipo(ventasEmp,compConfigDetails,conf,integrantesEquipo,thisPeriodSO){
@@ -1009,77 +989,77 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
         
     }
    function bonoSupercomision(integrantesEquipo,historicoSO,thisPeriodSO,allPresentadoras,dHistorico){
-    try{
-      var ventasNo =0
-        var montoSC=0
-        var ventasPeriodo=[]
-        var ordenesSupercomisionTotal=[]
-        if(integrantesEquipo){
-            integrantesEquipo.forEach(function(i,index) {
-                //log.debug('integrante',i)
-            var hiredate=allPresentadoras[i]['hiredate']
-            var reactivacion=allPresentadoras[i]['fechaReactivacion']
-            var conf=allPresentadoras[i]['conf_reclutamiento']
-            if(conf!=''){
-                var confRec = conf
-            }else{
-                var confRec = 1 
-            }
-            if(confRec==11||confRec==12||confRec==13||confRec==14){
-                var noComisiona = 4
-            }else{
-                var noComisiona = 6
-            }
-            var dObjetivo2=allPresentadoras[i]['objetivo_2']
-            //log.debug('confRec',confRec)
-            var dcontratacion
-            if(reactivacion == ''){
-                dcontratacion = Utils.stringToDate(hiredate)
-            }else{
-                dcontratacion = Utils.stringToDate(reactivacion)
-                dObjetivo2=allPresentadoras[i]['obj_2_reactivacion']
-            }
-            if(dcontratacion > dHistorico){
-                var ventasHistorico
-                if(historicoSO[i]){
-                    ventasHistorico = historicoSO[i].length
-                }else{
-                    ventasHistorico = 0
-                }
-                //log.debug('ventasHistorico',ventasHistorico)
-                var ordenesSCintegrante=[]
-                if(thisPeriodSO[i] && ventasHistorico < noComisiona){
-                    var ordenesFaltantes= noComisiona-ventasHistorico
-                    
-                    //log.debug('ordenesFaltantes',ordenesFaltantes)
-                    var ordenesPeriodo=[]
-                    for(x in thisPeriodSO[i]){
-                        var key = Object.keys(thisPeriodSO[i][x])
-                        var tipoVenta=thisPeriodSO[i][x][key]['custbody_tipo_venta'] 
-                        var dateSO=thisPeriodSO[i][x][key]['trandate']
-                        if(tipoVenta != 1 && Utils.stringToDate(dateSO)<Utils.stringToDate(dObjetivo2)){
-                            ordenesPeriodo.push(thisPeriodSO[i][x])
-                        }
-                    }
-                   // log.debug('ordenesPeriodo',ordenesPeriodo)
-                    if(ordenesPeriodo.length <= ordenesFaltantes  ){
-                        ordenesSCintegrante = ordenesPeriodo                 
+        try{
+            var ventasNo = 0
+            var montoSC = 0
+            var ventasPeriodo =[]
+            var ordenesSupercomisionTotal=[]
+            if(integrantesEquipo){
+                integrantesEquipo.forEach(function(i,index) {
+                    //log.debug('integrante',i)
+                    var hiredate = allPresentadoras[i]['hiredate']
+                    var reactivacion = allPresentadoras[i]['fechaReactivacion']
+                    var conf = allPresentadoras[i]['conf_reclutamiento']
+                    if(conf !=''){
+                        var confRec = conf
                     }else{
-                        var cont = 0 
-                        for(j in ordenesPeriodo){
-                            cont ++
-                            ordenesSCintegrante.push(ordenesPeriodo[j]) 
-                            if(cont >= ordenesFaltantes){
-                                break
-                            }
-                        }
+                        var confRec = 1 
                     }
-                   // log.debug('ordenesSCintegrante',ordenesSCintegrante)
-                    ordenesSupercomisionTotal.push(ordenesSCintegrante)
-                } 
-            }
-        });
-           //log.debug('ordenesSupercomisionTotal',ordenesSupercomisionTotal)
+                    if(confRec == 11 || confRec == 12 || confRec == 13 || confRec == 14){
+                        var noComisiona = 4
+                    }else{
+                        var noComisiona = 6
+                    }
+                    var dObjetivo2 = allPresentadoras[i]['objetivo_2']
+                    //log.debug('confRec',confRec)
+                    var dcontratacion
+                    if(reactivacion == ''){
+                        dcontratacion = Utils.stringToDate(hiredate)
+                    }else{
+                        dcontratacion = Utils.stringToDate(reactivacion)
+                        dObjetivo2=allPresentadoras[i]['obj_2_reactivacion']
+                    }
+                    if(dcontratacion > dHistorico){
+                        var ventasHistorico
+                        if(historicoSO[i]){
+                            ventasHistorico = historicoSO[i].length
+                        }else{
+                            ventasHistorico = 0
+                        }
+                        //log.debug('ventasHistorico',ventasHistorico)
+                        var ordenesSCintegrante=[]
+                        if(thisPeriodSO[i] && ventasHistorico < noComisiona){
+                            var ordenesFaltantes= noComisiona-ventasHistorico
+                            
+                            //log.debug('ordenesFaltantes',ordenesFaltantes)
+                            var ordenesPeriodo=[]
+                            for(x in thisPeriodSO[i]){
+                                var key = Object.keys(thisPeriodSO[i][x])
+                                var tipoVenta=thisPeriodSO[i][x][key]['custbody_tipo_venta'] 
+                                var dateSO=thisPeriodSO[i][x][key]['trandate']
+                                if(tipoVenta != 1 && Utils.stringToDate(dateSO)<Utils.stringToDate(dObjetivo2)){
+                                    ordenesPeriodo.push(thisPeriodSO[i][x])
+                                }
+                            }
+                            // log.debug('ordenesPeriodo',ordenesPeriodo)
+                            if(ordenesPeriodo.length <= ordenesFaltantes  ){
+                                ordenesSCintegrante = ordenesPeriodo                 
+                            }else{
+                                var cont = 0 
+                                for(j in ordenesPeriodo){
+                                    cont ++
+                                    ordenesSCintegrante.push(ordenesPeriodo[j]) 
+                                    if(cont >= ordenesFaltantes){
+                                        break
+                                    }
+                                }
+                            }
+                            // log.debug('ordenesSCintegrante',ordenesSCintegrante)
+                            ordenesSupercomisionTotal.push(ordenesSCintegrante)
+                        } 
+                    }
+            });
+            //log.debug('ordenesSupercomisionTotal',ordenesSupercomisionTotal)
             for(x in ordenesSupercomisionTotal){
                 for(y in ordenesSupercomisionTotal[x]){
                     var keys = Object.keys(ordenesSupercomisionTotal[x][y])
@@ -1089,164 +1069,116 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 //log.debug('ordenesSupercomisionTotal',ordenesSupercomisionTotal[x][y])
             }
                 //log.debug('ventasPeriodo',ventasPeriodo)
-            ventasNo= ventasPeriodo.length
-            montoSC= ventasNo*500        
-            if(montoSC == 0 && ventasNo== 0 ) {
-                ventasPeriodo=''
-            }                  
+                ventasNo= ventasPeriodo.length
+                montoSC= ventasNo*500        
+                if(montoSC == 0 && ventasNo== 0 ) {
+                    ventasPeriodo=''
+                }                  
+            }
+            //log.debug('montoSC',montoSC)
+            //log.debug('ventasPeriodo',ventasPeriodo)
+            //log.debug('ventasNo',ventasNo)
+            return  {monto:montoSC, data:ventasPeriodo, ventasNo:ventasNo};  
+        }catch(e){
+            log.debug('error Supercomision', e)
+            return false
         }
-        //log.debug('montoSC',montoSC)
-        //log.debug('ventasPeriodo',ventasPeriodo)
-        //log.debug('ventasNo',ventasNo)
-        return  {monto:montoSC, data:ventasPeriodo, ventasNo:ventasNo};  
-    }catch(e){
-        log.debug('error Supercomision', e)
-    }
          
     }
-    /*function bonoCincoDos(tipoReporte){
 
-        return 'Se están calculando los bonos del '+tipoReporte;
-
-    }
-    function bonotresdos(tipoReporte){
-
-        return 'Se están calculando los bonos del '+tipoReporte;
-
-    }
-    
-    function bonoTalento(tipoReporte){
-
-        return 'Se están calculando los bonos del '+tipoReporte;
-
-    }*/
 
     function bonoReclutamiento(reclutas,historicoSO,thisPeriodSO,dataEmp,compConfigDetails,allPresentadoras,dHistorico){
-    try{
-       // log.debug('reclutas lista ',dataEmp)
-        var totalVentas= 0
-        var bono_reclutadora =0
-        var ordenes={}
-        if(reclutas){
-          reclutas.forEach(function(i,index) {
-            //log.debug('recluta', i)   
-            var totalVentas= 0
-            var bono_rec =0 
-            var ventasReclutaTP = thisPeriodSO[i];
-            var ventasReclutaH = historicoSO[i];
-            //log.debug('reclutatp', ventasReclutaTP)
-            //log.debug('ventasReclutaH', ventasReclutaH)
-            var configuracionRec = allPresentadoras[i]['conf_reclutamiento']
-            var hiredate=allPresentadoras[i]['hiredate']
-            var reactivacion=allPresentadoras[i]['fechaReactivacion']
-            var dcontratacion
-            if(reactivacion == ''){
-                dcontratacion = Utils.stringToDate(hiredate)
-            }else{
-                dcontratacion = Utils.stringToDate(reactivacion)
-            }
-            if(dcontratacion > dHistorico){
-                if(configuracionRec){
-                //log.debug('configuracionRec'+i, configuracionRec);
-            }else{
-                configuracionRec=1
-            }
-            if(ventasReclutaTP){
-                //log.debug('recluta entra tp', i)
-                if(ventasReclutaH){
-                    //log.debug('recluta entra his', i)
-                    for(j in ventasReclutaTP){
-                        var key = Object.keys(ventasReclutaTP[j])
-                        var salesRep=ventasReclutaTP[j][key]['salesrep']
-                        var idSO=ventasReclutaTP[j][key]['internalid']
-                        //log.debug('salesRep',salesRep)
-                        //log.debug('idSO',idSO)
-                        if(ordenes.hasOwnProperty(key)){
-                            ordenes.push(key)
-                        }else{
-                            ordenes=key
-                        }
-                        
-                    }
-                    totalVentas= ventasReclutaTP.length+ventasReclutaH.length 
-                    if(totalVentas <=6 && configuracionRec != 11&& configuracionRec != 12&&configuracionRec!=13 &&configuracionRec!=14){ 
-                        //log.debug('if 6')
-                        bono_rec=bono_rec + Math.abs(compConfigDetails[configuracionRec]['esquemaVentasReclutamiento'][totalVentas]['compensacion'])
-                      }
-                      if(totalVentas <=4 && (configuracionRec == 11 || configuracionRec == 12 || configuracionRec==13 || configuracionRec==14)){
-                        //log.debug('if 4')
-                        bono_rec=bono_rec + Math.abs(compConfigDetails[configuracionRec]['esquemaVentasReclutamiento'][totalVentas]['compensacion'])
-                        
-                      }
-                }else{
-                    //log.debug('no hay historico')
-                    
-                    for(j in ventasReclutaTP){
-                        var montoInd=0
-                        var key = Object.keys(ventasReclutaTP[j])
-                        var tipoVenta=ventasReclutaTP[j][key]['custbody_tipo_venta']
-                        var salesRep=ventasReclutaTP[j][key]['salesrep']
-                        var idSO=ventasReclutaTP[j][key]['internalid']
-                        //log.debug('salesRep',salesRep)
-                       // log.debug('idSO',idSO)
-                        if(ordenes.hasOwnProperty(key)){
-                            ordenes.push(key)
-                        }else{
-                            ordenes=key
-                        }
-                        if(tipoVenta!=1){
-                            totalVentas++
-                           // log.debug('totalVentas'+i, totalVentas);
-                            if(totalVentas <=6 && configuracionRec != 11&& configuracionRec != 12&&configuracionRec!=13 &&configuracionRec!=14){ 
-                            //log.debug('6')
-                                montoInd= montoInd + Math.abs(compConfigDetails[configuracionRec]['esquemaVentasReclutamiento'][totalVentas]['compensacion'])
-                            }
-                            if(totalVentas <=4 && (configuracionRec == 11 || configuracionRec == 12 || configuracionRec==13|| configuracionRec==14)){
-                                //log.debug('4')
-                                montoInd= Math.abs(compConfigDetails[configuracionRec]['esquemaVentasReclutamiento'][totalVentas]['compensacion'])
-                            }
-                            //log.debug('montoInd',montoInd)
-                            bono_rec+=montoInd
-                            //log.debug('bono_rec'+i, bono_rec);
+        try{
+            if(reclutas){
+                var bono_reclutadora = 0
+                var ordenes = {}
+                var salesReclutas = {}
 
-                        }
+                reclutas.forEach(function(i,index) {
+                    var ventasReclutaTP = thisPeriodSO[i];
+                    var montoInd = 0  
+                    if(ventasReclutaTP){
+                          
                         
+                        var ventasReclutaH = historicoSO[i];
+                        var configuracionRec = allPresentadoras[i]['conf_reclutamiento']
+                        log.debug('reclutatp', ventasReclutaTP)
+                        log.debug('ventasReclutaH', ventasReclutaH)
+                        var confRec = allPresentadoras[i]['conf_reclutamiento']?allPresentadoras[i]['conf_reclutamiento']:1
+                        var hiredate=allPresentadoras[i]['hiredate']
+                        var reactivacion=allPresentadoras[i]['fechaReactivacion']
+                        var dcontratacion
+                        if(reactivacion == ''){
+                            dcontratacion = Utils.stringToDate(hiredate)
+                        }else{
+                            dcontratacion = Utils.stringToDate(reactivacion)
+                        }
+                        if(dcontratacion > dHistorico && ventasReclutaTP){
+                            
+                            
+                            var salesReclutaTP =[]
+                            /*var key = Object.keys(ventasReclutaTP[j])
+                            var tipoVenta=ventasReclutaTP[j][key]['custbody_tipo_venta']
+                            var salesRep=ventasReclutaTP[j][key]['salesrep']
+                            var idSO=ventasReclutaTP[j][key]['internalid']
+                            */
+
+                            log.debug('bono_reclutadora',bono_reclutadora)
+                            //log.debug('ordenes',ordenes)
+
+
+                            
+                            //test 
+
+                            if(confRec == 11 || confRec == 12 || confRec == 13 || confRec == 14){
+                                var noComisiona = 4
+                            }else{
+                                var noComisiona = 6
+                            }
+
+                            var cont = 0
+                            var faltantesRec = 0
+                            if( ventasReclutaH ){  
+                                cont = ventasReclutaH.length 
+                                faltantesRec = noComisiona - ventasReclutaH.length 
+                            }else{
+                                faltantesRec = noComisiona
+                            }
+
+                            if(faltantesRec > 0){ 
+                                for(j in ventasReclutaTP){
+                                    log.debug('ventasReclutaTP[j]',ventasReclutaTP[j])
+                                    key = Object.keys(ventasReclutaTP[j])
+                                    var tipoVenta=ventasReclutaTP[j][key]['custbody_tipo_venta']
+                                    if(tipoVenta == 'Ventas TM'){
+                                        cont ++
+                                        
+                                        montoInd = montoInd + Math.abs(compConfigDetails[configuracionRec]['esquemaVentasReclutamiento'][cont]['compensacion'])
+                                        log.debug('recluta', i) 
+                                        log.debug('montoInd',montoInd)
+                                        salesReclutaTP.push(ventasReclutaTP[j][key]['internalid'])
+                                        if(cont >= faltantesRec){
+                                            break
+                                        }
+                                    }
+                                    
+                                }
+                            }
+                             
+                        }
+                        salesReclutas[i] = salesReclutaTP
+                        bono_reclutadora += montoInd
                     }
-                    
-                }
-              bono_reclutadora+= bono_rec
-              //log.debug('bono_reclutadora',bono_reclutadora)
-              //log.debug('ordenes',ordenes)
-            }
-            }
+                });
+                return  {monto:bono_reclutadora, data:ordenes}; 
+            } 
             
-         });
-        } else{
-         // log.debug('esta presentadora no tiene reclutas: '+dataEmp.internalid)
-
-        }
-        return  {monto:bono_reclutadora, data:ordenes}; 
-    }catch(e){
-        log.debug('error reclutamiento',e)
-    }                          
-       
-
+        }catch(e){
+            log.error('error reclutamiento',e)
+            return false
+        }     
     }
-    /*function bonoGarantia(tipoReporte){
-
-        return 'Se están calculando los bonos del '+tipoReporte;
-
-    }
-    function bonoEmerald(tipoReporte){
-
-        return 'Se están calculando los bonos del '+tipoReporte;
-
-    }
-    function bonoProductividad(tipoReporte){
-
-        return 'Se están calculando los bonos del '+tipoReporte;
-
-    }*/
+  
     function bonoEntrega(dataEmp,empSOThisPeriod,cust_entrega){
     try{
         //log.debug('cust_entrega',cust_entrega)
@@ -1282,40 +1214,37 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
 
     }
     function bonoVentaPropia(dataEmp,empSOThisPeriod,compConfigDetails){
-    try{
-       var ventas = empSOThisPeriod
-      //log.debug('ventas',ventas)
-      var data = []
-      for (i in ventas){
-        var ventasData= Object.keys(ventas[i])
-        //thisPeriodSO['id presentador'][indice]['id pedido']['etiqueta']
-        var comisionables = ventas[i][ventasData]['custbody_vw_comission_status']
-        var tipoVenta = ventas[i][ventasData]['custbody_tipo_venta']
-        //log.debug('comisionables',comisionables)
-        if(comisionables != 2 && tipoVenta != 1){
-          data.push(ventasData)
+        try{
+            var ventas = empSOThisPeriod
+            //log.debug('ventas',ventas)
+            var data = []
+            for (i in ventas){
+                var ventasData= Object.keys(ventas[i])
+                //thisPeriodSO['id presentador'][indice]['id pedido']['etiqueta']
+                var comisionables = ventas[i][ventasData]['custbody_vw_comission_status']
+                var tipoVenta = ventas[i][ventasData]['custbody_tipo_venta']
+                //log.debug('comisionables',comisionables)
+                if(comisionables != 2 && tipoVenta != 1){
+                  data.push(ventasData)
+                }
+
+            }
+            var ventasNo = data.length
+            //compConfigDetails[tipo de cofiguracion][etiqueta del esquema][No de ventas][etiqueta de la compensacion monto]
+            var montoVentasPre= compConfigDetails[1]['esquemaVentasPresentadora'][ventasNo]['compensacion']
+/*
+log.debug('montoVentasPre', montoVentasPre)
+monto: Monto de cal cof a partir del numero de ventas 
+data: Arreglo de Internal id de Sales Order del EMP
+*/
+
+            return {monto:montoVentasPre, data:data} 
+        }catch(e){
+            log.debug('error venta propia',e)
+            return false
         }
-        
-      }
-      var ventasNo = data.length
-      //compConfigDetails[tipo de cofiguracion][etiqueta del esquema][No de ventas][etiqueta de la compensacion monto]
-      var montoVentasPre= compConfigDetails[1]['esquemaVentasPresentadora'][ventasNo]['compensacion']
-      //log.debug('montoVentasPre', montoVentasPre)
-            //monto: Monto de cal cof a partir del numero de ventas 
-            //data: Arreglo de Internal id de Sales Order del EMP
-
-        return {monto:montoVentasPre, data:data} 
-    }catch(e){
-        log.debug('error venta propia',e)
     }
-      
-      
-      
 
-    }
-   /* function bonoComCK(tipoReporte){
-
-    }*/
     function searchDataPresentadoras(namePeriodo){ 
         try{
            
