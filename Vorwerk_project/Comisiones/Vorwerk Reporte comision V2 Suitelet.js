@@ -682,23 +682,23 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             //log.debug('listaNombramientos de la lider ', listaNombramientos[liderM])
             for(i in listaNombramientos[liderM]){
                 var empConf=allPresentadoras[listaNombramientos[liderM][i]].emp_conf
-                    log.debug('lista empConf', empConf)
+                   // log.debug('lista empConf', empConf)
                 var configH=Utils.getConf(empConf);
-                    log.debug('lista configH', configH)
+                    //log.debug('lista configH', configH)
                 var equipoH=listaGrupos[listaNombramientos[liderM][i]]
-                    log.debug('lista equipoH', equipoH)
+                   // log.debug('lista equipoH', equipoH)
                 var ventasH= thisPeriodSO[listaNombramientos[liderM][i]]
-                    log.debug('lista ventasH', ventasH)
+                    //log.debug('lista ventasH', ventasH)
                 
                 var ventaEquipoH=bonoVentaEquipo(ventasH,compConfigDetails,configH,equipoH,thisPeriodSO)
-                    log.debug('ventaEquipoH',ventaEquipoH)
+                   // log.debug('ventaEquipoH',ventaEquipoH)
                 var montoNLE=ventaEquipoH.monto
                 montoTotal += montoNLE
                 
             }
             liderHijo= listaNombramientos[liderM]
         }
-        log.debug('lista montoTotal', montoTotal)
+        //log.debug('lista montoTotal', montoTotal)
                       
     }catch(e){
         log.debug('bonoVentaEquipoNLE ', e)
