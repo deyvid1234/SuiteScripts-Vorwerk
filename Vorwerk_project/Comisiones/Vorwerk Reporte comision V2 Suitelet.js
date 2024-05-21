@@ -179,7 +179,8 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
     function sublista(form,cust_type,cust_promo,cust_period,cust_entrega,compConfigDetails){
         try{
 
-            const fechaPeriodoCalculado = search.lookupFields({ type: 'customrecord_periods', id: cust_period, columns: ['custrecord_inicio','custrecord_final']});
+            const fechaPeriodoCalculado = search.lookupFields({ type: 'customrecord_periods', id: cust_period, columns: ['custrecord_inicio','custrecord_final','name']});
+            const namePeriodo= fechaPeriodoCalculado.name //mm/yyyy
             const inicioPeriodo = fechaPeriodoCalculado.custrecord_inicio // dd/mm/yyyy
             const finPeriodo = fechaPeriodoCalculado.custrecord_final // dd/mm/yyyy
 
@@ -205,7 +206,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             log.debug('dateX', dateX)*/
             
             //Busqueda datos Presentadores
-            const listasPresentadora = searchDataPresentadoras()
+            const listasPresentadora = searchDataPresentadoras(namePeriodo)
             const allPresentadoras = listasPresentadora.allPresentadorData
             log.debug('allPresentadoras', allPresentadoras)
             const listaGrupos= listasPresentadora.empGrupos
@@ -308,6 +309,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                                 objVentaEquipo = bonoVentaEquipo(ventasEmp,compConfigDetails,conf,integrantesEquipo,thisPeriodSO)
                                 log.debug('objVentaEquipo',objVentaEquipo)
                                 objVentasEquipoNLE=bonoVentaEquipoNLE(listaNombramientos,dataEmp,thisPeriodSO,listaGrupos,allPresentadoras,compConfigDetails,finPeriodo)
+                                log.debug('objVentasEquipoNLE',objVentasEquipoNLE)
                                 /*
 
                                 
@@ -327,7 +329,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                                 
                                 */
                                 
-                                fillTable(sublist,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objSupercomision,objReclutamiento,objEntrega,objTresDos,objCincoDos,objProductividad,objVentaEquipo)
+                                fillTable(sublist,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objSupercomision,objReclutamiento,objEntrega,objTresDos,objCincoDos,objProductividad,objVentaEquipo,objVentasEquipoNLE)
                                 cont_line++
                                 
                             }
@@ -387,7 +389,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
           log.debug('creditos 2',runtime.getCurrentScript().getRemainingUsage()); 
         }   
     }//Fin sublista
-    function fillTable(sublist,dataEmp,ventasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,supercomision,reclutamiento,entrega,tresDos,cincoDos,productividad,ventaEquipo){
+    function fillTable(sublist,dataEmp,ventasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,supercomision,reclutamiento,entrega,tresDos,cincoDos,productividad,ventaEquipo,ventasEquipoNLE){
         var linea = cont_line
         var subtotal=0
         sublist.setSublistValue({
@@ -624,7 +626,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
           
         }
         if(ventaEquipo){
-          //log.debug('bonoReclutamiento filltable')
+         
           v = ventaEquipo.porcentaje
           sublist.setSublistValue({
               id : 'custentity_porcentaje',
@@ -636,6 +638,24 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
           subtotal+=parseInt(v)
           sublist.setSublistValue({
               id : 'custentity_venta_equipo',
+              line : linea,
+              value : v
+          });
+          
+        }
+        if(ventasEquipoNLE){
+          
+          v = ventasEquipoNLE.data
+          sublist.setSublistValue({
+              id : 'custentity_lider_nle',
+              line : linea,
+              value : v!=''?v:''
+          });
+          
+          v = ventasEquipoNLE.monto>0?ventasEquipoNLE.monto:0
+          subtotal+=parseInt(v)
+          sublist.setSublistValue({
+              id : 'custentity_nle_monto',
               line : linea,
               value : v
           });
@@ -655,36 +675,35 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
     function bonoVentaEquipoNLE(listaNombramientos,dataEmp,thisPeriodSO,listaGrupos,allPresentadoras,compConfigDetails,finPeriodo){
     try{
         var liderM=dataEmp.internalid
-
+        var montoTotal= 0
+        var liderHijo = {}
         if(listaNombramientos.hasOwnProperty(liderM)){
-            log.debug('liderM',liderM)
-            log.debug('listaNombramientos de la lider ', listaNombramientos[liderM])
+            //log.debug('liderM',liderM)
+            //log.debug('listaNombramientos de la lider ', listaNombramientos[liderM])
             for(i in listaNombramientos[liderM]){
                 var empConf=allPresentadoras[listaNombramientos[liderM][i]].emp_conf
-                log.debug('lista empConf', empConf)
-                var fechaNom=allPresentadoras[listaNombramientos[liderM][i]].fechaNombramiento
-                log.debug('lista fechaNom', fechaNom)
-                var fechaLimite=Utils.sumarMeses(fechaNom,3)
-                log.debug('lista fechaLimite', fechaLimite)
+                    log.debug('lista empConf', empConf)
                 var configH=Utils.getConf(empConf);
-                log.debug('lista configH', configH)
+                    log.debug('lista configH', configH)
                 var equipoH=listaGrupos[listaNombramientos[liderM][i]]
-                log.debug('lista equipoH', equipoH)
+                    log.debug('lista equipoH', equipoH)
                 var ventasH= thisPeriodSO[listaNombramientos[liderM][i]]
-                log.debug('lista ventasH', ventasH)
-                if(Utils.stringToDate(finPeriodo) <=  fechaLimite){
-                    var ventaEquipoH=bonoVentaEquipo(ventasH,compConfigDetails,configH,equipoH,thisPeriodSO)
-                log.debug('ventaEquipoH',ventaEquipoH)
-                }
+                    log.debug('lista ventasH', ventasH)
+                
+                var ventaEquipoH=bonoVentaEquipo(ventasH,compConfigDetails,configH,equipoH,thisPeriodSO)
+                    log.debug('ventaEquipoH',ventaEquipoH)
+                var montoNLE=ventaEquipoH.monto
+                montoTotal += montoNLE
                 
             }
+            liderHijo= listaNombramientos[liderM]
         }
-        //log.debug('lista nombramientos', listaNombramientos)
+        log.debug('lista montoTotal', montoTotal)
                       
     }catch(e){
         log.debug('bonoVentaEquipoNLE ', e)
     }
-        return //true{monto:venta_equipo, porcentaje:porcentaje}
+        return {monto:montoTotal, data:liderHijo}
 
     }
     function bonoVentaEquipo(ventasEmp,compConfigDetails,conf,integrantesEquipo,thisPeriodSO){
@@ -1297,7 +1316,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
    /* function bonoComCK(tipoReporte){
 
     }*/
-    function searchDataPresentadoras(){ 
+    function searchDataPresentadoras(namePeriodo){ 
         try{
            
            
@@ -1412,10 +1431,21 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                     }else{
                         empReclutas[objEMP.emp_reclutadora] = [objEMP.internalid]  
                     }
-                    if(nombradsPor.hasOwnProperty(objEMP.nombramientoPor)){
-                        nombradsPor[objEMP.nombramientoPor].push(objEMP.internalid)
-                    }else{
-                        nombradsPor[objEMP.nombramientoPor] = [objEMP.internalid]  
+
+                    if(objEMP.nombramientoPor != ''){
+                        var mesPeriodo=namePeriodo.split('/')
+                        mesPeriodo = parseInt(mesPeriodo[0])
+                        var mesMinimo=mesPeriodo-3    
+                        var mesNombramiento=objEMP.fechaNombramiento.split('/')
+                        mesNombramiento=parseInt(mesNombramiento[1])
+                        if(mesNombramiento>mesMinimo&&mesNombramiento <= mesPeriodo){
+                            if(nombradsPor.hasOwnProperty(objEMP.nombramientoPor)){
+                            nombradsPor[objEMP.nombramientoPor].push(objEMP.internalid)
+                            }else{
+                                nombradsPor[objEMP.nombramientoPor] = [objEMP.internalid]
+                            }
+                          
+                        }
                     }
 
                 });
@@ -1935,6 +1965,18 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                     id : 'custentity_venta_equipo',
                     type : serverWidget.FieldType.CURRENCY,
                     label : 'Venta Equipo'
+                }).updateDisplayType({displayType : serverWidget.FieldDisplayType.READONLY});
+
+                sublist.addField({
+                    id : 'custentity_lider_nle',
+                    type : serverWidget.FieldType.TEXT,
+                    label : 'NLE'
+                }).updateDisplayType({displayType : serverWidget.FieldDisplayType.READONLY});
+                     
+                sublist.addField({
+                    id : 'custentity_nle_monto',
+                    type : serverWidget.FieldType.CURRENCY,
+                    label : 'Bono NLE'
                 }).updateDisplayType({displayType : serverWidget.FieldDisplayType.READONLY});
 
                 //3+2 y 5+2 EQUIPO ESPECIAL - DEBEN PERTENECER AL EQUIPO Y APARTE DEBIERON SER RECLUTADAS POR LA LIDER DE EQUIPO 
