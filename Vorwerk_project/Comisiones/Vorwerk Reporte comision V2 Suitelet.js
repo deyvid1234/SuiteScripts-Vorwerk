@@ -674,13 +674,13 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
     
     function bonoVentaEquipoNLE(listaNombramientos,dataEmp,thisPeriodSO,listaGrupos,allPresentadoras,compConfigDetails,finPeriodo){
     try{
-        var liderM=dataEmp.internalid
+        var liderM=dataEmp.internalid//lider madre
         var montoTotal= 0
         var liderHijo = {}
-        if(listaNombramientos.hasOwnProperty(liderM)){
+        if(listaNombramientos.hasOwnProperty(liderM)){Se valida si la lider tiene lideres hijos
             //log.debug('liderM',liderM)
             //log.debug('listaNombramientos de la lider ', listaNombramientos[liderM])
-            for(i in listaNombramientos[liderM]){
+            for(i in listaNombramientos[liderM]){//por cada lider hijo se obtiene su configuracion, equipo y ventas y se llama al bono Venta equpi para calcular el monto
                 var empConf=allPresentadoras[listaNombramientos[liderM][i]].emp_conf
                    // log.debug('lista empConf', empConf)
                 var configH=Utils.getConf(empConf);
@@ -693,7 +693,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 var ventaEquipoH=bonoVentaEquipo(ventasH,compConfigDetails,configH,equipoH,thisPeriodSO)
                    // log.debug('ventaEquipoH',ventaEquipoH)
                 var montoNLE=ventaEquipoH.monto
-                montoTotal += montoNLE
+                montoTotal += montoNLE//se suman los montos de cada lider hijo para obtener el monto total a pagar a la lider madre
                 
             }
             liderHijo= listaNombramientos[liderM]
