@@ -289,7 +289,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 var objJoya = false 
                 switch(tipoReporteGloobal){
                     case 1: //Reporte LE
-                        if(empType == 3 && empPromo == 2 && allPresentadoras[i].internalid == '2504501'){
+                        if(empType == 3 && empPromo == 2 /*&& allPresentadoras[i].internalid == '2504501'*/){
                             //Calcular reporte para la persona
                             var reclutas = listaReclutas[i]
                             var integrantesEquipo = listaGrupos[i]   
