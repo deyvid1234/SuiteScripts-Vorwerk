@@ -3,8 +3,8 @@
  * @NScriptType Suitelet
  * @NModuleScope SameAccount
  */
-define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file','N/query','SuiteScripts/Vorwerk_project/Vorwerk Utils V2.js'], 
-    function(plugin,task, serverWidget, search, runtime,file,query,Utils){
+define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file','N/query','SuiteScripts/Vorwerk_project/Vorwerk Utils V2.js','N/record'], 
+    function(plugin,task, serverWidget, search, runtime,file,query,Utils,record){
   
     /**
      * Definition of the Suitelet script trigger point.
@@ -285,10 +285,11 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 var objSupercomision = false
                 var objVentasEquipoNLE= false
                 var objGarantia = false
+                var objXmasdosNLE= false
                 var objJoya = false 
                 switch(tipoReporteGloobal){
                     case 1: //Reporte LE
-                        if(empType == 3 && empPromo == 2 && allPresentadoras[i].internalid == '28271'){
+                        if(empType == 3 && empPromo == 2 && allPresentadoras[i].internalid == '2504501'){
                             //Calcular reporte para la persona
                             var reclutas = listaReclutas[i]
                             var integrantesEquipo = listaGrupos[i]   
@@ -316,10 +317,11 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                             
                             objVentaEquipo = bonoVentaEquipo(ventasEmp,compConfigDetails,conf,integrantesEquipo,thisPeriodSO)
                             log.debug('objVentaEquipo',objVentaEquipo)
-                            objVentasEquipoNLE=bonoVentaEquipoNLE(listaNombramientos,dataEmp,thisPeriodSO,listaGrupos,allPresentadoras,compConfigDetails,finPeriodo)
+                            objVentasEquipoNLE=bonoVentaEquipoNLE(listaNombramientos,dataEmp,thisPeriodSO,listaGrupos,allPresentadoras,compConfigDetails)
                             log.debug('objVentasEquipoNLE',objVentasEquipoNLE)
                             objGarantia = bonoGarantia(dataEmp,garantiaSO,compConfigDetails)
                             log.debug('objGarantia',objGarantia)
+                            objXmasdosNLE=bonoXmasdosNLE(listaNombramientos,dataEmp,thisPeriodSO,listaGrupos,allPresentadoras,listaEquipoRecluta,historicoSO,dHistorico,namePeriodo,cust_period)
                             fillTable(sublist,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objSupercomision,objReclutamiento,objEntrega,objXmasDos,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objJoya)
                             cont_line++
                             
@@ -716,7 +718,63 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
         }
 
     }
-    
+    function bonoXmasdosNLE(listaNombramientos,dataEmp,thisPeriodSO,listaGrupos,allPresentadoras,listaEquipoRecluta,historicoSO,dHistorico,namePeriodo,cust_period){
+        try{
+            var liderM=dataEmp.internalid//lider madre
+            var montoTotal52= 0
+            var montoTotal32= 0
+            if(listaNombramientos.hasOwnProperty(liderM)){//Se valida si la lider tiene lideres hijos
+                var liderHijo = {}
+                //log.debug('liderM',liderM)
+                //log.debug('listaNombramientos de la lider ', listaNombramientos[liderM])
+                for(i in listaNombramientos[liderM]){//por cada lider hijo se obtiene su configuracion, equipo y ventas y se llama al bono Venta equpi para calcular el monto
+                    var periodoPagoNLE= allPresentadoras[listaNombramientos[liderM][i]].periodoPagoNLE
+                    log.debug('periodoPagoNLE',periodoPagoNLE)
+                    if(periodoPagoNLE == namePeriodo || !periodoPagoNLE){
+                        //log.debug('campo vacio')
+
+                        var dataEmpH=allPresentadoras[listaNombramientos[liderM][i]]
+                        var idHijo = dataEmp.internalid
+                        var empConf=allPresentadoras[listaNombramientos[liderM][i]].emp_conf
+                           // log.debug('lista empConf', empConf)
+                        var configH=Utils.getConf(empConf);
+                            //log.debug('lista configH', configH)
+                        var equipoH=listaGrupos[listaNombramientos[liderM][i]]
+                           // log.debug('lista equipoH', equipoH)
+                        var reclutaEquipoH=listaEquipoRecluta[listaNombramientos[liderM][i]]
+                        var ventasH= thisPeriodSO[listaNombramientos[liderM][i]]
+                            //log.debug('lista ventasH', ventasH)
+                        
+
+                        var xMasdosH=bonoXmasDos(dataEmpH,reclutaEquipoH,thisPeriodSO,ventasH,historicoSO,allPresentadoras,dHistorico,equipoH)
+                          
+                        var montoNLE32=xMasdosH.monto52
+                        var montoNLE52=xMasdosH.monto32
+                        //log.debug('montoNLE32',montoNLE32)
+                       //log.debug('montoNLE52',montoNLE52)
+                        if(montoNLE32 > 0 || montoNLE52 > 0){
+                            log.debug('actualizacion de registro de ', idHijo)
+                            var submitFields = record.submitFields({
+                                            type: 'employee',
+                                            id: idHijo,
+                                            values: {'custentityperiodo_nle_pago':cust_period}
+                                        });
+                        }
+                        montoTotal52 += montoNLE52//se suman los montos de cada lider hijo para obtener el monto total a pagar a la lider madre
+                        montoTotal32 += montoNLE32
+                    }
+                    //log.debug('montoTotal52',montoTotal52)
+                   // log.debug('montoTotal32',montoTotal32)
+                }
+                liderHijo= listaNombramientos[liderM]
+                return {monto32:montoTotal32,monto52:montoTotal52,data:liderHijo}
+            }
+            return false
+        }catch(e){
+            log.error('error bono X+2 NLE',e)
+        }
+
+    }
     function bonoGarantia(dataEmp,garantiaSO,compConfigDetails){
         try{
             if(garantiaSO.hasOwnProperty(dataEmp.internalid)){
@@ -732,7 +790,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
         }
 
     }
-    function bonoVentaEquipoNLE(listaNombramientos,dataEmp,thisPeriodSO,listaGrupos,allPresentadoras,compConfigDetails,finPeriodo){
+    function bonoVentaEquipoNLE(listaNombramientos,dataEmp,thisPeriodSO,listaGrupos,allPresentadoras,compConfigDetails){
         try{
             var liderM=dataEmp.internalid//lider madre
             var montoTotal= 0
@@ -774,13 +832,13 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
     function bonoVentaEquipo(ventasEmp,compConfigDetails,conf,integrantesEquipo,thisPeriodSO){
         try{
             var ventasP = ventasEmp
-            log.debug('ventas',ventas)
+            //log.debug('ventas',ventas)
             var data = []
             for (i in ventasP){
                 var ventasData= Object.keys(ventasP[i])
                 var comisionables = ventasP[i][ventasData]['custbody_vw_comission_status']
                 var tipoVenta = ventasP[i][ventasData]['custbody_tipo_venta']
-                log.debug('comisionables',comisionables)
+                //log.debug('comisionables',comisionables)
                 if( tipoVenta != 'TM Ganada'){
                     data.push(ventasData)
                 }
@@ -790,37 +848,37 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             var porcentaje
             var sum=0
             var venta_equipo = 0
-            log.debug('t_venta_propia',t_venta_propia)
-            log.debug('conf',conf)
+            //log.debug('t_venta_propia',t_venta_propia)
+            //log.debug('conf',conf)
             for(n in integrantesEquipo){
                 var ventas=[]
                 var ventasint= thisPeriodSO[integrantesEquipo[n]]
                 for(x in ventasint){
                     var key = Object.keys(ventasint[x])
                     var tipoVenta=ventasint[x][key]['custbody_tipo_venta'] 
-                    log.debug('key',key)
-                    log.debug('tipoVenta',tipoVenta)
+                    //log.debug('key',key)
+                    //log.debug('tipoVenta',tipoVenta)
                     if(tipoVenta!='TM Ganada'){
                         ventas.push(key)
                     }
                 }
                     
-                log.debug('ventasint',ventasint)
-                log.debug('ventas',ventas)
+                //log.debug('ventasint',ventasint)
+                //log.debug('ventas',ventas)
                 if(ventas!=''){
-                    log.debug('ventas length',ventas.length)
+                    //log.debug('ventas length',ventas.length)
                     sum += ventas.length
                 }
             }
-            log.debug('sum',sum)
+            //log.debug('sum',sum)
             for ( i in compConfigDetails[1]['esquemaVentasJefaGrupo']['propias'] ){
                 var desde = compConfigDetails[1]['esquemaVentasJefaGrupo']['propias'][i]['desde']
                 var hasta = compConfigDetails[1]['esquemaVentasJefaGrupo']['propias'][i]['hasta']
-                log.debug('desde',desde)
-                log.debug('hasta',hasta)
+                //log.debug('desde',desde)
+                //log.debug('hasta',hasta)
                 if (t_venta_propia >= desde && t_venta_propia <= hasta){
                     porcentaje = compConfigDetails[1]['esquemaVentasJefaGrupo']['propias'][i]['porcentaje']
-                    log.debug('porcentaje',porcentaje)
+                   //log.debug('porcentaje',porcentaje)
                      break;
                 }
             }
@@ -832,7 +890,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                     var desde= compConfigDetails[conf]['esquemaVentasJefaGrupo']['grupo'][num_]['desde']
                     if(sum >= desde && sum <= hasta){
                         venta_equipo = (compConfigDetails[conf]['esquemaVentasJefaGrupo']['grupo'][num_]['compensacion'])*(parseInt(porcentaje)/100)
-                        log.debug('venta_equipo',venta_equipo)
+                        //log.debug('venta_equipo',venta_equipo)
                         break;
                     }
                 }
@@ -1264,6 +1322,7 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
             const empSearchtiponombramiento = search.createColumn({ name: 'custentity_nombramiento_le'});
             const empSearchnombradopor = search.createColumn({ name: 'custentity_nombramiento'});
             const empSearchfechanombramiento = search.createColumn({ name: 'custentity_fecha_nombramiento'});
+            const empSearchPeriodoPagoNLE = search.createColumn({ name: 'custentityperiodo_nle_pago'});
 
             const mySearch = search.create({
                 type: 'employee',
@@ -1291,6 +1350,7 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
                     empSearchtiponombramiento,
                     empSearchnombradopor,
                     empSearchfechanombramiento,
+                    empSearchPeriodoPagoNLE,
 
 
                 ],
@@ -1329,6 +1389,8 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
                     objEMP.tipoNombramento = r.getValue('custentity_nombramiento_le')
                     objEMP.nombramientoPor = r.getValue('custentity_nombramiento')
                     objEMP.fechaNombramiento = r.getValue('custentity_fecha_nombramiento')
+                    objEMP.periodoPagoNLE = r.getValue('custentityperiodo_nle_pago')
+
                     allPresentadorData[objEMP.internalid] = objEMP
 
                     if(empGrupos.hasOwnProperty(objEMP.supervisor)){
