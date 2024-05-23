@@ -316,11 +316,11 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                              //log.debug('objProductividad',objProductividad)
                             
                             objVentaEquipo = bonoVentaEquipo(ventasEmp,compConfigDetails,conf,integrantesEquipo,thisPeriodSO)
-                            log.debug('objVentaEquipo',objVentaEquipo)
+                            //log.debug('objVentaEquipo',objVentaEquipo)
                             objVentasEquipoNLE=bonoVentaEquipoNLE(listaNombramientos,dataEmp,thisPeriodSO,listaGrupos,allPresentadoras,compConfigDetails)
-                            log.debug('objVentasEquipoNLE',objVentasEquipoNLE)
+                            //log.debug('objVentasEquipoNLE',objVentasEquipoNLE)
                             objGarantia = bonoGarantia(dataEmp,garantiaSO,compConfigDetails)
-                            log.debug('objGarantia',objGarantia)
+                            //log.debug('objGarantia',objGarantia)
                             objXmasdosNLE=bonoXmasdosNLE(listaNombramientos,dataEmp,thisPeriodSO,listaGrupos,allPresentadoras,listaEquipoRecluta,historicoSO,dHistorico,namePeriodo,cust_period)
                             fillTable(sublist,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objSupercomision,objReclutamiento,objEntrega,objXmasDos,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objJoya)
                             cont_line++
@@ -545,14 +545,14 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
           //log.debug('bonoReclutamiento filltable')          
           v = reclutamiento.monto>0?reclutamiento.monto:0
           subtotal+=parseInt(v)
-          log.debug('vbono reclutamiento',v)
+          //log.debug('vbono reclutamiento',v)
           sublist.setSublistValue({
               id : 'custentity_bono_rec',
               line : linea,
               value : v
           });
           v = JSON.stringify(reclutamiento.data)
-          log.debug('vStringRec',v)
+          //log.debug('vStringRec',v)
           sublist.setSublistValue({
               id : 'custentity_odv_rec',
               line : linea,
@@ -626,6 +626,12 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
               value : v
           });
           
+          v = ventaEquipo.infoVentasEquipo!=''?ventaEquipo.infoVentasEquipo:''
+          sublist.setSublistValue({
+              id : 'custentity_odv_equipo',
+              line : linea,
+              value : JSON.stringify(v)
+          });
         }
         if(ventasEquipoNLE){
           
@@ -684,7 +690,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             line : linea,
             value : v
         });
-        log.debug('subtotal',subtotal)
+        //log.debug('subtotal',subtotal)
           
         
         return fillTable;
@@ -833,6 +839,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
         try{
             var ventasP = ventasEmp
             //log.debug('ventas',ventas)
+            //Ventas propias 
             var data = []
             for (i in ventasP){
                 var ventasData= Object.keys(ventasP[i])
@@ -845,14 +852,20 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 
             }
             var t_venta_propia = data.length
+
+
             var porcentaje
-            var sum=0
+
+            //Recorrido de integrantes del equipo
+            var numeroVentasEquipo=0
+            var infoVentasEquipo ={}
             var venta_equipo = 0
             //log.debug('t_venta_propia',t_venta_propia)
             //log.debug('conf',conf)
             for(n in integrantesEquipo){
                 var ventas=[]
                 var ventasint= thisPeriodSO[integrantesEquipo[n]]
+                //Recorrido de las ventas de cada integrante de equipo
                 for(x in ventasint){
                     var key = Object.keys(ventasint[x])
                     var tipoVenta=ventasint[x][key]['custbody_tipo_venta'] 
@@ -867,10 +880,12 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 //log.debug('ventas',ventas)
                 if(ventas!=''){
                     //log.debug('ventas length',ventas.length)
-                    sum += ventas.length
+                    infoVentasEquipo[integrantesEquipo[n]] = ventas
+                    numeroVentasEquipo += ventas.length
                 }
             }
-            //log.debug('sum',sum)
+            //log.debug('numeroVentasEquipo',numeroVentasEquipo)
+
             for ( i in compConfigDetails[1]['esquemaVentasJefaGrupo']['propias'] ){
                 var desde = compConfigDetails[1]['esquemaVentasJefaGrupo']['propias'][i]['desde']
                 var hasta = compConfigDetails[1]['esquemaVentasJefaGrupo']['propias'][i]['hasta']
@@ -888,7 +903,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 for(num_ in inf ){//Recorre la configuracion hasta entrar en el rango de ventas
                     var hasta= compConfigDetails[conf]['esquemaVentasJefaGrupo']['grupo'][num_]['hasta']
                     var desde= compConfigDetails[conf]['esquemaVentasJefaGrupo']['grupo'][num_]['desde']
-                    if(sum >= desde && sum <= hasta){
+                    if(numeroVentasEquipo >= desde && numeroVentasEquipo <= hasta){
                         venta_equipo = (compConfigDetails[conf]['esquemaVentasJefaGrupo']['grupo'][num_]['compensacion'])*(parseInt(porcentaje)/100)
                         //log.debug('venta_equipo',venta_equipo)
                         break;
@@ -899,7 +914,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
         }catch(e){
             log.error('bonoVentaEquipo ', e)
         }
-        return {monto:venta_equipo, porcentaje:porcentaje}
+        return {monto:venta_equipo, porcentaje:porcentaje, infoVentasEquipo:infoVentasEquipo}
 
     }
     function bonoProductividad(dataEmp,ventasEmp,compConfigDetails){
@@ -1860,9 +1875,9 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
                 }).updateDisplayType({displayType : serverWidget.FieldDisplayType.READONLY});
                     
                 sublist.addField({
-                    id: 'custentity_odv_comisionables_pre',
+                    id: 'custentity_odv_equipo',
                     type: serverWidget.FieldType.TEXTAREA,
-                    label: 'ODV comisionables'
+                    label: 'ODV Equipo'
                 }).updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
                            
                 sublist.addField({
