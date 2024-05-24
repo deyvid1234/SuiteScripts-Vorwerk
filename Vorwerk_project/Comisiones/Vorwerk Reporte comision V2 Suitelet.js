@@ -192,10 +192,11 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             const thisPeriodSO = salesOrdersData.thisPeriodSO
             const dHistorico=salesOrdersData.dHistorico
             const garantiaSO = salesOrdersData.objGarantiaRep
+            const ckSO = salesOrdersData.objCK
             log.debug('historicoSO',historicoSO)
             log.debug('thisPeriodSO',thisPeriodSO)//sales reo
             log.debug('garantiaSO',garantiaSO)
-            
+            log.debug('ckSO',ckSO)
             newCheckTime = new Date();
             timeDiff = newCheckTime - startTime; //in ms
             timeDiff /= 1000;
@@ -287,6 +288,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 var objGarantia = false
                 var objXmasdosNLE= false
                 var objJoya = false 
+                var objCook = false
                 switch(tipoReporteGloobal){
                     case 1: //Reporte LE
                         if(empType == 3 && empPromo == 2 /*&& allPresentadoras[i].internalid == '2504501'*/){
@@ -322,7 +324,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                             objGarantia = bonoGarantia(dataEmp,garantiaSO,compConfigDetails)
                             //log.debug('objGarantia',objGarantia)
                             objXmasdosNLE=bonoXmasdosNLE(listaNombramientos,dataEmp,thisPeriodSO,listaGrupos,allPresentadoras,listaEquipoRecluta,historicoSO,dHistorico,namePeriodo,cust_period)
-                            fillTable(sublist,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objSupercomision,objReclutamiento,objEntrega,objXmasDos,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objJoya)
+                            fillTable(sublist,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objSupercomision,objReclutamiento,objEntrega,objXmasDos,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objJoya,objCook,objXmasdosNLE)
                             cont_line++
                             
                         }
@@ -352,11 +354,12 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                             objGarantia = bonoGarantia(dataEmp,garantiaSO,compConfigDetails)
                             log.debug('objGarantia',objGarantia)
                             objJoya = bonoJoya(conf,ventasEmp,compConfigDetails)
+                            objCook = bonoCk(dataEmp,ckSO)
                             /*
                             montoComisionCK = bonoComCK()
                             
                             */
-                            fillTable(sublist,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objSupercomision,objReclutamiento,objEntrega,objXmasDos,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objJoya)
+                            fillTable(sublist,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objSupercomision,objReclutamiento,objEntrega,objXmasDos,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objJoya,objCook,objXmasdosNLE)
                             cont_line++
                         }
 
@@ -367,10 +370,9 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                             //Calcular reporte para la persona
                             objReclutamiento = bonoReclutamiento(reclutas,historicoSO,thisPeriodSO,dataEmp,compConfigDetails,allPresentadoras,dHistorico)
                             log.debug('objReclutamiento',objReclutamiento)
-                            /*
-                            montoComisionCK = bonoComCK()
-                            */
-                            fillTable(sublist,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objSupercomision,objReclutamiento,objEntrega,objXmasDos,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objJoya)
+                            objCook = bonoCk(dataEmp,ckSO)
+                            
+                            fillTable(sublist,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objSupercomision,objReclutamiento,objEntrega,objXmasDos,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objJoya,objCook,objXmasdosNLE)
                             cont_line++
                         }
                     break;
@@ -392,7 +394,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
           log.debug('creditos 2',runtime.getCurrentScript().getRemainingUsage()); 
         }   
     }//Fin sublista
-    function fillTable(sublist,dataEmp,ventasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,supercomision,reclutamiento,entrega,objXmasDos,productividad,ventaEquipo,ventasEquipoNLE,garantia,joya){
+    function fillTable(sublist,dataEmp,ventasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,supercomision,reclutamiento,entrega,objXmasDos,productividad,ventaEquipo,ventasEquipoNLE,garantia,joya,cookKey,xMasdosNLE){
         var linea = cont_line
         var subtotal=0
         sublist.setSublistValue({
@@ -651,6 +653,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
           });
           
         }
+
         if(garantia){
          
           v = garantia.data.length
@@ -683,6 +686,49 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
               value : v
             });
         }
+        if(cookKey){
+        
+            v = cookKey.data
+            sublist.setSublistValue({
+                id : 'custentity_cookkey',
+                line : linea,
+                value : v!=''?v:''
+            });
+            v = cookKey.monto>0?cookKey.monto:0
+            subtotal+=parseInt(v)
+            sublist.setSublistValue({
+              id : 'custentity_cookkey_comision',
+              line : linea,
+              value : v
+            });
+        }
+        if(xMasdosNLE){
+          
+          v = xMasdosNLE.data
+          sublist.setSublistValue({
+              id : 'custentity_xmasdos_nle',
+              line : linea,
+              value : v!=''?v:''
+          });
+          
+          v = xMasdosNLE.monto52>0?xMasdosNLE.monto52:0
+          subtotal+=parseInt(v)
+          sublist.setSublistValue({
+              id : 'custentity_cincomasdos_nle_monto',
+              line : linea,
+              value : v
+          });
+          v = xMasdosNLE.monto32>0?xMasdosNLE.monto32:0
+          subtotal+=parseInt(v)
+          sublist.setSublistValue({
+              id : 'custentity_tresmasdos_nle_monto',
+              line : linea,
+              value : v
+          });
+          
+        }
+
+
         var v = subtotal>0?subtotal:0
        // log.debug('subtotal v',v)
         sublist.setSublistValue({
@@ -698,10 +744,28 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
         
 
     }
+    function bonoCk(dataEmp,ckSO){
+        try{
+            if(ckSO.hasOwnProperty(dataEmp.internalid)){
+                var numCK = ckSO[dataEmp.internalid].length
+                var idsCK = ckSO[dataEmp.internalid]
+                var comision_ck = numCK*350 
+
+                return {monto:comision_ck,data:idsCK, numCK:numCK}
+            }
+           return false 
+            
+        }catch(e){
+            log.error('error bono ck',e)
+        }
+
+    }
+
+    
     function bonoJoya(conf,ventasEmp,compConfigDetails){
         try{
             var ventasP = ventasEmp
-            log.debug('ventas',ventasP)
+            //log.debug('ventas',ventasP)
             var data = []
             for (i in ventasP){
                 var ventasData= Object.keys(ventasP[i])
@@ -716,7 +780,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             var t_venta_propia = data.length
 
             var bono_emerald = parseInt(compConfigDetails[conf]['esquemaVentasPresentadora'][t_venta_propia]['bonoProductividad']) - parseInt(compConfigDetails['1']['esquemaVentasPresentadora'][t_venta_propia]['bonoProductividad'])
-            log.debug('bono_emerald',bono_emerald)
+            //log.debug('bono_emerald',bono_emerald)
             return {monto:bono_emerald}
             
         }catch(e){
@@ -735,12 +799,12 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 //log.debug('listaNombramientos de la lider ', listaNombramientos[liderM])
                 for(i in listaNombramientos[liderM]){//por cada lider hijo se obtiene su configuracion, equipo y ventas y se llama al bono Venta equpi para calcular el monto
                     var periodoPagoNLE= allPresentadoras[listaNombramientos[liderM][i]].periodoPagoNLE
-                    log.debug('periodoPagoNLE',periodoPagoNLE)
-                    if(periodoPagoNLE == namePeriodo || !periodoPagoNLE){
+                    
+                    if(periodoPagoNLE == cust_period || !periodoPagoNLE){
                         //log.debug('campo vacio')
 
                         var dataEmpH=allPresentadoras[listaNombramientos[liderM][i]]
-                        var idHijo = dataEmp.internalid
+                        var idHijo = dataEmpH.internalid
                         var empConf=allPresentadoras[listaNombramientos[liderM][i]].emp_conf
                            // log.debug('lista empConf', empConf)
                         var configH=Utils.getConf(empConf);
@@ -754,11 +818,12 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
 
                         var xMasdosH=bonoXmasDos(dataEmpH,reclutaEquipoH,thisPeriodSO,ventasH,historicoSO,allPresentadoras,dHistorico,equipoH)
                           
-                        var montoNLE32=xMasdosH.monto52
-                        var montoNLE52=xMasdosH.monto32
-                        //log.debug('montoNLE32',montoNLE32)
-                       //log.debug('montoNLE52',montoNLE52)
+                        var montoNLE32=xMasdosH.monto32
+                        var montoNLE52=xMasdosH.monto52
+                        
                         if(montoNLE32 > 0 || montoNLE52 > 0){
+                        //log.debug('montoNLE32',montoNLE32)
+                        //log.debug('montoNLE52',montoNLE52)
                             log.debug('actualizacion de registro de ', idHijo)
                             var submitFields = record.submitFields({
                                             type: 'employee',
@@ -1303,8 +1368,6 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
     function searchDataPresentadoras(namePeriodo){ 
         try{
            
-           
-
             const employeeSearchFilters = [
                 ['isinactive', 'is', 'F'],
                 'AND',
@@ -1334,7 +1397,7 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
             const empSearchdelegada = search.createColumn({ name: 'custentity_delegada'});
             const empSearchunidad = search.createColumn({ name: 'custentity_nombre_unidad'});
             const employeeSearchReclutadoraInternalId = search.createColumn({ name: 'internalid', join: 'custentity_reclutadora' });
-            const empSearchtiponombramiento = search.createColumn({ name: 'custentity_nombramiento_le'});
+            //const empSearchtiponombramiento = search.createColumn({ name: 'custentity_nombramiento_le'});
             const empSearchnombradopor = search.createColumn({ name: 'custentity_nombramiento'});
             const empSearchfechanombramiento = search.createColumn({ name: 'custentity_fecha_nombramiento'});
             const empSearchPeriodoPagoNLE = search.createColumn({ name: 'custentityperiodo_nle_pago'});
@@ -1362,7 +1425,7 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
                     empSearchdelegada,
                     empSearchunidad,
                     employeeSearchReclutadoraInternalId,
-                    empSearchtiponombramiento,
+                    //empSearchtiponombramiento,
                     empSearchnombradopor,
                     empSearchfechanombramiento,
                     empSearchPeriodoPagoNLE,
@@ -1401,7 +1464,7 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
                     objEMP.delegada = r.getText('custentity_delegada')
                     objEMP.unidad = r.getValue('custentity_nombre_unidad')
                     objEMP.reclutadoraID = r.getValue({ name: 'internalid', join: 'custentity_reclutadora' })
-                    objEMP.tipoNombramento = r.getValue('custentity_nombramiento_le')
+                    //objEMP.tipoNombramento = r.getValue('custentity_nombramiento_le')
                     objEMP.nombramientoPor = r.getValue('custentity_nombramiento')
                     objEMP.fechaNombramiento = r.getValue('custentity_fecha_nombramiento')
                     objEMP.periodoPagoNLE = r.getValue('custentityperiodo_nle_pago')
@@ -1421,12 +1484,17 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
                     }
 
                     if(objEMP.nombramientoPor != ''){
-                        var mesPeriodo=namePeriodo.split('/')
-                        mesPeriodo = parseInt(mesPeriodo[0])
+                        var periodo=namePeriodo.split('/')
+                        var mesPeriodo = parseInt(periodo[0])
+                        var yearPeriodo=parseInt(periodo[1])
+
                         var mesMinimo=mesPeriodo-3    
-                        var mesNombramiento=objEMP.fechaNombramiento.split('/')
-                        mesNombramiento=parseInt(mesNombramiento[1])
-                        if(mesNombramiento>mesMinimo&&mesNombramiento <= mesPeriodo){
+                        var fechaNombramiento=objEMP.fechaNombramiento.split('/')
+                        var mesNombramiento=parseInt(fechaNombramiento[1])
+                        var yearNom=parseInt(fechaNombramiento[2])
+
+                        if(mesNombramiento>mesMinimo&&mesNombramiento <= mesPeriodo&&yearNom ==yearPeriodo){
+
                             if(nombradsPor.hasOwnProperty(objEMP.nombramientoPor)){
                             nombradsPor[objEMP.nombramientoPor].push(objEMP.internalid)
                             }else{
@@ -1484,8 +1552,9 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
             
             try{
                 var objGarantiaRep = {};
+                var objCK = {};
                 const salesOrderSearchFilters = [
-                    ['item', 'anyof', '2402'],
+                    ['item', 'anyof', '2402','1749'],
                     'AND',
                     ['salesrep.isinactive', 'is', 'F'],
                     'AND',
@@ -1502,7 +1571,7 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
                 const salesOrderSearchColTranId = search.createColumn({ name: 'tranid' });
                 const salesOrderSearchColInternalId = search.createColumn({ name: 'internalid' });
                 const salesOrderSearchColTranDate = search.createColumn({ name: 'trandate' });
-               
+                const salesOrderSearchColItem = search.createColumn({ name: 'item' });
 
                 const searchSalesGar = search.create({
                     type: 'salesorder',
@@ -1512,6 +1581,7 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
                         salesOrderSearchColTranId,
                         salesOrderSearchColInternalId,
                         salesOrderSearchColTranDate,
+                        salesOrderSearchColItem,
                        
                     ],
                 });
@@ -1525,10 +1595,21 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
                    var currentPage = pagedResults.fetch({index: pageRange.index});
                    currentPage.data.forEach(function (r) {
                         var salrep = r.getValue('salesrep')
-                        if(salrep in objGarantiaRep){
+                        var item = r.getValue('item')
+
+                        if(item == '2402'){
+                            if(salrep in objGarantiaRep){
                             objGarantiaRep[salrep].push(r.getValue('internalid'));
-                        }else{
-                           objGarantiaRep[salrep]= [r.getValue('internalid')]; 
+                            }else{
+                               objGarantiaRep[salrep]= [r.getValue('internalid')]; 
+                            }
+                        }
+                        if(item == '1749'){
+                            if(salrep in objCK){
+                            objCK[salrep].push(r.getValue('internalid'));
+                            }else{
+                               objCK[salrep]= [r.getValue('internalid')]; 
+                            }
                         }
                    });
 
@@ -1628,7 +1709,7 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
             log.debug('Total arrResults',Object.keys(arrResults).length)
             */
             
-            return {historicoSO:historicoSO,thisPeriodSO:thisPeriodSO,dHistorico:dHistorico,objGarantiaRep:objGarantiaRep}
+            return {historicoSO:historicoSO,thisPeriodSO:thisPeriodSO,dHistorico:dHistorico,objGarantiaRep:objGarantiaRep,objCK:objCK}
         }catch(e){
             log.error('Error en searchSalesOrders',e)
         }
@@ -1904,6 +1985,23 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
                     label : 'Bono NLE'
                 }).updateDisplayType({displayType : serverWidget.FieldDisplayType.READONLY});
 
+                sublist.addField({
+                    id : 'custentity_xmasdos_nle',
+                    type : serverWidget.FieldType.TEXT,
+                    label : 'X + 2 NLE'
+                }).updateDisplayType({displayType : serverWidget.FieldDisplayType.READONLY});
+                     
+                sublist.addField({
+                    id : 'custentity_tresmasdos_nle_monto',
+                    type : serverWidget.FieldType.CURRENCY,
+                    label : 'BONO 3 + 2 NLE'
+                }).updateDisplayType({displayType : serverWidget.FieldDisplayType.READONLY});
+
+                sublist.addField({
+                    id : 'custentity_cincomasdos_nle_monto',
+                    type : serverWidget.FieldType.CURRENCY,
+                    label : 'BONO 5 + 2 NLE'
+                }).updateDisplayType({displayType : serverWidget.FieldDisplayType.READONLY});
                 //3+2 y 5+2 EQUIPO ESPECIAL - DEBEN PERTENECER AL EQUIPO Y APARTE DEBIERON SER RECLUTADAS POR LA LIDER DE EQUIPO 
                 sublist.addField({
                     id : 'custentity_odv_rec_del_periodo',
