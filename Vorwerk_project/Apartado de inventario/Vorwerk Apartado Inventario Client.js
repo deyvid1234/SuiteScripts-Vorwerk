@@ -148,7 +148,7 @@ function(record,dialog,http,https,search) {
                         thisRecord.setValue('custrecord_item_apartado', '');
                         var options = {
                             title: 'Sin Inventario',
-                            message: 'No hay inventario en 1 o mas items que conforman el kit para el location Origen por lo que no se puede crear un apartado, Si desea liberar Inventario primero name marque el check LIBERAR APARTADO y luego ingrese el Item o Kit'
+                            message: 'No hay inventario en 1 o mas items que conforman el kit para el location Origen por lo que no se puede crear un apartado, Si desea liberar Inventario primero marque el check LIBERAR APARTADO y luego ingrese el Item o Kit'
                         };
                         dialog.alert(options);
                     }
@@ -189,7 +189,7 @@ function(record,dialog,http,https,search) {
                         thisRecord.setValue('custrecord_item_apartado', '');
                         var options = {
                             title: 'Sin Inventario',
-                            message: 'No hay inventario en 1 o mas items que conforman el kit para el location Origen por lo que no se puede crear un apartado, Si desea liberar Inventario primero name marque el check LIBERAR APARTADO y luego ingrese el Item o Kit'
+                            message: 'No hay inventario en 1 o mas items que conforman el kit para el location Origen por lo que no se puede crear un apartado, Si desea liberar Inventario primero marque el check LIBERAR APARTADO y luego ingrese el Item o Kit'
                         };
                         dialog.alert(options);
                     }
