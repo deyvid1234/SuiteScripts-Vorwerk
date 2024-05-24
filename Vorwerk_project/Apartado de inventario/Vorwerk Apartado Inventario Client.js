@@ -135,20 +135,20 @@ function(record,dialog,http,https,search) {
                             }); 
                     });
                     console.log('inv_disponible',inv_disponible)
-                    
+                    var liberar_apartado_check = thisRecord.getValue('custrecord_liberar_apartado');
                     if(inv_disponible){
                         
                         console.log('apartadoItem',apartadoItem)
                         disponibleParaApartar = inv_disponible
                         thisRecord.setValue('custrecord_cantidad_disponible', disponibleParaApartar);
                         thisRecord.getField('custrecord_cantidad_apartada').isDisabled = false;
-                    }else{
+                    }else if(!liberar_apartado_check){
                         thisRecord.setValue('custrecord_cantidad_apartada', '');
                         thisRecord.setValue('custrecord_cantidad_disponible', '');
                         thisRecord.setValue('custrecord_item_apartado', '');
                         var options = {
                             title: 'Sin Inventario',
-                            message: 'No hay inventario en 1 o mas items que conforman el kit para el location Origen por lo que no se puede crear un apartado'
+                            message: 'No hay inventario en 1 o mas items que conforman el kit para el location Origen por lo que no se puede crear un apartado, Si desea liberar Inventario primero name marque el check LIBERAR APARTADO y luego ingrese el Item o Kit'
                         };
                         dialog.alert(options);
                     }
@@ -176,19 +176,20 @@ function(record,dialog,http,https,search) {
                             }); 
                     });
                     console.log('Tienes disponible: '+inv_disponible)
+                    var liberar_apartado_check = thisRecord.getValue('custrecord_liberar_apartado');
                     if(inv_disponible){
                         
                         console.log('apartadoItem',apartadoItem)
                         disponibleParaApartar = inv_disponible
                         thisRecord.setValue('custrecord_cantidad_disponible', disponibleParaApartar);
                         thisRecord.getField('custrecord_cantidad_apartada').isDisabled = false;
-                    }else{
+                    }else if(!liberar_apartado_check){
                         thisRecord.setValue('custrecord_cantidad_apartada', '');
                         thisRecord.setValue('custrecord_cantidad_disponible', '');
                         thisRecord.setValue('custrecord_item_apartado', '');
                         var options = {
                             title: 'Sin Inventario',
-                            message: 'No hay inventario en el location Origen por lo que no se puede crear un apartado'
+                            message: 'No hay inventario en 1 o mas items que conforman el kit para el location Origen por lo que no se puede crear un apartado, Si desea liberar Inventario primero name marque el check LIBERAR APARTADO y luego ingrese el Item o Kit'
                         };
                         dialog.alert(options);
                     }
