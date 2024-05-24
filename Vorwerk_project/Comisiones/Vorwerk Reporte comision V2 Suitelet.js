@@ -1272,11 +1272,14 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
                                     key = Object.keys(ventasReclutaTP[j])
                                     var tipoVenta = ventasReclutaTP[j][key]['custbody_tipo_venta']
                                     var fechaSO = ventasReclutaTP[j][key]['trandate']
+                                    var id = ventasReclutaTP[j][key]['internalid']
+                                    var docNum = ventasReclutaTP[j][key]['tranid']
+                                    var pedido = { idSO:id,docNum:docNum}
                                     fechaSO = Utils.stringToDate(fechaSO)
                                     if(tipoVenta == 'Ventas TM'&& fechaSO <= fechaObjetivo){
                                         cont ++  
                                         montoInd = montoInd + Math.abs(compConfigDetails[confRec]['esquemaVentasReclutamiento'][cont]['compensacion'])
-                                        salesReclutaTP.push(ventasReclutaTP[j][key]['internalid'])
+                                        salesReclutaTP.push(pedido)
                                         if(cont >= noComisiona){
                                             break
                                         }
@@ -1890,7 +1893,7 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
                
             sublist.addField({
                 id: 'custentity_odv_rec',
-                type: serverWidget.FieldType.TEXT,
+                type: serverWidget.FieldType.TEXTAREA,
                 label: 'ODV de las Reclutas'
             }).updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
                
