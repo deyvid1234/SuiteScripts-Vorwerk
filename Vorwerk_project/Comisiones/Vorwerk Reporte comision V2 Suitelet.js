@@ -451,7 +451,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
           });
           //Reclutas
           if(reclutas){
-            v = reclutas
+            v = JSON.stringify(reclutas) 
             sublist.setSublistValue({
                 id : 'custentity_reclutas',
                 line : linea,
@@ -459,7 +459,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             });
           }
           if(integrantesEquipo){
-            v = integrantesEquipo
+            v = JSON.stringify(integrantesEquipo)
           sublist.setSublistValue({
               id : 'custentity_presentadoras',
               line : linea,
@@ -1353,7 +1353,7 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
                     var tipoVenta = ventas[i][ventasData]['custbody_tipo_venta']
                     //log.debug('comisionables',comisionables)
                     if(comisionables != 2 && tipoVenta != 1){
-                      data.push(ventasData)
+                      data.push(ventas[i][ventasData]['internalid'])
                     }
 
                 }
