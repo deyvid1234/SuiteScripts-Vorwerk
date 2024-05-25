@@ -366,7 +366,7 @@ function(record,https,currentRecord,runtime,file,search,message) {
                     });
                     var odv_pre_id = record.getSublistValue({
                         sublistId: "sublist",
-                        fieldId: "custentity_odv_comisionables_pre",
+                        fieldId: "custentity_odv_equipo",
                         line: i
                     });
                     
@@ -519,7 +519,7 @@ function(record,https,currentRecord,runtime,file,search,message) {
             var objet_full = getData();//extrae la informacion de la tabla
             var url = ""
             if(runtime.envType != 'PRODUCTION'){ //Reporte de comision Suitelet.js
-                url ='https://3367613-sb1.app.netsuite.com/app/site/hosting/scriptlet.nl?script=565&deploy=1';
+                url ='https://3367613-sb1.app.netsuite.com/app/site/hosting/scriptlet.nl?script=1324&deploy=1';
             }else{
                 url ='https://3367613.app.netsuite.com/app/site/hosting/scriptlet.nl?script=565&deploy=1';
             };

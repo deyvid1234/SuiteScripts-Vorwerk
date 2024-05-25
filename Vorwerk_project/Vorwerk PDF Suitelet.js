@@ -1213,11 +1213,18 @@ define(['N/runtime','N/email','N/record','N/render', 'N/search','N/xml','N/confi
         			log.debug("ref",2);
         			// ODV del equipo 
     	        	var odv_equipo_result = {}
-    	        	
+    	        	var ids = []
+    	        	var arregloVentas= JSON.parse(data.equipo)
     	        	if(data.equipo != ""){
+    	        		for (i in arregloVentas){
+    	        			for(e in arregloVentas[i]){
+    	        				ids.push(arregloVentas[i][e])
+    	        			}
+    	        		}
     	        		log.debug('data.equipo',data.equipo)
-    	        		var ids = data.equipo.split(",");
-    	        		log.debug('ids',ids)
+    	        		
+    	        		ids=JSON.stringify(ids)
+    	        		log.debug('idsss',ids)
     	        		var odv_equipo = search.create({
     	 	     	       type: search.Type.SALES_ORDER,
     	 	     	       columns: [
