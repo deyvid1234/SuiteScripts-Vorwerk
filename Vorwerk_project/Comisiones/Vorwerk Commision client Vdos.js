@@ -151,56 +151,15 @@ function(record,https,currentRecord,runtime,file,search,message) {
      * @since 2015.2
      */
     function saveRecord(scriptContext) {
-        try{
-            
-            console.log(scriptContext);
-            var record = scriptContext.currentRecord
-            var period = record.getValue('custpage_date');  
-            console.log('period',period);
-            var promo = record.getValue('custpage_promo');  
-            console.log('promo',promo);
-            var type = record.getValue('custpage_type_');  
-            if(record =="" || promo =="" || type ==""){
-                alert("Debe ingresar valores");
-                return false;
-            }
-            var myMsg = message.create({
-                title: "Reporte de comisiones",
-                message: "Por favor, espere mientras se ejecuta la estructura inicial",
-                type: message.Type.CONFIRMATION
-            });
-            myMsg.show({
-                duration: 10000
-            });
-            try{
-                if(runtime.envType != 'PRODUCTION'){ 
-                    url = 'https://3367613-sb1.app.netsuite.com/app/site/hosting/scriptlet.nl?script=578&deploy=1';//cambiar para sandbox
-                }else{
-                    url = 'https://3367613.app.netsuite.com/app/site/hosting/scriptlet.nl?script=578&deploy=1';
-                }
-                var headers = {'Content-Type': 'application/json'};
-                var response = https.post({
-                    url: url,
-                    body : JSON.stringify({period:period,promo:promo,type:type}),
-                    headers: {
-                        "Content-Type": "application/json"
-                    }
-                }).body;
-                
-                var rep = JSON.parse(response);
-                record.setValue('custpage_search_aux1',rep.idFile1);
-                record.setValue('custpage_search_aux2',rep.idFile2);
-                return true;
-            }catch(e){
-                console.log('error file',e);
-                alert("Memoria de Netsuite tiene problemas para generar estructura 1");
-                return false;
-            }
-        }catch(err){
-            console.log(err);
-            alert("Memoria de Netsuite tiene problemas");
-        }
-        
+        var myMsg = message.create({
+            title: "Reporte de comisiones",
+            message: "Por favor, espere mientras se ejecuta la estructura inicial",
+            type: message.Type.CONFIRMATION
+        });
+        myMsg.show({
+            duration: 10000
+        });
+        return true;
     }
     
     
@@ -576,6 +535,69 @@ function(record,https,currentRecord,runtime,file,search,message) {
             log.error("error create Excel",err)
         }
     }
+
+    //TEST GET DATA Dinamico 
+    /*
+    function getData(){
+        try{
+            
+            //extrae la informacion de la tabla
+            var object_fill = [];
+            var obj_conf = {};
+            var record = currentRecord.get();
+            var id_concat ="";
+            console.log('record',record);
+            var listLineCount = record.getLineCount({
+              sublistId: "sublist"
+            });
+            var period = record.getValue('custpage_date');  
+            console.log('period',period);
+            var promo = record.getValue('custpage_promo');  
+            console.log('promo',promo);
+            var type = record.getValue('custpage_type_');  
+            console.log('type',type);
+            var sublis_fields = JSON.parse(record.getValue('custpage_sublis_fields'));  
+            console.log('sublis_fields',sublis_fields);
+            if(promo == 1){
+                type = 2;
+            }
+            
+            obj_conf['period']= period;
+            obj_conf['promo']= promo;
+            obj_conf['type']= type;
+    
+            for (var i = 0; i < listLineCount; i++) {
+                var check = record.getSublistValue({
+                     sublistId: "sublist",
+                     fieldId: "select_field",
+                     line: i
+                });
+
+                if(check == true){
+                    var infoThisLine = {}
+                    for(j in sublis_fields){
+                        console.log('sublis_fields.idfield',sublis_fields[j].idfield)
+                        console.log('sublis_fields.namefield',sublis_fields[j].namefield)
+
+                        var fielValue = record.getSublistValue({
+                            sublistId: "sublist",
+                            fieldId: sublis_fields[j].idfield,
+                            line: i
+                        });
+                        infoThisLine[sublis_fields[j].namefield] = fielValue
+                    }
+                    object_fill.push(infoThisLine)
+                }
+            }
+            console.log('object_fill',object_fill);
+            return {obj:object_fill,obj_conf:obj_conf};
+        }catch(err){
+            console.log(err);
+        }
+        
+    }
+    */
+    //FIN TEST GET DATA Dinamico 
     
     
     return {
