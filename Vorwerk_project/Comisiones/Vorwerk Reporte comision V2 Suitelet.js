@@ -64,10 +64,10 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                     var config = body.obj_conf;
                     var mapTask = task.create({
                         taskType: task.TaskType.MAP_REDUCE,
-                        scriptId: 'customscript_vorwerk_commission_map',
+                        scriptId: 'customscript_commission_map_dos',
                         params: {
-                            custscript_data_commision: JSON.stringify(obj_comission),
-                            custscript_config_comission: JSON.stringify(config)
+                            custscript_data_com: JSON.stringify(obj_comission),
+                            custscript_config_com: JSON.stringify(config)
                         }
                     }).submit();
                 }catch(err){
@@ -813,8 +813,8 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                         var montoNLE52=xMasdosH.monto52
                         
                         if(montoNLE32 > 0 || montoNLE52 > 0){
-                        //log.debug('montoNLE32',montoNLE32)
-                        //log.debug('montoNLE52',montoNLE52)
+                        log.debug('montoNLE32',montoNLE32)
+                        log.debug('montoNLE52',montoNLE52)
                             log.debug('actualizacion de registro de ', idHijo)
                             var submitFields = record.submitFields({
                                             type: 'employee',
@@ -1031,7 +1031,7 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
                     }else{
                         valiDate=Utils.stringToDate(hiredate)
                     }
-                    var auxVentasFiltradas = []
+                    
                     if(valiDate>dHistorico){//si esa fecha es mayor que la fecha del historico validamos si tiene ventas en el historico
                         if(historicoSO.hasOwnProperty(i)){//si hay ventas en el historico queda descartado
             
@@ -1043,18 +1043,25 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
                                 //log.debug('key venta n de la recluta '+i,key)
                                 var fechaSO =ventas[n][key]['trandate']
                                 var recSO=ventas[n][key]['salesrep']
+                                var docNum =ventas[n][key]['tranid']
                                 //log.debug('fechaObjetivo',Utils.stringToDate(fechaObjetivo))
                                 //log.debug('fechaSO',Utils.stringToDate(fechaSO))
                                 if(Utils.stringToDate(fechaSO) <= Utils.stringToDate(fechaObjetivo)){
-                                  //log.debug('SO dentro de la fecha objetivo',key) 
-                                    
-                                    auxVentasFiltradas.push(key)
+                                    //log.debug('SO dentro de la fecha objetivo',key) 
+                                    var pedido = { idSO:key[0],docNum:docNum}
+                                    if(salesOrders.hasOwnProperty(recSO)){
+                                        salesOrders[recSO].push(pedido)
+                                    }else{
+                                        salesOrders[recSO]=(pedido)
+                                    }
                                 }
-                            }  
+                            } 
+                             
                         }
                     }
-                    salesOrders[i] = auxVentasFiltradas
+                    
                 })
+                //log.debug('salesOrders',salesOrders)
                 if (integrantesEquipo){// obtenemos su fecha de contratacion o de reactivacion de las integrantes del equipo
                    integrantesEquipo.forEach(function(i,index) {
                         var hiredate=allPresentadoras[i]['hiredate']
@@ -1066,7 +1073,7 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
                         }else{
                             valiDateEq=Utils.stringToDate(hiredate)
                         }
-                        var auxVentasFiltradas = []
+                        
                         if(valiDateEq>dHistorico){//si esa fecha es mayor que la fecha del historico validamos si tiene ventas en el historico
                             if(historicoSO.hasOwnProperty(i)){//si hay ventas en el historico queda descartado
                                 //log.debug('ventas historico de '+i,historicoSO[i] )
@@ -1078,18 +1085,26 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
                                     //log.debug('key eq de l recluta '+i,key)
                                     var fechaSO =ventasEq[n][key]['trandate']
                                     var recSO=ventasEq[n][key]['salesrep']
+                                    var docNum =ventasEq[n][key]['tranid']
                                     //log.debug('fechaObjetivo eq',Utils.stringToDate(fechaObjetivo))
                                     //log.debug('fechaSO eq',Utils.stringToDate(fechaSO))
                                     if(Utils.stringToDate(fechaSO) <= Utils.stringToDate(fechaObjetivo)){
-                                      //log.debug('SO dentro de la fecha objetivo eq',key) 
-                                        auxVentasFiltradas.push(key)
+                                        //log.debug('SO dentro de la fecha objetivo eq',key) 
+                                        var pedido = { idSO:key[0],docNum:docNum}
+                                        if(salesOrdersEq.hasOwnProperty(recSO)){
+                                            salesOrdersEq[recSO].push(pedido)
+                                        }else{
+                                            salesOrdersEq[recSO]=(pedido)
+                                        }
                                     }
-                                }  
+                                } 
+                                 
                             }
                         }
 
-                        salesOrdersEq[i] = auxVentasFiltradas;
+                        
                     })
+                   //log.debug('salesOrdersEq',salesOrdersEq)
                }
                
                preActivas= Object.keys(salesOrders)//presentadoras que son recluta y equipo activas
@@ -1109,7 +1124,7 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
                }
                
             }   
-            return {monto52:monto52,monto32:monto32, data:preActivas,equipo:equipoActivas} 
+            return {monto52:monto52,monto32:monto32, data:salesOrders,equipo:salesOrdersEq} 
         }catch(e){
             log.debug('error X+2',e)
         }    
@@ -1120,6 +1135,7 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
             var ventasNo = 0
             var montoSC = 0
             var ventasPeriodo =[]
+            var data = []
             var ordenesSupercomisionTotal=[]
             if(integrantesEquipo){
                 integrantesEquipo.forEach(function(i,index) {
@@ -1190,8 +1206,12 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
             for(x in ordenesSupercomisionTotal){
                 for(y in ordenesSupercomisionTotal[x]){
                     var keys = Object.keys(ordenesSupercomisionTotal[x][y])
+                    var salesrep = ordenesSupercomisionTotal[x][y][keys]['salesrep']
+                    var docNum = ordenesSupercomisionTotal[x][y][keys]['tranid']
+                    var pedido= {id:keys[0],docNum:docNum,SalesRep:salesrep }
                     //log.debug('keys',keys)
                     ventasPeriodo.push(keys[0])
+                    data.push(pedido)
                 }
                 //log.debug('ordenesSupercomisionTotal',ordenesSupercomisionTotal[x][y])
             }
@@ -1202,10 +1222,10 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
                     ventasPeriodo=''
                 }                  
             }
-            //log.debug('montoSC',montoSC)
+            //log.debug('data',data)
             //log.debug('ventasPeriodo',ventasPeriodo)
             //log.debug('ventasNo',ventasNo)
-            return  {monto:montoSC, data:ventasPeriodo, ventasNo:ventasNo};  
+            return  {monto:montoSC, data:data, ventasNo:ventasNo};  
         }catch(e){
             log.debug('error Supercomision', e)
             return false
@@ -1275,6 +1295,7 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
                                         
                                         if( Math.abs(compConfigDetails[confRec]['esquemaVentasReclutamiento'][cont]['compensacion']) > 0 ){
                                             salesReclutaTP.push(pedido)
+                                            salesReclutas[i] = salesReclutaTP
                                         }
                                         
                                         if(cont >= noComisiona){
@@ -1283,11 +1304,13 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
                                     }
                                     
                                 }
+                                
+                                bono_reclutadora += montoInd
                             }
-                             
+
                         }
-                        salesReclutas[i] = salesReclutaTP
-                        bono_reclutadora += montoInd
+                        
+                        
                     }
                 });
                 return  {monto:bono_reclutadora, data:salesReclutas}; 

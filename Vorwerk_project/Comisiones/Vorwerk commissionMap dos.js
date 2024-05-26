@@ -6,7 +6,7 @@
 define(['N/email','N/record', 'N/file','N/search', 'N/https', 'N/runtime','N/format','./Vorwerk Dictionary Script.js'],
 
 function(email,record, file, search, https, runtime,format,Dictionary) {
-    var config_fields = Dictionary.getDictionayFields();
+	var config_fields = Dictionary.getDictionayFields();
     /**
      * Marks the beginning of the Map/Reduce process and generates input data.
      *
@@ -17,20 +17,20 @@ function(email,record, file, search, https, runtime,format,Dictionary) {
      * @return {Array|Object|Search|RecordRef} inputSummary
      * @since 2015.1
      */
-    var field_id = {
-            customrecord_comisiones_presentadora:   ['custrecord_c_pre_empleado','custrecord_sub_registro_compensaciones_p','custrecord_sub_compensaciones_pre'],   
-            customrecord_compensaciones_jdg:        ['custrecord_c_jdg_empleado','custrecord_sub__registro_compensaciones','custrecord_sub__compensaciones_jdg'],
-            customrecord_compensaciones_gtm:        ['custrecord_c_gtm_empleado','custrecord_sub_registro_compensaciones_g','custrecord_sub_compensaciones_tm']
-    }
+	var field_id = {
+    		customrecord_comisiones_presentadora:	['custrecord_c_pre_empleado','custrecord_sub_registro_compensaciones_p','custrecord_sub_compensaciones_pre'], 	
+    		customrecord_compensaciones_jdg: 		['custrecord_c_jdg_empleado','custrecord_sub__registro_compensaciones','custrecord_sub__compensaciones_jdg'],
+			customrecord_compensaciones_gtm: 		['custrecord_c_gtm_empleado','custrecord_sub_registro_compensaciones_g','custrecord_sub_compensaciones_tm']
+	}
    
     
     function getInputData() {
         log.debug('se llamo getInputData :)');
         //recibe la inforamcion desde la tarea y la extrae por parametros
         var scriptObj = runtime.getCurrentScript();
-        var comissionInfo = scriptObj.getParameter({name: 'custscript_data_commision'});//informacion de la tabla
-        var salesRepInfo = scriptObj.getParameter({name: 'custscriptid_salesrep'});
-        var config = scriptObj.getParameter({name: 'custscript_config_comission'});//informacion de configuracion en headers
+        var comissionInfo = scriptObj.getParameter({name: 'custscript_data_com'});//informacion de la tabla
+        //var salesRepInfo = scriptObj.getParameter({name: 'custscriptid_salesrep'});
+        var config = scriptObj.getParameter({name: 'custscript_config_com'});//informacion de configuracion en headers
   
         
         return JSON.parse(comissionInfo);
@@ -47,7 +47,7 @@ function(email,record, file, search, https, runtime,format,Dictionary) {
             //recorre la informacion de la tabla 
             var comissionInfo = JSON.parse(context.value);
             var scriptObj = runtime.getCurrentScript();
-            var config = JSON.parse(scriptObj.getParameter({name: 'custscript_config_comission'}));//se extrae solo la configcuracion para la creacion del registro principal
+            var config = JSON.parse(scriptObj.getParameter({name: 'custscript_config_com'}));//se extrae solo la configcuracion para la creacion del registro principal
             
             log.debug('comissionInfo map',comissionInfo);
             
@@ -151,7 +151,7 @@ function(email,record, file, search, https, runtime,format,Dictionary) {
                 });
                 registerEmp.setValue({
                     fieldId: config_fields.entregas[config.type],
-                    value: comissionInfo.num_entrega
+                    value: comissionInfo.ventas_propias_num
                 });
                 registerEmp.setValue({
                     fieldId: config_fields.productividad[config.type],
@@ -166,26 +166,26 @@ function(email,record, file, search, https, runtime,format,Dictionary) {
                     fieldId: config_fields.totalReporte[config.type],
                     value: comissionInfo.total
                 });
-                registerEmp.setValue({
+                /*registerEmp.setValue({
                     fieldId: config_fields.retencion[config.type],
                     value: comissionInfo.retencion
-                });
+                });*/
                 registerEmp.setValue({
                     fieldId: config_fields.rec[config.type],
-                    value: comissionInfo.odv_rec_id
+                    value: comissionInfo.odv_de_reclutas
                 });
                 registerEmp.setValue({
                     fieldId: config_fields.equipo[config.type],
-                    value: comissionInfo.odv_pre_id
+                    value: comissionInfo.odv_equipo
                 });
                 registerEmp.setValue({
                     fieldId: config_fields.b_rec[config.type],
                     value: comissionInfo.bono_reclutadora
                 });
-                registerEmp.setValue({
+                /*registerEmp.setValue({
                     fieldId: config_fields.odv_entrega[config.type],
                     value: comissionInfo.odv_entrega    
-                });
+                });*/
                 //bono Joya
                 registerEmp.setValue({
                     fieldId: config_fields.bp1[config.type],
@@ -221,7 +221,7 @@ function(email,record, file, search, https, runtime,format,Dictionary) {
                 registerEmp.setValue({
                     fieldId: config_fields.ids_garantia[config.type],
                     value: comissionInfo.ids_garantia    
-                });     
+                }); 	
                 
                 //3+2
                 registerEmp.setValue({
@@ -241,10 +241,10 @@ function(email,record, file, search, https, runtime,format,Dictionary) {
                     value: comissionInfo.rec_con_ventas  
                 });
                 //rec_period_LE
-                registerEmp.setValue({
+                /*registerEmp.setValue({
                     fieldId: config_fields.rec_period_LE[config.type],
                     value: comissionInfo.rec_period_le    
-                }); 
+                }); */
                 registerEmp.setValue({
                     fieldId: config_fields.bp5[config.type],
                     value: 143  //  BONO ADICIONAL 5+2
@@ -351,15 +351,15 @@ function(email,record, file, search, https, runtime,format,Dictionary) {
      */
     function summarize(summary) {
         try{
-            try{
-                email.send({
-                    author: '344096',
-                    recipients: 'pilar.torres@vorwerk.de',
-                    subject: 'Información de Items',
-                    body: 'Proceso de guardado terminado'
-                }); 
+        	try{
+        		email.send({
+            		author: '344096',
+        			recipients: 'pilar.torres@vorwerk.de',
+        			subject: 'Información de Items',
+        			body: 'Proceso de guardado terminado'
+        		}); 
             }
-            
+        	
             catch(e){
                 log.error('reduce',e);
             }
@@ -469,4 +469,3 @@ function(email,record, file, search, https, runtime,format,Dictionary) {
     };
     
 });
-//comision map de produccion
