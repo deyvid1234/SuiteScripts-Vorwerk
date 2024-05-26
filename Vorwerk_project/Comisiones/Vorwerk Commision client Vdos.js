@@ -283,27 +283,27 @@ function(record,https,currentRecord,runtime,file,search,message) {
                         fieldId: "custentity_bono_emerald",
                         line: i
                     });
-                    var bono_talento = record.getSublistValue({
+                    /*var bono_talento = record.getSublistValue({
                         sublistId: "sublist",
                         fieldId: "custentity_bono_talento",
                         line: i
-                    });
+                    });*/
                     var bono_reclutadora = record.getSublistValue({
                         sublistId: "sublist",
                         fieldId: "custentity_bono_rec",
                         line: i
                     });
-                    var subtotal = record.getSublistValue({
+                    /*var subtotal = record.getSublistValue({
                         sublistId: "sublist",
                         fieldId: "custentity_subtotal",
                         line: i
-                    });
+                    });*/
                     var total = record.getSublistValue({
                         sublistId: "sublist",
                         fieldId: "custentity_total",
                         line: i
                     });
-                    var ajuste = record.getSublistValue({
+                    /*var ajuste = record.getSublistValue({
                         sublistId: "sublist",
                         fieldId: "custentity_ajuste",
                         line: i
@@ -322,15 +322,15 @@ function(record,https,currentRecord,runtime,file,search,message) {
                         sublistId: "sublist",
                         fieldId: "custentity_odv_comisionables_rec",
                         line: i
-                    });
-                    var odv_pre_id = record.getSublistValue({
+                    });*/
+                    var odv_equipo = record.getSublistValue({
                         sublistId: "sublist",
-                        fieldId: "custentity_odv_comisionables_pre",
+                        fieldId: "custentity_odv_equipo",
                         line: i
                     });
                     
                     
-                    var tm_pagada = record.getSublistValue({
+                    /*var tm_pagada = record.getSublistValue({
                         sublistId: "sublist",
                         fieldId: "custentity_tmpagada",
                         line: i
@@ -344,7 +344,7 @@ function(record,https,currentRecord,runtime,file,search,message) {
                         sublistId: "sublist",
                         fieldId: "custentity_tmpagada_pre",
                         line: i
-                    });
+                    });*/
                     var porcentaje = record.getSublistValue({
                         sublistId: "sublist",
                         fieldId: "custentity_porcentaje",
@@ -355,7 +355,7 @@ function(record,https,currentRecord,runtime,file,search,message) {
                         fieldId: "custentity_odv_rec",
                         line: i
                     });
-                    var tm_pagadas_rec = record.getSublistValue({
+                   /* var tm_pagadas_rec = record.getSublistValue({
                         sublistId: "sublist",
                         fieldId: "custentity_tmpagada_rec",
                         line: i
@@ -374,18 +374,18 @@ function(record,https,currentRecord,runtime,file,search,message) {
                         sublistId: "sublist",
                         fieldId: "custentity_odv_entrega",
                         line: i
-                    });
+                    });*/
                     //3 + 2 y 5 + 2 
                     var odv_rec_del_periodo = record.getSublistValue({
                         sublistId: "sublist",
                         fieldId: "custentity_odv_rec_del_periodo",
                         line: i
                     });
-                    var rec_period_le = record.getSublistValue({
+                    /*var rec_period_le = record.getSublistValue({
                         sublistId: "sublist",
                         fieldId: "custentity_odv_rec_de_le_del_periodo",
                         line: i
-                    });
+                    });*/
                     var rec_con_ventas = record.getSublistValue({
                         sublistId: "sublist",
                         fieldId: "custentity_rec_con_ventas",
@@ -417,6 +417,32 @@ function(record,https,currentRecord,runtime,file,search,message) {
                         fieldId: "custentity_bono_sc",
                         line: i
                     });
+                    //NLE
+                    var nle = record.getSublistValue({
+                        sublistId: "sublist",
+                        fieldId: "custentity_lider_nle",
+                        line: i
+                    });
+                    var bono_nle = record.getSublistValue({
+                        sublistId: "sublist",
+                        fieldId: "custentity_nle_monto",
+                        line: i
+                    });
+                    var xdos_nle = record.getSublistValue({
+                        sublistId: "sublist",
+                        fieldId: "custentity_xmasdos_nle",
+                        line: i
+                    });
+                    var tresdos_nle = record.getSublistValue({
+                        sublistId: "sublist",
+                        fieldId: "custentity_tresmasdos_nle_monto",
+                        line: i
+                    });
+                    var cincodos_nle = record.getSublistValue({
+                        sublistId: "sublist",
+                        fieldId: "custentity_cincomasdos_nle_monto",
+                        line: i
+                    });
                     //crea el objeto para enviar al script map
                     object_fill.push({
                             idEmp                 :idEmp,
@@ -426,29 +452,29 @@ function(record,https,currentRecord,runtime,file,search,message) {
                             ventas_propias_num    :ventas_propias_num,
                             ventas_propias_ids    :ventas_propias_ids,
                             ventas_propias_total  :ventas_propias_total,
-                            ventas_present_num    :ventas_present_num,
+                            //ventas_present_num    :ventas_present_num,
                             ventas_present_total  :ventas_present_total,
                             entrega               :entrega,
                             bono_productividad    :bono_productividad,
                             bono_emerald          :bono_emerald,
-                            bono_talento          :bono_talento,
+                            //bono_talento          :bono_talento,
                             bono_reclutadora      :bono_reclutadora,
-                            retencion             :retencion,
+                            /*retencion             :retencion,
                             ajuste                :ajuste,
                             subtotal              :subtotal,
                             num_entrega           :num_entrega,
                             odv_rec_id            :odv_rec_id,
-                            odv_entrega           :odv_entrega,
-                            odv_pre_id            :odv_pre_id,
+                            odv_entrega           :odv_entrega,*/
+                            odv_equipo            :odv_equipo,
                             total                 :total,
-                            tm_pagada             :tm_pagada,
+                            /*tm_pagada             :tm_pagada,
                             total_venta_propia    :total_venta_propia,
-                            tm_pagadas_equipo     :tm_pagadas_equipo,
+                            tm_pagadas_equipo     :tm_pagadas_equipo,*/
                             porcentaje            :porcentaje,
                             odv_de_reclutas       :odv_de_recliutas,
-                            tm_pagadas_rec        :tm_pagadas_rec,
+                            /*tm_pagadas_rec        :tm_pagadas_rec,
                             tm_ganadas            :tm_ganadas,
-                            acumulado_de_ventas   :acumulado_de_ventas,
+                            acumulado_de_ventas   :acumulado_de_ventas,*/
                             num_ck                :num_ck,
                             total_ck              :total_ck,
                             num_garantia          :num_garantia,
@@ -457,11 +483,16 @@ function(record,https,currentRecord,runtime,file,search,message) {
                             odv_rec_del_periodo   :odv_rec_del_periodo,
                             rec_con_ventas        :rec_con_ventas,
                             bono_tres_dos         :bono_tres_dos,
-                            rec_period_le         :rec_period_le,
+                            //rec_period_le         :rec_period_le,
                             bono_cinco_dos        :bono_cinco_dos,
                             odv_pre_supercomision :odv_pre_supercomision,
                             ventas_sc             :ventas_sc,
-                            bono_sc               :bono_sc
+                            bono_sc               :bono_sc,
+                            nle                   :nle,
+                            bono_nle              :bono_nle,
+                            xdos_nle              :xdos_nle,
+                            tresdos_nle           :tresdos_nle,
+                            cincodos_nle          :cincodos_nle
                     })  
                 }
             }
@@ -505,7 +536,7 @@ function(record,https,currentRecord,runtime,file,search,message) {
                 if(runtime.envType != 'PRODUCTION'){ 
                     url = 'https://3367613-sb1.app.netsuite.com/app/site/hosting/scriptlet.nl?script=571&deploy=1';
                 }else{
-                    url = 'https://3367613.app.netsuite.com/app/site/hosting/scriptlet.nl?script=571&deploy=1';
+                    url = 'https://3367613.app.netsuite.com/app/site/hosting/scriptlet.nl?script=1406&deploy=1';
                 }
                 log.debug("getexcel",url);
                 log.debug('objet_full',objet_full);

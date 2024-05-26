@@ -151,7 +151,7 @@ function(email,record, file, search, https, runtime,format,Dictionary) {
                 });
                 registerEmp.setValue({
                     fieldId: config_fields.entregas[config.type],
-                    value: comissionInfo.num_entrega
+                    value: comissionInfo.ventas_propias_num
                 });
                 registerEmp.setValue({
                     fieldId: config_fields.productividad[config.type],
@@ -166,26 +166,26 @@ function(email,record, file, search, https, runtime,format,Dictionary) {
                     fieldId: config_fields.totalReporte[config.type],
                     value: comissionInfo.total
                 });
-                registerEmp.setValue({
+                /*registerEmp.setValue({
                     fieldId: config_fields.retencion[config.type],
                     value: comissionInfo.retencion
-                });
+                });*/
                 registerEmp.setValue({
                     fieldId: config_fields.rec[config.type],
-                    value: comissionInfo.odv_rec_id
+                    value: comissionInfo.odv_de_reclutas
                 });
                 registerEmp.setValue({
                     fieldId: config_fields.equipo[config.type],
-                    value: comissionInfo.odv_pre_id
+                    value: comissionInfo.odv_equipo
                 });
                 registerEmp.setValue({
                     fieldId: config_fields.b_rec[config.type],
                     value: comissionInfo.bono_reclutadora
                 });
-                registerEmp.setValue({
+                /*registerEmp.setValue({
                     fieldId: config_fields.odv_entrega[config.type],
                     value: comissionInfo.odv_entrega    
-                });
+                });*/
                 //bono Joya
                 registerEmp.setValue({
                     fieldId: config_fields.bp1[config.type],
@@ -241,10 +241,10 @@ function(email,record, file, search, https, runtime,format,Dictionary) {
                     value: comissionInfo.rec_con_ventas  
                 });
                 //rec_period_LE
-                registerEmp.setValue({
+                /*registerEmp.setValue({
                     fieldId: config_fields.rec_period_LE[config.type],
                     value: comissionInfo.rec_period_le    
-                }); 
+                }); */
                 registerEmp.setValue({
                     fieldId: config_fields.bp5[config.type],
                     value: 143  //  BONO ADICIONAL 5+2

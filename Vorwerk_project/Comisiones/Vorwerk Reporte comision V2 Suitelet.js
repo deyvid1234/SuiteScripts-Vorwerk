@@ -488,7 +488,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 value : v!=0?v:0
             });
             //ID ODV
-            v = JSON.stringify(ventasPropias.data)
+            v = ventasPropias.data.join(',')
             sublist.setSublistValue({
                 id : 'custentity_odv_jdg_ids',
                 line : linea,
@@ -498,8 +498,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
         }
         if(entrega){
             var v
-            
-            //ntrega monto
+            //Entrega monto
             v = entrega.monto>0?entrega.monto:0
             subtotal+=parseInt(v)
             sublist.setSublistValue({
@@ -507,21 +506,6 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 line : linea,
                 value : v
             });
-            //entrega numero
-            v = entrega.data.length
-            sublist.setSublistValue({
-                id : 'custentity_num_entrega',
-                line : linea,
-                value : v!=0?v:0
-            });
-            //entrega odv
-            v = JSON.stringify(entrega.data)
-            sublist.setSublistValue({
-                id : 'custentity_odv_entrega',
-                line : linea,
-                value : v!=''?v:''
-            });
-
         }
 
         if(supercomision){
@@ -927,6 +911,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
 
 
             var porcentaje
+
 
             //Recorrido de integrantes del equipo
             var numeroVentasEquipo=0
@@ -1901,14 +1886,7 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
             thidField = sublist.addField({
                 id: 'custentity_odv_jdg_ids',
                 type: serverWidget.FieldType.TEXT,
-                label: 'ID ODV'
-            }).updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
-            arrayFields.push({idfield : thidField.id, namefield : thidField.label})
-            
-            thidField = sublist.addField({
-                id: 'custentity_tmpagada',
-                type: serverWidget.FieldType.TEXT,
-                label: 'TM Pagadas'
+                label: 'ID ODV PROPIAS'
             }).updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
             arrayFields.push({idfield : thidField.id, namefield : thidField.label})
             
@@ -1933,34 +1911,6 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
                     id: 'custentity_venta_propia',
                     type: serverWidget.FieldType.CURRENCY,
                     label: 'Venta Propia'
-                }).updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
-                arrayFields.push({idfield : thidField.id, namefield : thidField.label})
-               
-                thidField = sublist.addField({
-                    id: 'custentity_tm_ganadas_num',
-                    type: serverWidget.FieldType.TEXT,
-                    label: 'TM Ganadas'
-                }).updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
-                arrayFields.push({idfield : thidField.id, namefield : thidField.label})
-            
-                thidField = sublist.addField({
-                    id: 'custentity_suma_ventas_total',
-                    type: serverWidget.FieldType.TEXT,
-                    label: 'Acumulado de ventas'
-                }).updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
-                arrayFields.push({idfield : thidField.id, namefield : thidField.label})
-               
-                thidField =  sublist.addField({
-                    id: 'custentity_num_entrega',
-                    type: serverWidget.FieldType.TEXT,
-                    label: 'Número de Entregas'
-                }).updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
-                arrayFields.push({idfield : thidField.id, namefield : thidField.label})
-               
-                thidField = sublist.addField({
-                    id: 'custentity_odv_entrega',
-                    type: serverWidget.FieldType.TEXT,
-                    label: 'ODV Entrega'
                 }).updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
                 arrayFields.push({idfield : thidField.id, namefield : thidField.label})
                
@@ -2021,20 +1971,6 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
                 label: 'ODV Reclutas Comisionables'
             }).updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
             arrayFields.push({idfield : thidField.id, namefield : thidField.label})
-               
-            thidField = sublist.addField({
-                id: 'custentity_tmpagada_rec',
-                type: serverWidget.FieldType.TEXT,
-                label: 'TM Pagadas Rec'
-            }).updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
-            arrayFields.push({idfield : thidField.id, namefield : thidField.label})
-            
-            thidField = sublist.addField({
-                id: 'custentity_odv_comisionables_rec',
-                type: serverWidget.FieldType.TEXTAREA,
-                label: 'ODV comisionables'
-            }).updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
-            arrayFields.push({idfield : thidField.id, namefield : thidField.label})
              
             thidField = sublist.addField({
                 id: 'custentity_bono_rec',
@@ -2057,19 +1993,6 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
                
             //Campos JDG - Lideres de equipo
             if (cust_type == 3) {
-                thidField = sublist.addField({
-                    id: 'custentity_total_ventas_p',
-                    type: serverWidget.FieldType.TEXT,
-                    label: 'Ventas TM o CK y TM Pagadas'
-                }).updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
-                arrayFields.push({idfield : thidField.id, namefield : thidField.label})
-                
-                thidField = sublist.addField({
-                    id : 'custentity_bono_talento',
-                    type : serverWidget.FieldType.CURRENCY,
-                    label : 'Bono Talento'
-                }).updateDisplayType({displayType : serverWidget.FieldDisplayType.READONLY});
-                arrayFields.push({idfield : thidField.id, namefield : thidField.label})
                 
                 thidField = sublist.addField({
                     id : 'custentity_presentadoras',
@@ -2077,18 +2000,11 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
                     label : 'Presentadoras Equipo'
                 }).updateDisplayType({displayType : serverWidget.FieldDisplayType.READONLY});
                 arrayFields.push({idfield : thidField.id, namefield : thidField.label})
-                
+
                 thidField = sublist.addField({
                     id : 'custentity_odv_pre',
                     type : serverWidget.FieldType.TEXT,
-                    label : 'ODV de las Presentadoras'
-                }).updateDisplayType({displayType : serverWidget.FieldDisplayType.READONLY});
-                arrayFields.push({idfield : thidField.id, namefield : thidField.label})
-                
-                thidField = sublist.addField({
-                    id : 'custentity_tmpagada_pre',
-                    type : serverWidget.FieldType.TEXT,
-                    label : 'TM Pagadas equipo'
+                    label : 'Numero de ventas Equipo'
                 }).updateDisplayType({displayType : serverWidget.FieldDisplayType.READONLY});
                 arrayFields.push({idfield : thidField.id, namefield : thidField.label})
                 
@@ -2151,21 +2067,14 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
                 thidField = sublist.addField({
                     id : 'custentity_odv_rec_del_periodo',
                     type : serverWidget.FieldType.TEXTAREA,
-                    label : 'Reclutas y ODV del periodo mismo equipo'//2134324:56645653
-                }).updateDisplayType({displayType : serverWidget.FieldDisplayType.READONLY});
-                arrayFields.push({idfield : thidField.id, namefield : thidField.label})
-            
-                thidField = sublist.addField({
-                    id : 'custentity_odv_rec_de_le_del_periodo',
-                    type : serverWidget.FieldType.TEXTAREA,
-                    label : 'Reclutas y ODV Por recluta del LE del periodo'
+                    label : 'ODV del periodo mismo equipo'//2134324:56645653
                 }).updateDisplayType({displayType : serverWidget.FieldDisplayType.READONLY});
                 arrayFields.push({idfield : thidField.id, namefield : thidField.label})
             
                 thidField = sublist.addField({
                     id: 'custentity_rec_con_ventas',
-                    type: serverWidget.FieldType.TEXT,
-                    label: 'Reclutas con ventas'
+                    type: serverWidget.FieldType.TEXTAREA,
+                    label: 'Reclutas y Equipo con ventas'
                 }).updateDisplayType({displayType : serverWidget.FieldDisplayType.READONLY});
                 arrayFields.push({idfield : thidField.id, namefield : thidField.label})
             

@@ -62,42 +62,47 @@
                             + '<Cell><Data ss:Type="String">COMPENSACIONES DE INGRESO</Data></Cell>'
                             + '<Cell><Data ss:Type="String">UNIDAD</Data></Cell>'
                             + '<Cell><Data ss:Type="String">VENTAS TM Ó VENTAS CK</Data></Cell>'
-                            + '<Cell><Data ss:Type="String">TM PAGADAS PROPIAS</Data></Cell>'
+                            //+ '<Cell><Data ss:Type="String">TM PAGADAS PROPIAS</Data></Cell>'
                             + '<Cell><Data ss:Type="String">IDS DE VENTAS PROPIA</Data></Cell>'
                             + '<Cell><Data ss:Type="String">COOK KEY</Data></Cell>'
                             + '<Cell><Data ss:Type="String">COMISION COOK KEY</Data></Cell>'
                             + '<Cell><Data ss:Type="String">Num Garantia</Data></Cell>'
                             + '<Cell><Data ss:Type="String">Monto Garantia</Data></Cell>'
                             + '<Cell><Data ss:Type="String">IDS Garantia</Data></Cell>'
-                            + '<Cell><Data ss:Type="String">VENTAS TM O CK Y TM PAGADAS</Data></Cell>' 
+                            //+ '<Cell><Data ss:Type="String">VENTAS TM O CK Y TM PAGADAS</Data></Cell>' 
                             + '<Cell><Data ss:Type="String">VENTA PROPIA</Data></Cell>'
-                            + '<Cell><Data ss:Type="String">TM GANADAS</Data></Cell>'
-                            + '<Cell><Data ss:Type="String">ACUMULADO DE VENTAS</Data></Cell>'
-                            + '<Cell><Data ss:Type="String">NÚMERO DE ENTREGAS</Data></Cell>'
+                            //+ '<Cell><Data ss:Type="String">TM GANADAS</Data></Cell>'
+                            //+ '<Cell><Data ss:Type="String">ACUMULADO DE VENTAS</Data></Cell>'
+                            //+ '<Cell><Data ss:Type="String">NÚMERO DE ENTREGAS</Data></Cell>'
                             + '<Cell><Data ss:Type="String">ENTREGA</Data></Cell>'
                             + '<Cell><Data ss:Type="String">BONO DE PRODUCTIVIDAD</Data></Cell>'
                             + '<Cell><Data ss:Type="String">BONO EMERALD</Data></Cell>'
                             + '<Cell><Data ss:Type="String">ODV DE LAS RECLUTAS</Data></Cell>'
-                            + '<Cell><Data ss:Type="String">TM PAGADAS REC</Data></Cell>'
-                            + '<Cell><Data ss:Type="String">ODV COMISIONABLES REC</Data></Cell>'
+                            //+ '<Cell><Data ss:Type="String">TM PAGADAS REC</Data></Cell>'
+                            //+ '<Cell><Data ss:Type="String">ODV COMISIONABLES REC</Data></Cell>'
                             + '<Cell><Data ss:Type="String">BONO RECLUTADORA</Data></Cell>'
-                            + '<Cell><Data ss:Type="String">BONO TALENTO</Data></Cell>'
-                            + '<Cell><Data ss:Type="String">ODV DEL EQUIPO</Data></Cell>'
-                            + '<Cell><Data ss:Type="String">TM PAGADAS EQUIPO</Data></Cell>'
+                            //+ '<Cell><Data ss:Type="String">BONO TALENTO</Data></Cell>'
+                            + '<Cell><Data ss:Type="String"> NUMERO DE ODV DEL EQUIPO</Data></Cell>'
+                            //+ '<Cell><Data ss:Type="String">TM PAGADAS EQUIPO</Data></Cell>'
                             + '<Cell><Data ss:Type="String">IDS DEL EQUIPO</Data></Cell>'
                             + '<Cell><Data ss:Type="String">%</Data></Cell>'
                             + '<Cell><Data ss:Type="String">VENTA EQUIPO</Data></Cell>'
-                            + '<Cell><Data ss:Type="String">RECLUTAS Y ODV DEL PERIODO MISMO EQUIPO</Data></Cell>'
-                            + '<Cell><Data ss:Type="String">RECLUTAS Y ODV POR RECLUTA DEL LE DEL PERIODO</Data></Cell>'
-                            + '<Cell><Data ss:Type="String">RECLUTAS CON VENTAS</Data></Cell>'
+                            + '<Cell><Data ss:Type="String">NLE</Data></Cell>'
+                            + '<Cell><Data ss:Type="String">BONO NLE</Data></Cell>'
+                            + '<Cell><Data ss:Type="String">X+2 NLE</Data></Cell>'
+                            + '<Cell><Data ss:Type="String">BONO 3+2 NLE</Data></Cell>'
+                            + '<Cell><Data ss:Type="String">BONO 5+2 NLE</Data></Cell>'
+                            + '<Cell><Data ss:Type="String">ODV DEL PERIODO MISMO EQUIPO</Data></Cell>'
+                            //+ '<Cell><Data ss:Type="String">RECLUTAS Y ODV POR RECLUTA DEL LE DEL PERIODO</Data></Cell>'
+                            + '<Cell><Data ss:Type="String">RECLUTAS Y EQUIPO CON VENTAS</Data></Cell>'
                             + '<Cell><Data ss:Type="String">BONO 3 + 2</Data></Cell>'
                             + '<Cell><Data ss:Type="String">BONO 5 + 2</Data></Cell>'
                             + '<Cell><Data ss:Type="String">ODV POR RECLUTA DEL MES DEL EQUIPO SC</Data></Cell>'
                             + '<Cell><Data ss:Type="String">NUMERO DE VENTAS SC</Data></Cell>'
                             + '<Cell><Data ss:Type="String">BONO SUPERCOMISIÓN</Data></Cell>'
-                            + '<Cell><Data ss:Type="String">RETENCION</Data></Cell>'
-                                + '<Cell><Data ss:Type="String">AJUSTE</Data></Cell>'
-                                + '<Cell><Data ss:Type="String">SUBTOTAL</Data></Cell>'
+                            //+ '<Cell><Data ss:Type="String">RETENCION</Data></Cell>'
+                                //+ '<Cell><Data ss:Type="String">AJUSTE</Data></Cell>'
+                                //+ '<Cell><Data ss:Type="String">SUBTOTAL</Data></Cell>'
                             + '<Cell><Data ss:Type="String">TOTAL</Data></Cell>'
                             + '</Row>';
                        
@@ -119,75 +124,84 @@
                          var entrega = typeof data[x].entrega === 'undefined'?"0":data[x].entrega;
                          var bono_productividad = typeof data[x].bono_productividad === 'undefined'?"0":data[x].bono_productividad;
                          var bono_reclutadora = typeof data[x].bono_reclutadora === 'undefined'?"0":data[x].bono_reclutadora;
-                         var retencion = typeof data[x].retencion === 'undefined'?"0":data[x].retencion;
-                         var ajuste = typeof data[x].ajuste === 'undefined'?"0":data[x].ajuste;
-                         var subtotal = typeof data[x].subtotal === 'undefined'?"0":data[x].subtotal;
-                         var num_entrega = typeof data[x].num_entrega === 'undefined'?"0":data[x].num_entrega;
-                         var odv_pre_id = typeof data[x].odv_pre_id === 'undefined'?"0":data[x].odv_pre_id;
-                         var odv_rec_id = typeof data[x].odv_rec_id === 'undefined'?"0":data[x].odv_rec_id;
+                         //var retencion = typeof data[x].retencion === 'undefined'?"0":data[x].retencion;
+                         //var ajuste = typeof data[x].ajuste === 'undefined'?"0":data[x].ajuste;
+                         //var subtotal = typeof data[x].subtotal === 'undefined'?"0":data[x].subtotal;
+                         //var num_entrega = typeof data[x].num_entrega === 'undefined'?"0":data[x].num_entrega;
+                         var odv_equipo = typeof data[x].odv_equipo === 'undefined'?"0":data[x].odv_equipo;
+                         //var odv_rec_id = typeof data[x].odv_rec_id === 'undefined'?"0":data[x].odv_rec_id;
                          var odv_entrega = typeof data[x].odv_entrega === 'undefined'?"0":data[x].odv_entrega;
                          var total = typeof data[x].total === 'undefined'?"0":data[x].total;
-                         var tm_pagada = typeof data[x].tm_pagada === 'undefined'?"0":data[x].tm_pagada;
-                         var total_venta_propia = typeof data[x].total_venta_propia === 'undefined'?"0":data[x].total_venta_propia;
-                         var tm_pagadas_equipo = typeof data[x].tm_pagadas_equipo === 'undefined'?"0":data[x].tm_pagadas_equipo;
+                         //var tm_pagada = typeof data[x].tm_pagada === 'undefined'?"0":data[x].tm_pagada;
+                         //var total_venta_propia = typeof data[x].total_venta_propia === 'undefined'?"0":data[x].total_venta_propia;
+                         //var tm_pagadas_equipo = typeof data[x].tm_pagadas_equipo === 'undefined'?"0":data[x].tm_pagadas_equipo;
                          var porcentaje = typeof data[x].porcentaje === 'undefined'?"0":data[x].porcentaje;
                          var odv_de_reclutas = typeof data[x].odv_de_reclutas === 'undefined'?"0":data[x].odv_de_reclutas;
-                         var tm_pagadas_rec = typeof data[x].tm_pagadas_rec === 'undefined'?"0":data[x].tm_pagadas_rec;
-                         var bono_talento = typeof data[x].bono_talento === 'undefined'?"0":data[x].bono_talento;
+                         //var tm_pagadas_rec = typeof data[x].tm_pagadas_rec === 'undefined'?"0":data[x].tm_pagadas_rec;
+                         //var bono_talento = typeof data[x].bono_talento === 'undefined'?"0":data[x].bono_talento;
                          var bono_emerald = typeof data[x].bono_emerald === 'undefined'?"0":data[x].bono_emerald;
-                         var tm_ganadas = typeof data[x].tm_ganadas === 'undefined'?"0":data[x].tm_ganadas;
-                         var acumulado_de_ventas = typeof data[x].acumulado_de_ventas === 'undefined'?"0":data[x].acumulado_de_ventas;
+                         //var tm_ganadas = typeof data[x].tm_ganadas === 'undefined'?"0":data[x].tm_ganadas;
+                         //var acumulado_de_ventas = typeof data[x].acumulado_de_ventas === 'undefined'?"0":data[x].acumulado_de_ventas;
                          var odv_rec_del_periodo = typeof data[x].odv_rec_del_periodo === 'undefined'?"0":data[x].odv_rec_del_periodo;
-                         var rec_period_le = typeof data[x].rec_period_le === 'undefined'?"0":data[x].rec_period_le;
+                         //var rec_period_le = typeof data[x].rec_period_le === 'undefined'?"0":data[x].rec_period_le;
                          var rec_con_ventas = typeof data[x].rec_con_ventas === 'undefined'?"0":data[x].rec_con_ventas;
                          var bono_tres_dos = typeof data[x].bono_tres_dos === 'undefined'?"0":data[x].bono_tres_dos;
                          var bono_cinco_dos = typeof data[x].bono_cinco_dos === 'undefined'?"0":data[x].bono_cinco_dos;
                          var odv_pre_supercomision = typeof data[x].odv_pre_supercomision === 'undefined'?"0":data[x].odv_pre_supercomision;
                          var ventas_sc = typeof data[x].ventas_sc === 'undefined'?"0":data[x].ventas_sc;
                          var bono_sc = typeof data[x].bono_sc === 'undefined'?"0":data[x].bono_sc;
+                         var nle = typeof data[x].nle === 'undefined'?"0":data[x].nle;
+                         var bono_nle = typeof data[x].bono_nle === 'undefined'?"0":data[x].bono_nle;
+                         var xdos_nle = typeof data[x].xdos_nle === 'undefined'?"0":data[x].xdos_nle;
+                         var tresdos_nle = typeof data[x].tresdos_nle === 'undefined'?"0":data[x].tresdos_nle;
+                         var cincodos_nle = typeof data[x].cincodos_nle === 'undefined'?"0":data[x].cincodos_nle;
                          
                          xmlStr += '<Row>'
                            +'<Cell><Data ss:Type="String">'+data[x].nameEmp+'</Data></Cell>'
                                + '<Cell><Data ss:Type="String">'+data[x].ingreso+'</Data></Cell>'
                                + '<Cell><Data ss:Type="String">'+data[x].nombre_unidad+'</Data></Cell>'
                                + '<Cell><Data ss:Type="String">'+ventas_propias_num+'</Data></Cell>'
-                               + '<Cell><Data ss:Type="String">'+tm_pagada+'</Data></Cell>'
+                               //+ '<Cell><Data ss:Type="String">'+tm_pagada+'</Data></Cell>'
                                + '<Cell><Data ss:Type="String">'+ventas_propias_ids+'</Data></Cell>'
                                + '<Cell><Data ss:Type="String">'+num_ck+'</Data></Cell>' //COOK KEY 
                                + '<Cell><Data ss:Type="String">'+total_ck+'</Data></Cell>' //COMISION COOK KEY
                                + '<Cell><Data ss:Type="String">'+num_garantia+'</Data></Cell>' //Num Garantia
                                + '<Cell><Data ss:Type="String">'+monto_garantia+'</Data></Cell>' //Monto Garantia
                                + '<Cell><Data ss:Type="String">'+ids_garantia+'</Data></Cell>' //IDS Garantia
-                               + '<Cell><Data ss:Type="String">'+total_venta_propia+'</Data></Cell>'
+                               //+ '<Cell><Data ss:Type="String">'+total_venta_propia+'</Data></Cell>'
                                + '<Cell><Data ss:Type="String">'+ventas_propias_total+'</Data></Cell>'
-                               + '<Cell><Data ss:Type="String">'+tm_ganadas+'</Data></Cell>'
-                               + '<Cell><Data ss:Type="String">'+acumulado_de_ventas+'</Data></Cell>'
-                               + '<Cell><Data ss:Type="String">'+num_entrega+'</Data></Cell>'
+                               //+ '<Cell><Data ss:Type="String">'+tm_ganadas+'</Data></Cell>'
+                               //+ '<Cell><Data ss:Type="String">'+acumulado_de_ventas+'</Data></Cell>'
+                               //+ '<Cell><Data ss:Type="String">'+num_entrega+'</Data></Cell>'
                                + '<Cell><Data ss:Type="String">'+entrega+'</Data></Cell>'
                                + '<Cell><Data ss:Type="String">'+bono_productividad+'</Data></Cell>'
                                + '<Cell><Data ss:Type="String">'+bono_emerald+'</Data></Cell>'
                                + '<Cell><Data ss:Type="String">'+odv_de_reclutas+'</Data></Cell>'
-                               + '<Cell><Data ss:Type="String">'+tm_pagadas_rec+'</Data></Cell>'
-                               + '<Cell><Data ss:Type="String">'+odv_rec_id+'</Data></Cell>'
+                               //+ '<Cell><Data ss:Type="String">'+tm_pagadas_rec+'</Data></Cell>'
+                               //+ '<Cell><Data ss:Type="String">'+odv_rec_id+'</Data></Cell>'
                                + '<Cell><Data ss:Type="String">'+bono_reclutadora+'</Data></Cell>'
-                               + '<Cell><Data ss:Type="String">'+bono_talento+'</Data></Cell>'
+                               //+ '<Cell><Data ss:Type="String">'+bono_talento+'</Data></Cell>'
                                + '<Cell><Data ss:Type="String">'+ventas_present_num+'</Data></Cell>'
-                               + '<Cell><Data ss:Type="String">'+tm_pagadas_equipo+'</Data></Cell>'
-                               + '<Cell><Data ss:Type="String">'+odv_pre_id+'</Data></Cell>'
+                               //+ '<Cell><Data ss:Type="String">'+tm_pagadas_equipo+'</Data></Cell>'
+                               + '<Cell><Data ss:Type="String">'+odv_equipo+'</Data></Cell>'
                                + '<Cell><Data ss:Type="String">'+porcentaje+'</Data></Cell>'
                                + '<Cell><Data ss:Type="String">'+ventas_present_total+'</Data></Cell>'
+                               + '<Cell><Data ss:Type="String">'+nle+'</Data></Cell>'
+                               + '<Cell><Data ss:Type="String">'+bono_nle+'</Data></Cell>'
+                               + '<Cell><Data ss:Type="String">'+xdos_nle+'</Data></Cell>'
+                               + '<Cell><Data ss:Type="String">'+tresdos_nle+'</Data></Cell>'
+                               + '<Cell><Data ss:Type="String">'+cincodos_nle+'</Data></Cell>'
                                + '<Cell><Data ss:Type="String">'+odv_rec_del_periodo+'</Data></Cell>'
-                               + '<Cell><Data ss:Type="String">'+rec_period_le+'</Data></Cell>'
+                               //+ '<Cell><Data ss:Type="String">'+rec_period_le+'</Data></Cell>'
                                + '<Cell><Data ss:Type="String">'+rec_con_ventas+'</Data></Cell>'
                                + '<Cell><Data ss:Type="String">'+bono_tres_dos+'</Data></Cell>'
-                               
                                + '<Cell><Data ss:Type="String">'+bono_cinco_dos+'</Data></Cell>'
                                + '<Cell><Data ss:Type="String">'+odv_pre_supercomision+'</Data></Cell>'
                                + '<Cell><Data ss:Type="String">'+ventas_sc+'</Data></Cell>'
                                + '<Cell><Data ss:Type="String">'+bono_sc+'</Data></Cell>'
-                               + '<Cell><Data ss:Type="String">'+retencion+'</Data></Cell>'
-                               + '<Cell><Data ss:Type="String">'+ajuste+'</Data></Cell>'
-                               + '<Cell><Data ss:Type="String">'+subtotal+'</Data></Cell>'
+                               //+ '<Cell><Data ss:Type="String">'+retencion+'</Data></Cell>'
+                               //+ '<Cell><Data ss:Type="String">'+ajuste+'</Data></Cell>'
+                               //+ '<Cell><Data ss:Type="String">'+subtotal+'</Data></Cell>'
                                + '<Cell><Data ss:Type="String">'+total+'</Data></Cell>'
                                + '</Row>';
                          
