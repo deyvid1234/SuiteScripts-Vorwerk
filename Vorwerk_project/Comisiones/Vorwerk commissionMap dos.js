@@ -182,10 +182,10 @@ function(email,record, file, search, https, runtime,format,Dictionary) {
                     fieldId: config_fields.b_rec[config.type],
                     value: comissionInfo.bono_reclutadora
                 });
-                /*registerEmp.setValue({
+                registerEmp.setValue({
                     fieldId: config_fields.odv_entrega[config.type],
-                    value: comissionInfo.odv_entrega    
-                });*/
+                    value: comissionInfo.ventas_propias_ids    
+                });
                 //bono Joya
                 registerEmp.setValue({
                     fieldId: config_fields.bp1[config.type],
@@ -273,7 +273,8 @@ function(email,record, file, search, https, runtime,format,Dictionary) {
                     value: idrg
                 });
 
-                log.debug('comissionInfo',comissionInfo.odv_entrega)
+                log.debug('odv_de_reclutas',comissionInfo.odv_de_reclutas)
+                log.debug('odv_equipo',comissionInfo.odv_equipo)
                 var recEmp = registerEmp.save({ // Guarda el nuevo registro
                     enableSourcing: true,
                     ignoreMandatoryFields: true

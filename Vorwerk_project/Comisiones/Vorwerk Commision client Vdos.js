@@ -452,7 +452,7 @@ function(record,https,currentRecord,runtime,file,search,message) {
                             ventas_propias_num    :ventas_propias_num,
                             ventas_propias_ids    :ventas_propias_ids,
                             ventas_propias_total  :ventas_propias_total,
-                            //ventas_present_num    :ventas_present_num,
+                            ventas_present_num    :ventas_present_num,
                             ventas_present_total  :ventas_present_total,
                             entrega               :entrega,
                             bono_productividad    :bono_productividad,
@@ -509,9 +509,9 @@ function(record,https,currentRecord,runtime,file,search,message) {
             var objet_full = getData();//extrae la informacion de la tabla
             var url = ""
             if(runtime.envType != 'PRODUCTION'){ //Reporte de comision Suitelet.js
-                url ='https://3367613-sb1.app.netsuite.com/app/site/hosting/scriptlet.nl?script=565&deploy=1';
+                url ='https://3367613-sb1.app.netsuite.com/app/site/hosting/scriptlet.nl?script=1324&deploy=1';
             }else{
-                url ='https://3367613.app.netsuite.com/app/site/hosting/scriptlet.nl?script=565&deploy=1';
+                url ='https://3367613.app.netsuite.com/app/site/hosting/scriptlet.nl?script=1324&deploy=1';
             };
             //envia la información por metodo put al map vorwerk commission map
             var headers = {"Content-Type": "application/json"};

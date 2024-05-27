@@ -331,6 +331,8 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                             objGarantia = bonoGarantia(dataEmp,garantiaSO,compConfigDetails)
                             //log.debug('objGarantia',objGarantia)
                             objXmasdosNLE=bonoXmasdosNLE(listaNombramientos,dataEmp,thisPeriodSO,listaGrupos,allPresentadoras,listaEquipoRecluta,historicoSO,dHistorico,namePeriodo,cust_period)
+                            objJoya = bonoJoya(conf,ventasEmp,compConfigDetails)
+                            objCook = bonoCk(dataEmp,ckSO)
                             fillTable(sublist,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objSupercomision,objReclutamiento,objEntrega,objXmasDos,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objJoya,objCook,objXmasdosNLE)
                             cont_line++
                             
@@ -345,21 +347,21 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                             var reclutasEquipo=listaEquipoRecluta[i]
                             var ventasEmp =thisPeriodSO[i] 
                             var conf = Utils.getConf(empConfiguracion);
-                            log.debug('ventasEmp',ventasEmp)
+                            //log.debug('ventasEmp',ventasEmp)
                             objVentasPropias = bonoVentaPropia(dataEmp,ventasEmp,compConfigDetails)
-                            log.debug('objVentasPropias',objVentasPropias)
+                            //log.debug('objVentasPropias',objVentasPropias)
                             
                             objReclutamiento = bonoReclutamiento(reclutas,historicoSO,thisPeriodSO,dataEmp,compConfigDetails,allPresentadoras,dHistorico)
-                            log.debug('objReclutamiento',objReclutamiento)
+                            //log.debug('objReclutamiento',objReclutamiento)
                             objEntrega = bonoEntrega(dataEmp,ventasEmp,cust_entrega)
-                            log.debug('objEntrega',objEntrega)
+                            //log.debug('objEntrega',objEntrega)
                             
                             objProductividad = bonoProductividad(dataEmp,ventasEmp,compConfigDetails)
-                            log.debug('objProductividad',objProductividad)
+                            //log.debug('objProductividad',objProductividad)
                             objReclutamiento = bonoReclutamiento(reclutas,historicoSO,thisPeriodSO,dataEmp,compConfigDetails,allPresentadoras,dHistorico)
-                            log.debug('objReclutamiento',objReclutamiento)
+                            //log.debug('objReclutamiento',objReclutamiento)
                             objGarantia = bonoGarantia(dataEmp,garantiaSO,compConfigDetails)
-                            log.debug('objGarantia',objGarantia)
+                            //log.debug('objGarantia',objGarantia)
                             objJoya = bonoJoya(conf,ventasEmp,compConfigDetails)
                             objCook = bonoCk(dataEmp,ckSO)
                             /*
@@ -376,7 +378,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                         if(empType == 1 && empPromo == 1){
                             //Calcular reporte para la persona
                             objReclutamiento = bonoReclutamiento(reclutas,historicoSO,thisPeriodSO,dataEmp,compConfigDetails,allPresentadoras,dHistorico)
-                            log.debug('objReclutamiento',objReclutamiento)
+                            //log.debug('objReclutamiento',objReclutamiento)
                             objCook = bonoCk(dataEmp,ckSO)
                             
                             fillTable(sublist,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objSupercomision,objReclutamiento,objEntrega,objXmasDos,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objJoya,objCook,objXmasdosNLE)
@@ -625,6 +627,12 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
               line : linea,
               value : JSON.stringify(v)
           });
+          v = ventaEquipo.noVentas>0?ventaEquipo.noVentas:0
+          sublist.setSublistValue({
+              id : 'custentity_odv_pre',
+              line : linea,
+              value : v
+          });
         }
         if(ventasEquipoNLE){
           
@@ -816,11 +824,11 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                         log.debug('montoNLE32',montoNLE32)
                         log.debug('montoNLE52',montoNLE52)
                             log.debug('actualizacion de registro de ', idHijo)
-                            var submitFields = record.submitFields({
+                            /*var submitFields = record.submitFields({
                                             type: 'employee',
                                             id: idHijo,
                                             values: {'custentityperiodo_nle_pago':cust_period}
-                                        });
+                                        });*/
                         }
                         montoTotal52 += montoNLE52//se suman los montos de cada lider hijo para obtener el monto total a pagar a la lider madre
                         montoTotal32 += montoNLE32
@@ -972,7 +980,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
         }catch(e){
             log.error('bonoVentaEquipo ', e)
         }
-        return {monto:venta_equipo, porcentaje:porcentaje, infoVentasEquipo:infoVentasEquipo}
+        return {monto:venta_equipo, porcentaje:porcentaje, infoVentasEquipo:infoVentasEquipo,noVentas:numeroVentasEquipo}
 
     }
     function bonoProductividad(dataEmp,ventasEmp,compConfigDetails){
@@ -1018,6 +1026,8 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
             var equipoActivas=''
             var monto32 = 0
             var monto52 = 0
+            var data1=[]
+            var data2=[]
             if (reclutasEquipo){//si esta lider tiene reclutas obtenemos su fecha de contratacion o de reactivacion
                 reclutasEquipo.forEach(function(i,index) {
                 
@@ -1048,11 +1058,13 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
                                 //log.debug('fechaSO',Utils.stringToDate(fechaSO))
                                 if(Utils.stringToDate(fechaSO) <= Utils.stringToDate(fechaObjetivo)){
                                     //log.debug('SO dentro de la fecha objetivo',key) 
-                                    var pedido = { idSO:key[0],docNum:docNum}
+                                    var pedido = { idSO:key[0],docNum:docNum,salesRep:recSO}
+                                        data1.push(pedido)
                                     if(salesOrders.hasOwnProperty(recSO)){
-                                        salesOrders[recSO].push(pedido)
+
+                                        salesOrders[recSO].push(key)
                                     }else{
-                                        salesOrders[recSO]=(pedido)
+                                        salesOrders[recSO]=(key)
                                     }
                                 }
                             } 
@@ -1090,11 +1102,12 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
                                     //log.debug('fechaSO eq',Utils.stringToDate(fechaSO))
                                     if(Utils.stringToDate(fechaSO) <= Utils.stringToDate(fechaObjetivo)){
                                         //log.debug('SO dentro de la fecha objetivo eq',key) 
-                                        var pedido = { idSO:key[0],docNum:docNum}
+                                        var pedido = { idSO:key[0],docNum:docNum,salesRep:recSO}
+                                        data2.push(pedido)
                                         if(salesOrdersEq.hasOwnProperty(recSO)){
-                                            salesOrdersEq[recSO].push(pedido)
+                                            salesOrdersEq[recSO].push(key)
                                         }else{
-                                            salesOrdersEq[recSO]=(pedido)
+                                            salesOrdersEq[recSO]=(key)
                                         }
                                     }
                                 } 
@@ -1124,7 +1137,7 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
                }
                
             }   
-            return {monto52:monto52,monto32:monto32, data:salesOrders,equipo:salesOrdersEq} 
+            return {monto52:monto52,monto32:monto32, data:data1,equipo:data2} 
         }catch(e){
             log.debug('error X+2',e)
         }    
