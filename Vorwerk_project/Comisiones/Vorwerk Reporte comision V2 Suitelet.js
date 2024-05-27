@@ -1620,7 +1620,7 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
                         var mesNombramiento=parseInt(fechaNombramiento[1])
                         var yearNom=parseInt(fechaNombramiento[2])
 
-                        if(mesNombramiento>mesMinimo&&mesNombramiento <= mesPeriodo&&yearNom ==yearPeriodo){
+                        if(mesNombramiento>mesMinimo && mesNombramiento <= mesPeriodo && yearNom ==yearPeriodo && mesNombramiento >= 5){
 
                             if(nombradsPor.hasOwnProperty(objEMP.nombramientoPor)){
                             nombradsPor[objEMP.nombramientoPor].push(objEMP.internalid)

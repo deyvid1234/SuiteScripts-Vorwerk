@@ -295,6 +295,7 @@ function(runtime,email,record,render,search,xml,config,file,url,Utils,Dictionary
 			return strTable
 			//fin tabla
 		}catch(errT1){
+			return "";	
 			log.error('errT1',errT1);
 		}
   }
@@ -636,17 +637,17 @@ function(runtime,email,record,render,search,xml,config,file,url,Utils,Dictionary
   }
 	//creacion del body 
 	function createTable(data,CompConfigDetails,type_emp_text,period_name,type_emp,conf_emp,promocion,idPeriod,tmp_emp,dataSO){
-			var strTable =createHeader(data.emleado,type_emp_text,period_name,tmp_emp); 
+			var strTable = createHeader(data.emleado,type_emp_text,period_name,tmp_emp); 
 
 			var  lineaRec = 0
-			if(data.odv_entrega && data.venta_propia ){
+			if(data.odv_entrega /*&& data.venta_propia*/ ){
 				strTable += table_v_propia(data,tmp_emp,type_emp,promocion,dataSO,CompConfigDetails)
 			}
-			/*
-			if (type_emp == 3){
-				table_v_equipo(strTable,data)
-			}
 			
+			if (type_emp == 3){
+				strTable += table_v_equipo(strTable,data)
+			}
+			/*
 			if (ventasRec == 3){
 				table_v_rec(strTable,data)
 			}
