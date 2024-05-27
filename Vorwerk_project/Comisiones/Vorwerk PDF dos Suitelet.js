@@ -214,7 +214,7 @@ function(runtime,email,record,render,search,xml,config,file,url,Utils,Dictionary
 			log.debug('tmp_emp',tmp_emp)
 			var odv_p = data.odv_entrega.split(',')
 			var odv_p_monto = data.venta_propia
-
+  
 
 			var objSObyid = dataSO.objSObyid
 			log.debug('objSObyid',objSObyid)
@@ -300,69 +300,91 @@ function(runtime,email,record,render,search,xml,config,file,url,Utils,Dictionary
 		}
   }
 
-  function table_v_equipo (){
-  	//Ventas Equipo
-				strTable    += "<p font-family=\"Helvetica\" font-size=\"6\" align=\"center\"><b>VENTAS DEL EQUIPO</b></p>";
-				strTable += "<table width='670px'>";
+  function table_v_equipo(strTable,data,dataSO,CompConfigDetails){
+  	try{
+  		//Ventas Equipo
+	  	var equipoMonto = data.comision_equipo
+	    var dataEquipo = data.equipo
+	    log.debug('equipoMonto',equipoMonto)
+	    log.debug('dataEquipo',dataEquipo)
+	    var ids = []
+    	var arregloVentas= JSON.parse(dataEquipo)
+    	if(dataEquipo != ""){
+    	    for (i in arregloVentas){
+    	        for(e in arregloVentas[i]){
+    	        	ids.push(arregloVentas[i][e])
+    	        }
+    	      }
+    	}
+    	log.debug('ids',ids)
+		strTable    += "<p font-family=\"Helvetica\" font-size=\"6\" align=\"center\"><b>VENTAS DEL EQUIPO</b></p>";
+		strTable += "<table width='670px'>";
+		strTable += "<tr>";
+		strTable += "<td border='0.5' width='10px'><b>#</b></td>";		
+		strTable += "<td border='0.5' width='0px'><b>VENTA REALIZADA POR</b></td>";
+		strTable += "<td border='0.5' width='200px'><b>CLIENTE</b></td>";
+		strTable += "<td border='0.5' width='0px'><b>FECHA</b></td>";
+		strTable += "<td border='0.5' width='0px'><b>PEDIDO</b></td>";
+		strTable += "</tr>";
+		lineaRec=0
+				
+		for(var i in ids){
+			try{
+				lineaRec++
+				var objSObyid = dataSO.objSObyid
+				var thisSO = objSObyid[ids[i]]
+				var salesRep = thisSO.salesrep[0].text
+				var cliente = thisSO.entity[0].text
+				var fecha = thisSO.trandate
+				var pedido = thisSO.tranid
+				
+				cliente = cliente.replace(/&/gi," ")
 				strTable += "<tr>";
-				strTable += "<td border='0.5' width='10px'><b>#</b></td>";
-				
-				strTable += "<td border='0.5' width='0px'><b>VENTA REALIZADA POR</b></td>";
-				strTable += "<td border='0.5' width='200px'><b>CLIENTE</b></td>";
-				strTable += "<td border='0.5' width='0px'><b>FECHA</b></td>";
-				strTable += "<td border='0.5' width='0px'><b>PEDIDO</b></td>";
-				
+				strTable += "<td border='0.5' border-style='dotted-narrow'>" + lineaRec 	+ "</td>";
+						
+				strTable += "<td border='0.5' border-style='dotted-narrow'>" + salesRep 	+ "</td>";
+				strTable += "<td border='0.5' border-style='dotted-narrow'>" + cliente	    + "</td>";
+				strTable += "<td border='0.5' border-style='dotted-narrow'>" + fecha 		+ "</td>";
+				strTable += "<td border='0.5' border-style='dotted-narrow'>" + pedido		+ "</td>";
+						
 				strTable += "</tr>";
-				lineaRec=0
-				
-				for(var i in v_equipo){
-					try{
-						lineaRec++
-						var cliente = v_equipo[i].cliente.replace(/&/gi," ")
-						strTable += "<tr>";
-						strTable += "<td border='0.5' border-style='dotted-narrow'>" + lineaRec 	+ "</td>";
-						
-						strTable += "<td border='0.5' border-style='dotted-narrow'>" + v_equipo[i].employee 	+ "</td>";
-						strTable += "<td border='0.5' border-style='dotted-narrow'>" +  cliente	+ "</td>";
-						strTable += "<td border='0.5' border-style='dotted-narrow'>" + v_equipo[i].fecha 		+ "</td>";
-						strTable += "<td border='0.5' border-style='dotted-narrow'>" + v_equipo[i].idExterno		+ "</td>";
-						
-						strTable += "</tr>";
-					}catch(errT2){
-						log.error('errT2',errT2);
-					}
+			}catch(errT2){
+				log.error('errT2',errT2);
+			}
 					
-				}
-				var porcentaje
-				for ( i in CompConfigDetails[1]['esquemaVentasJefaGrupo']['propias'] ){
-					var desde = CompConfigDetails[1]['esquemaVentasJefaGrupo']['propias'][i]['desde']
-					var hasta = CompConfigDetails[1]['esquemaVentasJefaGrupo']['propias'][i]['hasta']
-					if (Object.keys(v_propia).length >= desde && Object.keys(v_propia).length <= hasta){
-						porcentaje = CompConfigDetails[1]['esquemaVentasJefaGrupo']['propias'][i]['porcentaje']
-						break;
-					}
-				}
-				var com_aux = data.comision_equipo==0?0:currencyFormat('$',data.comision_equipo/(parseInt(porcentaje)/100)+'.00')
+		}
+		var porcentaje
+		var odv_p = data.odv_entrega.split(',')
+	
+		for ( i in CompConfigDetails[1]['esquemaVentasJefaGrupo']['propias'] ){
+			var desde = CompConfigDetails[1]['esquemaVentasJefaGrupo']['propias'][i]['desde']
+			var hasta = CompConfigDetails[1]['esquemaVentasJefaGrupo']['propias'][i]['hasta']
+			if (odv_p.length >= desde && odv_p.length <= hasta){
+				porcentaje = CompConfigDetails[1]['esquemaVentasJefaGrupo']['propias'][i]['porcentaje']
+				break;
+			}
+		}
+		var com_aux = data.comision_equipo==0?0:currencyFormat('$',data.comision_equipo/(parseInt(porcentaje)/100)+'.00')
 				
-				strTable += "<tr>";
-				strTable += "<td border='0.5' colspan= '4' border-style='none' align='right'><b>   </b></td>";
-				strTable += "</tr>";
-				strTable += "<tr>";
-				strTable += "<td border='0.5' colspan= '4' border-style='none' align='right'><b>Total comisión Venta de Equipos</b></td>";
-				strTable += "<td border='0.5' border-style='dotted-narrow' align='right'><b>" + com_aux	+ "</b></td>";
-				strTable += "</tr>";
-				strTable += "<tr>";
-				strTable += "<td border='0.5' colspan= '4' border-style='none' align='right'><b> % Pagado </b></td>";
-				strTable += "<td border='0.5' border-style='dotted-narrow' align='right'><b>" + porcentaje	+ "</b></td>";
-				strTable += "</tr>";
-				strTable += "<tr>";
-				strTable += "<td border='0.5' colspan= '4' border-style='none' align='right'><b>Total comisión</b></td>";
-				strTable += "<td border='0.5' border-style='dotted-narrow' align='right'><b>" + currencyFormat('$',data.comision_equipo+'.00')	+ "</b></td>";
-				strTable += "</tr>";
-				strTable += "</table>";
+		strTable += "<tr>";
+		strTable += "<td border='0.5' colspan= '4' border-style='none' align='right'><b>   </b></td>";
+		strTable += "</tr>";
+		strTable += "<tr>";
+		strTable += "<td border='0.5' colspan= '4' border-style='none' align='right'><b>Total comisión Venta de Equipos</b></td>";
+		strTable += "<td border='0.5' border-style='dotted-narrow' align='right'><b>" + com_aux	+ "</b></td>";
+		strTable += "</tr>";
+		strTable += "<tr>";
+		strTable += "<td border='0.5' colspan= '4' border-style='none' align='right'><b> % Pagado </b></td>";
+		strTable += "<td border='0.5' border-style='dotted-narrow' align='right'><b>" + porcentaje	+ "</b></td>";
+		strTable += "</tr>";
+		strTable += "<tr>";
+		strTable += "<td border='0.5' colspan= '4' border-style='none' align='right'><b>Total comisión</b></td>";
+		strTable += "<td border='0.5' border-style='dotted-narrow' align='right'><b>" + currencyFormat('$',data.comision_equipo+'.00')	+ "</b></td>";
+		strTable += "</tr>";
+		strTable += "</table>";
 				//Fin Ventas Equipo
 
-				log.debug('pre if v_tres_dos',v_tres_dos)
+				/*log.debug('pre if v_tres_dos',v_tres_dos)
 				if(v_tres_dos && v_tres_dos != '' && v_tres_dos !=' ' && Object.keys(v_tres_dos).length > 0){
 					//v_tres_dos
 				strTable    += "<p font-family=\"Helvetica\" font-size=\"6\" align=\"center\"><b>VENTAS RECLUTAS DEL PERIODO</b></p>";
@@ -425,7 +447,12 @@ function(runtime,email,record,render,search,xml,config,file,url,Utils,Dictionary
 				strTable += "</tr>";
 				strTable += "</table>";
 				//fin v_tres_dos 
-				}
+				}*/
+				return strTable
+  	}catch(e){
+  		log.debug('error funcion venta equipo',e)
+  	}
+  	
   }
   function table_v_rec(){
   	//Ventas Rec
@@ -645,7 +672,7 @@ function(runtime,email,record,render,search,xml,config,file,url,Utils,Dictionary
 			}
 			
 			if (type_emp == 3){
-				strTable += table_v_equipo(strTable,data)
+				strTable += table_v_equipo(strTable,data,dataSO,CompConfigDetails)
 			}
 			/*
 			if (ventasRec == 3){
@@ -949,8 +976,7 @@ function(runtime,email,record,render,search,xml,config,file,url,Utils,Dictionary
     	        	log.debug('type_search',type_search)
     	        	if(type_emp== 3){
                 		data.comision_equipo = r.getValue(config_fields.comision_equipo[type_emp])
-                		data.equipo = r.getValue(config_fields.equipo[type_emp])
-                		data.equipo = r.getValue(config_fields.equipo[type_emp])
+                		data.equipo = r.getValue(config_fields.equipo[type_emp]) 
     	        	}
     	        	if(promocion ==1){
     	        		type_emp=2
