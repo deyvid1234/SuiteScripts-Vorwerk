@@ -522,13 +522,13 @@ function(serverWidget,search,record,runtime,redirect,url) {
         try{ 
         	if(runtime.envType != 'PRODUCTION'){
                 var record_url_base = 'https://3367613-sb1.app.netsuite.com/app/common/custom/custrecordentry.nl?rectype=397&id=';
-                var print_url_base = 'https://3367613-sb1.app.netsuite.com/app/site/hosting/scriptlet.nl?script=570&deploy=1&employee=';
+                var print_url_base = 'https://3367613-sb1.app.netsuite.com/app/site/hosting/scriptlet.nl?script=1408&deploy=1&employee=';
                 var send_url_base = 'https://3367613-sb1.app.netsuite.com/app/site/hosting/scriptlet.nl?script=573&deploy=1&employee=';
                 var url_file ='https://3367613-sb1.app.netsuite.com/app/site/hosting/scriptlet.nl?script=571&deploy=1';
                 
         	}else{
         		var record_url_base = 'https://3367613.app.netsuite.com/app/common/custom/custrecordentry.nl?rectype=397&id=';
-        		var print_url_base = 'https://3367613.app.netsuite.com/app/site/hosting/scriptlet.nl?script=570&deploy=1&employee=';
+        		var print_url_base = 'https://3367613.app.netsuite.com/app/site/hosting/scriptlet.nl?script=1408&deploy=1&employee=';
                 var send_url_base = 'https://3367613.app.netsuite.com/app/site/hosting/scriptlet.nl?script=573&deploy=1&employee=';
                 var url_file ='https://3367613.app.netsuite.com/app/site/hosting/scriptlet.nl?script=571&deploy=1';
                 
@@ -648,12 +648,12 @@ function(serverWidget,search,record,runtime,redirect,url) {
         try{
         	if(runtime.envType != 'PRODUCTION'){
 	            var record_url_base = 'https://3367613-sb1.app.netsuite.com/app/common/custom/custrecordentry.nl?rectype=394&id=';
-	            var print_url_base = 'https://3367613-sb1.app.netsuite.com/app/site/hosting/scriptlet.nl?script=570&deploy=1&employee=';
+	            var print_url_base = 'https://3367613-sb1.app.netsuite.com/app/site/hosting/scriptlet.nl?script=1408&deploy=1&employee=';
 	            var send_url_base = 'https://3367613-sb1.app.netsuite.com/app/site/hosting/scriptlet.nl?script=573&deploy=1&employee=';
 	            var url_file ='https://3367613-sb1.app.netsuite.com/app/site/hosting/scriptlet.nl?script=571&deploy=1';
         	}else{
         		var record_url_base = 'https://3367613.app.netsuite.com/app/common/custom/custrecordentry.nl?rectype=394&id=';
-        		var print_url_base = 'https://3367613.app.netsuite.com/app/site/hosting/scriptlet.nl?script=570&deploy=1&employee=';
+        		var print_url_base = 'https://3367613.app.netsuite.com/app/site/hosting/scriptlet.nl?script=1408&deploy=1&employee=';
 	            var send_url_base = 'https://3367613.app.netsuite.com/app/site/hosting/scriptlet.nl?script=573&deploy=1&employee=';
 	            var url_file ='https://3367613.app.netsuite.com/app/site/hosting/scriptlet.nl?script=571&deploy=1';
         	}
@@ -770,12 +770,12 @@ function(serverWidget,search,record,runtime,redirect,url) {
         try{
         	if(runtime.envType != 'PRODUCTION'){
 	            var record_url_base = 'https://3367613-sb1.app.netsuite.com/app/common/custom/custrecordentry.nl?rectype=398&id=';
-	            var print_url_base = 'https://3367613-sb1.app.netsuite.com/app/site/hosting/scriptlet.nl?script=570&deploy=1&employee=';
+	            var print_url_base = 'https://3367613-sb1.app.netsuite.com/app/site/hosting/scriptlet.nl?script=1408&deploy=1&employee=';
 	            var send_url_base = 'https://3367613-sb1.app.netsuite.com/app/site/hosting/scriptlet.nl?script=573&deploy=1&employee=';
 	            var url_file ='https://3367613-sb1.app.netsuite.com/app/site/hosting/scriptlet.nl?script=571&deploy=1';
         	}else{
         		var record_url_base = 'https://3367613.app.netsuite.com/app/common/custom/custrecordentry.nl?rectype=398&id=';
-        		var print_url_base = 'https://3367613.app.netsuite.com/app/site/hosting/scriptlet.nl?script=570&deploy=1&employee=';
+        		var print_url_base = 'https://3367613.app.netsuite.com/app/site/hosting/scriptlet.nl?script=1408&deploy=1&employee=';
                 var send_url_base = 'https://3367613.app.netsuite.com/app/site/hosting/scriptlet.nl?script=573&deploy=1&employee=';
                 var url_file ='https://3367613.app.netsuite.com/app/site/hosting/scriptlet.nl?script=571&deploy=1';
         	}
