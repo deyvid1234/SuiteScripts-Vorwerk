@@ -300,8 +300,9 @@ function(runtime,email,record,render,search,xml,config,file,url,Utils,Dictionary
 		}
   }
 
-  function table_v_equipo(strTable,data,dataSO,CompConfigDetails){
+  function table_v_equipo(data,dataSO,CompConfigDetails){
   	try{
+  		var strTable = ''
   		//Ventas Equipo
 	  	var equipoMonto = data.comision_equipo
 	    var dataEquipo = data.equipo
@@ -672,7 +673,7 @@ function(runtime,email,record,render,search,xml,config,file,url,Utils,Dictionary
 			}
 			
 			if (type_emp == 3){
-				strTable += table_v_equipo(strTable,data,dataSO,CompConfigDetails)
+				strTable += table_v_equipo(data,dataSO,CompConfigDetails)
 			}
 			/*
 			if (ventasRec == 3){
