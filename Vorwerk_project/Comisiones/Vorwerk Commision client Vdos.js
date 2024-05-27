@@ -507,6 +507,19 @@ function(record,https,currentRecord,runtime,file,search,message) {
         try{
             alert("Almacenamiento de registros en proceso");
             var objet_full = getData();//extrae la informacion de la tabla
+            var idActualizar = objet_full.obj[0].idEmp
+            var tresDos=objet_full.obj[0].tresdos_nle
+            var cincoDos=objet_full.obj[0].cincodos_nle
+            var period = objet_full.obj_conf.period
+
+            if(tresDos > 0 || cincoDos >0){
+                log.debug('actualizar cliente')
+                var submitFields = record.submitFields({
+                    type: 'employee',
+                    id: idActualizar,
+                    values: {'custentityperiodo_nle_pago':period}
+                });
+            }
             var url = ""
             if(runtime.envType != 'PRODUCTION'){ //Reporte de comision Suitelet.js
                 url ='https://3367613-sb1.app.netsuite.com/app/site/hosting/scriptlet.nl?script=1324&deploy=1';
