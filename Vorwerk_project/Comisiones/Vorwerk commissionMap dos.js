@@ -267,6 +267,33 @@ function(email,record, file, search, https, runtime,format,Dictionary) {
                     value: comissionInfo.bono_sc  
                 });
 
+                registerEmp.setValue({
+                    fieldId: config_fields.bp7[config.type],
+                    value: 188  //  Equipo NLE
+                });
+                registerEmp.setValue({
+                    fieldId: config_fields.bp7_monto[config.type],
+                    value: comissionInfo.bono_nle  
+                });
+
+                registerEmp.setValue({
+                    fieldId: config_fields.bp8[config.type],
+                    value: 189  //  3+2 NLE
+                });
+                registerEmp.setValue({
+                    fieldId: config_fields.bp8_monto[config.type],
+                    value: comissionInfo.tresdos_nle  
+                });
+
+                registerEmp.setValue({
+                    fieldId: config_fields.bp9[config.type],
+                    value: 190  //  5+2 NLE
+                });
+                registerEmp.setValue({
+                    fieldId: config_fields.bp9_monto[config.type],
+                    value: comissionInfo.cincodos_nle  
+                });
+
 
                 registerEmp.setValue({
                     fieldId: field_id[type_to_add][1],
