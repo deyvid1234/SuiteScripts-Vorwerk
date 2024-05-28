@@ -375,7 +375,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                     
                     break;
                     case 3: //Reporte Trabaja x TM
-                        if(empType == 1 && empPromo == 1){
+                        if(empType == 1 && (empPromo == 1 || empPromo == 5)){
                             //Calcular reporte para la persona
                             objReclutamiento = bonoReclutamiento(reclutas,historicoSO,thisPeriodSO,dataEmp,compConfigDetails,allPresentadoras,dHistorico)
                             //log.debug('objReclutamiento',objReclutamiento)
