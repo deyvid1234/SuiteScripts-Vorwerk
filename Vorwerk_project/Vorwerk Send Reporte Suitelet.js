@@ -64,7 +64,7 @@ function(log,email,record,file,https,search,runtime,file) {
             if(runtime.envType != 'PRODUCTION'){ 
                 print_url_base = 'https://3367613-sb1.extforms.netsuite.com/app/site/hosting/scriptlet.nl?script=571&deploy=1&compid=3367613_SB1&h=1c36c032d85c608d8db4';
             }else{
-                print_url_base = 'https://3367613.extforms.netsuite.com/app/site/hosting/scriptlet.nl?script=570&deploy=1&compid=3367613&h=d48ce6f5d7c69a79c66c';
+                print_url_base = 'https://3367613.extforms.netsuite.com/app/site/hosting/scriptlet.nl?script=1408&deploy=1&compid=3367613&h=d48ce6f5d7c69a79c66c';
             }
             var url = print_url_base+'&employee='+idEmployee+'&periodo='+period+'&comp='+internalid+'&level='+type_rec;;
             log.debug("getpdf-url",url);
