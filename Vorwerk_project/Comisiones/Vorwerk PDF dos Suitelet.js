@@ -964,13 +964,15 @@ function(runtime,email,record,render,search,xml,config,file,url,Utils,Dictionary
 				{
 				    amttt += amtt.charAt(amtt.length-a);
 				}
-				if(amt[1] == '')
+				if(amt[1] == '' || !amt[1])
 				{
 					return v = signo + amttt + '.00';
 				}
-				else
+				else if(amt[1] != '')
 				{
 					return v = signo + amttt + '.' +amt[1];
+				} else{
+					return v = signo + amttt
 				}
         	}catch(err){
         		log.error('err currencyFormat',err);
@@ -1137,7 +1139,7 @@ function(runtime,email,record,render,search,xml,config,file,url,Utils,Dictionary
 			}
 			strTab +="<tr>"
 			strTab += "<td border='0.5' colspan= '6' border-style='none' align='right'><b>Subtotal</b></td>";
-			strTab += "<td border='0.5' border-style='dotted-narrow' align='right'><b>" + currencyFormat('$',(montoGarantia),'.00')+ "</b></td>";
+			strTab += "<td border='0.5' border-style='dotted-narrow' align='right'><b>" + currencyFormat('$',montoGarantia+'.00')+ "</b></td>";
 			strTab += "</tr>";
         	strTab += "</table>";
         	
