@@ -557,7 +557,7 @@ function(runtime,email,record,render,search,xml,config,file,url,Utils,Dictionary
 				    });
 					log.debug('cc',confRec)
 			            
-			            if(!confRec){
+			        if(!confRec){
 			            	confRec = 1
 			            }
 						cliente = cliente.replace(/&/gi," ")
@@ -574,11 +574,9 @@ function(runtime,email,record,render,search,xml,config,file,url,Utils,Dictionary
 							strTable += "<td border='0.5' border-style='dotted-narrow'>" + fecha 		+ "</td>";
 							strTable += "<td border='0.5' border-style='dotted-narrow'>" + pedido		+ "</td>";
 							strTable += "<td border='0.5' border-style='dotted-narrow' align='right'>" + currencyFormat('$',monto_rec >0? monto_rec : '0.00')	+ "</td>";
-							strTable += "</tr>";
-							
+							strTable += "</tr>";	
 						}
-						
-				}
+					}
 				
 				strTable += "<tr>";
 				strTable += "<td border='0.5' colspan= '6' border-style='none' align='right'><b>Total Reclutamiento</b></td>";
@@ -587,9 +585,9 @@ function(runtime,email,record,render,search,xml,config,file,url,Utils,Dictionary
 				strTable += "</table>";
 			}
 			return strTable
-			}catch(errT3){
-				log.error('errT3',errT3);
-			}
+	}catch(errT3){
+		log.error('errT3',errT3);
+	}
 			//Fin Ventas Rec
   }
 
@@ -1076,43 +1074,43 @@ function(runtime,email,record,render,search,xml,config,file,url,Utils,Dictionary
     
         
         
-        function createtablewarranty(data,dataSO){
-        	try{
+    function createtablewarranty(data,dataSO){
+        try{
         		
-        		 var idGarantia = data.ids_garantia.split(',')
-        		 log.debug('idGarantia',idGarantia)
-        		 var montoGarantia = data.garantia
-        		 var cc09 = {};
-        		 var cc09_search = search.load({
-                     id: 'customsearch_vw_cc09'
-                 });
-        		 var pagedResults = cc09_search.runPaged();
-                 pagedResults.pageRanges.forEach(function (pageRange){
-                     var currentPage = pagedResults.fetch({index: pageRange.index});
-                     currentPage.data.forEach(function (r) {
-        	         var n_venta = r.getValue('custrecord_esq_ventas_pre_no_ventas')
-        	               if(n_venta in cc09){
-        	            	   cc09[n_venta].push(r.getValue('custrecord_esq_ventas_pre_compensacion'));
-        	               }else{
-        	            	   cc09[n_venta]= [r.getValue('custrecord_esq_ventas_pre_compensacion')]; 
-        	               }
-                     });
-                 });    
+        	var idGarantia = data.ids_garantia.split(',')
+        	log.debug('idGarantia',idGarantia)
+        	var montoGarantia = data.garantia
+        	var cc09 = {};
+        	var cc09_search = search.load({
+                id: 'customsearch_vw_cc09'
+             });
+            var pagedResults = cc09_search.runPaged();
+                pagedResults.pageRanges.forEach(function (pageRange){
+                    var currentPage = pagedResults.fetch({index: pageRange.index});
+                    currentPage.data.forEach(function (r) {
+        	        var n_venta = r.getValue('custrecord_esq_ventas_pre_no_ventas')
+        	        if(n_venta in cc09){
+        	            cc09[n_venta].push(r.getValue('custrecord_esq_ventas_pre_compensacion'));
+        	        }else{
+        	            cc09[n_venta]= [r.getValue('custrecord_esq_ventas_pre_compensacion')]; 
+        	        }
+                });
+            });    
         		 
-        			var linea = 0;
+        	var linea = 0;
         			
-        			var strTab = "<br/><p font-family=\"Helvetica\" font-size=\"6\" align=\"center\"><b>VENTAS DE GARANTìA EXTENDIDA</b></p>";
-		        	strTab += "<table width='670px'>";
-					strTab += "<tr>" ;
-					strTab += "<td border='0.5' width='10px'><b>#</b></td>";
-					strTab += "<td border='0.5' width='90px'><b>TIPO COMPENSACIÓN</b></td>";
-					strTab += "<td border='0.5' width='100px'><b>VENTA REALIZADA POR</b></td>";
-					strTab += "<td border='0.5' width='200px'><b>CLIENTE</b></td>";
-					strTab += "<td border='0.5' width='0px'><b>FECHA</b></td>";
-					strTab += "<td border='0.5' width='0px'><b>PEDIDO</b></td>";
-					strTab += "<td border='0.5' width='40px'><b>MONTO</b></td>";
-					strTab += "</tr>";
-					for( i in idGarantia){
+        	var strTab = "<br/><p font-family=\"Helvetica\" font-size=\"6\" align=\"center\"><b>VENTAS DE GARANTìA EXTENDIDA</b></p>";
+		        strTab += "<table width='670px'>";
+				strTab += "<tr>" ;
+				strTab += "<td border='0.5' width='10px'><b>#</b></td>";
+				strTab += "<td border='0.5' width='90px'><b>TIPO COMPENSACIÓN</b></td>";
+				strTab += "<td border='0.5' width='100px'><b>VENTA REALIZADA POR</b></td>";
+				strTab += "<td border='0.5' width='200px'><b>CLIENTE</b></td>";
+				strTab += "<td border='0.5' width='0px'><b>FECHA</b></td>";
+				strTab += "<td border='0.5' width='0px'><b>PEDIDO</b></td>";
+				strTab += "<td border='0.5' width='40px'><b>MONTO</b></td>";
+				strTab += "</tr>";
+			for( i in idGarantia){
 				try{
 					log.debug('idGarantia i',idGarantia[i])
 					linea ++
@@ -1137,10 +1135,10 @@ function(runtime,email,record,render,search,xml,config,file,url,Utils,Dictionary
 					log.error('arrayT',erry)
 				}
 			}
-					strTab +="<tr>"
-					strTab += "<td border='0.5' colspan= '6' border-style='none' align='right'><b>Subtotal</b></td>";
-					strTab += "<td border='0.5' border-style='dotted-narrow' align='right'><b>" + currencyFormat('$',(montoGarantia),'.00')+ "</b></td>";
-					strTab += "</tr>";
+			strTab +="<tr>"
+			strTab += "<td border='0.5' colspan= '6' border-style='none' align='right'><b>Subtotal</b></td>";
+			strTab += "<td border='0.5' border-style='dotted-narrow' align='right'><b>" + currencyFormat('$',(montoGarantia),'.00')+ "</b></td>";
+			strTab += "</tr>";
         	strTab += "</table>";
         	
 			
