@@ -145,7 +145,7 @@ function(runtime,email,record,render,search,xml,config,file,url,Utils,Dictionary
       var objSObyEmp = {};
       var objSObyid = [];
       const salesOrderSearchFilters = [
-          ['item', 'anyof', '2638','2280','2001','2571','2170','1757','1126','2035'],
+          ['item', 'anyof', '2638','2280','2001','2571','2170','1757','1126','2035','2402'],
           'AND',
           ['salesrep.isinactive', 'is', 'F'],
           'AND',
@@ -455,28 +455,15 @@ function(runtime,email,record,render,search,xml,config,file,url,Utils,Dictionary
   	}
   	
   }
-  function table_v_rec(){
+  function table_v_rec(data,dataSO,CompConfigDetails){
   	//Ventas Rec
-			try{
-				//Asignacion de configuracion de reclutameinto 
-			var conf_rec = {}
-	        var mySearch = search.load({
-	            id: 'customsearch1905'
-	         });
-	        
-	        var pagedResults = mySearch.runPaged();
-	             pagedResults.pageRanges.forEach(function (pageRange){
-	                 var currentPage = pagedResults.fetch({index: pageRange.index});
-	                 currentPage.data.forEach(function (result) {
-	                    var rec = result.getValue('internalid')
-	                    if(result.getValue('custentity_conf_rec') != '' && result.getValue('custentity_conf_rec') != null && result.getValue('custentity_conf_rec')){
-	                        conf_rec[rec]= [result.getValue('custentity_conf_rec')];
-	                    }
-	                    
-	                 });
-	                   
-	           }); 
-            log.debug("data.b_rec",data.b_rec)
+	try{
+		var strTable = ''
+		var reclutas = Object.keys(JSON.parse(data.rec))
+		var conf_rec = []
+	    var conf_equipo = []
+            log.debug("conf_rec",conf_rec)
+            log.debug("reclutas",reclutas)
 			if(data.b_rec != ''&& data.b_rec != null && data.b_rec && data.b_rec > 0 && data.rec != "" && data.rec){
 				strTable    += "<p font-family=\"Helvetica\" font-size=\"6\" align=\"center\"><b>BONO DE RECLUTAMIENTO</b></p>";
 				strTable += "<table width='670px'>";
@@ -490,67 +477,125 @@ function(runtime,email,record,render,search,xml,config,file,url,Utils,Dictionary
 				strTable += "<td border='0.5' width='0px'><b>MONTO</b></td>";
 				strTable += "</tr>";
 				lineaRec=0
-				var num_odv_por_recluta = {}
-				log.debug("data.rec", data.rec)
+				
 				ids_rec = JSON.parse(data.rec)
-				for(var i in v_rec){
-						//log.debug('v_rec[i]',v_rec[i])
-						lineaRec++
-						if( num_odv_por_recluta.hasOwnProperty(v_rec[i].employee)){
-							num_odv_por_recluta[v_rec[i].employee]++
+				log.debug("ids_rec", ids_rec)
+				for(var i in ids_rec){
 					
-							}else{
-								num_odv_por_recluta[v_rec[i].employee]=1
-							}
-						//Asignacion de configuracion por recluta 
-						var limiteVentasReclutamiento = 6
-						var configuracion_rec
-			            log.debug('Pre asignacion','data.id_presentadora '+data.id_presentadora+' conf_rec '+conf_rec)
-			            if(v_rec[i].id_rec in conf_rec ){
-			                log.debug('conf_rec[v_rec[i].id_rec]',conf_rec[v_rec[i].id_rec])
-			                configuracion_rec = conf_rec[v_rec[i].id_rec]
-                          if(configuracion_rec == 11){
-                            configuracion_rec = 1
-                          }
-                          if(configuracion_rec == 12 || configuracion_rec == 13){
-                          	limiteVentasReclutamiento = 4
-                          }
-			            }else{
-			                configuracion_rec = 1
+					var idSO = ids_rec[i][0].idSO
+					var noVenta = ids_rec[i][0].noVenta
+
+					var objSObyid = dataSO.objSObyid
+				    var thisSO = objSObyid[idSO]
+				    var salesRep = thisSO.salesrep[0].value
+				    var cliente = thisSO.entity[0].text
+					var fecha = thisSO.trandate
+					var pedido = thisSO.tranid
+				    var confRec = []
+				    log.debug('idSO',idSO)
+				    log.debug('noVenta',noVenta)
+				    log.debug('salesRep',salesRep)
+
+				    var busquedaConfRec = search.create({
+						type: 'employee',
+						columns: [
+						    { name: 'custentity_conf_rec'},
+						    { name: 'custentity123'},         
+						],
+						filters: [
+						    {
+						      name: 'internalid',
+						      operator: 'anyof',
+						      values: salesRep
+						    }
+						]
+			      	  });
+					var pagedResults = busquedaConfRec.runPaged();
+					    pagedResults.pageRanges.forEach(function (pageRange){
+					        var currentPage = pagedResults.fetch({index: pageRange.index});
+					            currentPage.data.forEach(function (r) {
+							    confR = r.getValue('custentity_conf_rec'),
+							    confIng = r.getValue('custentity123')	
+							    log.debug('confIng',confIng)
+							    confRec.push(confR)
+
+							    var confv_rec = confIng.split(',')
+					   			var nameConfEquipo
+								for(var n in confv_rec ){
+					                switch(confv_rec[n]){
+						                case '1':
+						                  nameConfEquipo = 'Promocion Base'
+						                  break;
+						                case '5': 
+						                  nameConfEquipo = 'Thermomix 6'
+						                  break;
+						                case '6': 
+						                  nameConfEquipo = 'Emerald Club'
+						                  break;
+						                case '7': 
+						                  nameConfEquipo = 'LE Junior'
+						                  break;
+						                case '8': 
+						                  nameConfEquipo = 'NLE Emerald'
+						                  break;
+						                case '11': 
+						                  nameConfEquipo = 'TM6 Rectificada'
+						                    
+						                  break;
+						                case '12': 
+						                  nameConfEquipo = 'TM4U'
+						                   
+						                  break;
+						                  case '13': 
+					                  nameConfEquipo = 'TM6 4 ventas 2 meses'
+					                   
+					                  break;
+					                }
+					              }
+							      conf_equipo.push(nameConfEquipo)									  	  		
+						});
+				    });
+					log.debug('cc',confRec)
+			            
+			            if(!confRec){
+			            	confRec = 1
 			            }
-						var cliente = v_rec[i].cliente.replace(/&/gi," ")
+						cliente = cliente.replace(/&/gi," ")
 						//log.debug('cliente',cliente)
 						//log.debug('1ids_rec[v_rec[i].internalid]',ids_rec[v_rec[i].internalid])
-						var monto_rec = CompConfigDetails[configuracion_rec]['esquemaVentasReclutamiento'][(ids_rec[v_rec[i].internalid])>limiteVentasReclutamiento?0:(ids_rec[v_rec[i].internalid])]['compensacion']
+						var monto_rec = CompConfigDetails[confRec]['esquemaVentasReclutamiento'][noVenta]['compensacion']
+						log.debug('monto_rec',monto_rec)
 						if(monto_rec>0){
 							strTable += "<tr>";
 							strTable += "<td border='0.5' border-style='dotted-narrow'>" + lineaRec 	+ "</td>";
-							strTable += "<td border='0.5' border-style='dotted-narrow'>" + v_rec[i].confEquipo 	+ "</td>";
-							strTable += "<td border='0.5' border-style='dotted-narrow'>" + v_rec[i].employee 	+ "</td>";
-							strTable += "<td border='0.5' border-style='dotted-narrow'>" +  cliente	+ "</td>";
-							strTable += "<td border='0.5' border-style='dotted-narrow'>" + v_rec[i].fecha 		+ "</td>";
-							strTable += "<td border='0.5' border-style='dotted-narrow'>" + v_rec[i].idExterno		+ "</td>";
+							strTable += "<td border='0.5' border-style='dotted-narrow'>" + conf_equipo 	+ "</td>";
+							strTable += "<td border='0.5' border-style='dotted-narrow'>" + salesRep 	+ "</td>";
+							strTable += "<td border='0.5' border-style='dotted-narrow'>" +  cliente	    + "</td>";
+							strTable += "<td border='0.5' border-style='dotted-narrow'>" + fecha 		+ "</td>";
+							strTable += "<td border='0.5' border-style='dotted-narrow'>" + pedido		+ "</td>";
 							strTable += "<td border='0.5' border-style='dotted-narrow' align='right'>" + currencyFormat('$',monto_rec >0? monto_rec : '0.00')	+ "</td>";
 							strTable += "</tr>";
 							
 						}
 						
 				}
-				log.debug('num_odv_por_recluta',num_odv_por_recluta)
+				
 				strTable += "<tr>";
 				strTable += "<td border='0.5' colspan= '6' border-style='none' align='right'><b>Total Reclutamiento</b></td>";
 				strTable += "<td border='0.5' border-style='dotted-narrow' align='right'><b>" + currencyFormat('$',data.b_rec+'.00' )+ "</b></td>";
 				strTable += "</tr>";
 				strTable += "</table>";
 			}
+			return strTable
 			}catch(errT3){
 				log.error('errT3',errT3);
 			}
 			//Fin Ventas Rec
   }
 
-  function table_b_Permanente (){
+  function table_b_Permanente (data){
   	//bonos permanentes
+  	var strTable = ''
     var obj_bonos = {
       bono1: {label:(data.bono_1 != '' && data.bono_1 != null? data.bono_1 : "Bono Permanente 1"),valor:(data.bono_m_1 != '' ? data.bono_m_1+'.00' : "0.00")},
       bono2: {label:(data.bono_2 != '' && data.bono_2 != null? data.bono_2 : "Bono Permanente 2"),valor:(data.bono_m_2 != '' ? data.bono_m_2+'.00' : "0.00")},
@@ -605,7 +650,14 @@ function(runtime,email,record,render,search,xml,config,file,url,Utils,Dictionary
     strTable += "</table>";
     //fin bonos permanentes
     //inician bonos manuales
-    var obj_bonos_manuales = {
+    
+    return strTable
+  }
+
+  function table_b_Manual(data){
+  	var strTable = ''
+  	log.debug('data.total',data.total)
+  	var obj_bonos_manuales = {
       bonoManual1: {label:(data.bonoMan_1 != '' && data.bonoMan_1 != null? data.bonoMan_1 : "Bono Manual 1"),valor:(data.bonoMan_m_1 != '' ? data.bonoMan_m_1+'.00' : "0.00")},
       bonoManual2: {label:(data.bonoMan_2 != '' && data.bonoMan_2 != null? data.bonoMan_2 : "Bono Manual 2"),valor:(data.bonoMan_m_2 != '' ? data.bonoMan_m_2+'.00' : "0.00")},
       bonoManual3: {label:(data.bonoMan_3 != '' && data.bonoMan_3 != null? data.bonoMan_3 : "Bono Manual 3"),valor:(data.bonoMan_m_3 != '' ? data.bonoMan_m_3+'.00' : "0.00")},
@@ -618,12 +670,6 @@ function(runtime,email,record,render,search,xml,config,file,url,Utils,Dictionary
       bonoManual10: {label:(data.bonoMan_10 != '' && data.bonoMan_10 != null? data.bonoMan_10 : "Bono Manual 10"),valor:(data.bonoMan_m_10 != '' ? data.bonoMan_m_10+'.00' : "0.00")},
       bonoManualTotal: parseInt(data.bonoMan_m_1 != '' ? data.bonoMan_m_1 : 0)+parseInt(data.bonoMan_m_2 != '' ? data.bonoMan_m_2 : 0)+parseInt(data.bonoMan_m_3 != '' ? data.bonoMan_m_3 : 0)+parseInt(data.bonoMan_m_4 != '' ? data.bonoMan_m_4 : 0)+parseInt(data.bonoMan_m_5 != '' ? data.bonoMan_m_5 : 0)+parseInt(data.bonoMan_m_6 != '' ? data.bonoMan_m_6 : 0)+parseInt(data.bonoMan_m_7 != '' ? data.bonoMan_m_7 : 0)+parseInt(data.bonoMan_m_8 != '' ? data.bonoMan_m_8 : 0)+parseInt(data.bonoMan_m_9 != '' ? data.bonoMan_m_9 : 0)+parseInt(data.bonoMan_m_10 != '' ? data.bonoMan_m_10 : 0)
     }
-
-  }
-
-  function table_b_Manual(){
-
-  	log.debug('data.total',data.total)
     strTable +="<br/><h3 align='center'>Movimientos Manuales</h3>";
     strTable += "<table width='670px' page-break-inside='avoid'>";
     strTable += "<tr>";
@@ -661,6 +707,7 @@ function(runtime,email,record,render,search,xml,config,file,url,Utils,Dictionary
     strTable += "<td border='0.5' border-style='dotted-narrow' align='right'>"+ currencyFormat('$',(obj_bonos_manuales.bonoManualTotal+'.00')) +"</td>";
     strTable += "</tr>";
     strTable += "</table>";
+    return {strTable:strTable, bManualTotal:obj_bonos_manuales.bonoManualTotal}
     //fin bonos manuales
   }
 	//creacion del body 
@@ -672,45 +719,24 @@ function(runtime,email,record,render,search,xml,config,file,url,Utils,Dictionary
 				strTable += table_v_propia(data,tmp_emp,type_emp,promocion,dataSO,CompConfigDetails)
 			}
 			
-			if (type_emp == 3){
+			if (type_emp == 3 && data.comision_equipo > 0){
 				strTable += table_v_equipo(data,dataSO,CompConfigDetails)
 			}
-			/*
-			if (ventasRec == 3){
-				table_v_rec(strTable,data)
+			if (data.b_rec > 0){
+				strTable += table_v_rec(data,dataSO,CompConfigDetails)
 			}
-			 
-		
-			log.debug('data',data.total)
-			
-			log.debug('Datos EMP',type_emp+'   '+promocion)
-
-
 			if((type_emp == 1 || type_emp == 3) && promocion == 2 && data.ids_garantia != ''){
-				var ventas=SearchSales(data)
-				strTable +=createtablewarranty(data,ventas,type_emp)
+				
+				strTable +=createtablewarranty(data,dataSO)
 			}
-			
-
-			//bonos permanentes
-			strTable +=table_b_Permanente()
-
-
-			//bonos Manuales
-			strTable +=table_b_Manual()
-
-			
-            
-            
-            
-            
-            
-			
-			
+			strTable +=table_b_Permanente(data)
+			var b_manuales = table_b_Manual(data)
+			strTable +=b_manuales.strTable
+				
 			
 			//resumen
 			strTable +="<br/><h3>Resumen</h3>";
-        	strTable += "<table width='50%'>";
+        	strTable += "<table width='50%' page-break-inside= 'avoid'>";
         	strTable += "<tr>";
         	strTable += "<td border='0.5'><b>Concepto</b></td>";
         	strTable += "<td border='0.5'><b>Importe</b></td>";
@@ -726,7 +752,7 @@ function(runtime,email,record,render,search,xml,config,file,url,Utils,Dictionary
 //        	strTable += "</tr>";
         	strTable += "<tr>";
 			strTable += "<td border='0.5' border-style='dotted-narrow'>Movimientos Manuales</td>";
-        	strTable += "<td border='0.5' border-style='dotted-narrow' align='right'>"+ currencyFormat('$',(obj_bonos_manuales.bonoManualTotal != ''? (obj_bonos_manuales.bonoManualTotal+'.00'):'0.00')) +"</td>";
+        	strTable += "<td border='0.5' border-style='dotted-narrow' align='right'>"+ currencyFormat('$',(b_manuales.bManualTotal != ''? (b_manuales.bManualTotal+'.00'):'0.00')) +"</td>";
         	strTable += "</tr>"
         	//Solo JDG
         	if (type_emp == 3){
@@ -778,7 +804,7 @@ function(runtime,email,record,render,search,xml,config,file,url,Utils,Dictionary
         			"puedes enviar un mail a incidencias@mxthermomix.com y tener a la mano este documento, " +
         			"el PDF de tu recibo fiscal así como el estado de cuenta bancario donde se refleje (o no) " +
         			"el depósito de la compensación en cuestión.</h7>";
-        	*/
+        	
 			return strTable;
 		}
 	function createHeader(name_employee,type_emp_text,period_name,tmp_emp){
@@ -1050,10 +1076,12 @@ function(runtime,email,record,render,search,xml,config,file,url,Utils,Dictionary
     
         
         
-        function createtablewarranty(data,ventas,type_emp){
+        function createtablewarranty(data,dataSO){
         	try{
-        		log.debug('ventas',ventas)
-        		 var numVentas = ventas.length
+        		
+        		 var idGarantia = data.ids_garantia.split(',')
+        		 log.debug('idGarantia',idGarantia)
+        		 var montoGarantia = data.garantia
         		 var cc09 = {};
         		 var cc09_search = search.load({
                      id: 'customsearch_vw_cc09'
@@ -1084,17 +1112,24 @@ function(runtime,email,record,render,search,xml,config,file,url,Utils,Dictionary
 					strTab += "<td border='0.5' width='0px'><b>PEDIDO</b></td>";
 					strTab += "<td border='0.5' width='40px'><b>MONTO</b></td>";
 					strTab += "</tr>";
-					for(var i= 0; i<ventas.length; i++){
+					for( i in idGarantia){
 				try{
+					log.debug('idGarantia i',idGarantia[i])
 					linea ++
-					var cliente = ventas[i].cliente.replace(/&/gi," ")
+					var objSObyid = dataSO.objSObyid
+					var thisSO = objSObyid[idGarantia[i]]
+					var salesRep = thisSO.salesrep[0].text
+					var cliente = thisSO.entity[0].text
+					var fecha = thisSO.trandate
+					var pedido = thisSO.tranid
+					cliente = cliente.replace(/&/gi," ")
 		        	strTab +="<tr>"
 					strTab += "<td border='0.5' border-style='dotted-narrow'>"+ linea +"</td>";
 					strTab += "<td border='0.5' border-style='dotted-narrow'>Garantìa extendida</td>";
-					strTab += "<td border='0.5' border-style='dotted-narrow'>"+ ventas[i].vendedor+"</td>";
+					strTab += "<td border='0.5' border-style='dotted-narrow'>"+ salesRep+"</td>";
 					strTab += "<td border='0.5' border-style='dotted-narrow'>"+ cliente +"</td>";
-					strTab += "<td border='0.5' border-style='dotted-narrow'>"+ ventas[i].fecha +"</td>";
-					strTab += "<td border='0.5' border-style='dotted-narrow'>"+ ventas[i].internal +"</td>";
+					strTab += "<td border='0.5' border-style='dotted-narrow'>"+ fecha +"</td>";
+					strTab += "<td border='0.5' border-style='dotted-narrow'>"+ pedido +"</td>";
 					strTab += "<td border='0.5' border-style='dotted-narrow'>"+currencyFormat('$',cc09[linea-(linea-1)])+"</td>";
 					strTab += "</tr>";
 					
@@ -1104,11 +1139,11 @@ function(runtime,email,record,render,search,xml,config,file,url,Utils,Dictionary
 			}
 					strTab +="<tr>"
 					strTab += "<td border='0.5' colspan= '6' border-style='none' align='right'><b>Subtotal</b></td>";
-					strTab += "<td border='0.5' border-style='dotted-narrow' align='right'><b>" + currencyFormat('$',cc09[linea])	+ "</b></td>";
+					strTab += "<td border='0.5' border-style='dotted-narrow' align='right'><b>" + currencyFormat('$',(montoGarantia),'.00')+ "</b></td>";
 					strTab += "</tr>";
         	strTab += "</table>";
-        	log.debug('ventas',ventas)
-			log.debug('strTab',strTab)
+        	
+			
         	return strTab
         	}catch(err){
         		log.error('TableWarranty',err)
