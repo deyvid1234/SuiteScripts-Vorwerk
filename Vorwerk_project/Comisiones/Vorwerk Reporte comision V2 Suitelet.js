@@ -857,7 +857,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 var comisionables = ventasP[i][ventasData]['custbody_vw_comission_status']
                 var tipoVenta = ventasP[i][ventasData]['custbody_tipo_venta']
                 //log.debug('comisionables',comisionables)
-                if( tipoVenta == 'Ventas TM' && comisionables != 'No Comisionable'){
+                if( tipoVenta != 'TM Ganada' && comisionables != 'No Comisionable'){
                     data.push(ventasData)
                 }
                 
@@ -996,7 +996,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 var comisionables = ventasP[i][ventasData]['custbody_vw_comission_status']
                 var tipoVenta = ventasP[i][ventasData]['custbody_tipo_venta']
                 //log.debug('comisionables',comisionables)
-                if( tipoVenta == 'Ventas TM'){
+                if( tipoVenta != 'TM Ganada'){
                     data.push(ventasData)
                 }
                 
@@ -1022,7 +1022,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                     var tipoVenta=ventasint[x][key]['custbody_tipo_venta'] 
                     //log.debug('key',key)
                     //log.debug('tipoVenta',tipoVenta)
-                    if(tipoVenta== 'Ventas TM'){
+                    if(tipoVenta != 'TM Ganada'){
                         ventas.push(key[0])
 
                     }
@@ -1279,7 +1279,7 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
                                 var key = Object.keys(thisPeriodSO[i][x])
                                 var tipoVenta=thisPeriodSO[i][x][key]['custbody_tipo_venta'] 
                                 var dateSO=thisPeriodSO[i][x][key]['trandate']
-                                if(tipoVenta == 'Ventas TM' && Utils.stringToDate(dateSO)<Utils.stringToDate(dObjetivo2)){
+                                if(tipoVenta  != 'TM Ganada' && Utils.stringToDate(dateSO)<Utils.stringToDate(dObjetivo2)){
                                     ordenesPeriodo.push(thisPeriodSO[i][x])
                                 }
                             }
@@ -1387,7 +1387,7 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
                                     var docNum = ventasReclutaTP[j][key]['tranid']
                                     
                                     fechaSO = Utils.stringToDate(fechaSO)
-                                    if(tipoVenta == 'Ventas TM'&& fechaSO <= fechaObjetivo){
+                                    if(tipoVenta != 'TM Ganada'&& fechaSO <= fechaObjetivo){
                                         cont ++ 
                                         var pedido = { idSO:id,docNum:docNum, noVenta:cont} 
                                         montoInd = montoInd + Math.abs(compConfigDetails[confRec]['esquemaVentasReclutamiento'][cont]['compensacion'])
@@ -1464,7 +1464,7 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
                     var comisionables = ventas[i][ventasData]['custbody_vw_comission_status']
                     var tipoVenta = ventas[i][ventasData]['custbody_tipo_venta']
                     //log.debug('comisionables',comisionables)
-                    if(comisionables != 'No Comisionable' && tipoVenta == 'Ventas TM'){
+                    if(comisionables != 'No Comisionable' && tipoVenta != 'TM Ganada'){
                       data.push(ventas[i][ventasData]['internalid'])
                     }
 
