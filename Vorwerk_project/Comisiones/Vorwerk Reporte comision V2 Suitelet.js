@@ -556,7 +556,8 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
              
         }
 
-        if(ventasPropias){  
+        if(ventasPropias && ventasPropias.data != ''){  
+            log.debug('ventasPropias',ventasPropias)
             var v
             //Venta Propia
             v = ventasPropias.monto>0?ventasPropias.monto:0
@@ -574,7 +575,12 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 value : v!=0?v:0
             });
             //ID ODV
-            v = ventasPropias.data.join(',')
+            if(ventasPropias.data.length > 0){
+                v = ventasPropias.data.join(',')
+            }else{
+                v = ''
+            }
+            log.debug('v',v)
             sublist.setSublistValue({
                 id : 'custentity_odv_jdg_ids',
                 line : linea,
@@ -1849,7 +1855,7 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
                     objSO.custbody_otro_financiamiento = r.custbody_otro_financiamiento
                     objSO.custbody_vw_recruiter = r.custbody_vw_recruiter
                    
-                    log.debug('objSO',objSO)
+                    //log.debug('objSO',objSO)
 
                     var idSO = {}
                     idSO[objSO.internalid] = objSO 
