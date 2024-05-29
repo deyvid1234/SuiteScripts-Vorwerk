@@ -333,8 +333,16 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                             objXmasdosNLE=bonoXmasdosNLE(listaNombramientos,dataEmp,thisPeriodSO,listaGrupos,allPresentadoras,listaEquipoRecluta,historicoSO,dHistorico,namePeriodo,cust_period)
                             objJoya = bonoJoya(conf,ventasEmp,compConfigDetails)
                             objCook = bonoCk(dataEmp,ckSO)
-                            fillTable(sublist,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objSupercomision,objReclutamiento,objEntrega,objXmasDos,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objJoya,objCook,objXmasdosNLE)
-                            cont_line++
+                            
+
+                            var amounTrue = validateAmount(sublist,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objSupercomision,objReclutamiento,objEntrega,objXmasDos,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objJoya,objCook,objXmasdosNLE)
+        
+                            if(amounTrue){
+                                fillTable(sublist,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objSupercomision,objReclutamiento,objEntrega,objXmasDos,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objJoya,objCook,objXmasdosNLE,false)
+                                cont_line++
+                            }
+
+                            
                             
                         }
 
@@ -368,8 +376,12 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                             montoComisionCK = bonoComCK()
                             
                             */
-                            fillTable(sublist,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objSupercomision,objReclutamiento,objEntrega,objXmasDos,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objJoya,objCook,objXmasdosNLE)
-                            cont_line++
+                            var amounTrue = validateAmount(sublist,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objSupercomision,objReclutamiento,objEntrega,objXmasDos,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objJoya,objCook,objXmasdosNLE)
+        
+                            if(amounTrue){
+                                fillTable(sublist,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objSupercomision,objReclutamiento,objEntrega,objXmasDos,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objJoya,objCook,objXmasdosNLE)
+                                cont_line++
+                            }
                         }
 
                     
@@ -403,15 +415,88 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
           log.debug('creditos 2',runtime.getCurrentScript().getRemainingUsage()); 
         }   
     }//Fin sublista
+
+    function validateAmount(sublist,dataEmp,ventasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,supercomision,reclutamiento,entrega,objXmasDos,productividad,ventaEquipo,ventasEquipoNLE,garantia,joya,cookKey,xMasdosNLE){
+        var subtotal=0
+        var v
+        if(ventasPropias){  
+            v = ventasPropias.monto>0?ventasPropias.monto:0
+            subtotal+=parseInt(v)
+        }
+        if(entrega){
+            v = entrega.monto>0?entrega.monto:0
+            subtotal+=parseInt(v)
+        }
+
+        if(supercomision){
+          v = supercomision.monto>0?supercomision.monto:0
+          subtotal+=parseInt(v)
+        }
+        
+        if(reclutamiento){      
+          v = reclutamiento.monto>0?reclutamiento.monto:0
+          subtotal+=parseInt(v)
+        }
+        if(objXmasDos){
+          v = objXmasDos.monto32>0?objXmasDos.monto32:0
+          subtotal+=parseInt(v)
+          
+          v = objXmasDos.monto52>0?objXmasDos.monto52:0
+          subtotal+=parseInt(v)
+        }
+        
+        if(productividad){
+          v = productividad.monto>0?productividad.monto:0
+          subtotal+=parseInt(v)
+          
+        }
+        if(ventaEquipo){
+          v = ventaEquipo.monto>0?ventaEquipo.monto:0
+          subtotal+=parseInt(v)
+        }
+        if(ventasEquipoNLE){
+          v = ventasEquipoNLE.monto>0?ventasEquipoNLE.monto:0
+          subtotal+=parseInt(v)
+        }
+
+        if(garantia){
+          v = garantia.monto>0?garantia.monto:0
+          subtotal+=parseInt(v)
+        }
+        if(joya){
+            v = joya.monto>0?joya.monto:0
+            subtotal+=parseInt(v)
+        }
+        if(cookKey){
+        
+            v = cookKey.monto>0?cookKey.monto:0
+            subtotal+=parseInt(v)
+        }
+        if(xMasdosNLE){
+          v = xMasdosNLE.monto52>0?xMasdosNLE.monto52:0
+          subtotal+=parseInt(v)
+          
+          v = xMasdosNLE.monto32>0?xMasdosNLE.monto32:0
+          subtotal+=parseInt(v)
+        }
+
+
+        v = subtotal>0?true:false
+
+        return v;
+
+    }
     function fillTable(sublist,dataEmp,ventasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,supercomision,reclutamiento,entrega,objXmasDos,productividad,ventaEquipo,ventasEquipoNLE,garantia,joya,cookKey,xMasdosNLE){
         var linea = cont_line
         var subtotal=0
+        
+        
         sublist.setSublistValue({
-              id : 'nombre',
-              line : linea,
-              value : linea
+          id : 'nombre',
+          line : linea,
+          value : linea
           });
-       if(dataEmp){
+        if(dataEmp){
           
           var v=dataEmp.internalid        
           sublist.setSublistValue({
@@ -460,18 +545,17 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 value : v!=''?v:''
             });
           }
-          if(integrantesEquipo){
-            v = JSON.stringify(integrantesEquipo)
-          sublist.setSublistValue({
-              id : 'custentity_presentadoras',
-              line : linea,
-              value : v!=''?v:''
-          });
-          }  
-          
-
-            
+            if(integrantesEquipo){
+                v = JSON.stringify(integrantesEquipo)
+                sublist.setSublistValue({
+                    id : 'custentity_presentadoras',
+                    line : linea,
+                    value : v!=''?v:''
+                });
+            }  
+             
         }
+
         if(ventasPropias){  
             var v
             //Venta Propia
@@ -736,12 +820,8 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             value : v
         });
         //log.debug('subtotal',subtotal)
-          
-        
         return fillTable;
-          
         
-
     }
     function bonoCk(dataEmp,ckSO){
         try{
@@ -994,7 +1074,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 //thisPeriodSO['id presentador'][indice]['id pedido']['etiqueta']
                 var comisionables = ventas[i][ventasData]['custbody_vw_comission_status']
                 //log.debug('comisionables',comisionables)
-                if(comisionables != 2){
+                if(comisionables != 'No Comisionable'){
                   data.push(ventasData)
                 }
                 
@@ -1378,7 +1458,7 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
                     var comisionables = ventas[i][ventasData]['custbody_vw_comission_status']
                     var tipoVenta = ventas[i][ventasData]['custbody_tipo_venta']
                     //log.debug('comisionables',comisionables)
-                    if(comisionables != 2 && tipoVenta != 1){
+                    if(comisionables != 'No Comisionable' && tipoVenta != 1){
                       data.push(ventas[i][ventasData]['internalid'])
                     }
 
