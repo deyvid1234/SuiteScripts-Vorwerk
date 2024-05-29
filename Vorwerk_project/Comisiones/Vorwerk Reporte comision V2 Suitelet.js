@@ -851,7 +851,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 var comisionables = ventasP[i][ventasData]['custbody_vw_comission_status']
                 var tipoVenta = ventasP[i][ventasData]['custbody_tipo_venta']
                 //log.debug('comisionables',comisionables)
-                if( tipoVenta != 'TM Ganada'&& comisionables != 'No Comisionable'){
+                if( tipoVenta == 'Ventas TM' && comisionables != 'No Comisionable'){
                     data.push(ventasData)
                 }
                 
@@ -990,7 +990,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 var comisionables = ventasP[i][ventasData]['custbody_vw_comission_status']
                 var tipoVenta = ventasP[i][ventasData]['custbody_tipo_venta']
                 //log.debug('comisionables',comisionables)
-                if( tipoVenta != 'TM Ganada'){
+                if( tipoVenta == 'Ventas TM'){
                     data.push(ventasData)
                 }
                 
@@ -1016,7 +1016,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                     var tipoVenta=ventasint[x][key]['custbody_tipo_venta'] 
                     //log.debug('key',key)
                     //log.debug('tipoVenta',tipoVenta)
-                    if(tipoVenta!='TM Ganada'){
+                    if(tipoVenta== 'Ventas TM'){
                         ventas.push(key[0])
 
                     }
@@ -1273,7 +1273,7 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
                                 var key = Object.keys(thisPeriodSO[i][x])
                                 var tipoVenta=thisPeriodSO[i][x][key]['custbody_tipo_venta'] 
                                 var dateSO=thisPeriodSO[i][x][key]['trandate']
-                                if(tipoVenta != 1 && Utils.stringToDate(dateSO)<Utils.stringToDate(dObjetivo2)){
+                                if(tipoVenta == 'Ventas TM' && Utils.stringToDate(dateSO)<Utils.stringToDate(dObjetivo2)){
                                     ordenesPeriodo.push(thisPeriodSO[i][x])
                                 }
                             }
@@ -1458,7 +1458,7 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
                     var comisionables = ventas[i][ventasData]['custbody_vw_comission_status']
                     var tipoVenta = ventas[i][ventasData]['custbody_tipo_venta']
                     //log.debug('comisionables',comisionables)
-                    if(comisionables != 'No Comisionable' && tipoVenta != 1){
+                    if(comisionables != 'No Comisionable' && tipoVenta == 'Ventas TM'){
                       data.push(ventas[i][ventasData]['internalid'])
                     }
 
@@ -1849,7 +1849,7 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
                     objSO.custbody_otro_financiamiento = r.custbody_otro_financiamiento
                     objSO.custbody_vw_recruiter = r.custbody_vw_recruiter
                    
-                    ///log.debug('objSO',objSO)
+                    log.debug('objSO',objSO)
 
                     var idSO = {}
                     idSO[objSO.internalid] = objSO 
