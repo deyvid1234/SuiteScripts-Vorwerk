@@ -1225,7 +1225,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 	     		 log.debug('configuracion',configuracion)
 	             for (i = 0; i < configuracion.length ; i++){
 	             	log.debug('configuracion[i].value',configuracion[i].value)
-	                if(configuracion[i].value == 11 || configuracion[i].value == 12 || configuracion[i].value == 13 ){//TM6R o TM4U
+	                if(configuracion[i].value == 11 || configuracion[i].value == 12 || configuracion[i].value == 13 || configuracion[i].value == 14){//TM6R o TM4U
 	                    odv_ganaTM = 4
 	                }
 	             }
@@ -1292,14 +1292,14 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                         
                         if(count == odv_ganaTM && delegate==5 ){//CONTADOR ES IGUAL AL NUMERO DE VENTAS DE LA CONFIGURACION
                           
-                           var objEmployee = record.load({//CARGAR REGISTRO DEL EMPLOYEE PARA CAMBIAR LA PROMOCION DE TM EN PRESTAMO A TM PROPIA
+                           /*var objEmployee = record.load({//CARGAR REGISTRO DEL EMPLOYEE PARA CAMBIAR LA PROMOCION DE TM EN PRESTAMO A TM PROPIA
                               type: 'employee',
                               id: rec.getValue('salesrep'),
                               isDynamic: false
                           });
                             
                           objEmployee.setValue('custentity_promocion','2')
-                          objEmployee.save();
+                          objEmployee.save();*/
                           for(inter in internals){//RECORRE LAS VENTAS Y ASIGAN COMMISSION STATUS 2(NO COMISIONABLE)
                               record.submitFields({
                                   type: 'salesorder',
