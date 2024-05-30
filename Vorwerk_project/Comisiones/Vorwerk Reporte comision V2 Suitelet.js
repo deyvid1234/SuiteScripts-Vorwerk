@@ -369,7 +369,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                             objReclutamiento = bonoReclutamiento(reclutas,historicoSO,thisPeriodSO,dataEmp,compConfigDetails,allPresentadoras,dHistorico)
                             //log.debug('objReclutamiento',objReclutamiento)
                             objGarantia = bonoGarantia(dataEmp,garantiaSO,compConfigDetails)
-                            //log.debug('objGarantia',objGarantia)
+                            
                             objJoya = bonoJoya(conf,ventasEmp,compConfigDetails)
                             objCook = bonoCk(dataEmp,ckSO)
                             /*
@@ -557,7 +557,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
         }
 
         if(ventasPropias && ventasPropias.data != ''){  
-            log.debug('ventasPropias',ventasPropias)
+            //log.debug('ventasPropias',ventasPropias)
             var v
             //Venta Propia
             v = ventasPropias.monto>0?ventasPropias.monto:0
@@ -580,7 +580,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             }else{
                 v = ''
             }
-            log.debug('v',v)
+            //log.debug('v',v)
             sublist.setSublistValue({
                 id : 'custentity_odv_jdg_ids',
                 line : linea,
@@ -849,24 +849,30 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
     
     function bonoJoya(conf,ventasEmp,compConfigDetails){
         try{
-            var ventasP = ventasEmp
-            //log.debug('ventas',ventasP)
-            var data = []
-            for (i in ventasP){
-                var ventasData= Object.keys(ventasP[i])
-                var comisionables = ventasP[i][ventasData]['custbody_vw_comission_status']
-                var tipoVenta = ventasP[i][ventasData]['custbody_tipo_venta']
-                //log.debug('comisionables',comisionables)
-                if( tipoVenta != 'TM Ganada' && comisionables != 'No Comisionable'){
-                    data.push(ventasData)
+            if(conf){
+                var ventasP = ventasEmp
+                //log.debug('ventas',ventasP)
+                var data = []
+                for (i in ventasP){
+                    var ventasData= Object.keys(ventasP[i])
+                    var comisionables = ventasP[i][ventasData]['custbody_vw_comission_status']
+                    var tipoVenta = ventasP[i][ventasData]['custbody_tipo_venta']
+                    //log.debug('comisionables',comisionables)
+                    if( tipoVenta != 'TM Ganada' && comisionables != 'No Comisionable'){
+                        data.push(ventasData)
+                    }
+                    
                 }
-                
+                var t_venta_propia = data.length
+                //log.debug('t_venta_propia',t_venta_propia)
+                //log.debug('conf',conf)
+                var bono_emerald = parseInt(compConfigDetails[conf]['esquemaVentasPresentadora'][t_venta_propia]['bonoProductividad']) - parseInt(compConfigDetails['1']['esquemaVentasPresentadora'][t_venta_propia]['bonoProductividad'])
+                //log.debug('bono_emerald',bono_emerald)
+                return {monto:bono_emerald}
+            }else{
+                return false
             }
-            var t_venta_propia = data.length
-
-            var bono_emerald = parseInt(compConfigDetails[conf]['esquemaVentasPresentadora'][t_venta_propia]['bonoProductividad']) - parseInt(compConfigDetails['1']['esquemaVentasPresentadora'][t_venta_propia]['bonoProductividad'])
-            //log.debug('bono_emerald',bono_emerald)
-            return {monto:bono_emerald}
+            
             
         }catch(e){
             log.error('error bono joya',e)
