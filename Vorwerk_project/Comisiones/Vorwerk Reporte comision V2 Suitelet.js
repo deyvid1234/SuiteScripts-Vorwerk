@@ -298,7 +298,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 var objCook = false
                 switch(tipoReporteGloobal){
                     case 1: //Reporte LE
-                        if(empType == 3 && empPromo == 2 /*&& allPresentadoras[i].internalid == '2504501'*/){
+                        if(empType == 3 && empPromo == 2 /*&& allPresentadoras[i].internalid == '2836941'*/){
                             //Calcular reporte para la persona
                             var reclutas = listaReclutas[i]
                             var integrantesEquipo = listaGrupos[i]   
@@ -389,8 +389,10 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                     case 3: //Reporte Trabaja x TM
                         if(empType == 1 && (empPromo == 1 || empPromo == 5)){
                             //Calcular reporte para la persona
+                            var reclutas=listaReclutas[i]
+                            
                             objReclutamiento = bonoReclutamiento(reclutas,historicoSO,thisPeriodSO,dataEmp,compConfigDetails,allPresentadoras,dHistorico)
-                            //log.debug('objReclutamiento',objReclutamiento)
+                        
                             objCook = bonoCk(dataEmp,ckSO)
                             
                             fillTable(sublist,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objSupercomision,objReclutamiento,objEntrega,objXmasDos,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objJoya,objCook,objXmasdosNLE)
@@ -1341,6 +1343,7 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
 
     function bonoReclutamiento(reclutas,historicoSO,thisPeriodSO,dataEmp,compConfigDetails,allPresentadoras,dHistorico){
         try{
+            
             if(reclutas){
                 var bono_reclutadora = 0
                 var ordenes = {}
