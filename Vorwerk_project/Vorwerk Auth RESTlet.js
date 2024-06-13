@@ -688,7 +688,256 @@ function(record,search,https,file,http,format,encode,email) {
 					
 					var id_traking = createTraking(description,id_sales_order,acLogistic)
 					log.debug("traking_id",id_traking);
-					
+
+					try{
+
+                        var tipoVenta = req_info.custbody_tipo_venta
+                        var urlOne = req_info.custbody_url_one_aclogistics
+                        var urlTwo = req_info.custbody_url_two_aclogistics
+                        var statusEnvio = req_info.custbody_estatus_envio 
+                        if(tipoVenta == 2 && statusEnvio != 7 && urlOne && urlTwo){
+
+                            var apiKey = "",cont_trak = [], description = [],valid_tm = false, description_txt = "";
+                            if(runtime.envType  == "SANDBOX"){
+                                apiKey = "c9df5be32d150aaae2c5f3a2cddacb44" //Apikey Logistica 
+                            }else{
+                                apiKey = "c9df5be32d150aaae2c5f3a2cddacb44"
+                            }
+                            
+                            var objSO = record.load({
+                                type: record.Type.SALES_ORDER,
+                                id: id_sales_order,
+                                isDynamic: false,
+                            });
+                            log.debug('objSO',objSO);
+                            
+
+                            var itemLines = objSO.getLineCount({
+                                sublistId  : 'item'
+                            });
+                            log.debug('itemLines',itemLines);
+                            
+                            for(var i=0; i < itemLines; i++){
+                                var itemId = objSO.getSublistValue({
+                                    sublistId : 'item',
+                                    fieldId   : 'item',
+                                    line      : i
+                                });
+                                if(itemId != 1441 && itemId != 859){
+                                    if(itemId != 2001 && itemId != 2170 && itemId != 2490 && itemId != 2571){
+                                            description.push(objSO.getSublistValue({
+                                                sublistId : 'item',
+                                                fieldId   : 'description',
+                                                line      : i
+                                            }));
+                                        }
+                                }
+                                
+                            }
+                            
+                            description_txt = description.join(',');
+                            log.debug('description_txt',description_txt);
+                            
+                            var objTracking = search.lookupFields({
+                                type: 'customrecord_vk_traking_information',
+                                id: 3,
+                                columns: ['custrecord_alto_cm','custrecord_ancho_cm','custrecord_largo_cm','name','custrecord_contenido']
+                            });
+                            log.debug('objTracking',objTracking);
+                                                        
+                            var objCustomer = record.load({
+                                type: record.Type.CUSTOMER,
+                                id: objSO.getValue('entity'),
+                                isDynamic: false,
+                            });
+                            //extrae la información del cliente
+                            log.debug('objCustomer',objCustomer);
+                            var email_customer = objCustomer.getValue('email');
+                            var nameCustomer = "";
+                            var addrphone = "";
+                            var addr1 = "";
+                            var addr2 = "";
+                            var zip ="";
+                            var companyCustomer = objCustomer.getValue('custentity_razon_social');
+                            
+                            var totalLines = objCustomer.getLineCount({
+                                sublistId  : 'addressbook'
+                            });
+                            log.debug('totalLines',totalLines);
+                            for(var i=0; i < totalLines; i++){
+                                var defaultshipping = objCustomer.getSublistValue({
+                                    sublistId : 'addressbook',
+                                    fieldId   : 'defaultshipping',
+                                    line      : i
+                                });
+                                
+                                if(defaultshipping == true){
+                                    var subRecord = objCustomer.getSublistSubrecord({
+                                       sublistId : 'addressbook',
+                                       fieldId   : 'addressbookaddress',
+                                       line      : i
+                                    });
+                                    log.debug('subrec',subRecord)
+                                    nameCustomer = subRecord.getValue({
+                                    fieldId: 'addressee'
+                                    });
+                                    addrphone = subRecord.getText({
+                                        fieldId: 'addrphone'
+                                    });
+                                    addr1 = subRecord.getValue({
+                                        fieldId: 'addr1'
+                                    });
+                                    addr2 = subRecord.getValue({
+                                        fieldId: 'addr2'
+                                    });
+                                    zip = subRecord.getValue({
+                                        fieldId: 'zip'
+                                    });
+                                    break;
+                                }
+                                
+                            }
+                            var random_num = Math.floor(Math.random() * 100);
+                            //crea el objeto que se envia a ac logistic
+                            var weight = objTracking.name.split(" ")[0];
+
+                            var configRecObj = config.load({
+                                type: config.Type.COMPANY_INFORMATION
+                            });
+                //          log.debug('configRecObj',configRecObj);
+                            
+                            var mainaddress = configRecObj.getSubrecord({
+                                fieldId: 'mainaddress'
+                            });
+                            
+                            var companyname = configRecObj.getValue('companyname');
+                            var phone =     mainaddress.getValue('addrphone');
+                            var email_company =     configRecObj.getValue('email');
+                            var address =   mainaddress.getValue('addr1')
+                                            +' '+mainaddress.getValue('addr2')
+                                            +' '+mainaddress.getValue('city')
+                                            +' '+mainaddress.getValue('state')
+                                            +' '+mainaddress.getValue('zip');
+                            var legalname = configRecObj.getValue('legalname');
+
+                            var objRequest = {
+                                     "api_key": apiKey,
+                                     "referencia": objSO.getValue('tranid')+'-'+random_num,
+                                     "id_courier": "fedex_eco",
+                                     "nombre_remitente": companyname,
+                                     "telefono_remitente": phone,
+                                     "correo_remitente": email_company,
+                                     "direccion_remitente": address,
+                                     "empresa_remitente": legalname,
+                                     "nombre_destinatario": nameCustomer,
+                                     "telefono_destinatario": addrphone,
+                                     "correo_destinatario": email_customer,
+                                     "calle_destinatario": addr1,
+                                     "num_exterior_destinatario": "0",
+                                     "num_interior_destinatario": "0",
+                                     "cp_destinatario": zip,
+                                     "colonia_destinatario": addr2,
+                                     "empresa_destinatario": companyCustomer,
+                                     "alto_cm": objTracking.custrecord_alto_cm,
+                                     "ancho_cm": objTracking.custrecord_ancho_cm,
+                                     "largo_cm": objTracking.custrecord_largo_cm,
+                                     "peso_kg": weight,
+                                     "contenido": objTracking.custrecord_contenido,
+                                     "valor":objSO.getValue('total'),
+                                     "seguro": "false"
+                                } 
+                            
+                            log.debug("Datos a enviar",objRequest);
+                            log.debug("Datos a enviar stringify",JSON.stringify(objRequest));
+        
+                            /*var responseService = https.post({
+                                url: 'https://www.smartship.mx/api/documentar/',
+                                body : JSON.stringify(objRequest),
+                                headers: {
+                                    "Content-Type": "application/json"
+                                }
+                            }).body;*/
+                          try{
+                              log.debug("responseService",responseService);
+                            
+                              if(JSON.parse(responseService).mensaje == 'Exitoso'){
+                                console.log("if true",JSON.parse(responseService).mensaje);
+                              }else{
+                                console.log("if false",JSON.parse(responseService).mensaje);
+                              }
+                              //log.debug("Respuesta de AC LLogistic",JSON.parse(responseService));
+                            
+                //                var acLogistic = JSON.parse(responseService);
+                //              
+                //                log.debug("acLogistic.mensaje",acLogistic.mensaje);
+                //            
+                //                console.log("acLogistic.mensaje",acLogistic.mensaje);
+                          }catch(e){
+                              log.debug("error log",e);
+                              console.log("error log",e);
+                          }
+                            
+                            //si la respuesta es correcta crea un nuevo registro de traking
+                            if( JSON.parse(responseService).mensaje == 'Exitoso' ){
+                                var acLogistic = JSON.parse(responseService)
+                                var obj_traking= record.create({
+                                    type: 'customrecord_guia_envio',
+                                    isDynamic: false,
+                                });
+                                
+                                obj_traking.setValue({
+                                    fieldId: 'custrecord_id_sales_order',
+                                    value: id_sales_order
+                                });
+                                obj_traking.setValue({
+                                    fieldId: 'custrecord_no_guia',
+                                    value: acLogistic.tracking
+                                });
+                                obj_traking.setValue({
+                                    fieldId: 'custrecord_url_resp_aclogistics',
+                                    value: acLogistic.tracking_link
+                                });
+                                obj_traking.setValue({
+                                    fieldId: 'custrecord_url_pdf_aclogistics',
+                                    value: acLogistic.guia
+                                });
+                                obj_traking.setValue({
+                                    fieldId: 'custrecord_estatus_envio',
+                                    value: 1
+                                });
+                                obj_traking.setValue({
+                                    fieldId: 'custrecord_id_envio',
+                                    value: acLogistic.id_envio
+                                });
+                                obj_traking.setValue({
+                                    fieldId: 'custrecord_vw_description',
+                                    value: description_txt
+                                });
+                                
+                                var id_traking = obj_traking.save();
+                                console.log('id_traking',id_traking);
+                                dialog.alert({
+                                    title: 'Éxito',
+                                    message: 'Guía generada correctamente'
+                                });
+                                try{
+                                    
+                                    objSO.setValue('custbody_tracking_dimensions','');
+                                    objSO.save();
+                                }catch(err_update){
+                                    console.log('err_update',err_update);
+                                }
+                                
+                                window.location.reload();
+                            }else{
+                                log.error('Error al generar guia')
+                                alert("Error al generar guia "+acLogistic.mensaje);
+                            }
+
+                        }
+                    }catch(e){
+                        log.error('error segunda guia',e)
+                    }
 				}catch(err_tracking){
 					log.error('error create traking',err_tracking)
 				}
