@@ -686,18 +686,18 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                     }
                     
                     
-                    var id_traking = createTraking(description,id_sales_order,acLogistic)
+                    var id_traking = createTraking(description,id_sales_order,acLogistic,req_info.custbody_tipo_venta,req_info.custbody_estatus_envio)
                     log.debug("traking_id",id_traking);
-
+//segunda guia
                     try{
 
                         var tipoVenta = req_info.custbody_tipo_venta
                         var urlOne = req_info.custbody_url_one_aclogistics
                         var urlTwo = req_info.custbody_url_two_aclogistics
                         var statusEnvio = req_info.custbody_estatus_envio 
-                        if(tipoVenta == 2 && statusEnvio != 7 && urlOne && urlTwo){
+                        if(tipoVenta == 2 && statusEnvio != 7 && urlOne && urlTwo){//status de envio 7 es Entrega en sucursal
                             log.debug('entra if segunda guia')
-                            var apiKey = "",cont_trak = [], description = [],valid_tm = false, description_txt = "";
+                            var apiKey = "",cont_trak = [], description = [], description_txt = "";
                             if(runtime.envType  == "SANDBOX"){
                                 apiKey = "c9df5be32d150aaae2c5f3a2cddacb44" //Apikey Logistica 
                             }else{
@@ -723,18 +723,15 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                                     fieldId   : 'item',
                                     line      : i
                                 });
-                                if(itemId != 1441 && itemId != 859){
-                                    if(itemId != 2001 && itemId != 2170 && itemId != 2490 && itemId != 2571){
-                                            description.push(objSO.getSublistValue({
-                                                sublistId : 'item',
-                                                fieldId   : 'description',
-                                                line      : i
-                                            }));
-                                        }
+                                
+                                if(itemId != 1441 && itemId != 859 && itemId != 2001 && itemId != 2170 && itemId != 2490 && itemId != 2571 && itemId != 2638){//que no sea kit, bundle, tms, costo por financiamiento 
+                                    description.push(objSO.getSublistValue({
+                                        sublistId : 'item',
+                                        fieldId   : 'description',
+                                        line      : i
+                                    }));
                                 }
                                 
-                            }
-                            
                             description_txt = description.join(',');
                             log.debug('description_txt',description_txt);
                             
@@ -753,7 +750,7 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                             //extrae la información del cliente
                             log.debug('objCustomer',objCustomer);
                             var email_customer = objCustomer.getValue('email');
-                            var nameCustomer = "";
+                            var nameCustomer = objCustomer.getValue('altname');
                             var addrphone = "";
                             var addr1 = "";
                             var addr2 = "";
@@ -778,9 +775,7 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                                        line      : i
                                     });
                                     log.debug('subrec',subRecord)
-                                    nameCustomer = subRecord.getValue({
-                                    fieldId: 'addressee'
-                                    });
+
                                     addrphone = subRecord.getText({
                                         fieldId: 'addrphone'
                                     });
@@ -800,8 +795,6 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                             var random_num = Math.floor(Math.random() * 100);
                             //crea el objeto que se envia a ac logistic
                             var weight = objTracking.name.split(" ")[0];
-
-                            
 
                             var objRequest = {
                                      "api_key": apiKey,
@@ -833,32 +826,26 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                             log.debug("Datos a enviar",objRequest);
                             log.debug("Datos a enviar stringify",JSON.stringify(objRequest));
         
-                            /*var responseService = https.post({
+                            var responseService = https.post({
                                 url: 'https://www.smartship.mx/api/documentar/',
                                 body : JSON.stringify(objRequest),
                                 headers: {
                                     "Content-Type": "application/json"
                                 }
-                            }).body;*/
-                          try{
-                              log.debug("responseService",responseService);
+                            }).body;
+                            try{
+                                log.debug("responseService",responseService);
                             
-                              if(JSON.parse(responseService).mensaje == 'Exitoso'){
-                                log.debug("if true",JSON.parse(responseService).mensaje);
-                              }else{
-                                log.debug("if false",JSON.parse(responseService).mensaje);
-                              }
-                              //log.debug("Respuesta de AC LLogistic",JSON.parse(responseService));
-                            
-                //                var acLogistic = JSON.parse(responseService);
-                //              
-                //                log.debug("acLogistic.mensaje",acLogistic.mensaje);
-                //            
-                //                console.log("acLogistic.mensaje",acLogistic.mensaje);
-                          }catch(e){
-                              log.debug("error log",e);
+                                if(JSON.parse(responseService).mensaje == 'Exitoso'){
+                                    log.debug("if true",JSON.parse(responseService).mensaje);
+                                }else{
+                                    log.debug("if false",JSON.parse(responseService).mensaje);
+                                }
                               
-                          }
+                            }catch(e){
+                                log.debug("error log",e);
+                              
+                            }
                             
                             //si la respuesta es correcta crea un nuevo registro de traking
                             if( JSON.parse(responseService).mensaje == 'Exitoso' ){
@@ -898,23 +885,11 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                                 });
                                 obj_traking.setValue({
                                     fieldId: 'custrecord_peso',
-                                    value: weight 
+                                    value: weight + ' kg'
                                 });
-                                var id_traking = obj_traking.save();
-                                log.debug('id_traking',id_traking);
-                                /*dialog.alert({
-                                    title: 'Éxito',
-                                    message: 'Guía generada correctamente'
-                                });
-                                try{
-                                    
-                                    objSO.setValue('custbody_tracking_dimensions','');
-                                    objSO.save();
-                                }catch(err_update){
-                                    console.log('err_update',err_update);
-                                }
+                                var id_trakingDos = obj_traking.save();
+                                log.debug('id_trakingDos',id_trakingDos);
                                 
-                                window.location.reload();*/
                             }else{
                                 log.error('Error al generar guia')
                                 alert("Error al generar guia "+acLogistic.mensaje);
@@ -924,6 +899,7 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                     }catch(e){
                         log.error('error segunda guia',e)
                     }
+                    //fin segunda guia
                 }catch(err_tracking){
                     log.error('error create traking',err_tracking)
                 }
@@ -1464,7 +1440,7 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
             log.error("error get Description",err)
         }
     }
-    function createTraking(description_txt,idSalesOrder,acLogistic){
+    function createTraking(description_txt,idSalesOrder,acLogistic,tipoVenta,statusEnvio){
         try{
             var obj_traking= record.create({
                 type: 'customrecord_guia_envio',
@@ -1495,10 +1471,12 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                 fieldId: 'custrecord_vw_description',
                 value: description_txt
             });
-            obj_traking.setValue({
-                fieldId: 'custrecord_peso',
-                value: '12.60 kg' 
-            });
+            if(tipoVenta == 2 /*&& statusEnvio != 7*/){
+                obj_traking.setValue({
+                    fieldId: 'customrecord_guia_envio',
+                    value: '12.60 kg'
+                }); 
+            }
             
             var id_traking = obj_traking.save();
             return id_traking;
