@@ -684,20 +684,18 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                             guia            :req_info.custbody_url_two_aclogistics,
                             status          :req_info.custbody_estatus_envio
                     }
-                    
-                    
-                    var id_traking = createTraking(description,id_sales_order,acLogistic,req_info.custbody_tipo_venta,req_info.custbody_estatus_envio)
+                    var tipoVenta = req_info.custbody_tipo_venta
+                    var statusEnvio = req_info.custbody_estatus_envio
+                    var id_traking = createTraking(description,id_sales_order,acLogistic,tipoVenta,statusEnvio)
                     log.debug("traking_id",id_traking);
 //segunda guia
                     try{
-
-                        var tipoVenta = req_info.custbody_tipo_venta
                         var urlOne = req_info.custbody_url_one_aclogistics
                         var urlTwo = req_info.custbody_url_two_aclogistics
-                        var statusEnvio = req_info.custbody_estatus_envio 
+                         
                         if(tipoVenta == 2 && statusEnvio != 7 && urlOne && urlTwo){//status de envio 7 es Entrega en sucursal
                             log.debug('entra if segunda guia')
-                            var apiKey = "",cont_trak = [], description = [], description_txt = "";
+                            var apiKey = "", description = [], description_txt = "";
                             if(runtime.envType  == "SANDBOX"){
                                 apiKey = "c9df5be32d150aaae2c5f3a2cddacb44" //Apikey Logistica 
                             }else{
@@ -731,7 +729,7 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                                         line      : i
                                     }));
                                 }
-                                
+                            }   
                             description_txt = description.join(',');
                             log.debug('description_txt',description_txt);
                             
