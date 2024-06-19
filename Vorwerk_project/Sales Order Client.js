@@ -293,7 +293,7 @@ function(record,search,https,runtime,currentRecord,dialog) {
             //extrae la información del cliente
             console.log('objCustomer',objCustomer);
             var email_customer = objCustomer.getValue('email');
-            var nameCustomer = "";
+            var nameCustomer = objCustomer.getValue('altname');;
             var addrphone = "";
             var addr1 = "";
             var addr2 = "";
@@ -318,9 +318,7 @@ function(record,search,https,runtime,currentRecord,dialog) {
                        line      : i
                     });
                     console.log('subrec',subRecord)
-                    nameCustomer = subRecord.getValue({
-                    fieldId: 'addressee'
-                    });
+                    
                     addrphone = subRecord.getText({
                         fieldId: 'addrphone'
                     });
