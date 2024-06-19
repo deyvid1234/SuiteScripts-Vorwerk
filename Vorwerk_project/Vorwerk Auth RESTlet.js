@@ -695,7 +695,7 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                          
                         if(tipoVenta == 2 && statusEnvio != 7 && urlOne && urlTwo){//status de envio 7 es Entrega en sucursal
                             log.debug('entra if segunda guia')
-                            var apiKey = "", description = [], description_txt = "";
+                            var apiKey = "", description = [], description_txt = "", segundaGuia = false;
                             if(runtime.envType  == "SANDBOX"){
                                 apiKey = "c9df5be32d150aaae2c5f3a2cddacb44" //Apikey Logistica 
                             }else{
@@ -723,6 +723,7 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                                 });
                                 
                                 if(itemId != 1441 && itemId != 859 && itemId != 2001 && itemId != 2170 && itemId != 2490 && itemId != 2571 && itemId != 2638){//que no sea kit, bundle, tms, costo por financiamiento 
+                                    segundaGuia = true
                                     description.push(objSO.getSublistValue({
                                         sublistId : 'item',
                                         fieldId   : 'description',
@@ -793,8 +794,8 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                             var random_num = Math.floor(Math.random() * 100);
                             //crea el objeto que se envia a ac logistic
                             var weight = objTracking.name.split(" ")[0];
-
-                            var objRequest = {
+                            if (itemLines > 1 && segundaGuia == true){
+                               var objRequest = {
                                      "api_key": apiKey,
                                      "referencia": objSO.getValue('tranid')+'-'+random_num,
                                      "id_courier": "fedex_eco",
@@ -891,7 +892,9 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                             }else{
                                 log.error('Error al generar guia')
                                 alert("Error al generar guia "+acLogistic.mensaje);
+                            } 
                             }
+                            
 
                         }
                     }catch(e){
@@ -1471,7 +1474,7 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
             });
             if(tipoVenta == 2 /*&& statusEnvio != 7*/){
                 obj_traking.setValue({
-                    fieldId: 'customrecord_guia_envio',
+                    fieldId: 'custrecord_peso',
                     value: '12.60 kg'
                 }); 
             }
