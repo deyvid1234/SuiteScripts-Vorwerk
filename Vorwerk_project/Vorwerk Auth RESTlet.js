@@ -1472,11 +1472,35 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                 fieldId: 'custrecord_vw_description',
                 value: description_txt
             });
-            if(tipoVenta == 2 /*&& statusEnvio != 7*/){
-                obj_traking.setValue({
-                    fieldId: 'custrecord_peso',
-                    value: '12.60 kg'
-                }); 
+            var objSO = record.load({
+                type: record.Type.SALES_ORDER,
+                id: idSalesOrder,
+                isDynamic: false,
+            });
+            
+            var itemLines = objSO.getLineCount({
+                sublistId  : 'item'
+            });
+            
+            for(var i=0; i < itemLines; i++){
+                var itemId = objSO.getSublistValue({
+                    sublistId : 'item',
+                    fieldId   : 'item',
+                    line      : i
+                });
+
+                if( itemId == 2001 || itemId == 2170 || itemId == 2490 || itemId == 2571 || itemId == 2638 || itemId == 2280 || itemId == 1757 || itemId == 1126 || itemId == 2035){
+                    obj_traking.setValue({
+                        fieldId: 'custrecord_peso',
+                        value: '12.60 kg'
+                    });
+                    break;
+                }else{
+                    obj_traking.setValue({
+                        fieldId: 'custrecord_peso',
+                        value: '1 kg'
+                    }); 
+                }
             }
             
             var id_traking = obj_traking.save();
