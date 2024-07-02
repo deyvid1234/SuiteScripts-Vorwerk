@@ -298,7 +298,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 var objCook = false
                 switch(tipoReporteGloobal){
                     case 1: //Reporte LE
-                        if(empType == 3 && empPromo == 2 /*&& allPresentadoras[i].internalid == '2836941'*/){
+                        if(empType == 3 && empPromo == 2 && allPresentadoras[i].internalid == '3345618'){
                             //Calcular reporte para la persona
                             var reclutas = listaReclutas[i]
                             var integrantesEquipo = listaGrupos[i]   
@@ -308,7 +308,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                             //log.debug('ventasEmp',ventasEmp)
                             
                             objVentasPropias = bonoVentaPropia(dataEmp,ventasEmp,compConfigDetails)
-                            //log.debug('objVentasPropias',objVentasPropias)
+                            log.debug('objVentasPropias',objVentasPropias)
                             
                             objSupercomision = bonoSupercomision(integrantesEquipo,historicoSO,thisPeriodSO,allPresentadoras,dHistorico)
                             //log.debug('objSupercomision',objSupercomision)
@@ -1420,7 +1420,7 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
         try{
             if(empSOThisPeriod){
                 var ventas = empSOThisPeriod
-                //log.debug('ventas',ventas)
+                log.debug('ventas',ventas)
                 var data = []
                 for (i in ventas){
                     var ventasData= Object.keys(ventas[i])
