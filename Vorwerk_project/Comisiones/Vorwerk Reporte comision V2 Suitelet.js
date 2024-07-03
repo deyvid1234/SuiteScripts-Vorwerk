@@ -308,7 +308,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                             //log.debug('ventasEmp',ventasEmp)
                             
                             objVentasPropias = bonoVentaPropia(dataEmp,ventasEmp,compConfigDetails)
-                            log.debug('objVentasPropias',objVentasPropias)
+                            //log.debug('objVentasPropias',objVentasPropias)
                             
                             objSupercomision = bonoSupercomision(integrantesEquipo,historicoSO,thisPeriodSO,allPresentadoras,dHistorico)
                             //log.debug('objSupercomision',objSupercomision)
@@ -1420,7 +1420,7 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
         try{
             if(empSOThisPeriod){
                 var ventas = empSOThisPeriod
-                log.debug('ventas',ventas)
+                //log.debug('ventas',ventas)
                 var data = []
                 for (i in ventas){
                     var ventasData= Object.keys(ventas[i])
@@ -1733,16 +1733,16 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
                     idSO[objSO.internalid] = objSO 
                     if(dateSO >= inicioPeriodoDate && dateSO <= finPeriodoDate){
                         //log.debug('esta fecha es del periodo calculado',dateSO)
-                        if(thisPeriodSO.hasOwnProperty(objSO.salesrep) && controlRepeat[objSO.salesrep].indexOf(objSO.internalid) == -1){
+                        if(thisPeriodSO.hasOwnProperty(objSO.salesrep) && controlRepeat[objSO.salesrep].indexOf(objSO.internalid) < 0){
                             thisPeriodSO[objSO.salesrep].push(idSO)
                             controlRepeat[objSO.salesrep].push(objSO.internalid)
                         }else if(!thisPeriodSO.hasOwnProperty(objSO.salesrep)){
                             thisPeriodSO[objSO.salesrep] = [idSO]
                             controlRepeat[objSO.salesrep] = [objSO.internalid]
                         }
-                        /*if(objSO.salesrep == '872433'||objSO.salesrep == '3314243'||objSO.salesrep == '92577'){
+                        if(objSO.salesrep == '39360'||objSO.salesrep == '12590'){
                             log.debug('ventas propias test1',objSO.internalid)
-                            if(objSO.salesrep == '92577'){
+                            if(objSO.salesrep == '39360'||objSO.salesrep == '12590'){
                                log.debug('r',r) 
                             }
                             log.debug('ventas propias test3',idSO)
@@ -1751,7 +1751,7 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
                             log.debug('controlRepeat 3',controlRepeat[objSO.salesrep].indexOf(objSO.internalid))
                             log.debug('thisPeriodSO[objSO.salesrep]',thisPeriodSO[objSO.salesrep])
                             
-                        }*/
+                        }
                     }else if(dateSO < inicioPeriodoDate){
                         //log.debug('Esta fecha es Historicio',dateSO)
                         if(historicoSO.hasOwnProperty(objSO.salesrep)){
@@ -1854,7 +1854,7 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
                
             thidField = sublist.addField({
                 id: 'custentity_odv_jdg_ids',
-                type: serverWidget.FieldType.TEXT,
+                type: serverWidget.FieldType.TEXTAREA,
                 label: 'ID ODV PROPIAS'
             }).updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
             arrayFields.push({idfield : thidField.id, namefield : thidField.label})
