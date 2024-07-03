@@ -1711,6 +1711,7 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
                 pageSize: 1000
             });
 
+            var controlRepeat = {}
             pagedResults.pageRanges.forEach(function (pageRange){
                 var currentPage = pagedResults.fetch({index: pageRange.index});
                 currentPage.data.asMappedResults().forEach(function (r) {
@@ -1733,12 +1734,23 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
                     idSO[objSO.internalid] = objSO 
                     if(dateSO >= inicioPeriodoDate && dateSO <= finPeriodoDate){
                         //log.debug('esta fecha es del periodo calculado',dateSO)
-                        if(thisPeriodSO.hasOwnProperty(objSO.salesrep)){
+                        if(thisPeriodSO.hasOwnProperty(objSO.salesrep) && controlRepeat[objSO.salesrep].indexOf(objSO.internalid) == -1){
                             thisPeriodSO[objSO.salesrep].push(idSO)
-                        }else{
-                            thisPeriodSO[objSO.salesrep] = [idSO]  
+                            controlRepeat[objSO.salesrep].push(objSO.internalid)
+                        }else if(!thisPeriodSO.hasOwnProperty(objSO.salesrep)){
+                            thisPeriodSO[objSO.salesrep] = [idSO]
+                            controlRepeat[objSO.salesrep] = [objSO.internalid]
                         }
-
+                        /*if(objSO.salesrep == '3345618'){
+                            log.debug('ventas propias test1',objSO.internalid)
+                            
+                            log.debug('ventas propias test3',idSO)
+                            log.debug('controlRepeat',controlRepeat)
+                            log.debug('controlRepeat 2',controlRepeat[objSO.salesrep])
+                            log.debug('controlRepeat 3',controlRepeat[objSO.salesrep].indexOf(objSO.internalid))
+                            log.debug('thisPeriodSO[objSO.salesrep]',thisPeriodSO[objSO.salesrep])
+                            
+                        }/*
                     }else if(dateSO < inicioPeriodoDate){
                         //log.debug('Esta fecha es Historicio',dateSO)
                         if(historicoSO.hasOwnProperty(objSO.salesrep)){
