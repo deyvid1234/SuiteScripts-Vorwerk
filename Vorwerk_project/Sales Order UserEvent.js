@@ -1288,7 +1288,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 	              
 	              log.debug('context',runtime.executionContext);
                   //AJUSTE PARA CONSIDERAR PROMOCION TM EN PRESTAMO
-                    if (scriptContext.type == 'create' && rec.getValue('custbody_tipo_venta') == 2 && delegate == 5){//TIPO DE VENTA 'VENTAS TM', PROMO 'TM EN PRESTAMO'
+                    if (scriptContext.type == 'create' && rec.getValue('custbody_tipo_venta') == 2 && (delegate == 5 || firstso == '')){//TIPO DE VENTA 'VENTAS TM', PROMO 'TM EN PRESTAMO'
                         
                         if(count == odv_ganaTM && delegate==5 ){//CONTADOR ES IGUAL AL NUMERO DE VENTAS DE LA CONFIGURACION
                           
@@ -1546,7 +1546,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 		            	 }
 		            	 return numOdv;
 		            	 
-		            	}else if(count < odv_ganaTM && firstso != ''){//963
+		            	}else if(count < odv_ganaTM ){//963
 		            		for(inter in internals){
 		            		  record.submitFields({
 			            		  type: 'salesorder',
