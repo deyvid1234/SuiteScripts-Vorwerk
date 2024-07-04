@@ -391,8 +391,12 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                         
                             objCook = bonoCk(dataEmp,ckSO)
                             
-                            fillTable(sublist,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objSupercomision,objReclutamiento,objEntrega,objXmasDos,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objJoya,objCook,objXmasdosNLE)
-                            cont_line++
+                            var amounTrue = validateAmount(sublist,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objSupercomision,objReclutamiento,objEntrega,objXmasDos,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objJoya,objCook,objXmasdosNLE)
+        
+                            if(amounTrue){
+                                fillTable(sublist,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objSupercomision,objReclutamiento,objEntrega,objXmasDos,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objJoya,objCook,objXmasdosNLE)
+                                cont_line++
+                            }
                         }
                     break;
                 }   
@@ -1628,7 +1632,7 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
             const inicioPeriodoDate =  Utils.stringToDate(inicioPeriodo)
             const finPeriodoDate = Utils.stringToDate(finPeriodo)
             var dHistorico = Utils.restarMeses(inicioPeriodo, 3); //Fecha 3 meses antes del periodo calculado
-            log.debug('dHistorico',inicioPeriodoDate)
+            log.debug('dHistorico',dHistorico)
             
             try{
                 var objGarantiaRep = {};
