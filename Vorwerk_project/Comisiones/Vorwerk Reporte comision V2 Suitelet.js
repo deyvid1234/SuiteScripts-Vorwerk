@@ -1486,7 +1486,7 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
             const empSearchdelegada = search.createColumn({ name: 'custentity_delegada'});
             const empSearchunidad = search.createColumn({ name: 'custentity_nombre_unidad'});
             //const employeeSearchReclutadoraInternalId = search.createColumn({ name: 'internalid', join: 'custentity_reclutadora' });
-            //const empSearchtiponombramiento = search.createColumn({ name: 'custentity_nombramiento_le'});
+            const empSearchtiponombramiento = search.createColumn({ name: 'custentity_nombramiento_le'});
             const empSearchnombradopor = search.createColumn({ name: 'custentity_nombramiento'});
             const empSearchfechanombramiento = search.createColumn({ name: 'custentity_fecha_nombramiento'});
             const empSearchPeriodoPagoNLE = search.createColumn({ name: 'custentityperiodo_nle_pago'});
@@ -1514,7 +1514,7 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
                     empSearchdelegada,
                     empSearchunidad,
                     //employeeSearchReclutadoraInternalId,
-                    //empSearchtiponombramiento,
+                    empSearchtiponombramiento,
                     empSearchnombradopor,
                     empSearchfechanombramiento,
                     empSearchPeriodoPagoNLE,
@@ -1553,7 +1553,7 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
                     objEMP.delegada = r.getText('custentity_delegada')
                     objEMP.unidad = r.getValue('custentity_nombre_unidad')
                     //objEMP.reclutadoraID = r.getValue({ name: 'internalid', join: 'custentity_reclutadora' })
-                    //objEMP.tipoNombramento = r.getValue('custentity_nombramiento_le')
+                    objEMP.tipoNombramento = r.getValue('custentity_nombramiento_le')
                     objEMP.nombramientoPor = r.getValue('custentity_nombramiento')
                     objEMP.fechaNombramiento = r.getValue('custentity_fecha_nombramiento')
                     objEMP.periodoPagoNLE = r.getValue('custentityperiodo_nle_pago')
@@ -1572,7 +1572,7 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
                         empReclutas[objEMP.emp_reclutadora] = [objEMP.internalid]  
                     }
 
-                    if(objEMP.nombramientoPor != ''){
+                    if(objEMP.nombramientoPor != '' && objEMP.tipoNombramento == 4){
                         var periodo=namePeriodo.split('/')
                         var mesPeriodo = parseInt(periodo[0])
                         var yearPeriodo=parseInt(periodo[1])
