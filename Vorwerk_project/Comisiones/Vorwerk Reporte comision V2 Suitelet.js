@@ -1329,6 +1329,9 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
                             fechaObjetivo = allPresentadoras[i]['obj_2_reactivacion']
                         }
                         fechaObjetivo = Utils.stringToDate(fechaObjetivo)
+                       
+                        fechaObjetivo.setDate(fechaObjetivo.getDate() + 2);
+
                         if(dcontratacion > dHistorico && ventasReclutaTP){//Si su contratacion/Reactivacion es anterios a 3 meses se asume que ya se pagó su reclutamiento
                             
                             var salesReclutaTP =[]
