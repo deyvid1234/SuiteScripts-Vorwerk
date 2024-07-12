@@ -22,7 +22,10 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils) {
             sublistId: 'expense',
             fieldId: 'estimatedamount'
         }).isDisabled = true;
-        
+        thisRecord.getCurrentSublistField({
+            sublistId: 'item',
+            fieldId: 'estimatedamount'
+        }).isDisabled = true;
         
     	return true;
     }
@@ -46,6 +49,7 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils) {
                 fieldId: 'customform'
             });
             var fieldid = scriptContext.fieldId;
+            var sublistName = scriptContext.sublistId;
             var thisRecord = scriptContext.currentRecord;
             if(customform == '231'){//formulario custom para employee centre
                 console.log('customform',customform)
@@ -227,12 +231,27 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils) {
                 }
 
             }
-
-            
+            var sublista = ''
+            if(sublistName =='expense'){
+                    sublista = 'expense'
+            }else if(sublistName =='item'){
+                sublista = 'item'
+            }
 
             if(fieldid =='povendor' && customform != '231'){//proceso para el form Solicitur Vorwerk
-                var vendor = rec.getCurrentSublistValue({//se obtiene el vendor, su moneda y se setea en el campo de moneda del proveedor
+                var sublistaItem = rec.getCurrentSublistValue({
+                    sublistId: 'item',
+                    fieldId: 'povendor'
+                });
+                var sublistaExpense = rec.getCurrentSublistValue({
                     sublistId: 'expense',
+                    fieldId: 'povendor'
+                });
+                
+                
+                console.log('sublista',sublista)
+                var vendor = rec.getCurrentSublistValue({//se obtiene el vendor, su moneda y se setea en el campo de moneda del proveedor
+                    sublistId: sublista,
                     fieldId: 'povendor'
                 });
 
@@ -245,33 +264,35 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils) {
                 var currencyVendor = vendorRec.getValue('currency')
                 console.log('currencyVendor',currencyVendor)
                 var monedaProveedor = rec.setCurrentSublistValue({
-                    sublistId: 'expense',
+                    sublistId: sublista,
                     fieldId: 'custcol_moneda_proveedor',
                     value: currencyVendor
                 });  
                 
                 thisRecord.getCurrentSublistField({//habilitamos los campos de montos
-                    sublistId: 'expense',
+                    sublistId: sublista,
                     fieldId: 'estimatedamount'
                 }).isDisabled = false;
                 thisRecord.getCurrentSublistField({
-                    sublistId: 'expense',
+                    sublistId: sublista,
                     fieldId: 'custcolmonto_enpesos'
                 }).isDisabled = false;
 
             }
+
+            console.log('sublista fuera de ifs',sublista)
             var montoPesos = rec.getCurrentSublistValue({
-                    sublistId: 'expense',
+                    sublistId: sublista,
                     fieldId: 'custcolmonto_enpesos'
                 });
             var estimatedAmount = rec.getCurrentSublistValue({
-                    sublistId: 'expense',
+                    sublistId: sublista,
                     fieldId: 'estimatedamount'
                 });
             if(fieldid =='estimatedamount'&& montoPesos== ''&& customform != '231'){//si se ingresa el monto en la moneda del proveedor se hace la conversion a pesos y se setea al campo de monto en pesos
-                console.log('entro monto estimate')
+                console.log('entro monto estimate',sublista)
                 var vendor = rec.getCurrentSublistValue({
-                    sublistId: 'expense',
+                    sublistId: sublista,
                     fieldId: 'povendor'
                 });
                 
@@ -285,7 +306,7 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils) {
                 console.log('currencyVendor',currencyVendor)
                 var monedaSalida = 'MXN'
                 var estimatedAmount = rec.getCurrentSublistValue({
-                    sublistId: 'expense',
+                    sublistId: sublista,
                     fieldId: 'estimatedamount'
                 });
                 console.log('estimatedAmount',estimatedAmount)
@@ -294,7 +315,7 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils) {
                 var conversion = estimatedAmount * rate;
 
                 var montoPesos = rec.setCurrentSublistValue({
-                    sublistId: 'expense',
+                    sublistId: sublista,
                     fieldId: 'custcolmonto_enpesos',
                     value: conversion
                 });
@@ -309,11 +330,11 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils) {
                     value: total
                 });
                 thisRecord.getCurrentSublistField({
-                    sublistId: 'expense',
+                    sublistId: sublista,
                     fieldId: 'estimatedamount'
                 }).isDisabled = true;
                 thisRecord.getCurrentSublistField({
-                    sublistId: 'expense',
+                    sublistId: sublista,
                     fieldId: 'custcolmonto_enpesos'
                 }).isDisabled = true;
                 
@@ -321,7 +342,7 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils) {
             if(fieldid =='custcolmonto_enpesos' && estimatedAmount== ''&& customform != '231'){//si el monto se ingresa en pesos se hace la conversion a la moneda de proveedor
                 console.log('entro monto')
                 var vendor = rec.getCurrentSublistValue({
-                    sublistId: 'expense',
+                    sublistId: sublista,
                     fieldId: 'povendor'
                 });
                 
@@ -333,7 +354,7 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils) {
                 var currencyVendor = vendorRec.getValue('currency')
             
                 var montoPesos = rec.getCurrentSublistValue({
-                    sublistId: 'expense',
+                    sublistId: sublista,
                     fieldId: 'custcolmonto_enpesos'
                 });
                 
@@ -343,7 +364,7 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils) {
                 
                 
                 var estimatedAmount = rec.setCurrentSublistValue({
-                    sublistId: 'expense',
+                    sublistId: sublista,
                     fieldId: 'estimatedamount',
                     value: conversion
                 });
@@ -359,11 +380,11 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils) {
                     value: total
                 });
                 thisRecord.getCurrentSublistField({
-                    sublistId: 'expense',
+                    sublistId: sublista,
                     fieldId: 'estimatedamount'
                 }).isDisabled = true;
                 thisRecord.getCurrentSublistField({
-                    sublistId: 'expense',
+                    sublistId: sublista,
                     fieldId: 'custcolmonto_enpesos'
                 }).isDisabled = true;
                 
