@@ -1,10 +1,72 @@
 //Utils v2
-define(['N/record', 'N/search','N/runtime','N/format','N/query'],
+define(['N/record', 'N/search','N/runtime','N/format','N/query','N/currency'],
 
-function(record, search, runtime, format, query) {
+function(record, search, runtime, format, query,currency) {
     
     function getLog(scriptName){
         log.debug('llamado correcto de utils',scriptName)
+    }
+     function currencyConvert(monedaOrigen,monedaSalida){
+       
+        var origen = ''
+        var salida = ''
+            switch(monedaOrigen){
+                case '1':
+                    origen = 'MXN'
+                    break;
+                case '2': 
+                    origen = 'USD'
+                    break;
+                case '3': 
+                    origen = 'CAD'
+                    break;
+                case '4': 
+                    origen = 'EUR'
+                    break;
+                case '5': 
+                    origen = 'GBP'
+                    break;
+                case '6': 
+                    origen = 'CZK'
+                    break;
+                case '7': 
+                    origen = 'CNY'
+                    break;
+                
+            }
+            switch(monedaSalida){
+                case '1':
+                    salida = 'MXN'
+                    break;
+                case '2': 
+                    salida = 'USD'
+                    break;
+                case '3': 
+                    salida = 'CAD'
+                    break;
+                case '4': 
+                    salida = 'EUR'
+                    break;
+                case '5': 
+                    salida = 'GBP'
+                    break;
+                case '6': 
+                    salida = 'CZK'
+                    break;
+                case '7': 
+                    salida = 'CNY'
+                    break;
+                
+            }
+           
+            var rate = currency.exchangeRate({
+                source: origen,
+                target: salida,
+                //date: new Date('7/28/2015')
+            });
+        
+
+        return rate
     }
     function getConf(configuracion){
         var x=configuracion.split(',')
@@ -375,6 +437,7 @@ function(record, search, runtime, format, query) {
 
     return {
         getLog: getLog,
+        currencyConvert:currencyConvert,
         getConf:getConf,
         dateToString:dateToString,
         stringToDate:stringToDate,
