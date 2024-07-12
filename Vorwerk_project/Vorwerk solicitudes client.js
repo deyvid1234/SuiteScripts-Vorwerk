@@ -3,9 +3,9 @@
  * @NScriptType ClientScript
  * @NModuleScope SameAccount
  */
-define(['N/record','N/ui/dialog','N/http','N/https','N/search','N/currentRecord'],
+define(['N/record','N/ui/dialog','N/http','N/https','N/search','N/currentRecord','N/currency','SuiteScripts/Vorwerk_project/Vorwerk Utils V2.js'],
 
-function(record,dialog,http,https,search,currentRecord) {
+function(record,dialog,http,https,search,currentRecord,currency,Utils) {
     
     /**
      * Function to be executed after page is initialized.
@@ -22,10 +22,7 @@ function(record,dialog,http,https,search,currentRecord) {
             sublistId: 'expense',
             fieldId: 'estimatedamount'
         }).isDisabled = true;
-        thisRecord.getCurrentSublistField({
-            sublistId: 'expense',
-            fieldId: 'custcolmonto_enpesos'
-        }).isDisabled = true;
+        
         
     	return true;
     }
@@ -50,10 +47,10 @@ function(record,dialog,http,https,search,currentRecord) {
             });
             var fieldid = scriptContext.fieldId;
             var thisRecord = scriptContext.currentRecord;
-            if(customform == '231'){
+            if(customform == '231'){//formulario custom para employee centre
                 console.log('customform',customform)
                 
-                if(fieldid == 'custcol_cuentacustom'){
+                if(fieldid == 'custcol_cuentacustom'){//cuando se ingresa la cuenta en elcmpo custom se llama al suitelet para obtener la categoria
                     console.log('modificamos cuenta custom')
                     var cuentaCustom = rec.getCurrentSublistValue({
                         sublistId: 'expense',
@@ -71,7 +68,7 @@ function(record,dialog,http,https,search,currentRecord) {
                     }).body;
                     console.log('response',response.slice(1, -1))
                     var categoria = response.slice(1, -1)
-                    var cuentaCustom = rec.setCurrentSublistValue({
+                    var cuentaCustom = rec.setCurrentSublistValue({//seteamos la categoria en su campo
                         sublistId: 'expense',
                         fieldId: 'category_display',
                         value: categoria
@@ -79,7 +76,7 @@ function(record,dialog,http,https,search,currentRecord) {
                     
                     
                 }
-                if(fieldid =='custcol7'){
+                if(fieldid =='custcol7'){//cuando se agrega el vendor llamamos al suitelet para obtener la moneda del proveedor
                     var vendor = rec.getCurrentSublistValue({
                         sublistId: 'expense',
                         fieldId: 'custcol7'
@@ -97,13 +94,13 @@ function(record,dialog,http,https,search,currentRecord) {
                     }).body;
                     console.log('response',response.slice(1, -1))
                     var currencyVendor = response.slice(1, -1)
-                    var monedaProveedor = rec.setCurrentSublistValue({
+                    var monedaProveedor = rec.setCurrentSublistValue({//seteamos el dato de la moneda en el campo custom
                         sublistId: 'expense',
                         fieldId: 'custcol_moneda_proveedor',
                         value: currencyVendor
                     });  
                     
-                    thisRecord.getCurrentSublistField({
+                    thisRecord.getCurrentSublistField({//habilitamos los campos de Monto en moneda del proveedor y monto en pesos para poder ingresr los montos
                         sublistId: 'expense',
                         fieldId: 'estimatedamount'
                     }).isDisabled = false;
@@ -121,7 +118,7 @@ function(record,dialog,http,https,search,currentRecord) {
                     sublistId: 'expense',
                     fieldId: 'estimatedamount'
                 });
-                if(fieldid =='estimatedamount'&& montoPesos== ''){
+                if(fieldid =='estimatedamount'&& montoPesos== ''){//Si se ingresa el monto en la moneda del proveedor se hara la conversion a pesos
                     console.log('entro monto estimate 231')
                     var vendor = rec.getCurrentSublistValue({
                         sublistId: 'expense',
@@ -132,7 +129,7 @@ function(record,dialog,http,https,search,currentRecord) {
 
                     var url = 'https://3367613-sb1.app.netsuite.com/app/site/hosting/scriptlet.nl?script=1506&deploy=1';
                     
-                    var headers = {'Content-Type': 'application/json'};
+                    var headers = {'Content-Type': 'application/json'};//llamada al suitelet para obtener la moneda del proveedor
                     var response = https.post({
                         url: url,
                         body : JSON.stringify({vendor:vendor,proceso:proceso}),
@@ -141,21 +138,16 @@ function(record,dialog,http,https,search,currentRecord) {
                     console.log('response',response.slice(1, -1))
                     var currencyVendor = response.slice(1, -1)
                     
-                    var estimatedAmount = rec.getCurrentSublistValue({
+                    var estimatedAmount = rec.getCurrentSublistValue({//se obtiene el monto
                         sublistId: 'expense',
                         fieldId: 'estimatedamount'
                     });
                     console.log('estimatedAmount',estimatedAmount)
-                    var cambio= 1
-                    if(currencyVendor=='2'){
-                        cambio = 17
-                    } else if(currencyVendor == '4'){
-                        cambio = 19
-                    }
+                    var rate = Utils.currencyConvert(currencyVendor,'1');//se obtiene el rate desde el utils
                     
-                    var conversion = estimatedAmount * cambio
+                    var conversion = estimatedAmount * rate
                     
-                    var montoPesos = rec.setCurrentSublistValue({
+                    var montoPesos = rec.setCurrentSublistValue({//seteamos el monto en pesos e su respectivo campo
                         sublistId: 'expense',
                         fieldId: 'custcolmonto_enpesos',
                         value: conversion
@@ -164,15 +156,23 @@ function(record,dialog,http,https,search,currentRecord) {
                         fieldId: 'custbody_monto_pesos'
                     });
 
-                    var total = campoTotal + conversion
+                    var total = campoTotal + conversion//se suma con el campo del total
                     console.log('total',total)
-                    var montoTotal = rec.setValue({
+                    var montoTotal = rec.setValue({//setea el nuevo total en el campo Monto total en pesos
                         fieldId: 'custbody_monto_pesos',
                         value: total
                     });
+                    thisRecord.getCurrentSublistField({//se vuelven a deshabilirat los campos de montos
+                        sublistId: 'expense',
+                        fieldId: 'estimatedamount'
+                    }).isDisabled = true;
+                    thisRecord.getCurrentSublistField({
+                        sublistId: 'expense',
+                        fieldId: 'custcolmonto_enpesos'
+                    }).isDisabled = true;
                     
                 }
-                if(fieldid =='custcolmonto_enpesos' && estimatedAmount== ''){
+                if(fieldid =='custcolmonto_enpesos' && estimatedAmount== ''){//si se ingresa el monto en pesos hace la conversion a la moneda del proveedor
                     console.log('entro monto 231')
                     var vendor = rec.getCurrentSublistValue({
                         sublistId: 'expense',
@@ -181,7 +181,7 @@ function(record,dialog,http,https,search,currentRecord) {
                     var proceso = 'getCurrency'
                     console.log('vendor',vendor) 
 
-                    var url = 'https://3367613-sb1.app.netsuite.com/app/site/hosting/scriptlet.nl?script=1506&deploy=1';
+                    var url = 'https://3367613-sb1.app.netsuite.com/app/site/hosting/scriptlet.nl?script=1506&deploy=1';//llamada al suitelet para obtener la moneda del proveedor
                     
                     var headers = {'Content-Type': 'application/json'};
                     var response = https.post({
@@ -197,15 +197,10 @@ function(record,dialog,http,https,search,currentRecord) {
                         fieldId: 'custcolmonto_enpesos'
                     });
                     
-                    var cambio= 1
-                    if(currencyVendor=='2'){
-                        cambio = 17
-                    } else if(currencyVendor == '4'){
-                        cambio = 19
-                    }
-                    var conversion = montoPesos / cambio
+                    var rate = Utils.currencyConvert('1',currencyVendor);//se obtiene el rate desde el utils
+                    var conversion = montoPesos * rate
                     
-                    var estimatedAmount = rec.setCurrentSublistValue({
+                    var estimatedAmount = rec.setCurrentSublistValue({//seteamos el monto en la moneda del proveedor
                         sublistId: 'expense',
                         fieldId: 'estimatedamount',
                         value: conversion
@@ -213,14 +208,21 @@ function(record,dialog,http,https,search,currentRecord) {
                     var campoTotal = rec.getValue({
                         fieldId: 'custbody_monto_pesos'
                     });
-                    console.log('campoTotal',campoTotal)
-                    console.log('montoPesos',montoPesos)
+                    
                     var total = campoTotal + montoPesos
                     console.log('total',total)
-                    var montoTotal = rec.setValue({
+                    var montoTotal = rec.setValue({//se suma con el campo de total y se asigna el nuevo total
                         fieldId: 'custbody_monto_pesos',
                         value: total
                     });
+                    thisRecord.getCurrentSublistField({//se deshabilitan los campos de montos
+                        sublistId: 'expense',
+                        fieldId: 'estimatedamount'
+                    }).isDisabled = true;
+                    thisRecord.getCurrentSublistField({
+                        sublistId: 'expense',
+                        fieldId: 'custcolmonto_enpesos'
+                    }).isDisabled = true;
                     
                 }
 
@@ -228,8 +230,8 @@ function(record,dialog,http,https,search,currentRecord) {
 
             
 
-            if(fieldid =='povendor' && customform != '231'){
-                var vendor = rec.getCurrentSublistValue({
+            if(fieldid =='povendor' && customform != '231'){//proceso para el form Solicitur Vorwerk
+                var vendor = rec.getCurrentSublistValue({//se obtiene el vendor, su moneda y se setea en el campo de moneda del proveedor
                     sublistId: 'expense',
                     fieldId: 'povendor'
                 });
@@ -248,7 +250,7 @@ function(record,dialog,http,https,search,currentRecord) {
                     value: currencyVendor
                 });  
                 
-                thisRecord.getCurrentSublistField({
+                thisRecord.getCurrentSublistField({//habilitamos los campos de montos
                     sublistId: 'expense',
                     fieldId: 'estimatedamount'
                 }).isDisabled = false;
@@ -266,7 +268,7 @@ function(record,dialog,http,https,search,currentRecord) {
                     sublistId: 'expense',
                     fieldId: 'estimatedamount'
                 });
-            if(fieldid =='estimatedamount'&& montoPesos== ''&& customform != '231'){
+            if(fieldid =='estimatedamount'&& montoPesos== ''&& customform != '231'){//si se ingresa el monto en la moneda del proveedor se hace la conversion a pesos y se setea al campo de monto en pesos
                 console.log('entro monto estimate')
                 var vendor = rec.getCurrentSublistValue({
                     sublistId: 'expense',
@@ -280,21 +282,17 @@ function(record,dialog,http,https,search,currentRecord) {
                     isDynamic: false,
                 });
                 var currencyVendor = vendorRec.getValue('currency')
-                
+                console.log('currencyVendor',currencyVendor)
+                var monedaSalida = 'MXN'
                 var estimatedAmount = rec.getCurrentSublistValue({
                     sublistId: 'expense',
                     fieldId: 'estimatedamount'
                 });
                 console.log('estimatedAmount',estimatedAmount)
-                var cambio= 1
-                if(currencyVendor=='2'){
-                    cambio = 17
-                } else if(currencyVendor == '4'){
-                    cambio = 19
-                }
-                
-                var conversion = estimatedAmount * cambio
-                
+                var rate = Utils.currencyConvert(currencyVendor,'1');
+                console.log('rate',rate)
+                var conversion = estimatedAmount * rate;
+
                 var montoPesos = rec.setCurrentSublistValue({
                     sublistId: 'expense',
                     fieldId: 'custcolmonto_enpesos',
@@ -310,20 +308,23 @@ function(record,dialog,http,https,search,currentRecord) {
                     fieldId: 'custbody_monto_pesos',
                     value: total
                 });
+                thisRecord.getCurrentSublistField({
+                    sublistId: 'expense',
+                    fieldId: 'estimatedamount'
+                }).isDisabled = true;
+                thisRecord.getCurrentSublistField({
+                    sublistId: 'expense',
+                    fieldId: 'custcolmonto_enpesos'
+                }).isDisabled = true;
                 
             }
-            if(fieldid =='custcolmonto_enpesos' && estimatedAmount== ''&& customform != '231'){
+            if(fieldid =='custcolmonto_enpesos' && estimatedAmount== ''&& customform != '231'){//si el monto se ingresa en pesos se hace la conversion a la moneda de proveedor
                 console.log('entro monto')
                 var vendor = rec.getCurrentSublistValue({
                     sublistId: 'expense',
                     fieldId: 'povendor'
                 });
-                if(customform == '231'){
-                    vendor = rec.getCurrentSublistValue({
-                        sublistId: 'expense',
-                        fieldId: 'custcol7'
-                    }); 
-                }
+                
                 var vendorRec= record.load({
                     type: 'vendor',
                     id: vendor,
@@ -336,13 +337,10 @@ function(record,dialog,http,https,search,currentRecord) {
                     fieldId: 'custcolmonto_enpesos'
                 });
                 
-                var cambio= 1
-                if(currencyVendor=='2'){
-                    cambio = 17
-                } else if(currencyVendor == '4'){
-                    cambio = 19
-                }
-                var conversion = montoPesos / cambio
+                var rate = Utils.currencyConvert('1',currencyVendor);
+                console.log('rate 4',rate)
+                var conversion = montoPesos * rate;
+                
                 
                 var estimatedAmount = rec.setCurrentSublistValue({
                     sublistId: 'expense',
@@ -360,6 +358,14 @@ function(record,dialog,http,https,search,currentRecord) {
                     fieldId: 'custbody_monto_pesos',
                     value: total
                 });
+                thisRecord.getCurrentSublistField({
+                    sublistId: 'expense',
+                    fieldId: 'estimatedamount'
+                }).isDisabled = true;
+                thisRecord.getCurrentSublistField({
+                    sublistId: 'expense',
+                    fieldId: 'custcolmonto_enpesos'
+                }).isDisabled = true;
                 
 		  }
     		return true;
