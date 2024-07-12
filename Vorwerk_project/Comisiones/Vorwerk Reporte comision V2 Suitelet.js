@@ -1228,6 +1228,7 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
                     if(reactivacion == ''){
                         dcontratacion = Utils.stringToDate(hiredate)
                     }else{
+                        log.debug('viene de react')
                         dcontratacion = Utils.stringToDate(reactivacion)
                         dObjetivo2=allPresentadoras[i]['obj_2_reactivacion']
                     }
@@ -1249,7 +1250,12 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
                                 var key = Object.keys(thisPeriodSO[i][x])
                                 var tipoVenta=thisPeriodSO[i][x][key]['custbody_tipo_venta'] 
                                 var dateSO=thisPeriodSO[i][x][key]['trandate']
-                                if(tipoVenta  != 'TM Ganada' && Utils.stringToDate(dateSO)<=Utils.stringToDate(dObjetivo2)){
+                                log.debug('dObjetivo2',dObjetivo2)
+                                dObjetivo2 = Utils.stringToDate(dObjetivo2)
+                                log.debug('dObjetivo2',dObjetivo2)
+                                dObjetivo2.setDate(dObjetivo2.getDate() + 2);
+                                log.debug('dObjetivo2 dos dias despues',dObjetivo2)
+                                if(tipoVenta  != 'TM Ganada' && Utils.stringToDate(dateSO)<=dObjetivo2){
                                     ordenesPeriodo.push(thisPeriodSO[i][x])
                                 }
                             }
