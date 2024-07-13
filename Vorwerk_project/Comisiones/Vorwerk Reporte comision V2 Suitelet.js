@@ -1222,16 +1222,22 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
                     }else{
                         var noComisiona = 6
                     }
-                    var dObjetivo2 = allPresentadoras[i]['objetivo_2']
-                    //log.debug('confRec',confRec)
+                    var dObjetivo2 
+                
                     var dcontratacion
                     if(reactivacion == ''){
                         dcontratacion = Utils.stringToDate(hiredate)
+                        
+                        dObjetivo2 = Utils.stringToDate(allPresentadoras[i]['objetivo_2'])
+                        dObjetivo2.setDate(dObjetivo2.getDate() + 2);
                     }else{
-                        log.debug('viene de react')
+                      
                         dcontratacion = Utils.stringToDate(reactivacion)
-                        dObjetivo2=allPresentadoras[i]['obj_2_reactivacion']
+                        
+                        dObjetivo2 = Utils.stringToDate(allPresentadoras[i]['obj_2_reactivacion'])
+                        dObjetivo2.setDate(dObjetivo2.getDate() + 2);
                     }
+                   
                     if(dcontratacion > dHistorico){
                         var ventasHistorico
                         if(historicoSO[i]){
@@ -1250,11 +1256,8 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
                                 var key = Object.keys(thisPeriodSO[i][x])
                                 var tipoVenta=thisPeriodSO[i][x][key]['custbody_tipo_venta'] 
                                 var dateSO=thisPeriodSO[i][x][key]['trandate']
-                                log.debug('dObjetivo2',dObjetivo2)
-                                dObjetivo2 = Utils.stringToDate(dObjetivo2)
-                                log.debug('dObjetivo2',dObjetivo2)
-                                dObjetivo2.setDate(dObjetivo2.getDate() + 2);
-                                log.debug('dObjetivo2 dos dias despues',dObjetivo2)
+                                
+                        
                                 if(tipoVenta  != 'TM Ganada' && Utils.stringToDate(dateSO)<=dObjetivo2){
                                     ordenesPeriodo.push(thisPeriodSO[i][x])
                                 }
@@ -1335,9 +1338,9 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
                             fechaObjetivo = allPresentadoras[i]['obj_2_reactivacion']
                         }
                         fechaObjetivo = Utils.stringToDate(fechaObjetivo)
-                       
+                        
                         fechaObjetivo.setDate(fechaObjetivo.getDate() + 2);
-
+                        
                         if(dcontratacion > dHistorico && ventasReclutaTP){//Si su contratacion/Reactivacion es anterios a 3 meses se asume que ya se pagó su reclutamiento
                             
                             var salesReclutaTP =[]
