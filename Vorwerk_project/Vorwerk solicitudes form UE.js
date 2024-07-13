@@ -77,8 +77,10 @@ function(runtime,url,https,record) {
             });
             log.debug('listLineCountExpense',listLineCountExpense)
             log.debug('listLineCountItem',listLineCountItem)
+            var totalGastos = 0
+            var totalItem = 0 
             if(listLineCountExpense){
-                var total = 0 
+                
                 for (var i = 0; i < listLineCountExpense; i++) {
                     
                     var montoPesos = rec.getSublistValue({
@@ -87,18 +89,15 @@ function(runtime,url,https,record) {
                         line: i
                     });
                     
-                    total = total+montoPesos
+                    totalGastos = totalGastos+montoPesos
                     log.debug('total',total)
                     
                     
                 }   
-                var montoTotal = rec.setValue({
-                        fieldId: "custbody_monto_pesos",
-                        value : total                                                                                                                                                                 
-                    });
+                
             }
             if(listLineCountItem){
-                var total = 0 
+                 
                 for (var i = 0; i < listLineCountItem; i++) {
                     
                     var montoPesos = rec.getSublistValue({
@@ -107,19 +106,19 @@ function(runtime,url,https,record) {
                         line: i
                     });
                     
-                    total = total+montoPesos
-                    log.debug('total',total)
+                    totalItem = totalItem+montoPesos
+                    log.debug('total',totalItem)
                     
                     
                 }   
-                var montoTotal = rec.setValue({
-                        fieldId: "custbody_monto_pesos",
-                        value : total                                                                                                                                                                 
-                    });
+                
             }
             
-               
-            
+            var total = totalGastos + totalItem   
+            var montoTotal = rec.setValue({
+                fieldId: "custbody_monto_pesos",
+                value : total                                                                                                                                                                 
+            });
 
         }catch(err){
             log.error("error beforeSubmit",err);
