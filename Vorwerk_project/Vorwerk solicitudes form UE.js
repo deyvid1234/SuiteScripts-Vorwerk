@@ -44,12 +44,10 @@ function(runtime,url,https,record) {
             var formulario = rec.getValue('customform')
             log.debug('formulario',formulario)//formulario 222 es solicitus vorwerk, 231 custom requisition  
             if(formulario == '231'){
-               
-                var listLineCount = rec.getLineCount({
+               var listLineCount = rec.getLineCount({
                  sublistId: "expense"
                 });
-               
-              
+
                 for (var i = 0; i < listLineCount; i++) {
                     
                     var vendorCustom = rec.getSublistValue({
@@ -71,6 +69,58 @@ function(runtime,url,https,record) {
             
                 
             }
+            var listLineCountExpense = rec.getLineCount({
+                sublistId: "expense"
+            });
+            var listLineCountItem = rec.getLineCount({
+                sublistId: "item"
+            });
+            log.debug('listLineCountExpense',listLineCountExpense)
+            log.debug('listLineCountItem',listLineCountItem)
+            if(listLineCountExpense){
+                var total = 0 
+                for (var i = 0; i < listLineCountExpense; i++) {
+                    
+                    var montoPesos = rec.getSublistValue({
+                        sublistId: "expense",
+                        fieldId: "custcolmonto_enpesos",//vendor
+                        line: i
+                    });
+                    
+                    total = total+montoPesos
+                    log.debug('total',total)
+                    
+                    
+                }   
+                var montoTotal = rec.setValue({
+                        fieldId: "custbody_monto_pesos",
+                        value : total                                                                                                                                                                 
+                    });
+            }
+            if(listLineCountItem){
+                var total = 0 
+                for (var i = 0; i < listLineCountItem; i++) {
+                    
+                    var montoPesos = rec.getSublistValue({
+                        sublistId: "item",
+                        fieldId: "custcolmonto_enpesos",//vendor
+                        line: i
+                    });
+                    
+                    total = total+montoPesos
+                    log.debug('total',total)
+                    
+                    
+                }   
+                var montoTotal = rec.setValue({
+                        fieldId: "custbody_monto_pesos",
+                        value : total                                                                                                                                                                 
+                    });
+            }
+            
+               
+            
+
         }catch(err){
             log.error("error beforeSubmit",err);
         }
