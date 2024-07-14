@@ -223,8 +223,57 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils) {
                     }).isDisabled = true;
                     
                 }
+                if(fieldid =='custcol_tc'&& sublista == 'expense'){
+                    var idTax = rec.getCurrentSublistValue({
+                        sublistId: sublista,
+                        fieldId: 'custcol_tc'
+                    });
+                    console.log('idTax',idTax)
+                    var proceso = 'getRateTax'
+                    
+                    var url = 'https://3367613-sb1.app.netsuite.com/app/site/hosting/scriptlet.nl?script=1506&deploy=1';//llamada al suitelet para obtener la el rate con el tax code
+                    
+                    var headers = {'Content-Type': 'application/json'};
+                    var response = https.post({
+                        url: url,
+                        body : JSON.stringify({idTax:idTax,proceso:proceso}),
+                        headers: headers
+                    }).body;
+
+                    console.log('response',response)
+
+                    var rateTax = response
+                    console.log('rateTax',rateTax)
+
+                    var montoPesos = rec.getCurrentSublistValue({
+                        sublistId: sublista,
+                        fieldId: 'estimatedamount'
+                    });
+                    var finalAmount
+                    var impuesto
+                    if (rateTax < 0) {
+                        console.log('negativo')
+                        impuesto = (Math.abs(rateTax) / 100) * montoPesos;
+                        finalAmount = montoPesos - impuesto;
+                    } else {
+                        console.log('positivo')
+                        impuesto = (rateTax / 100) * montoPesos;
+                        finalAmount = montoPesos + impuesto;
+                    }
+                    
+                    console.log('finalAmount',finalAmount)
+                    amount
+                    var amount = rec.setCurrentSublistValue({
+                        sublistId: sublista,
+                        fieldId: 'estimatedamount',
+                        value: finalAmount
+                    });
+                }
 
             }
+
+
+            //form 222
             var sublista = ''
             if(sublistName =='expense'){
                     sublista = 'expense'
@@ -274,7 +323,7 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils) {
                 });
             
 
-            if(fieldid =='estimatedamount'&& montoPesos== ''&& customform != '231' ){//si se ingresa el monto en la moneda del proveedor se hace la conversion a pesos y se setea al campo de monto en pesos
+            if(fieldid =='estimatedamount'&& customform != '231' ){//si se ingresa el monto en la moneda del proveedor se hace la conversion a pesos y se setea al campo de monto en pesos
                 console.log('entro monto estimate',sublista)
                 var vendor = rec.getCurrentSublistValue({
                     sublistId: sublista,
@@ -304,7 +353,18 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils) {
                     fieldId: 'custcolmonto_enpesos',
                     value: conversion
                 });
-                
+                if(sublista == 'item'){
+                    var amount = rec.setCurrentSublistValue({
+                        sublistId: sublista,
+                        fieldId: 'amount',
+                        value: conversion
+                    });
+                    var rate = rec.setCurrentSublistValue({
+                        sublistId: sublista,
+                        fieldId: 'rate',
+                        value: conversion
+                    });
+                }
                 thisRecord.getCurrentSublistField({
                     sublistId: sublista,
                     fieldId: 'estimatedamount'
@@ -354,7 +414,46 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils) {
                     fieldId: 'custcolmonto_enpesos'
                 }).isDisabled = true;
                 
-		  }
+		    }
+
+            if(fieldid =='custcol_tc'&& sublista == 'expense'){
+                var idTax = rec.getCurrentSublistValue({
+                    sublistId: sublista,
+                    fieldId: 'custcol_tc'
+                });
+                console.log('idTax',idTax)
+                var taxRec= record.load({
+                    type: 'salestaxitem',
+                    id: idTax,
+                    isDynamic: false,
+                });
+                var rateTax = taxRec.getValue('rate')
+                console.log('rateTax',rateTax)
+
+                var montoPesos = rec.getCurrentSublistValue({
+                    sublistId: sublista,
+                    fieldId: 'estimatedamount'
+                });
+                var finalAmount
+                var impuesto
+                if (rateTax < 0) {
+                    console.log('negativo')
+                    impuesto = (Math.abs(rateTax) / 100) * montoPesos;
+                    finalAmount = montoPesos - impuesto;
+                } else {
+                    console.log('positivo')
+                    impuesto = (rateTax / 100) * montoPesos;
+                    finalAmount = montoPesos + impuesto;
+                }
+                
+                console.log('finalAmount',finalAmount)
+                amount
+                var amount = rec.setCurrentSublistValue({
+                    sublistId: sublista,
+                    fieldId: 'estimatedamount',
+                    value: finalAmount
+                });
+            }
     		return true;
     	}catch(err){
     		log.error("error fieldChanged",err);

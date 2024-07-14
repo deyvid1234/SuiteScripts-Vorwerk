@@ -51,7 +51,8 @@ function(serverWidget, search, runtime,format,record) {
                     });
 
                     context.response.write(JSON.stringify(categoria));
-                }else if(proceso == 'getCurrency'){
+                } 
+                if(proceso == 'getCurrency'){
                     var vendor = body.vendor
 
                     var vendorRec= record.load({
@@ -61,6 +62,18 @@ function(serverWidget, search, runtime,format,record) {
                     });
                     var currencyVendor = vendorRec.getValue('currency')
                     context.response.write(JSON.stringify(currencyVendor));
+                }
+                if(proceso == 'getRateTax'){
+                    var idTax = body.idTax
+
+                    var taxRec= record.load({
+                        type: 'salestaxitem',
+                        id: idTax,
+                        isDynamic: false,
+                    });
+                    var rateTax = taxRec.getValue('rate')
+                    
+                    context.response.write(JSON.stringify(rateTax));
                 }
                 
 
