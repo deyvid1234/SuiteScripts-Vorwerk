@@ -85,7 +85,7 @@ function(runtime,url,https,record) {
                     
                     var montoPesos = rec.getSublistValue({
                         sublistId: "expense",
-                        fieldId: "custcolmonto_enpesos",//vendor
+                        fieldId: "custcolsub_impuestos",//vendor
                         line: i
                     });
                     
@@ -102,7 +102,7 @@ function(runtime,url,https,record) {
                     
                     var montoPesos = rec.getSublistValue({
                         sublistId: "item",
-                        fieldId: "amount",//vendor 
+                        fieldId: "custcolsub_impuestos",//vendor 
                         line: i
                     });
                     
