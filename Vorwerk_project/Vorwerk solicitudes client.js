@@ -26,7 +26,14 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils) {
             sublistId: 'item',
             fieldId: 'estimatedamount'
         }).isDisabled = true;
-        
+        thisRecord.getCurrentSublistField({
+            sublistId: 'item',
+            fieldId: 'custcol_tc'
+        }).isDisabled = true;
+        thisRecord.getCurrentSublistField({
+            sublistId: 'expense',
+            fieldId: 'custcol_tc'
+        }).isDisabled = true;
     	return true;
     }
 
@@ -127,7 +134,7 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils) {
 
                 }
 
-                if(sublista == 'item' && fieldid =='povendor' ){//proceso para llenar el campo monto en pesos en los articulos, sin que se edite el campo de estamatedamount
+                if(sublista == 'item' && (fieldid =='povendor'||fieldid =='quantity') ){//proceso para llenar el campo monto en pesos en los articulos, sin que se edite el campo de estamatedamount
                     console.log('aqui setear pesos')
                     var vendor = rec.getCurrentSublistValue({//se obtiene el vendor, su moneda y se setea en el campo de moneda del proveedor
                         sublistId: sublista,
@@ -177,6 +184,29 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils) {
                         sublistId: sublista,
                         fieldId: 'custcolmonto_enpesos'
                     }).isDisabled = true;
+
+                    var item = rec.getCurrentSublistValue({//se obtiene el item, su tax scheduled y el impuesto
+                        sublistId: 'item',
+                        fieldId: 'item'
+                    });
+                    console.log('item',item)
+                    var proceso = 'getTaxScheduled'
+                    
+                    var url = 'https://3367613-sb1.app.netsuite.com/app/site/hosting/scriptlet.nl?script=1506&deploy=1';
+                    
+                    var headers = {'Content-Type': 'application/json'};
+                    var response = https.post({
+                        url: url,
+                        body : JSON.stringify({item:item,proceso:proceso}),
+                        headers: headers
+                    }).body;
+                    console.log('response',response.slice(1, -1))
+                    var sub = response.slice(1, -1)
+                    var idTax = rec.setCurrentSublistValue({
+                        sublistId: sublista,
+                        fieldId: 'custcol_tc',
+                        value: sub
+                    });
                 }
                 var montoPesos = rec.getCurrentSublistValue({
                     sublistId: sublista,
@@ -221,7 +251,10 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils) {
                         fieldId: 'custcolmonto_enpesos',
                         value: conversion
                     });
-                    
+                    thisRecord.getCurrentSublistField({
+                        sublistId: sublista,
+                        fieldId: 'custcol_tc'
+                    }).isDisabled = false;
                     thisRecord.getCurrentSublistField({//se vuelven a deshabilirat los campos de montos
                         sublistId: 'expense',
                         fieldId: 'estimatedamount'
@@ -265,7 +298,10 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils) {
                         fieldId: 'estimatedamount',
                         value: conversion
                     });
-                    
+                    thisRecord.getCurrentSublistField({
+                        sublistId: sublista,
+                        fieldId: 'custcol_tc'
+                    }).isDisabled = false;
                     thisRecord.getCurrentSublistField({//se deshabilitan los campos de montos
                         sublistId: 'expense',
                         fieldId: 'estimatedamount'
@@ -321,6 +357,10 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils) {
                         fieldId: 'custcolsub_impuestos',
                         value: finalAmount
                     });
+                    thisRecord.getCurrentSublistField({
+                        sublistId: sublista,
+                        fieldId: 'custcol_tc'
+                    }).isDisabled = true;
                 }
 
             }
@@ -333,7 +373,10 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils) {
             }else if(sublistName =='item'){
                 sublista = 'item'
             }
-            
+            if(fieldid =='item' && customform != '231'){
+
+
+            }
             if(fieldid =='povendor' && customform != '231'){//proceso para el form Solicitur Vorwerk
                 
                 var vendor = rec.getCurrentSublistValue({//se obtiene el vendor, su moneda y se setea en el campo de moneda del proveedor
@@ -375,7 +418,7 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils) {
                 fieldId: 'estimatedamount'
             });
             
-            if(sublista == 'item' && fieldid =='povendor' && customform != '231' ){//proceso para llenar el campo monto en pesos en los articulos, sin que se edite el campo de estamatedamount
+            if(sublista == 'item' && (fieldid =='povendor' || fieldid == 'quantity') && customform != '231' ){//proceso para llenar el campo monto en pesos en los articulos, sin que se edite el campo de estamatedamount
                 console.log('aqui setear pesos')
                 var vendor = rec.getCurrentSublistValue({//se obtiene el vendor, su moneda y se setea en el campo de moneda del proveedor
                     sublistId: sublista,
@@ -418,6 +461,34 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils) {
                     sublistId: sublista,
                     fieldId: 'custcolmonto_enpesos'
                 }).isDisabled = true;
+                var item = rec.getCurrentSublistValue({//se obtiene el item, su tax scheduled y el impuesto
+                    sublistId: 'item',
+                    fieldId: 'item'
+                });
+                console.log('item',item)
+                var inventoryitem= record.load({
+                    type: 'inventoryitem',
+                    id: item,
+                    isDynamic: false,
+                });
+                var taxSchedule = inventoryitem.getValue('taxschedule')
+                console.log('taxSchedule',taxSchedule)
+                var taxRec= record.load({
+                    type: 'taxschedule',
+                    id: parseInt(taxSchedule),
+                    isDynamic: false,
+                });
+                var sub = taxRec.getSublistValue({//se obtiene el vendor, su moneda y se setea en el campo de moneda del proveedor
+                    sublistId: 'nexuses',
+                    fieldId: 'purchasetaxcode',
+                    line: 0
+                });
+                console.log('sub',sub)
+                var idTax = rec.setCurrentSublistValue({
+                    sublistId: sublista,
+                    fieldId: 'custcol_tc',
+                    value: sub
+                });
             }
 
             if(fieldid =='estimatedamount'&& customform != '231' ){//si se ingresa el monto en la moneda del proveedor se hace la conversion a pesos y se setea al campo de monto en pesos
@@ -450,7 +521,10 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils) {
                     fieldId: 'custcolmonto_enpesos',
                     value: conversion
                 });
-                
+                thisRecord.getCurrentSublistField({
+                        sublistId: sublista,
+                        fieldId: 'custcol_tc'
+                    }).isDisabled = false;
                 thisRecord.getCurrentSublistField({
                     sublistId: sublista,
                     fieldId: 'estimatedamount'
@@ -491,7 +565,10 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils) {
                     fieldId: 'estimatedamount',
                     value: conversion
                 });
-               
+                thisRecord.getCurrentSublistField({
+                        sublistId: sublista,
+                        fieldId: 'custcol_tc'
+                    }).isDisabled = false;
                 thisRecord.getCurrentSublistField({
                     sublistId: sublista,
                     fieldId: 'estimatedamount'
@@ -542,6 +619,10 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils) {
                     fieldId: 'custcolsub_impuestos',
                     value: finalAmount
                 });
+                thisRecord.getCurrentSublistField({
+                        sublistId: sublista,
+                        fieldId: 'custcol_tc'
+                    }).isDisabled = true;
             }
     		return true;
     	}catch(err){

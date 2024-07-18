@@ -235,6 +235,7 @@ function Orden_Compra_PDF(request, response) {
         strName += "<td colspan='10'>&nbsp;</td>";
         strName += "</tr>";
         
+        nlapiLogExecution('DEBUG', 'lines item', numberLinesItem);
         if(searchTransaction.length>0 && numberLinesItem != 0){  
             strName += "<tr>";
             strName += "<td align='center' colspan='10'><b>Articulos</b></td>";
@@ -264,13 +265,20 @@ function Orden_Compra_PDF(request, response) {
                 if (precio_tot * 1 < 0)
                     precio_tot = precio_tot * -1
                 if(unidades!=''){
+                    nlapiLogExecution('DEBUG', 'data', JSON.stringify({
+                    'currency': articulo,
+                    'exchange_rate': descripcion,
+                    'calculatedSubtotal': unidades,
+                    'taxtotal': cantidad
+                    
+                }));
                     strName += "<tr>";
-                    strName += "<td width='50%' border='0.5'>" + articulo + " " + descripcion + "</td>";
-                    strName += "<td width='10%' border='0.5'>" + unidades + "</td>";
-                    strName += "<td width='10%' border='0.5'>" + cantidad + "</td>";
-                    strName += "<td width='15%' border='0.5'>" + currencyFormat(precio_uni, 2, simbolo) + "</td>";
-                    strName += "<td width='15%' border='0.5'>" + currencyFormat(precio_tot, 2, simbolo) + "</td>";
-                    strName += "</tr>";
+                strName += "<td width='50%' border='0.5'>" + articulo + " " + descripcion + "</td>";
+                strName += "<td width='10%' border='0.5'>" + unidades + "</td>";
+                strName += "<td width='10%' border='0.5'>" + cantidad + "</td>";
+                strName += "<td width='15%' border='0.5'>" + currencyFormat(precio_uni, 2, simbolo) + "</td>";
+                strName += "<td width='15%' border='0.5'>" + currencyFormat(precio_tot, 2, simbolo) + "</td>";
+                strName += "</tr>";
                 }
                 
             }

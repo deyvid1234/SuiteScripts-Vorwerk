@@ -136,7 +136,55 @@ function(runtime,url,https,record) {
      * @Since 2015.2
      */
     function afterSubmit(scriptContext) {
+       /* var rec = scriptContext.newRecord;
+        var recordid = rec.id;
+        var formulario = rec.getValue('customform')
+        log.debug('formulario',formulario)//formulario 222 es solicitus vorwerk, 231 custom requisition  
+        if(formulario == '231'){
+            var solicitud = record.load({
+                id: recordid,
+                type: 'purchaserequisition',
+                isDynamic: false
+            });
 
+            var numLines = solicitud.getLineCount({
+                sublistId: 'expense'
+            });
+            for(var i =0; i<numLines; i++){ 
+
+                var cuentaEC = solicitud.getSublistValue({
+                    sublistId: 'expense',
+                    fieldId: 'custcol_cuentacustom',
+                    line: i
+                })
+                log.debug('cuentaEC',cuentaEC)
+                var eliminarCategoria = solicitud.getSublistValue({
+                    sublistId: 'expense',
+                    fieldId: 'custcoleliminar_categoria',
+                    line: i
+                })
+                log.debug('eliminarCategoria',eliminarCategoria)
+                if(eliminarCategoria == true){
+                    var categoria = solicitud.setSublistValue({//seteamos la categoria en su campo
+                        sublistId: 'expense',
+                        fieldId: 'category',
+                        line: i,
+                        value: ''
+                    });
+                }
+                
+                var account = solicitud.setSublistValue({//seteamos la categoria en su campo
+                    sublistId: 'expense',
+                    fieldId: 'account',
+                    line: i,
+                    value: cuentaEC
+                });
+
+            }
+            solicitud.save();
+
+        }*/
+        
     }
 
   

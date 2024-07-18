@@ -75,7 +75,29 @@ function(serverWidget, search, runtime,format,record) {
                     
                     context.response.write(JSON.stringify(rateTax));
                 }
-                
+                if(proceso == 'getTaxScheduled'){
+                    var item = body.item
+                    var inventoryitem= record.load({
+                        type: 'inventoryitem',
+                        id: item,
+                        isDynamic: false,
+                    });
+                    var taxSchedule = inventoryitem.getValue('taxschedule')
+                    
+                    var taxRec= record.load({
+                        type: 'taxschedule',
+                        id: parseInt(taxSchedule),
+                        isDynamic: false,
+                    });
+                    var sub = taxRec.getSublistValue({//se obtiene el vendor, su moneda y se setea en el campo de moneda del proveedor
+                        sublistId: 'nexuses',
+                        fieldId: 'purchasetaxcode',
+                        line: 0
+                    });
+                    
+                    
+                    context.response.write(JSON.stringify(sub));
+                }
 
 
     		}
