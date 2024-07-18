@@ -1239,13 +1239,15 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
                     }
                    
                     if(dcontratacion > dHistorico){
+                        log.debug('entra if dhist')
                         var ventasHistorico
                         if(historicoSO[i]){
+                            log.debug('entra if ventas hist',historicoSO[i])
                             ventasHistorico = historicoSO[i].length
                         }else{
                             ventasHistorico = 0
                         }
-                        //log.debug('ventasHistorico',ventasHistorico)
+                        log.debug('ventasHistorico',ventasHistorico)
                         var ordenesSCintegrante=[]
                         if(thisPeriodSO[i] && ventasHistorico < noComisiona){
                             var ordenesFaltantes= noComisiona-ventasHistorico
