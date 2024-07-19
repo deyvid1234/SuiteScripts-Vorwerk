@@ -298,7 +298,7 @@ function Orden_Compra_PDF(request, response) {
             strName += "<table table-layout='fixed' width='100%' border='1'>";
             strName += "<thead>";
             strName += "<tr>";
-            strName += "<td width='50%' border='0.5'><b>Memo</b></td>";
+            strName += "<td width='50%' border='0.5'><b>Descripcion</b></td>";
             strName += "<td width='20%' border='0.5'><b>Cuenta</b></td>";
             strName += "<td width='15%' border='0.5'><b>Categoria</b></td>";
             strName += "<td width='15%' border='0.5'><b>Monto</b></td>";
@@ -310,6 +310,9 @@ function Orden_Compra_PDF(request, response) {
                 var categoria = transaccion.getLineItemValue('expense', 'category_display', i);
                 //var location = transaccion.getLineItemValue('expense', 'location_display', i);
                 var memo = transaccion.getLineItemValue('expense', 'memo', i);
+                if(memo == null){
+                    memo = ''
+                }
                 strName += "<tr>";
                 strName += "<td width='50%' border='0.5' align='left'>" + memo + "</td>";
                 strName += "<td width='20%' border='0.5' align='left'>" + cuenta + "</td>";
