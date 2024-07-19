@@ -35,7 +35,7 @@ function Orden_Compra_PDF(request, response) {
         }
 
         if (nlapiGetContext().getEnvironment() == "SANDBOX") {
-            companyInfoLogoURL = '/core/media/media.nl?id=2461144&c=3367613_SB1&h=eEB3Zn7T6vRFsbPljmmuN0ORPNQ5jSQGt3ys437w_kszrBvh'
+            companyInfoLogoURL = '/core/media/media.nl?id=2576941&c=3367613&h=EVQpFOUkyARO0Xup5ue_KhGuik1V9R-xb--eYG7FiF_7YPaV'
         }
         else {
             companyInfoLogoURL = '/core/media/media.nl?id=2576941&c=3367613&h=EVQpFOUkyARO0Xup5ue_KhGuik1V9R-xb--eYG7FiF_7YPaV'
@@ -144,7 +144,8 @@ function Orden_Compra_PDF(request, response) {
             'taxtotal': iva,
             'total': total
         }));
-
+        var numberLines = transaccion.getLineItemCount('expense');//obtiene las lineas de la subtab expense
+        var numberLinesItem=transaccion.getLineItemCount('item');
         var Encabezado = '';
 
         Encabezado += "<p align='center'><img width=\"100%\" height=\"100%\" " + companyInfoLogoURL + "><br/></p>";
@@ -233,41 +234,101 @@ function Orden_Compra_PDF(request, response) {
         strName += "<tr>";
         strName += "<td colspan='10'>&nbsp;</td>";
         strName += "</tr>";
-        strName += "<tr>";
-        strName += "<td colspan='10'>";
-        strName += "<table table-layout='fixed' width='100%' border='1'>";
-        strName += "<thead>";
-        strName += "<tr>";
-        strName += "<td width='50%' border='0.5'><b>Articulo</b></td>";
-        strName += "<td width='10%' border='0.5'><b>Unidades</b></td>";
-        strName += "<td width='10%' border='0.5'><b>Cantidad</b></td>";
-        strName += "<td width='15%' border='0.5'><b>Precio Unit.</b></td>";
-        strName += "<td width='15%' border='0.5'><b>Precio Tot.</b></td>";
-        strName += "</tr>";
-        strName += "</thead>";
-        for (var x = 1; x < searchTransaction.length; x++) {
-            var articulo = nlapiEscapeXML(returnBlank(searchTransaction[x].getText('item')));
-            var descripcion = nlapiEscapeXML(returnBlank(searchTransaction[x].getValue('displayname', 'item')));
-            var unidades = returnBlank(searchTransaction[x].getValue('unit'));
-            var cantidad = returnNumber(searchTransaction[x].getValue('quantity'));
-            if (cantidad * 1 < 0)
-                cantidad = cantidad * -1
-            var precio_uni = returnNumber(searchTransaction[x].getValue('rate')) / exchange_rate;
-            var precio_tot = returnNumber(searchTransaction[x].getValue('fxamount'));
-            if (precio_tot * 1 < 0)
-                precio_tot = precio_tot * -1
-
+        
+        nlapiLogExecution('DEBUG', 'lines item', numberLinesItem);
+        if(searchTransaction.length>0 && numberLinesItem != 0){  
             strName += "<tr>";
-            strName += "<td width='50%' border='0.5'>" + articulo + " " + descripcion + "</td>";
-            strName += "<td width='10%' border='0.5'>" + unidades + "</td>";
-            strName += "<td width='10%' border='0.5'>" + cantidad + "</td>";
-            strName += "<td width='15%' border='0.5'>" + currencyFormat(precio_uni, 2, simbolo) + "</td>";
-            strName += "<td width='15%' border='0.5'>" + currencyFormat(precio_tot, 2, simbolo) + "</td>";
+            strName += "<td align='center' colspan='10'><b>Articulos</b></td>";
             strName += "</tr>";
+            strName += "<tr>";
+            strName += "<td colspan='10'>";
+            strName += "<table table-layout='fixed' width='100%' border='1'>";
+            strName += "<thead>";
+            strName += "<tr>";
+            strName += "<td width='50%' border='0.5'><b>Articulo</b></td>";
+            strName += "<td width='10%' border='0.5'><b>Unidades</b></td>";
+            strName += "<td width='10%' border='0.5'><b>Cantidad</b></td>";
+            strName += "<td width='15%' border='0.5'><b>Precio Unit.</b></td>";
+            strName += "<td width='15%' border='0.5'><b>Precio Tot.</b></td>";
+            strName += "</tr>";
+            strName += "</thead>"; 
+            for (var x = 1; x < searchTransaction.length; x++) {
+                var articulo = nlapiEscapeXML(returnBlank(searchTransaction[x].getText('item')));
+                var descripcion = nlapiEscapeXML(returnBlank(searchTransaction[x].getValue('displayname', 'item')));
+                var unidades = returnBlank(searchTransaction[x].getValue('unit'));
+                var cantidad = returnNumber(searchTransaction[x].getValue('quantity'));
+                
+                if (cantidad * 1 < 0)
+                    cantidad = cantidad * -1
+                var precio_uni = returnNumber(searchTransaction[x].getValue('rate')) / exchange_rate;
+                var precio_tot = returnNumber(searchTransaction[x].getValue('fxamount'));
+                if (precio_tot * 1 < 0)
+                    precio_tot = precio_tot * -1
+                if(unidades!=''){
+                    nlapiLogExecution('DEBUG', 'data', JSON.stringify({
+                    'currency': articulo,
+                    'exchange_rate': descripcion,
+                    'calculatedSubtotal': unidades,
+                    'taxtotal': cantidad
+                    
+                }));
+                    strName += "<tr>";
+                strName += "<td width='50%' border='0.5'>" + articulo + " " + descripcion + "</td>";
+                strName += "<td width='10%' border='0.5'>" + unidades + "</td>";
+                strName += "<td width='10%' border='0.5'>" + cantidad + "</td>";
+                strName += "<td width='15%' border='0.5'>" + currencyFormat(precio_uni, 2, simbolo) + "</td>";
+                strName += "<td width='15%' border='0.5'>" + currencyFormat(precio_tot, 2, simbolo) + "</td>";
+                strName += "</tr>";
+                }
+                
+            }
+            strName += "</table>";
+            strName += "</td>";
+            strName += "</tr>";  
         }
-        strName += "</table>";
-        strName += "</td>";
-        strName += "</tr>";
+                
+        //Gastos
+        
+        if (numberLines > 0) {
+            strName += "<tr>";
+            strName += "<td align='center' colspan='10'><b>Gastos</b></td>";
+            strName += "</tr>";
+            strName += "<tr>";
+            strName += "<td colspan='10'>";
+            strName += "<table table-layout='fixed' width='100%' border='1'>";
+            strName += "<thead>";
+            strName += "<tr>";
+            strName += "<td width='50%' border='0.5'><b>Descripcion</b></td>";
+            strName += "<td width='20%' border='0.5'><b>Cuenta</b></td>";
+            strName += "<td width='15%' border='0.5'><b>Categoria</b></td>";
+            strName += "<td width='15%' border='0.5'><b>Monto</b></td>";
+            strName += "</tr>";
+            strName += "</thead>";
+            for (i = 1; i <= numberLines; i++) {
+                var cuenta = transaccion.getLineItemValue('expense', 'account_display', i) 
+                var monto = transaccion.getLineItemValue('expense', 'amount', i);
+                var categoria = transaccion.getLineItemValue('expense', 'category_display', i);
+                //var location = transaccion.getLineItemValue('expense', 'location_display', i);
+                var memo = transaccion.getLineItemValue('expense', 'memo', i);
+                if(memo == null){
+                    memo = ''
+                }
+                strName += "<tr>";
+                strName += "<td width='50%' border='0.5' align='left'>" + memo + "</td>";
+                strName += "<td width='20%' border='0.5' align='left'>" + cuenta + "</td>";
+                strName += "<td width='15%' border='0.5' align='left'>" + categoria + "</td>";
+                strName += "<td width='15%' border='0.5' align='right'>" + monto + "</td>";
+                strName += "</tr>";
+                    
+            }
+            strName += "</table>";
+            strName += "</td>";
+            strName += "</tr>";
+            strName += "<tr>";
+            strName += "<td align='right' colspan='10' font-size=\"10pt\">&nbsp;</td>";
+            strName += "</tr>";
+        }  
+        //Fin gastos
         strName += "<tr>";
         strName += "<td align='right' colspan='10'>Subtotal   " + currencyFormat(subtotal, 2, simbolo) + "</td>";
         strName += "</tr>";
@@ -282,7 +343,9 @@ function Orden_Compra_PDF(request, response) {
         strName += "</tr>";
         strName += "<tr>";
         strName += "<td align='right' colspan='10' font-size=\"10pt\">&nbsp;</td>";
-        strName += "</tr>";
+        strName += "</tr>";        
+        
+        
         strName += "<tr>";
         strName += "<td colspan='10'>'El Proveedor' garantiza el cumplimiento de la entrega del producto o servicio " +
             "en la fecha estipulada con anterioridad en la presente orden de compra, " +
