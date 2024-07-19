@@ -3,9 +3,9 @@
  * @NScriptType ClientScript
  * @NModuleScope SameAccount
  */
-define(['N/record','N/ui/dialog','N/http','N/https','N/search','N/currentRecord','N/currency','SuiteScripts/Vorwerk_project/Vorwerk Utils V2.js'],
+define(['N/record','N/ui/dialog','N/http','N/https','N/search','N/currentRecord','N/currency','SuiteScripts/Vorwerk_project/Vorwerk Utils V2.js','N/runtime'],
 
-function(record,dialog,http,https,search,currentRecord,currency,Utils) {
+function(record,dialog,http,https,search,currentRecord,currency,Utils,runtime) {
     
     /**
      * Function to be executed after page is initialized.
@@ -58,6 +58,12 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils) {
             var fieldid = scriptContext.fieldId;
             var sublistName = scriptContext.sublistId;
             var thisRecord = scriptContext.currentRecord;
+            var url
+            if(runtime.envType  == "SANDBOX"){
+                url = 'https://3367613-sb1.app.netsuite.com/app/site/hosting/scriptlet.nl?script=1506&deploy=1';
+            } else{
+                url = 'https://3367613.app.netsuite.com/app/site/hosting/scriptlet.nl?script=1412&deploy=1';
+            }
             if(customform == '231'){//formulario custom para employee centre
                 console.log('customform',customform)
                 
@@ -69,7 +75,7 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils) {
                     });
                     console.log('cuentaCustom',cuentaCustom)  
                     var proceso = 'getCategoria'
-                    var url = 'https://3367613-sb1.app.netsuite.com/app/site/hosting/scriptlet.nl?script=1506&deploy=1';
+                    
                     
                     var headers = {'Content-Type': 'application/json'};
                     var response = https.post({
@@ -106,8 +112,6 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils) {
                     });
                     var proceso = 'getCurrency'
                     console.log('vendor',vendor) 
-
-                    var url = 'https://3367613-sb1.app.netsuite.com/app/site/hosting/scriptlet.nl?script=1506&deploy=1';
                     
                     var headers = {'Content-Type': 'application/json'};
                     var response = https.post({
@@ -145,8 +149,6 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils) {
                     var proceso = 'getCurrency'
                     console.log('vendor',vendor) 
 
-                    var url = 'https://3367613-sb1.app.netsuite.com/app/site/hosting/scriptlet.nl?script=1506&deploy=1';
-                    
                     var headers = {'Content-Type': 'application/json'};
                     var response = https.post({
                         url: url,
@@ -192,8 +194,6 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils) {
                     console.log('item',item)
                     var proceso = 'getTaxScheduled'
                     
-                    var url = 'https://3367613-sb1.app.netsuite.com/app/site/hosting/scriptlet.nl?script=1506&deploy=1';
-                    
                     var headers = {'Content-Type': 'application/json'};
                     var response = https.post({
                         url: url,
@@ -226,8 +226,6 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils) {
                     var proceso = 'getCurrency'
                     console.log('vendor',vendor) 
 
-                    var url = 'https://3367613-sb1.app.netsuite.com/app/site/hosting/scriptlet.nl?script=1506&deploy=1';
-                    
                     var headers = {'Content-Type': 'application/json'};//llamada al suitelet para obtener la moneda del proveedor
                     var response = https.post({
                         url: url,
@@ -274,8 +272,6 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils) {
                     var proceso = 'getCurrency'
                     console.log('vendor',vendor) 
 
-                    var url = 'https://3367613-sb1.app.netsuite.com/app/site/hosting/scriptlet.nl?script=1506&deploy=1';//llamada al suitelet para obtener la moneda del proveedor
-                    
                     var headers = {'Content-Type': 'application/json'};
                     var response = https.post({
                         url: url,
@@ -319,8 +315,6 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils) {
                     });
                     console.log('idTax',idTax)
                     var proceso = 'getRateTax'
-                    
-                    var url = 'https://3367613-sb1.app.netsuite.com/app/site/hosting/scriptlet.nl?script=1506&deploy=1';//llamada al suitelet para obtener la el rate con el tax code
                     
                     var headers = {'Content-Type': 'application/json'};
                     var response = https.post({
