@@ -55,6 +55,12 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils,runtime) {
             var customform = rec.getValue({
                 fieldId: 'customform'
             });
+            var formEployeeCentre
+            if(runtime.envType  == "SANDBOX"){
+                formEployeeCentre = '231'
+            }else{
+                formEployeeCentre = '230'
+            }
             var fieldid = scriptContext.fieldId;
             var sublistName = scriptContext.sublistId;
             var thisRecord = scriptContext.currentRecord;
@@ -64,7 +70,7 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils,runtime) {
             } else{
                 url = 'https://3367613.app.netsuite.com/app/site/hosting/scriptlet.nl?script=1412&deploy=1';
             }
-            if(customform == '231'){//formulario custom para employee centre
+            if(customform == formEployeeCentre){//formulario custom para employee centre
                 console.log('customform',customform)
                 
                 if(fieldid == 'custcol_cuentacustom'){//cuando se ingresa la cuenta en elcmpo custom se llama al suitelet para obtener la categoria
@@ -367,11 +373,11 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils,runtime) {
             }else if(sublistName =='item'){
                 sublista = 'item'
             }
-            if(fieldid =='item' && customform != '231'){
+            if(fieldid =='item' && customform != formEployeeCentre){
 
 
             }
-            if(fieldid =='povendor' && customform != '231'){//proceso para el form Solicitur Vorwerk
+            if(fieldid =='povendor' && customform != formEployeeCentre){//proceso para el form Solicitur Vorwerk
                 
                 var vendor = rec.getCurrentSublistValue({//se obtiene el vendor, su moneda y se setea en el campo de moneda del proveedor
                     sublistId: sublista,
@@ -412,7 +418,7 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils,runtime) {
                 fieldId: 'estimatedamount'
             });
             
-            if(sublista == 'item' && (fieldid =='povendor' || fieldid == 'quantity') && customform != '231' ){//proceso para llenar el campo monto en pesos en los articulos, sin que se edite el campo de estamatedamount
+            if(sublista == 'item' && (fieldid =='povendor' || fieldid == 'quantity') && customform != formEployeeCentre ){//proceso para llenar el campo monto en pesos en los articulos, sin que se edite el campo de estamatedamount
                 console.log('aqui setear pesos')
                 var vendor = rec.getCurrentSublistValue({//se obtiene el vendor, su moneda y se setea en el campo de moneda del proveedor
                     sublistId: sublista,
@@ -485,7 +491,7 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils,runtime) {
                 });
             }
 
-            if(fieldid =='estimatedamount'&& customform != '231' ){//si se ingresa el monto en la moneda del proveedor se hace la conversion a pesos y se setea al campo de monto en pesos
+            if(fieldid =='estimatedamount'&& customform != formEployeeCentre ){//si se ingresa el monto en la moneda del proveedor se hace la conversion a pesos y se setea al campo de monto en pesos
                 console.log('entro monto estimate',sublista)
                 var vendor = rec.getCurrentSublistValue({
                     sublistId: sublista,
@@ -530,7 +536,7 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils,runtime) {
                 
             }
 
-            if(fieldid =='custcolmonto_enpesos' && estimatedAmount== ''&& customform != '231'){//si el monto se ingresa en pesos se hace la conversion a la moneda de proveedor
+            if(fieldid =='custcolmonto_enpesos' && estimatedAmount== ''&& customform != formEployeeCentre){//si el monto se ingresa en pesos se hace la conversion a la moneda de proveedor
                 console.log('entro monto')
                 var vendor = rec.getCurrentSublistValue({
                     sublistId: sublista,
