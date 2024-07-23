@@ -34,6 +34,10 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils,runtime) {
             sublistId: 'expense',
             fieldId: 'custcol_tc'
         }).isDisabled = true;
+        thisRecord.getCurrentSublistField({
+            sublistId: 'expense',
+            fieldId: 'category'
+        }).isDisabled = true;
     	return true;
     }
 
@@ -685,7 +689,7 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils,runtime) {
      * @since 2015.2
      */
     function validateField(scriptContext) {
-
+        return true;
     }
 
     /**
@@ -758,7 +762,7 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils,runtime) {
 //        postSourcing: postSourcing,
 //        sublistChanged: sublistChanged,
 //        lineInit: lineInit,
-//        validateField: validateField,
+        validateField: validateField,
 //        validateLine: validateLine,
 //        validateInsert: validateInsert,
 //        validateDelete: validateDelete,
