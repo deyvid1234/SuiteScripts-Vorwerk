@@ -39,6 +39,12 @@ function(runtime,url,https,record) {
      */
     function beforeSubmit(scriptContext) {
         try{
+            var rec = scriptContext.newRecord;
+            
+            var supAprob = rec.setValue({
+                fieldId: 'supervisorapproval',
+                value : true
+            })
            
         }catch(err){
             log.error("error beforeSubmit",err);
@@ -64,7 +70,10 @@ function(runtime,url,https,record) {
             type: 'purchaseorder',
             isDynamic: false
         });
-
+        var supAprob = poRec.setValue({
+            fieldId: 'supervisorapproval',
+            value : true
+        })
         var numLines = poRec.getLineCount({
             sublistId: 'expense'
         });
