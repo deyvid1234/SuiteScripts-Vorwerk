@@ -586,7 +586,7 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils,runtime) {
 
 
 
-            if(fieldid =='custcol_tc'){
+            if(fieldid =='custcol_tc'&& customform != formEployeeCentre){
                 var idTax = rec.getCurrentSublistValue({
                     sublistId: sublista,
                     fieldId: 'custcol_tc'

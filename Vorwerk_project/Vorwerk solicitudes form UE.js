@@ -42,8 +42,14 @@ function(runtime,url,https,record) {
             var rec = scriptContext.newRecord;
             var form = scriptContext.form;
             var formulario = rec.getValue('customform')
+            var formEployeeCentre
+            if(runtime.envType  == "SANDBOX"){
+                formEployeeCentre = '231'
+            }else{
+                formEployeeCentre = '230'
+            }
             log.debug('formulario',formulario)//formulario 222 es solicitus vorwerk, 231 custom requisition  
-            if(formulario == '231'){
+            if(formulario == formEployeeCentre){
                var listLineCount = rec.getLineCount({
                  sublistId: "expense"
                 });
