@@ -1559,7 +1559,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 	              	}
 		            log.debug('test')
 		            log.debug('custbody_tipo_venta',rec.getValue('custbody_tipo_venta'))
-		            if(scriptContext.type == 'edit' && rec.getValue('custbody_tipo_venta') == 19){
+		            /*if(scriptContext.type == 'edit' && rec.getValue('custbody_tipo_venta') == 19){
 		            	//dd
 		    			//validacion tm pagada
 			            	log.debug('desc',rec.getValue('custbody_vorwerk_descuento'))
@@ -1575,7 +1575,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 			                      id: rec.id,
 			                      isDynamic: false
 			                  	});
-		    	            	var descuentoTm = pagatutm(numOdv,odv)*(-.84);
+		    	            	var descuentoTm =   pagatutm(numOdv,odv)*(-.84);
 		    	            	
 		    	            	var numLines = salesorder.getLineCount({
 		    		                sublistId: 'item'
@@ -1743,7 +1743,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 		    	         return numOdv;
 	   	
 		    	        }
-		            }
+		            }*/
 	              
 	              
 
