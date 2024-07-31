@@ -330,7 +330,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                             //log.debug('objVentasEquipoNLE',objVentasEquipoNLE)
                             objGarantia = bonoGarantia(dataEmp,garantiaSO,compConfigDetails)
                             //log.debug('objGarantia',objGarantia)
-                            objXmasdosNLE=bonoXmasdosNLE(listaNombramientos,dataEmp,thisPeriodSO,listaGrupos,allPresentadoras,listaEquipoRecluta,historicoSO,dHistorico,namePeriodo,cust_period)
+                            objXmasdosNLE=bonoXmasdosNLE(listaNombramientos,dataEmp,thisPeriodSO,listaGrupos,allPresentadoras,listaEquipoRecluta,historicoSO,dHistorico,namePeriodo,cust_period,listaReclutas)
                             objJoya = bonoJoya(conf,ventasEmp,compConfigDetails)
                             objCook = bonoCk(dataEmp,ckSO)
                             
@@ -864,7 +864,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
         }
 
     }
-    function bonoXmasdosNLE(listaNombramientos,dataEmp,thisPeriodSO,listaGrupos,allPresentadoras,listaEquipoRecluta,historicoSO,dHistorico,namePeriodo,cust_period){
+    function bonoXmasdosNLE(listaNombramientos,dataEmp,thisPeriodSO,listaGrupos,allPresentadoras,listaEquipoRecluta,historicoSO,dHistorico,namePeriodo,cust_period,listaReclutas){
         try{
             var liderM=dataEmp.internalid//lider madre
             var montoTotal52= 0
@@ -887,10 +887,11 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                             //log.debug('lista configH', configH)
                         var equipoH=listaGrupos[listaNombramientos[liderM][i]]
                            // log.debug('lista equipoH', equipoH)
+                        var reclutasH=listaReclutas[listaNombramientos[liderM][i]]
                         var reclutaEquipoH=listaEquipoRecluta[listaNombramientos[liderM][i]]
                         var ventasH= thisPeriodSO[listaNombramientos[liderM][i]]
                             //log.debug('lista ventasH', ventasH)
-                        var xMasdosH=bonoXmasDos(dataEmpH,reclutaEquipoH,thisPeriodSO,ventasH,historicoSO,allPresentadoras,dHistorico,equipoH)
+                        var xMasdosH=bonoXmasDos(dataEmpH,reclutaEquipoH,thisPeriodSO,ventasH,historicoSO,allPresentadoras,dHistorico,equipoH,reclutasH)
                           
                         var montoNLE32=xMasdosH.monto32
                         var montoNLE52=xMasdosH.monto52
@@ -1187,7 +1188,7 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
                         monto32 = 5000
                         monto52 = 0
                     }
-                    if(ventasEmp.length>4 && equipoActivas.length >= 2 && preActivas.length > 0){
+                    if(ventasEmp.length>4 && (preActivas.length >= 2 ||(equipoActivas.length > 0 && preActivas.length > 0))){
                         monto32 = 0
                         monto52 = 8000
                     }
