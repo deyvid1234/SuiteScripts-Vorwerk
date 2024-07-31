@@ -319,7 +319,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                             objEntrega = bonoEntrega(dataEmp,ventasEmp,cust_entrega)
                             //log.debug('objEntrega',objEntrega)
                             
-                            objXmasDos = bonoXmasDos(dataEmp,reclutasEquipo,thisPeriodSO,ventasEmp,historicoSO,allPresentadoras,dHistorico,integrantesEquipo)
+                            objXmasDos = bonoXmasDos(dataEmp,reclutasEquipo,thisPeriodSO,ventasEmp,historicoSO,allPresentadoras,dHistorico,integrantesEquipo,reclutas)
                             
                             objProductividad = bonoProductividad(dataEmp,ventasEmp,compConfigDetails)
                              //log.debug('objProductividad',objProductividad)
@@ -1070,11 +1070,12 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
       
     }
     
-    function bonoXmasDos(dataEmp,reclutasEquipo,thisPeriodSO,ventasEmp,historicoSO,allPresentadoras,dHistorico,integrantesEquipo){
+    function bonoXmasDos(dataEmp,reclutasEquipo,thisPeriodSO,ventasEmp,historicoSO,allPresentadoras,dHistorico,integrantesEquipo,reclutas){
         try{
 /*El bono considera a las lideres con 3 o mas ventas propias y que tengan dos presentadoras activas(que son reclutas y parte del equipo
 y que han echo su primera venta dentro de sus primeron 30 dias despues de su contratacion) o bien una presentadora activa y una miembro 
 del equipo aunque esta ultima ano haya sido reclutada por la lider*/
+/*Ajuste el 31 de julio para considerar solo las reclutas sen o no parte del equipo*/
             var lider= dataEmp.internalid
             var salesOrders={}
             var salesOrdersEq={}
@@ -1084,8 +1085,8 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
             var monto52 = 0
             var data1=[]
             var data2=[]
-            if (reclutasEquipo){//si esta lider tiene reclutas obtenemos su fecha de contratacion o de reactivacion
-                reclutasEquipo.forEach(function(i,index) {
+            if (reclutas){//si esta lider tiene reclutas obtenemos su fecha de contratacion o de reactivacion
+                reclutas.forEach(function(i,index) {
                 
                     var hiredate=allPresentadoras[i]['hiredate']
                     var reactivacion=allPresentadoras[i]['fechaReactivacion']
@@ -1182,7 +1183,7 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
                log.debug('ventasEmp',ventasEmp)
                log.debug('equipoActivas',equipoActivas)*/
                 if(ventasEmp){
-                    if(ventasEmp.length> 2 && ventasEmp.length<5 && equipoActivas.length >= 2 && preActivas.length > 0){
+                    if(ventasEmp.length> 2 && ventasEmp.length<5 && (preActivas.length >= 2 ||(equipoActivas.length > 0 && preActivas.length > 0)) ){
                         monto32 = 5000
                         monto52 = 0
                     }
