@@ -320,7 +320,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                             //log.debug('objEntrega',objEntrega)
                             
                             objXmasDos = bonoXmasDos(dataEmp,reclutasEquipo,thisPeriodSO,ventasEmp,historicoSO,allPresentadoras,dHistorico,integrantesEquipo,reclutas)
-                            
+                            log.debug('objXmasDos',objXmasDos)
                             objProductividad = bonoProductividad(dataEmp,ventasEmp,compConfigDetails)
                              //log.debug('objProductividad',objProductividad)
                             
@@ -1075,8 +1075,8 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
         try{
 /*El bono considera a las lideres con 3 o mas ventas propias y que tengan dos presentadoras activas(que son reclutas y parte del equipo
 y que han echo su primera venta dentro de sus primeron 30 dias despues de su contratacion) o bien una presentadora activa y una miembro 
-del equipo aunque esta ultima ano haya sido reclutada por la lider*/
-/*Ajuste el 31 de julio para considerar solo las reclutas sen o no parte del equipo*/
+del equipo aunque esta ultima no haya sido reclutada por la lider*/
+/*Ajuste el 31 de julio para considerar solo las reclutas sean o no parte del equipo*/
             var lider= dataEmp.internalid
             var salesOrders={}
             var salesOrdersEq={}
@@ -1178,17 +1178,40 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
                    //log.debug('salesOrdersEq',salesOrdersEq)
                }
                
-               preActivas= Object.keys(salesOrders)//presentadoras que son recluta y equipo activas
-               equipoActivas=Object.keys(salesOrdersEq)//presentadoras que son equipo activas
-               /*log.debug('preActivas',preActivas)
-               log.debug('ventasEmp',ventasEmp)
-               log.debug('equipoActivas',equipoActivas)*/
+                preActivas= Object.keys(salesOrders)//presentadoras que son recluta y equipo activas
+                equipoActivas=Object.keys(salesOrdersEq)//presentadoras que son equipo activas
+                /*var reclutasCont = 0
+                var equipoCont = equipoActivas.length
+                log.debug('equipoCont antes for',equipoCont)
+                for (x in preActivas){//validar si la recluta esta en el arreglo de equipo
+                    log.debug('preActivas[x]',JSON.stringify(preActivas[x]))
+                    if(reclutasEquipo.hasOwnProperty(JSON.stringify(preActivas[x]))){
+                        log.debug('ya no contar')
+                        equipoCont = equipoActivas.length - 1
+                    }
+                }
+                log.debug('equipoCont',equipoCont)
+                log.debug('preActivas',preActivas)
+                log.debug('ventasEmp',ventasEmp)
+                log.debug('equipoActivas',equipoActivas)
+
+                //validacion para considerar 1 solo recluta y 1 solo equipo o 2 solo reclutas
                 if(ventasEmp){
                     if(ventasEmp.length> 2 && ventasEmp.length<5 && (preActivas.length >= 2 ||(equipoActivas.length > 0 && preActivas.length > 0)) ){
                         monto32 = 5000
                         monto52 = 0
                     }
                     if(ventasEmp.length>4 && (preActivas.length >= 2 ||(equipoActivas.length > 0 && preActivas.length > 0))){
+                        monto32 = 0
+                        monto52 = 8000
+                    }
+                }*/
+                if(ventasEmp){//considera 2 solo reclutas
+                    if(ventasEmp.length> 2 && ventasEmp.length<5 && preActivas.length >= 2){
+                        monto32 = 5000
+                        monto52 = 0
+                    }
+                    if(ventasEmp.length>4 && preActivas.length >= 2){
                         monto32 = 0
                         monto52 = 8000
                     }
@@ -1241,15 +1264,15 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
                     }
                    
                     if(dcontratacion > dHistorico){
-                        log.debug('entra if dhist')
+                        //log.debug('entra if dhist')
                         var ventasHistorico
                         if(historicoSO[i]){
-                            log.debug('entra if ventas hist',historicoSO[i])
+                            //log.debug('entra if ventas hist',historicoSO[i])
                             ventasHistorico = historicoSO[i].length
                         }else{
                             ventasHistorico = 0
                         }
-                        log.debug('ventasHistorico',ventasHistorico)
+                        //log.debug('ventasHistorico',ventasHistorico)
                         var ordenesSCintegrante=[]
                         if(thisPeriodSO[i] && ventasHistorico < noComisiona){
                             var ordenesFaltantes= noComisiona-ventasHistorico
@@ -1760,7 +1783,7 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
                             thisPeriodSO[objSO.salesrep] = [idSO]
                             controlRepeat[objSO.salesrep] = [objSO.internalid]
                         }
-                        if(objSO.salesrep == '39360'||objSO.salesrep == '12590'){
+                        /*if(objSO.salesrep == '39360'||objSO.salesrep == '12590'){
                             log.debug('ventas propias test1',objSO.internalid)
                             if(objSO.salesrep == '39360'||objSO.salesrep == '12590'){
                                log.debug('r',r) 
@@ -1771,7 +1794,7 @@ del equipo aunque esta ultima ano haya sido reclutada por la lider*/
                             log.debug('controlRepeat 3',controlRepeat[objSO.salesrep].indexOf(objSO.internalid))
                             log.debug('thisPeriodSO[objSO.salesrep]',thisPeriodSO[objSO.salesrep])
                             
-                        }
+                        }*/
                     }else if(dateSO < inicioPeriodoDate){
                         //log.debug('Esta fecha es Historicio',dateSO)
                         if(historicoSO.hasOwnProperty(objSO.salesrep)){
