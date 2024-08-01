@@ -319,7 +319,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                             objEntrega = bonoEntrega(dataEmp,ventasEmp,cust_entrega)
                             //log.debug('objEntrega',objEntrega)
                             
-                            objXmasDos = bonoXmasDos(dataEmp,reclutasEquipo,thisPeriodSO,ventasEmp,historicoSO,allPresentadoras,dHistorico,integrantesEquipo,reclutas)
+                            objXmasDos = bonoXmasDos(dataEmp,reclutasEquipo,thisPeriodSO,ventasEmp,historicoSO,allPresentadoras,dHistorico,integrantesEquipo,reclutas,listaReclutas)
                             log.debug('objXmasDos',objXmasDos)
                             objProductividad = bonoProductividad(dataEmp,ventasEmp,compConfigDetails)
                              //log.debug('objProductividad',objProductividad)
@@ -891,7 +891,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                         var reclutaEquipoH=listaEquipoRecluta[listaNombramientos[liderM][i]]
                         var ventasH= thisPeriodSO[listaNombramientos[liderM][i]]
                             //log.debug('lista ventasH', ventasH)
-                        var xMasdosH=bonoXmasDos(dataEmpH,reclutaEquipoH,thisPeriodSO,ventasH,historicoSO,allPresentadoras,dHistorico,equipoH,reclutasH)
+                        var xMasdosH=bonoXmasDos(dataEmpH,reclutaEquipoH,thisPeriodSO,ventasH,historicoSO,allPresentadoras,dHistorico,equipoH,reclutasH,listaReclutas)
                           
                         var montoNLE32=xMasdosH.monto32
                         var montoNLE52=xMasdosH.monto52
@@ -1071,12 +1071,13 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
       
     }
     
-    function bonoXmasDos(dataEmp,reclutasEquipo,thisPeriodSO,ventasEmp,historicoSO,allPresentadoras,dHistorico,integrantesEquipo,reclutas){
+    function bonoXmasDos(dataEmp,reclutasEquipo,thisPeriodSO,ventasEmp,historicoSO,allPresentadoras,dHistorico,integrantesEquipo,reclutas,listaReclutas){
         try{
 /*El bono considera a las lideres con 3 o mas ventas propias y que tengan dos presentadoras activas(que son reclutas y parte del equipo
 y que han echo su primera venta dentro de sus primeron 30 dias despues de su contratacion) o bien una presentadora activa y una miembro 
 del equipo aunque esta ultima no haya sido reclutada por la lider*/
-/*Ajuste el 31 de julio para considerar solo las reclutas sean o no parte del equipo*/
+/*Ajuste el 31 de julio para considerar solo las reclutas sean o no parte del equipo, se considera una recluta del lider de equipo y 
+una rcluta de algun miembro del equipo*/
             var lider= dataEmp.internalid
             var salesOrders={}
             var salesOrdersEq={}
@@ -1086,6 +1087,7 @@ del equipo aunque esta ultima no haya sido reclutada por la lider*/
             var monto52 = 0
             var data1=[]
             var data2=[]
+            var bonoLogrado = false//creado para validar si ya se logro el bono con solo reclutas del lider no recorrer las reclutas del equipo
             if (reclutas){//si esta lider tiene reclutas obtenemos su fecha de contratacion o de reactivacion
                 reclutas.forEach(function(i,index) {
                 
@@ -1125,99 +1127,91 @@ del equipo aunque esta ultima no haya sido reclutada por la lider*/
                                         salesOrders[recSO]=(key)
                                     }
                                 }
-                            } 
-                             
+                            }   
                         }
                     }
-                    
                 })
                 //log.debug('salesOrders',salesOrders)
-                if (integrantesEquipo){// obtenemos su fecha de contratacion o de reactivacion de las integrantes del equipo
-                   integrantesEquipo.forEach(function(i,index) {
-                        var hiredate=allPresentadoras[i]['hiredate']
-                        var reactivacion=allPresentadoras[i]['fechaReactivacion']
-                        var fechaObjetivo = allPresentadoras[i]['objetivo_1']
-                        var valiDateEq
-                        if(reactivacion){
-                            valiDateEq=Utils.stringToDate(reactivacion)
-                        }else{
-                            valiDateEq=Utils.stringToDate(hiredate)
-                        }
-                        
-                        if(valiDateEq>dHistorico){//si esa fecha es mayor que la fecha del historico validamos si tiene ventas en el historico
-                            if(historicoSO.hasOwnProperty(i)){//si hay ventas en el historico queda descartado
-                                //log.debug('ventas historico de '+i,historicoSO[i] )
-                            }else{//si no, validamos si tienen ventas en este periodo
-                                var ventasEq = thisPeriodSO[i]
-                                
-                                for(n in ventasEq){
-                                    var key = Object.keys(ventasEq[n])
-                                    //log.debug('key eq de l recluta '+i,key)
-                                    var fechaSO =ventasEq[n][key]['trandate']
-                                    var recSO=ventasEq[n][key]['salesrep']
-                                    var docNum =ventasEq[n][key]['tranid']
-                                    //log.debug('fechaObjetivo eq',Utils.stringToDate(fechaObjetivo))
-                                    //log.debug('fechaSO eq',Utils.stringToDate(fechaSO))
-                                    if(Utils.stringToDate(fechaSO) <= Utils.stringToDate(fechaObjetivo)){
-                                        //log.debug('SO dentro de la fecha objetivo eq',key) 
-                                        var pedido = { idSO:key[0],docNum:docNum,salesRep:recSO}
-                                        data2.push(pedido)
-                                        if(salesOrdersEq.hasOwnProperty(recSO)){
-                                            salesOrdersEq[recSO].push(key)
-                                        }else{
-                                            salesOrdersEq[recSO]=(key)
-                                        }
-                                    }
-                                } 
-                                 
-                            }
-                        }
-
-                        
-                    })
-                   //log.debug('salesOrdersEq',salesOrdersEq)
-               }
-               
-                preActivas= Object.keys(salesOrders)//presentadoras que son recluta y equipo activas
-                equipoActivas=Object.keys(salesOrdersEq)//presentadoras que son equipo activas
-                /*var reclutasCont = 0
-                var equipoCont = equipoActivas.length
-                log.debug('equipoCont antes for',equipoCont)
-                for (x in preActivas){//validar si la recluta esta en el arreglo de equipo
-                    log.debug('preActivas[x]',JSON.stringify(preActivas[x]))
-                    if(reclutasEquipo.hasOwnProperty(JSON.stringify(preActivas[x]))){
-                        log.debug('ya no contar')
-                        equipoCont = equipoActivas.length - 1
-                    }
-                }
-                log.debug('equipoCont',equipoCont)
+                preActivas= Object.keys(salesOrders)// recluta activas
+                
                 log.debug('preActivas',preActivas)
-                log.debug('ventasEmp',ventasEmp)
-                log.debug('equipoActivas',equipoActivas)
-
-                //validacion para considerar 1 solo recluta y 1 solo equipo o 2 solo reclutas
-                if(ventasEmp){
-                    if(ventasEmp.length> 2 && ventasEmp.length<5 && (preActivas.length >= 2 ||(equipoActivas.length > 0 && preActivas.length > 0)) ){
-                        monto32 = 5000
-                        monto52 = 0
-                    }
-                    if(ventasEmp.length>4 && (preActivas.length >= 2 ||(equipoActivas.length > 0 && preActivas.length > 0))){
-                        monto32 = 0
-                        monto52 = 8000
-                    }
-                }*/
-                if(ventasEmp){//considera 2 solo reclutas
+                /*if(ventasEmp){//considera 2 solo reclutas
                     if(ventasEmp.length> 2 && ventasEmp.length<5 && preActivas.length >= 2){
+                        bonoLogrado = true
                         monto32 = 5000
                         monto52 = 0
                     }
                     if(ventasEmp.length>4 && preActivas.length >= 2){
+                        bonoLogrado = true
                         monto32 = 0
                         monto52 = 8000
                     }
-                }
+                }*/
                
-            }   
+            }
+            if (integrantesEquipo /*&& bonoLogrado == false*/){
+                log.debug('inicia recorido de reclutas del equipo')
+                   integrantesEquipo.forEach(function(i,index) {//recorremos cada integrante del equipo y obtenemos sus reclutas
+                        var reclutasXintegranteEquipo = listaReclutas[i] 
+                        for (y in reclutasXintegranteEquipo){//de cada recluta obtenemos su fecha de contratacion o reactivacion, fin objetivo 1 y reclutador
+                            log.debug('reclutasXintegranteEquipo y', reclutasXintegranteEquipo[y]) 
+                            var hiredate=allPresentadoras[reclutasXintegranteEquipo[y]]['hiredate']
+                            var reactivacion=allPresentadoras[reclutasXintegranteEquipo[y]]['fechaReactivacion']
+                            var fechaObjetivo = allPresentadoras[reclutasXintegranteEquipo[y]]['objetivo_1']
+                            var reclutador = allPresentadoras[reclutasXintegranteEquipo[y]]['emp_reclutadora']
+                            var valiDateEq
+                            if(reactivacion){
+                                valiDateEq=Utils.stringToDate(reactivacion)
+                            }else{
+                                valiDateEq=Utils.stringToDate(hiredate)
+                            }
+                            
+                            if(valiDateEq>dHistorico){//si esa fecha es mayor que la fecha del historico validamos si tiene ventas en el historico
+                                if(historicoSO.hasOwnProperty(reclutasXintegranteEquipo[y])){//si hay ventas en el historico queda descartado
+                                    //log.debug('ventas historico de '+i,historicoSO[i] )
+                                }else{//si no, validamos si tienen ventas en este periodo
+                                    var ventasEq = thisPeriodSO[reclutasXintegranteEquipo[y]]
+                                    
+                                    for(n in ventasEq){
+                                        var key = Object.keys(ventasEq[n])
+                                        //log.debug('key eq de l recluta '+i,key)
+                                        var fechaSO =ventasEq[n][key]['trandate']
+                                        var recSO=ventasEq[n][key]['salesrep']
+                                        var docNum =ventasEq[n][key]['tranid']
+                                        //log.debug('fechaObjetivo eq',Utils.stringToDate(fechaObjetivo))
+                                        //log.debug('fechaSO eq',Utils.stringToDate(fechaSO))
+                                        if(Utils.stringToDate(fechaSO) <= Utils.stringToDate(fechaObjetivo)){
+                                            //log.debug('SO dentro de la fecha objetivo eq',key) 
+                                            var pedido = { idSO:key[0],docNum:docNum,salesRep:recSO,rec:reclutador}
+                                            data2.push(pedido)
+                                            if(salesOrdersEq.hasOwnProperty(recSO)){
+                                                salesOrdersEq[recSO].push(key)
+                                            }else{
+                                                salesOrdersEq[recSO]=(key)
+                                            }
+                                        }
+                                    }     
+                                }
+                            } 
+                        }
+                        
+                    })
+                    log.debug('salesOrdersEq',salesOrdersEq)
+                    equipoActivas=Object.keys(salesOrdersEq)//reclutas de algun miembro del equipo activas
+                    if(ventasEmp){//considera 1 recluta del lider y una recluta de algun miembro del equipo
+                        if(ventasEmp.length> 2 && ventasEmp.length<5 && preActivas.length >= 1 && equipoActivas.length >= 1){
+                            bonoLogrado = true
+                            monto32 = 5000
+                            monto52 = 0
+                        }
+                        if(ventasEmp.length>4 && preActivas.length >= 1 && equipoActivas.length >= 1){
+                            bonoLogrado = true
+                            monto32 = 0
+                            monto52 = 8000
+                        }
+                    }
+                }   
+               
             return {monto52:monto52,monto32:monto32, data:data1,equipo:data2} 
         }catch(e){
             log.debug('error X+2',e)
