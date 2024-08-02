@@ -109,7 +109,7 @@ function(file, encode, email) {
         		email.send({
             		author: '344096',
         			recipients: 'pilar.torres@thermomix.mx',
-                    cc: ['deyvid8uriel@gmail.com','pilar.torres@thermomix.mx'],
+                    cc: ['pilar.torres@thermomix.mx'],
         			subject: 'MX_Daily_sales_VI',
         			body: 'Reporte Tagetik',
                     attachments: [objXlsFile]

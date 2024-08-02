@@ -214,7 +214,7 @@ function(runtime,config,record,render,runtime,email,search,format) {
     		    author: senderId,//senderId
     		    recipients: recipientEmail,//recipientEmail
     		    subject: emailSubject,
-                bcc: ['deyvid8uriel@gmail.com','pilar.torres@thermomix.mx'],//email_bbc 
+                bcc: ['pilar.torres@thermomix.mx'],//email_bbc 
     		    body: emailBody,
     		    relatedRecords: {
                 	transactionId: recordid
