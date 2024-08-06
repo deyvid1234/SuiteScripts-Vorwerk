@@ -112,7 +112,7 @@ function(file, encode, email) {
               author: '344096',
               recipients: 'reportemxvi@thermomix.mx',
               cc: ['pilar.torres@thermomix.mx'],
-              bcc: ['923581', 'griselrdz@gmail.com'],
+              bcc: ['pilar.torres@thermomix.mx'],
               subject: 'MX_Daily_sales_VI',
               body: 'MX_Daily_sales_VI',
               attachments: [objXlsFile]
