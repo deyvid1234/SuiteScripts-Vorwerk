@@ -1262,7 +1262,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 	      			});
 	      		});
 	      		log.debug('numOrders',numOrders);
-	           if(numOrders.length > 10){
+	           if(numOrders.length > 6 || delegate == 2){
 	        	   return false;
 	           }
 	           	log.debug('count pre if ',count)
@@ -1288,7 +1288,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 	              
 	              log.debug('context',runtime.executionContext);
                   //AJUSTE PARA CONSIDERAR PROMOCION TM EN PRESTAMO
-                    if (scriptContext.type == 'create' && rec.getValue('custbody_tipo_venta') == 2 && (delegate == 5 || firstso == '')){//TIPO DE VENTA 'VENTAS TM', PROMO 'TM EN PRESTAMO'
+                    if (scriptContext.type == 'create' && rec.getValue('custbody_tipo_venta') == 2 && delegate == 5 && delegate != 2){//TIPO DE VENTA 'VENTAS TM', PROMO 'TM EN PRESTAMO'
                         
                         if(count == odv_ganaTM && delegate==5 ){//CONTADOR ES IGUAL AL NUMERO DE VENTAS DE LA CONFIGURACION
                           
@@ -1318,9 +1318,9 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                        }
 
                     }
-                    if(scriptContext.type == 'create' && rec.getValue('custbody_tipo_venta') != 19 && delegate != 5){
+                    if(scriptContext.type == 'create' && rec.getValue('custbody_tipo_venta') != 19 && delegate != 5 && delegate != 2){
 	              		log.debug('cuantos',count)
-		            	if(count == odv_ganaTM && firstso != '' ){
+		            	if(count == odv_ganaTM && firstso != '' ){//Necesita tener First SO porque es la que cambia a TM Ganada
 		            	  
 		            	  var salesorder = record.load({//Cargar registro 
 		                      type: 'salesorder',
