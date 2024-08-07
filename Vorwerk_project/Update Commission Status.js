@@ -3,9 +3,9 @@
  * @NScriptType MapReduceScript
  * @NModuleScope SameAccount
  */
-define(['N/search','N/record','N/format'],
+define(['N/search','N/record','N/format','SuiteScripts/Vorwerk_project/Vorwerk Utils V2.js'],
 
-function(search,record,format) {
+function(search,record,format,Utils) {
    
     /**
      * Marks the beginning of the Map/Reduce process and generates input data.
@@ -35,9 +35,13 @@ function(search,record,format) {
     function map(context) {
     	try{
     		var registeInfo = JSON.parse(context.value);
-        	//log.debug('registeInfo',registeInfo)
-        	var idPre = registeInfo.id;
-            var configuracion = registeInfo.values.custentity123
+        	log.debug('registeInfo',registeInfo)
+        	var idPre = registeInfo.values["GROUP(internalid)"].value;
+            log.debug('idPre',idPre)
+            var configuracion = registeInfo.values["GROUP(custentity123)"]
+            var fechaTMPropia =registeInfo.values["MAX(date.systemNotes)"].split(' ')
+            fechaTMPropia = Utils.stringToDate(fechaTMPropia[0])
+            log.debug('fechaTMPropia',fechaTMPropia)
             var limit = 6
             log.debug('configuracion',configuracion)
             for (i = 0; i < configuracion.length ; i++){
@@ -61,22 +65,32 @@ function(search,record,format) {
             presentadorasSearch.run().each(function(r){
                 var internalId = r.getValue('internalid')
                 var tipoVenta = r.getValue('custbody_tipo_venta')
-                
-                log.debug('tipoVenta',tipoVenta)
-                if(tipoVenta == '2' && cont < limit){
-                    log.debug('internalId',internalId)
-                    log.debug('set com status no comisionable')
+                var fechaSO = r.getValue('trandate')
+                fechaSO = Utils.stringToDate(fechaSO)
+                log.debug('fechaSO',fechaSO)
+                if(fechaSO > fechaTMPropia){
                     var submitFields = record.submitFields({
                             type: record.Type.SALES_ORDER,
                             id: internalId,
-                            values: {'custbody_vw_comission_status':'2'}
+                            values: {'custbody_vw_comission_status':''}
                         });
-                    cont ++
-        
-                }else if (cont >= limit){
-                    log.debug('break')
-                    
+                }else{
+                    if(tipoVenta == '2' && cont < limit){
+                        log.debug('internalId',internalId)
+                        log.debug('set com status no comisionable')
+                        var submitFields = record.submitFields({
+                                type: record.Type.SALES_ORDER,
+                                id: internalId,
+                                values: {'custbody_vw_comission_status':'2'}
+                            });
+                        cont ++
+            
+                    }else if (cont >= limit){
+                        log.debug('break')
+                        
+                    }
                 }
+               
                 return true
                 
             });
