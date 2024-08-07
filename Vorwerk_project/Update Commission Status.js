@@ -35,22 +35,22 @@ function(search,record,format,Utils) {
     function map(context) {
     	try{
     		var registeInfo = JSON.parse(context.value);
-        	log.debug('registeInfo',registeInfo)
+        	//log.debug('registeInfo',registeInfo)
         	var idPre = registeInfo.values["GROUP(internalid)"].value;
-            log.debug('idPre',idPre)
+            //log.debug('idPre',idPre)
             var configuracion = registeInfo.values["GROUP(custentity123)"]
             var fechaTMPropia =registeInfo.values["MAX(date.systemNotes)"].split(' ')
             fechaTMPropia = Utils.stringToDate(fechaTMPropia[0])
-            log.debug('fechaTMPropia',fechaTMPropia)
+            //log.debug('fechaTMPropia',fechaTMPropia)
             var limit = 6
-            log.debug('configuracion',configuracion)
+            //log.debug('configuracion',configuracion)
             for (i = 0; i < configuracion.length ; i++){
                     //log.debug('configuracion[i].value',configuracion[i])
                     if(configuracion[i] == 11 || configuracion[i] == 12 || configuracion[i] == 13 || configuracion[i] == 14){//TM6R o TM4U
                         limit = 4
                     }
                  }
-            log.debug('limit',limit)
+            //log.debug('limit',limit)
             var presentadorasSearch = search.load({
                 id: 'customsearchso_search_commisionstatus' //employees
             });
@@ -67,8 +67,10 @@ function(search,record,format,Utils) {
                 var tipoVenta = r.getValue('custbody_tipo_venta')
                 var fechaSO = r.getValue('trandate')
                 fechaSO = Utils.stringToDate(fechaSO)
-                log.debug('fechaSO',fechaSO)
+                //log.debug('fechaSO',fechaSO)
                 if(fechaSO > fechaTMPropia){
+                    //log.debug('internalId',internalId)
+                    log.debug('set com status comisionable',internalId)
                     var submitFields = record.submitFields({
                             type: record.Type.SALES_ORDER,
                             id: internalId,
@@ -76,8 +78,8 @@ function(search,record,format,Utils) {
                         });
                 }else{
                     if(tipoVenta == '2' && cont < limit){
-                        log.debug('internalId',internalId)
-                        log.debug('set com status no comisionable')
+                        //log.debug('internalId',internalId)
+                        log.debug('set com status no comisionable',internalId)
                         var submitFields = record.submitFields({
                                 type: record.Type.SALES_ORDER,
                                 id: internalId,
@@ -86,7 +88,12 @@ function(search,record,format,Utils) {
                         cont ++
             
                     }else if (cont >= limit){
-                        log.debug('break')
+                        log.debug('si comisiona break',internalId)
+                        var submitFields = record.submitFields({
+                            type: record.Type.SALES_ORDER,
+                            id: internalId,
+                            values: {'custbody_vw_comission_status':''}
+                        });
                         
                     }
                 }
