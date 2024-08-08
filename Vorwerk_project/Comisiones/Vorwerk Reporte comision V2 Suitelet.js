@@ -1135,7 +1135,7 @@ una rcluta de algun miembro del equipo*/
                 preActivas= Object.keys(salesOrders)// recluta activas
                 
                 log.debug('preActivas',preActivas)
-                /*if(ventasEmp){//considera 2 solo reclutas
+                if(ventasEmp){//considera 2 solo reclutas
                     if(ventasEmp.length> 2 && ventasEmp.length<5 && preActivas.length >= 2){
                         bonoLogrado = true
                         monto32 = 5000
@@ -1146,10 +1146,10 @@ una rcluta de algun miembro del equipo*/
                         monto32 = 0
                         monto52 = 8000
                     }
-                }*/
+                }
                
             }
-            if (integrantesEquipo /*&& bonoLogrado == false*/){
+            if (integrantesEquipo && bonoLogrado == false){
                 log.debug('inicia recorido de reclutas del equipo')
                    integrantesEquipo.forEach(function(i,index) {//recorremos cada integrante del equipo y obtenemos sus reclutas
                         var reclutasXintegranteEquipo = listaReclutas[i] 
