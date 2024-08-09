@@ -344,7 +344,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
 
                     break;
                     case 2: //Reporte Presentadora
-                        if(empType == 1 && empPromo == 2){
+                        if(empType == 1 && empPromo == 2 /*&& allPresentadoras[i].internalid == '4055754'*/){
                             //Calcular reporte para la persona
                             var reclutas=listaReclutas[i]
                             var integrantesEquipo=listaGrupos[i]   
@@ -1054,13 +1054,16 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 var ventasData= Object.keys(ventas[i])
                 //thisPeriodSO['id presentador'][indice]['id pedido']['etiqueta']
                 var comisionables = ventas[i][ventasData]['custbody_vw_comission_status']
+                var tipoVenta = ventas[i][ventasData]['custbody_tipo_venta']
+                //log.debug('tipoVenta',tipoVenta)
                 //log.debug('comisionables',comisionables)
-                if(comisionables != 'No Comisionable'){
+                if(comisionables != 'No Comisionable' && tipoVenta != 'TM Ganada'){
                     data.push(ventasData)
                 }
                 
             }
             var ventasNo = data.length
+            //log.debug('ventasNo',ventasNo)
             var montoProductividad= compConfigDetails[1]['esquemaVentasPresentadora'][ventasNo]['bonoProductividad']
             //log.debug('montoProductividad', montoProductividad)
             return {monto:montoProductividad, data:data} 
