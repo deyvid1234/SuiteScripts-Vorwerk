@@ -62,92 +62,97 @@ function(runtime,url,https,record) {
      * @Since 2015.2
      */
     function afterSubmit(scriptContext) {
-        var rec = scriptContext.newRecord;
-        var recordid = rec.id;
-        log.debug('recordid',recordid)
-        var poRec = record.load({
-            id: recordid,
-            type: 'purchaseorder',
-            isDynamic: false
-        });
-        var supAprob = poRec.setValue({
-            fieldId: 'supervisorapproval',
-            value : true
-        })
-        var numLines = poRec.getLineCount({
-            sublistId: 'expense'
-        });
-        log.debug('numLines',numLines)
-        if(numLines > 0){
-            for(var e =0; e<numLines; e++){ 
-                var sol_id = poRec.getSublistValue({
-                    sublistId: 'expense',
-                    fieldId: 'linkedorder',
-                    line: e
-                })
-                log.debug('sol_id',sol_id)
-                if (sol_id != '' && sol_id != '[]'){
-                    var cuentaPo = poRec.getSublistValue({
+        try {
+            var rec = scriptContext.newRecord;
+            var recordid = rec.id;
+            log.debug('recordid',recordid)
+            var poRec = record.load({
+                id: recordid,
+                type: 'purchaseorder',
+                isDynamic: false
+            });
+            var supAprob = poRec.setValue({
+                fieldId: 'supervisorapproval',
+                value : true
+            })
+            var numLines = poRec.getLineCount({
+                sublistId: 'expense'
+            });
+            log.debug('numLines',numLines)
+            if(numLines > 0){
+                for(var e =0; e<numLines; e++){ 
+                    var sol_id = poRec.getSublistValue({
                         sublistId: 'expense',
-                        fieldId: 'account',
+                        fieldId: 'linkedorder',
                         line: e
                     })
-                    log.debug('cuentaPo',cuentaPo)
-
-                    var montoPo = poRec.getSublistValue({
-                        sublistId: 'expense',
-                        fieldId: 'amount',
-                        line: e
-                    })
-                    log.debug('montoPo',montoPo)
-
-                    
-                    var solRec = record.load({
-                        id: sol_id,
-                        type: 'purchaserequisition',
-                        isDynamic: false
-                    });
-                    var numLinesSol = solRec.getLineCount({
-                        sublistId: 'expense'
-                    });
-                    log.debug('numLinesSol',numLinesSol)
-                    for(var i =0; i<numLinesSol; i++){ 
-
-                        var solMonto = solRec.getSublistValue({
-                            sublistId: 'expense',
-                            fieldId: 'estimatedamount',
-                            line: i
-                        })
-                        log.debug('solMonto',solMonto)
-
-                        var solCuenta = solRec.getSublistValue({
+                    log.debug('sol_id',sol_id)
+                    if (sol_id != '' && sol_id != '[]'){
+                        var cuentaPo = poRec.getSublistValue({
                             sublistId: 'expense',
                             fieldId: 'account',
-                            line: i
+                            line: e
                         })
-                        log.debug('solCuenta',solCuenta)
-                        if(montoPo == solMonto && cuentaPo == solCuenta){
-                            var solTax = solRec.getSublistValue({
+                        log.debug('cuentaPo',cuentaPo)
+
+                        var montoPo = poRec.getSublistValue({
+                            sublistId: 'expense',
+                            fieldId: 'amount',
+                            line: e
+                        })
+                        log.debug('montoPo',montoPo)
+
+                        
+                        var solRec = record.load({
+                            id: sol_id,
+                            type: 'purchaserequisition',
+                            isDynamic: false
+                        });
+                        var numLinesSol = solRec.getLineCount({
+                            sublistId: 'expense'
+                        });
+                        log.debug('numLinesSol',numLinesSol)
+                        for(var i =0; i<numLinesSol; i++){ 
+
+                            var solMonto = solRec.getSublistValue({
                                 sublistId: 'expense',
-                                fieldId: 'custcol_tc',
+                                fieldId: 'estimatedamount',
                                 line: i
                             })
-                            log.debug('solTax',solTax)
-                            var montoPo = poRec.setSublistValue({
+                            log.debug('solMonto',solMonto)
+
+                            var solCuenta = solRec.getSublistValue({
                                 sublistId: 'expense',
-                                fieldId: 'taxcode',
-                                line: e,
-                                value : solTax
+                                fieldId: 'account',
+                                line: i
                             })
-                            poRec.save();
-                            break;
-                        }
-                    } 
+                            log.debug('solCuenta',solCuenta)
+                            if(montoPo == solMonto && cuentaPo == solCuenta){
+                                var solTax = solRec.getSublistValue({
+                                    sublistId: 'expense',
+                                    fieldId: 'custcol_tc',
+                                    line: i
+                                })
+                                log.debug('solTax',solTax)
+                                var montoPo = poRec.setSublistValue({
+                                    sublistId: 'expense',
+                                    fieldId: 'taxcode',
+                                    line: e,
+                                    value : solTax
+                                })
+                                poRec.save();
+                                break;
+                            }
+                        } 
+                    }
+                    
+                    
                 }
-                
-                
             }
+        }catch(e){
+            log.debug('error afer submit PO',e)
         }
+        
         
     }
 
