@@ -93,8 +93,9 @@ function(log,email,record,file,https,search,runtime,file) {
             email.send({
                 author: runtime.getCurrentUser().id,
                 recipients: employee.email,
+                cc: ['no-reply@thermomix.mx'],
                 subject: 'Reporte de Compensación',
-                body: 'Peporte de Compensación : '+employee.name,
+                body: 'Reporte de Compensación : '+employee.name,
                 attachments: file,
                 relatedRecords: {
                      customRecord:{

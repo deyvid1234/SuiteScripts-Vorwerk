@@ -86,7 +86,7 @@ function(email,record,render, file, search, https, runtime,format,Dictionary,Ema
             if(runtime.envType != 'PRODUCTION'){ 
                 print_url_base = 'https://3367613.extforms.netsuite.com/app/site/hosting/scriptlet.nl?script=1408&deploy=1&compid=3367613&h=d48ce6f5d7c69a79c66c';
             }else{
-                print_url_base = 'https://3367613.extforms.netsuite.com/app/site/hosting/scriptlet.nl?script=1408&deploy=1&compid=3367613&h=d48ce6f5d7c69a79c66c';
+                print_url_base = 'https://3367613.extforms.netsuite.com/app/site/hosting/scriptlet.nl?script=1408&deploy=1&compid=3367613&ns-at=AAEJ7tMQyq7jwkS4stiuYtzuLkRmJPspJNtkQcWSrkNFaJUOmXM';
             }
             var url = print_url_base+'&employee='+idemp[config_fields.empleado[type_rec]][0]['value']+'&periodo='+period+'&comp='+idReg+'&level='+type_rec+'&massive=true';
             var headers = {'Content-Type': 'application/json'};
