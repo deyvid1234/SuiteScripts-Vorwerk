@@ -42,7 +42,7 @@ function(serverWidget, search, runtime,format,record) {
                         var currentPage = pagedResults.fetch({index: pageRange.index});
                         currentPage.data.forEach(function (result) {
                      
-                            categoria = result.getValue('name')
+                            categoria = result.getValue('internalid')
                             log.debug('categoria',categoria)
                             return true; 
                          

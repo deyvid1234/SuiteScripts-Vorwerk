@@ -97,9 +97,14 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils,runtime) {
                     var categoria = response.slice(1, -1)
                     var cuentaCustom = rec.setCurrentSublistValue({//seteamos la categoria en su campo
                         sublistId: 'expense',
-                        fieldId: 'category_display',
+                        fieldId: 'category',
                         value: categoria
                     });
+                    /*var cuentaCustom = rec.setCurrentSublistValue({//seteamos la categoria en su campo
+                        sublistId: 'expense',
+                        fieldId: 'category_display',
+                        value: categoria
+                    });*/
                     
                     
                 }
