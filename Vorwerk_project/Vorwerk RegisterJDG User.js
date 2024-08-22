@@ -52,7 +52,7 @@ function(serverWidget,search,record,runtime,redirect,url) {
                 functionName: 'nomina()'
             });
             form.addButton({
-                id : 'custpage_email',
+                id : 'custpage_cfdiyreporte',
                 label : 'Envio de CFDi y Reporte',
                 functionName: 'cfdiReporteSend()'
             });

@@ -335,7 +335,17 @@ function(https, url,record,runtime,currentRecord,message,log,search) {
     }
     function cfdiReporteSend(){
         try{
-
+            
+            var obj = getSelectedData();
+            var url_aux = (runtime.envType != 'PRODUCTION') ? 'https://3367613-sb1.app.netsuite.com/app/site/hosting/scriptlet.nl?script=569&deploy=1' : 'https://3367613.app.netsuite.com/app/site/hosting/scriptlet.nl?script=569&deploy=1';
+            //envia la información por metodo put al map vorwerk commission map
+            var headers = {"Content-Type": "application/json"};
+            var res = https.put({
+                url: url_aux,
+                headers: headers,
+                body: JSON.stringify({obj:obj,type_req:"emailXML-PDF-R"})
+            }).body;
+            log.debug('entramos boton nuevo')
         }catch(e){
             log.debug('error envio de tres',e)
         }
@@ -745,6 +755,7 @@ function(https, url,record,runtime,currentRecord,message,log,search) {
         saveRecord: saveRecord,
         txt: txt,
         nomina:nomina,
+        cfdiReporteSend:cfdiReporteSend,
         emailSend:emailSend,
         policycreate:policycreate,
         massivepdf:massivepdf,
