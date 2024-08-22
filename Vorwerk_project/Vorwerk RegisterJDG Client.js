@@ -333,6 +333,13 @@ function(https, url,record,runtime,currentRecord,message,log,search) {
             log.error('There is an error in nomina process',e);
         }
     }
+    function cfdiReporteSend(){
+        try{
+
+        }catch(e){
+            log.debug('error envio de tres',e)
+        }
+    }
     function emailSend(){
         try{
             var url_aux = ""

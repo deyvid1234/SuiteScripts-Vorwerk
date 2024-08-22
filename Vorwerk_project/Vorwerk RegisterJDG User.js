@@ -53,6 +53,11 @@ function(serverWidget,search,record,runtime,redirect,url) {
             });
             form.addButton({
                 id : 'custpage_email',
+                label : 'Envio de CFDi y Reporte',
+                functionName: 'cfdiReporteSend()'
+            });
+            form.addButton({
+                id : 'custpage_email',
                 label : 'Envio de Email',
                 functionName: 'emailSend()'
             });
