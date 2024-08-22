@@ -31,7 +31,7 @@ function(message,task, serverWidget, search, runtime) {
                           taskType: task.TaskType.MAP_REDUCE,
                           scriptId: 'customscript_reenvio_pfd_cfdi',
                           params: {
-                            custscript_reg_info: JSON.stringify(body.obj),
+                            custscript_reg_information: JSON.stringify(body.obj),
                           }
                     }).submit(); 
                   }
