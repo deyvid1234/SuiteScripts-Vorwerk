@@ -26,6 +26,15 @@ function(message,task, serverWidget, search, runtime) {
     			  //recibe la informacion de la tabla para ejecutar el map y enviar los parametros con la informacion
                   var body = JSON.parse(context.request.body);
                   log.debug('params',body);
+                  if(body.type_req == "emailXML-PDF-R"){
+                    var mapTask = task.create({
+                          taskType: task.TaskType.MAP_REDUCE,
+                          scriptId: 'customscript_reenvio_pfd_cfdi',
+                          params: {
+                            custscript_reg_info: JSON.stringify(body.obj),
+                          }
+                    }).submit(); 
+                  }
                   if(body.type_req == "email"){
                 	  var mapTask = task.create({
                           taskType: task.TaskType.MAP_REDUCE,
