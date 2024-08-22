@@ -29,7 +29,7 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils,runtime) {
         thisRecord.getCurrentSublistField({
             sublistId: 'item',
             fieldId: 'custcol_tc'
-        }).isDisabled = true;
+        }).isDisabled = false;
         thisRecord.getCurrentSublistField({
             sublistId: 'expense',
             fieldId: 'custcol_tc'
@@ -369,7 +369,7 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils,runtime) {
                     thisRecord.getCurrentSublistField({
                         sublistId: sublista,
                         fieldId: 'custcol_tc'
-                    }).isDisabled = true;
+                    }).isDisabled = false;
                 }
 
             }
@@ -631,7 +631,7 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils,runtime) {
                 thisRecord.getCurrentSublistField({
                         sublistId: sublista,
                         fieldId: 'custcol_tc'
-                    }).isDisabled = true;
+                    }).isDisabled = false;
             }
     		return true;
     	}catch(err){
