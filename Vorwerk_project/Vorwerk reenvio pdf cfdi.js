@@ -20,7 +20,7 @@ function(email,record,render, file, search, https, runtime,format,Dictionary,Ema
      */
     function getInputData() {
         var scriptObj = runtime.getCurrentScript();
-        var comissionInfo = scriptObj.getParameter({name: 'custscript_reg_info'});//informacion de la tabla
+        var comissionInfo = scriptObj.getParameter({name: 'custscript_reg_information'});//informacion de la tabla
         log.debug('comissionInfo',comissionInfo);
         return JSON.parse(comissionInfo);
     }

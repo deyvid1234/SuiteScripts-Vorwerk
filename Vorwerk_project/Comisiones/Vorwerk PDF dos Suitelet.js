@@ -105,6 +105,21 @@ function onRequest(context){
 	        var my_file = fileR.save();
 	  		
 	        log.debug('my_file',my_file)
+	        if(type_emp == 3){
+	            type_search = "customrecord_compensaciones_jdg"
+	        }else if(type_emp == 2){
+	            type_search = "customrecord_compensaciones_gtm"
+	        }else{
+	            type_search = "customrecord_comisiones_presentadora"
+	        }
+	        var reg = record.load({
+	            type:  type_search,
+	            id: params.comp,
+	            isDynamic: false
+	        });
+
+	        var compensacionesPdf = reg.setValue({ fieldId: 'custrecord_registro_pdf', value: my_file })
+	        reg.save()
 	        context.response.write(JSON.stringify(my_file));
   		}else{
   			context.response.addHeader({
