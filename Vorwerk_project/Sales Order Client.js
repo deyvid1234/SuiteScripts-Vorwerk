@@ -253,7 +253,7 @@ function(record,search,https,runtime,currentRecord,dialog) {
                 }
                 
             }
-            
+            var txtKilos = '12.60 Kg'
             //si encontro tm6 y es la primer guía 
             if(valid_tm && cont_trak.length == 0){
                 description_txt = description.join(',');
@@ -264,6 +264,7 @@ function(record,search,https,runtime,currentRecord,dialog) {
             }
             //si es una guia extra toma todos los items 
             if(cont_trak.length > 0){
+                txtKilos = '1 Kg'
                 description_txt = description.join(',');
             }
             
@@ -438,37 +439,12 @@ function(record,search,https,runtime,currentRecord,dialog) {
                     fieldId: 'custrecord_vw_description',
                     value: description_txt
                 });
-
-                var salesOrder = record.load({
-                    type: record.Type.SALES_ORDER,
-                    id: idSalesOrder,
-                    isDynamic: false,
+                obj_traking.setValue({
+                    fieldId: 'custrecord_peso',
+                    value: txtKilos
                 });
                 
-                var itemLines = salesOrder.getLineCount({
-                    sublistId  : 'item'
-                });
                 
-                for(var i=0; i < itemLines; i++){
-                    var itemId = salesOrder.getSublistValue({
-                        sublistId : 'item',
-                        fieldId   : 'item',
-                        line      : i
-                    });
-
-                    if( itemId == 2001 || itemId == 2170 || itemId == 2490 || itemId == 2571 || itemId == 2638 || itemId == 2280 || itemId == 1757 || itemId == 1126 || itemId == 2035){
-                        obj_traking.setValue({
-                            fieldId: 'custrecord_peso',
-                            value: '12.60 kg'
-                        });
-                        break;
-                    }else{
-                        obj_traking.setValue({
-                            fieldId: 'custrecord_peso',
-                            value: '1 kg'
-                        }); 
-                    }
-                }
                 
                 var id_traking = obj_traking.save();
                 console.log('id_traking',id_traking);
