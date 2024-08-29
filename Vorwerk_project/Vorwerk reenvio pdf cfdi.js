@@ -72,7 +72,7 @@ function(email,record,render, file, search, https, runtime,format,Dictionary,Ema
                 id: registroCompPdf
             });
             var files = [pdfObj,xmlObj,registroCompPdfObj]
-            EmailLib.sendEmail(email_emp,files,registeInfo.idReg,type_to_add);
+            EmailLib.sendEmailCfdi(email_emp,files,registeInfo.idReg,type_to_add);
         }catch(err){
             log.error("Error map",err);
         }

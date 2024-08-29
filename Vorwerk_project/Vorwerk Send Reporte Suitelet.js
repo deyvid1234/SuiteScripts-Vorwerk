@@ -109,10 +109,34 @@ function(log,email,record,file,https,search,runtime,file) {
         }
         
     }
+    function sendEmailCfdi(employee,file,recordId,recordTypeId){
+        try{
+            log.debug("email send to",employee);
+            log.debug('file',file)
+            email.send({
+                author: runtime.getCurrentUser().id,
+                recipients: 'pilar.torres@thermomix.mx',//employee.email,
+                cc: ['griselrdz@gmail'],
+                subject: 'Reporte de Compensación',
+                body: 'CFDI y Reporte de Compensación : '+employee.name,
+                attachments: file,
+                relatedRecords: {
+                     customRecord:{
+                           id:recordId,
+                           recordType: recordTypeId //an integer value
+                      }
+               }
+            });
+        }catch(err){
+            log.error("error send email",err);
+        }
+        
+    }
     return {
         onRequest: onRequest,
         getpdf:getpdf,
         sendEmail:sendEmail,
+        sendEmailCfdi:sendEmailCfdi,
         getEmployee:getEmployee
     };
     
