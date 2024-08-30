@@ -49,6 +49,8 @@ function(record,search,Utils,Dictionary) {
             var rec = scriptContext.newRecord;
             var rec_type = rec.type;
             var subtotal = rec.getValue('custrecord_total_reporte_gtm');
+            var descuento = rec.getValue('custrecord_descuento_gtm');
+            log.debug('descuento',descuento)
             var total = 0; 
             var retencion = 0;
             var sumBonos = Utils.getBonos(2,rec);//el numero indica el tipo de promocion del presentador
@@ -82,6 +84,9 @@ function(record,search,Utils,Dictionary) {
                     }
                 }
                 total = subtotal-retencion;
+                if(descuento > 0 || descuento != ''){
+                    total = total - descuento
+                }
                 try{
                     var rec_jdg = record.load({
                         type: rec_type,

@@ -86,6 +86,8 @@ function(record,search,Utils,Dictionary,file,xml) {
             var rec = scriptContext.newRecord;
             var rec_type = rec.type;
             var subtotal = rec.getValue('custrecord_total_reporte_jdg');
+            var descuento = rec.getValue('custrecord_descuento_jdg');
+            log.debug('descuento',descuento)
             var total = 0; 
             var retencion = 0;
             var sumBonos = Utils.getBonos(3,rec);
@@ -117,6 +119,9 @@ function(record,search,Utils,Dictionary,file,xml) {
                     }
                 }
                 total = subtotal-retencion;
+                if(descuento > 0 || descuento != ''){
+                    total = total - descuento
+                }
                 try{
                     var rec_jdg = record.load({
                         type: rec_type,

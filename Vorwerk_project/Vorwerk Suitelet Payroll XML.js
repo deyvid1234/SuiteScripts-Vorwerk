@@ -103,10 +103,12 @@ function(record, search, email, render, file,runtime, encode, https, format, xml
                     initDate: objCalendar['data']['initDate'],
                     finishDate: objCalendar['data']['finishDate'],
                     paymentDate: objCalendar['data']['paymentDate'],
-                }
+                },
+                descuento: compensationData['descuento']
             };
             //Creación del XML sin envío y antes de base64
             var objXMLTemplate = createXML(objData);
+            log.debug('objXMLTemplate',objXMLTemplate)
             if(objXMLTemplate.error){
                 throw objXMLTemplate.message;
             }
@@ -493,10 +495,12 @@ function(record, search, email, render, file,runtime, encode, https, format, xml
                 internalid: loadedRecord.id,
                 name: loadedRecord.getValue('name'),
                 employeeId: loadedRecord.getValue(recordEquivalence['employeeField']),
+                descuento: parseFloat(loadedRecord.getValue(recordEquivalence['descuento'])).toFixed(2),
                 subtotal: parseFloat(loadedRecord.getValue(recordEquivalence['subtotalField'])).toFixed(2),
                 isrTaxTotal: parseFloat(loadedRecord.getValue(recordEquivalence['isrTaxField'])).toFixed(2),
                 total: parseFloat(loadedRecord.getValue(recordEquivalence['totalField'])).toFixed(2)
             };
+            log.debug('objReturn',objReturn)
             return createObjReturn(objReturn,'loadCompensationRecord OK',false)
         }
         catch(e){
@@ -521,7 +525,8 @@ function(record, search, email, render, file,runtime, encode, https, format, xml
                     responseMessage: 'custrecord_c_gtm_mensaje_respuesta',
                     responseDetails: 'custrecord_c_gtm_response_details',
                     idRecordDetail: 'custrecord_sub_compensaciones_tm',
-                    estatusTimbrado: 'custrecord_estatus_timbrado_gtm'
+                    estatusTimbrado: 'custrecord_estatus_timbrado_gtm',
+                    descuento:'custrecord_descuento_gtm'
                 },
                 'customrecord_compensaciones_jdg': {
                     employeeField: 'custrecord_c_jdg_empleado',
@@ -536,7 +541,8 @@ function(record, search, email, render, file,runtime, encode, https, format, xml
                     responseMessage: 'custrecord_c_jdg_mensaje_respuesta',
                     responseDetails: 'custrecord_c_jdg_response_details',
                     idRecordDetail: 'custrecord_sub__compensaciones_jdg',
-                    estatusTimbrado: 'custrecord_estatus_timbrado'
+                    estatusTimbrado: 'custrecord_estatus_timbrado',
+                    descuento:'custrecord_descuento_jdg'
 
                 },
                 'customrecord_comisiones_presentadora': {
@@ -552,7 +558,8 @@ function(record, search, email, render, file,runtime, encode, https, format, xml
                     responseMessage: 'custrecord_c_pre_mensaje_respuesta',
                     responseDetails: 'custrecord_c_pre_response_details',
                     idRecordDetail: 'custrecord_sub_compensaciones_pre',
-                    estatusTimbrado: 'custrecord_estatus_timbrado_pre'
+                    estatusTimbrado: 'custrecord_estatus_timbrado_pre',
+                    descuento:'custrecord_descuento_pre'
                 }
             }
             return createObjReturn(objEquivalence[recordType],'getRecordEquivalence OK',false);
@@ -766,6 +773,8 @@ function(record, search, email, render, file,runtime, encode, https, format, xml
             var domicilioFiscalReceptor = objData['conectionSettings']['isTestig'] ? '01030' : objData['receptor']['billzip'];
             var usoCFDI = objData['conectionSettings']['isTestig'] ? 'CN01' : objData['receptor']['cfdiUse'];
             var claveEntFed = objData['conectionSettings']['isTestig'] ? 'MEX' : objData['receptor']['stateValue'];
+            var descuento = objData['descuento'];
+            log.debug('descuento',descuento)
 
             var newXML =
             '<?xml version="1.0" encoding="utf-8"?>'+
@@ -879,7 +888,7 @@ function(record, search, email, render, file,runtime, encode, https, format, xml
                         '<fx:Percepciones TotalSueldos="'+objData['monetaryTotal']['subtotal']+'" TotalGravado="'+objData['monetaryTotal']['subtotal']+'"  TotalExento="'+'0'+'">'+
                             '<fx:Percepcion TipoPercepcion="'+'046'+'" Clave="'+'Compensacion'+'" Concepto="'+'Ingresos asimilados a salarios'+'" ImporteGravado="'+objData['monetaryTotal']['subtotal']+'" ImporteExento="'+'0'+'"></fx:Percepcion>'+
                         '</fx:Percepciones>'+
-                        '<fx:Deducciones TotalOtrasDeducciones="'+'0.0'+'" TotalImpuestosRetenidos="'+objData['monetaryTotal']['isrTaxTotal']+'" >'+
+                        '<fx:Deducciones TotalOtrasDeducciones="'+descuento+'" TotalImpuestosRetenidos="'+objData['monetaryTotal']['isrTaxTotal']+'" >'+
                             '<fx:Deduccion TipoDeduccion="'+'002'+'" Clave="'+'ISR'+'" Concepto="'+'ISR'+'" Importe="'+objData['monetaryTotal']['isrTaxTotal']+'"></fx:Deduccion>'+
                        '</fx:Deducciones>'+
                     '</fx:Nomina12>'+

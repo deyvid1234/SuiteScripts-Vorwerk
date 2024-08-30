@@ -357,6 +357,11 @@ function() {
 				2:'custrecord_c_gtm_bpm10',
 				3:'custrecord_c_jdg_bpm10'
 			},
+			descuento:{
+				1:'custrecord_descuento_pre',
+				2:'custrecord_descuento_gtm',
+				3:'custrecord_descuento_jdg'
+			},
 		} 
 	}
     return {
