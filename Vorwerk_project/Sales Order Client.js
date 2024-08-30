@@ -404,6 +404,7 @@ function(record,search,https,runtime,currentRecord,dialog) {
           
             //si la respuesta es correcta crea un nuevo registro de traking
             if( JSON.parse(responseService).mensaje == 'Exitoso' ){
+
                 var acLogistic = JSON.parse(responseService)
                 console.log('acLogistic',acLogistic);
                 var obj_traking= record.create({
@@ -453,7 +454,10 @@ function(record,search,https,runtime,currentRecord,dialog) {
                     message: 'Guía generada correctamente'
                 });
                 try{
-                    
+                    var location = objSO.getValue('location')
+                    if(location == 53){
+                        objSO.setValue('ordertype',1)
+                    }
                     objSO.setValue('custbody_tracking_dimensions','');
                     objSO.save();
                 }catch(err_update){

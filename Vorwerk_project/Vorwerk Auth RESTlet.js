@@ -595,7 +595,9 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                     log.debug('segundo if',locationValidado)
                     obj_sales_order.setValue('location',locationValidado)
                     obj_sales_order.setValue('custbody_so_eshop',true)
-                    obj_sales_order.setValue('ordertype',1)
+                    if(req_info.custbody46 != ''|| req_info.custbody_estatus_envio != 7){
+                        obj_sales_order.setValue('ordertype',1)
+                    }
                 }
             }
             obj_sales_order.setValue('custbody_cfdi_metpago_sat',req_info.custbody_cfdi_metododepago)
