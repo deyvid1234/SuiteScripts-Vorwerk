@@ -558,7 +558,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 			    				"noPedido":numOrden,
 			    				"PedidoStatus":'Activo',
 			    			}
-			    			log.debug('objRequestAD first SO',JSON.stringify(objRequestAD))
+			    			log.debug('objRequestAD',JSON.stringify(objRequestAD))
 
 				            //Agenda Digital
 				            var responseService = https.post({
@@ -569,7 +569,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 		                            "x-api-key": "QxTbKbIDyB7eN0wCHxCZH5SN6gZzd0Nd7yreJAhW"
 		                        }
 		                    }).body;
-		                    log.debug('responseService AD first SO',responseService)
+		                    log.debug('responseService AD',responseService)
 
 			            }
 			            
@@ -1262,7 +1262,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 	      			});
 	      		});
 	      		log.debug('numOrders',numOrders);
-	           if(numOrders.length > 6 || delegate == 2){
+	           if(numOrders.length >  6 || delegate == 2){
 	        	   return false;
 	           }
 	           	log.debug('count pre if ',count)
@@ -1287,7 +1287,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 	              log.debug('info debug','count'+count+' firstso '+firstso+' type '+scriptContext.type );
 	              
 	              log.debug('context',runtime.executionContext);
-                  //AJUSTE PARA CONSIDERAR PROMOCION TM EN PRESTAMO
+                    //AJUSTE PARA CONSIDERAR PROMOCION TM EN PRESTAMO
                     if (scriptContext.type == 'create' && rec.getValue('custbody_tipo_venta') == 2 && delegate == 5 && delegate != 2){//TIPO DE VENTA 'VENTAS TM', PROMO 'TM EN PRESTAMO'
                         
                         if(count == odv_ganaTM && delegate==5 ){//CONTADOR ES IGUAL AL NUMERO DE VENTAS DE LA CONFIGURACION
@@ -1321,7 +1321,15 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                     if(scriptContext.type == 'create' && rec.getValue('custbody_tipo_venta') != 19 && delegate != 5 && delegate != 2){
 	              		log.debug('cuantos',count)
 		            	if(count == odv_ganaTM && firstso != '' ){//Necesita tener First SO porque es la que cambia a TM Ganada
+		            	  	log.debug('comission antes de flujo TM ganada')
+		            	  	for(inter in internals){
 		            	  
+		            		  record.submitFields({
+			            		  type: 'salesorder',
+			            		  id: internals[inter].internalodv,
+			            		  values: {'custbody_vw_comission_status':'2'}
+		            		  })
+		            	 	}
 		            	  var salesorder = record.load({//Cargar registro 
 		                      type: 'salesorder',
 		                      id: firstso,
@@ -1416,7 +1424,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 	    		                     line: x
 	    		                 })
                                 log.debug('tmp_id',tmp_id+'  line  '+i)
-                                if(tmp_id != 2170 && tmp_id != 2001 && tmp_id != 2280 && tmp_id != 2490 && tmp_id != 2571 && tmp_id !=2638){//2170=TM6 & Varoma 120V UL USA CA MX (24),2001=TM6 & Varoma 120V UL MX US,2280=TM6R,2490= Black,2571=Spark, 2638 = kit 00190
+                                if(tmp_id != 2170 && tmp_id != 2001 && tmp_id != 2280 && tmp_id != 2490 && tmp_id != 2571 && tmp_id !=2638){//2170=TM6 & Varoma 120V UL USA CA MX (24),2001=TM6 & Varoma 120V UL MX US,2280=TM6R,2490= Black,2571=Spark,2638=kit k00190
                                     try{
 										salesorder.removeLine({
 	                                        sublistId: 'item',
@@ -1536,17 +1544,10 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 		            	  objEmployee.save();
 			               
 		            	 
-		            	 for(inter in internals){
-		            	  
-		            		  record.submitFields({
-			            		  type: 'salesorder',
-			            		  id: internals[inter].internalodv,
-			            		  values: {'custbody_vw_comission_status':'2'}
-		            		  })
-		            	 }
+		            	 
 		            	 return numOdv;
 		            	 
-		            	}else if(count < odv_ganaTM ){//963
+		            	}else if(count <= odv_ganaTM ){//963
 		            		for(inter in internals){
 		            		  record.submitFields({
 			            		  type: 'salesorder',
@@ -1575,7 +1576,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 			                      id: rec.id,
 			                      isDynamic: false
 			                  	});
-		    	            	var descuentoTm =   pagatutm(numOdv,odv)*(-.84);
+		    	            	var descuentoTm = pagatutm(numOdv,odv)*(-.84);
 		    	            	
 		    	            	var numLines = salesorder.getLineCount({
 		    		                sublistId: 'item'
