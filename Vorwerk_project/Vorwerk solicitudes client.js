@@ -26,10 +26,10 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils,runtime) {
             sublistId: 'item',
             fieldId: 'estimatedamount'
         }).isDisabled = true;
-        thisRecord.getCurrentSublistField({
+        /*thisRecord.getCurrentSublistField({
             sublistId: 'item',
             fieldId: 'custcol_tc'
-        }).isDisabled = false;
+        }).isDisabled = false;*/
         thisRecord.getCurrentSublistField({
             sublistId: 'expense',
             fieldId: 'custcol_tc'
@@ -75,10 +75,10 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils,runtime) {
                 url = 'https://3367613.app.netsuite.com/app/site/hosting/scriptlet.nl?script=1412&deploy=1';
             }
             if(customform == formEployeeCentre){//formulario custom para employee centre
-                console.log('customform',customform)
+                //console.log('customform',customform)
                 
                 if(fieldid == 'custcol_cuentacustom'){//cuando se ingresa la cuenta en elcmpo custom se llama al suitelet para obtener la categoria
-                    console.log('modificamos cuenta custom')
+                    //console.log('modificamos cuenta custom')
                     var cuentaCustom = rec.getCurrentSublistValue({
                         sublistId: 'expense',
                         fieldId: 'custcol_cuentacustom'
@@ -109,7 +109,7 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils,runtime) {
                     
                 }
                 var sublista = ''
-                console.log('sublistName',sublistName)
+                //console.log('sublistName',sublistName)
                 var campoVendor = ''
                 if(sublistName =='expense'){
                         sublista = 'expense'
@@ -118,7 +118,7 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils,runtime) {
                     sublista = 'item'
                     campoVendor = 'povendor'
                 }
-                console.log('sublista',sublista)
+                //console.log('sublista',sublista)
 
                 if(fieldid ==campoVendor){//cuando se agrega el vendor llamamos al suitelet para obtener la moneda del proveedor
                     var vendor = rec.getCurrentSublistValue({
@@ -370,6 +370,82 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils,runtime) {
                         sublistId: sublista,
                         fieldId: 'custcol_tc'
                     }).isDisabled = false;
+                }
+                
+                if(sublista == 'item' && fieldid =='estimatedrate'){//proceso para llenar el campo monto en pesos en los articulos, sin que se edite el campo de estamatedamount
+                    console.log('aqui setear pesos')
+                    var articulo = rec.getCurrentSublistValue({//se obtiene el vendor, su moneda y se setea en el campo de moneda del proveedor
+                        sublistId: sublista,
+                        fieldId: 'item'
+                    });
+                    var precioNuevo = rec.getCurrentSublistValue({//se obtiene el vendor, su moneda y se setea en el campo de moneda del proveedor
+                        sublistId: sublista,
+                        fieldId: 'estimatedrate'
+                    });
+                    var rateField = rec.setCurrentSublistValue({
+                        sublistId: sublista,
+                        fieldId: 'rate',
+                        value: precioNuevo
+                    });
+                    console.log('articulo',articulo) 
+                    console.log('precioNuevo',precioNuevo) 
+                    var proceso = 'setPriceItem'
+
+                    var headers = {'Content-Type': 'application/json'};
+                    /*var response = https.post({
+                        url: url,
+                        body : JSON.stringify({articulo:articulo,precioNuevo:precioNuevo,proceso:proceso}),
+                        headers: headers
+                    }).body;*/
+                    
+                    var monedaProveedor = rec.getCurrentSublistValue({
+                        sublistId: sublista,
+                        fieldId: 'custcol_moneda_proveedor'
+                    });  
+                    var estimatedAmount = rec.getCurrentSublistValue({
+                        sublistId: sublista,
+                        fieldId: 'estimatedamount'
+                    });
+                    console.log('estimatedAmount',estimatedAmount)
+                    var rate = Utils.currencyConvert(monedaProveedor,'1');
+                    console.log('rate',rate)
+                    var conversion = estimatedAmount * rate;
+
+                    var montoPesos = rec.setCurrentSublistValue({
+                        sublistId: sublista,
+                        fieldId: 'custcolmonto_enpesos',
+                        value: conversion
+                    });
+                    
+                    thisRecord.getCurrentSublistField({
+                        sublistId: sublista,
+                        fieldId: 'estimatedamount'
+                    }).isDisabled = true;
+                    thisRecord.getCurrentSublistField({
+                        sublistId: sublista,
+                        fieldId: 'custcolmonto_enpesos'
+                    }).isDisabled = true;
+
+                    var item = rec.getCurrentSublistValue({//se obtiene el item, su tax scheduled y el impuesto
+                        sublistId: 'item',
+                        fieldId: 'item'
+                    });
+                    console.log('item',item)
+                    var proceso = 'getTaxScheduled'
+                    
+                    var headers = {'Content-Type': 'application/json'};
+                    var response = https.post({
+                        url: url,
+                        body : JSON.stringify({item:item,proceso:proceso}),
+                        headers: headers
+                    }).body;
+                    console.log('response',response.slice(1, -1))
+                    var sub = response.slice(1, -1)
+                    var idTax = rec.setCurrentSublistValue({
+                        sublistId: sublista,
+                        fieldId: 'custcol_tc',
+                        value: sub
+                    });
                 }
 
             }
@@ -633,6 +709,81 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils,runtime) {
                         fieldId: 'custcol_tc'
                     }).isDisabled = false;
             }
+            if(sublista == 'item' && fieldid =='estimatedrate'){//proceso para llenar el campo monto en pesos en los articulos, sin que se edite el campo de estamatedamount
+                    console.log('aqui setear pesos')
+                    var articulo = rec.getCurrentSublistValue({//se obtiene el vendor, su moneda y se setea en el campo de moneda del proveedor
+                        sublistId: sublista,
+                        fieldId: 'item'
+                    });
+                    var precioNuevo = rec.getCurrentSublistValue({//se obtiene el vendor, su moneda y se setea en el campo de moneda del proveedor
+                        sublistId: sublista,
+                        fieldId: 'estimatedrate'
+                    });
+                    var rateField = rec.setCurrentSublistValue({
+                        sublistId: sublista,
+                        fieldId: 'rate',
+                        value: precioNuevo
+                    });
+                    console.log('articulo',articulo) 
+                    console.log('precioNuevo',precioNuevo) 
+                    var proceso = 'setPriceItem'
+
+                    var headers = {'Content-Type': 'application/json'};
+                    /*var response = https.post({
+                        url: url,
+                        body : JSON.stringify({articulo:articulo,precioNuevo:precioNuevo,proceso:proceso}),
+                        headers: headers
+                    }).body;*/
+                    
+                    var monedaProveedor = rec.getCurrentSublistValue({
+                        sublistId: sublista,
+                        fieldId: 'custcol_moneda_proveedor'
+                    });  
+                    var estimatedAmount = rec.getCurrentSublistValue({
+                        sublistId: sublista,
+                        fieldId: 'estimatedamount'
+                    });
+                    console.log('estimatedAmount',estimatedAmount)
+                    var rate = Utils.currencyConvert(monedaProveedor,'1');
+                    console.log('rate',rate)
+                    var conversion = estimatedAmount * rate;
+
+                    var montoPesos = rec.setCurrentSublistValue({
+                        sublistId: sublista,
+                        fieldId: 'custcolmonto_enpesos',
+                        value: conversion
+                    });
+                    
+                    thisRecord.getCurrentSublistField({
+                        sublistId: sublista,
+                        fieldId: 'estimatedamount'
+                    }).isDisabled = true;
+                    thisRecord.getCurrentSublistField({
+                        sublistId: sublista,
+                        fieldId: 'custcolmonto_enpesos'
+                    }).isDisabled = true;
+
+                    var item = rec.getCurrentSublistValue({//se obtiene el item, su tax scheduled y el impuesto
+                        sublistId: 'item',
+                        fieldId: 'item'
+                    });
+                    console.log('item',item)
+                    var proceso = 'getTaxScheduled'
+                    
+                    var headers = {'Content-Type': 'application/json'};
+                    var response = https.post({
+                        url: url,
+                        body : JSON.stringify({item:item,proceso:proceso}),
+                        headers: headers
+                    }).body;
+                    console.log('response',response.slice(1, -1))
+                    var sub = response.slice(1, -1)
+                    var idTax = rec.setCurrentSublistValue({
+                        sublistId: sublista,
+                        fieldId: 'custcol_tc',
+                        value: sub
+                    });
+                }
     		return true;
     	}catch(err){
     		log.error("error fieldChanged",err);

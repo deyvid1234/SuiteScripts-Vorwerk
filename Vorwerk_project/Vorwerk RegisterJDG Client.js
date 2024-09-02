@@ -335,7 +335,14 @@ function(https, url,record,runtime,currentRecord,message,log,search) {
     }
     function cfdiReporteSend(){
         try{
-            
+            var myMsg = message.create({
+                title: "Envio de email ",
+                message: "El envio de de los Registros de compensacion y CFDI están en progreso",
+                type: message.Type.CONFIRMATION
+            });
+            myMsg.show({
+                duration: 5000
+            });
             var obj = getSelectedData();
             var url_aux = (runtime.envType != 'PRODUCTION') ? 'https://3367613-sb1.app.netsuite.com/app/site/hosting/scriptlet.nl?script=569&deploy=1' : 'https://3367613.app.netsuite.com/app/site/hosting/scriptlet.nl?script=569&deploy=1';
             //envia la información por metodo put al map vorwerk commission map

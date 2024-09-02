@@ -253,7 +253,6 @@ function(record,search,https,runtime,currentRecord,dialog) {
                 }
                 
             }
-            var txtKilos = '12.60 Kg'
             //si encontro tm6 y es la primer guía 
             if(valid_tm && cont_trak.length == 0){
                 description_txt = description.join(',');
@@ -264,7 +263,6 @@ function(record,search,https,runtime,currentRecord,dialog) {
             }
             //si es una guia extra toma todos los items 
             if(cont_trak.length > 0){
-                txtKilos = '1 Kg'
                 description_txt = description.join(',');
             }
             
@@ -277,7 +275,15 @@ function(record,search,https,runtime,currentRecord,dialog) {
             }else{
                 id_dimention= objSO.getValue('custbody_tracking_dimensions')!=""?objSO.getValue('custbody_tracking_dimensions'):thisRecord.getValue('custbody_tracking_dimensions');
             }
-            console.log('id_dimention',id_dimention);
+            log.debug('id_dimention',id_dimention);
+            var txtKilos 
+    
+            if (id_dimention == 4){
+                txtKilos = '12.60 kg'
+            }else{
+                txtKilos = '1 kg'
+            }
+            log.debug('txtKilos',txtKilos)
             var objTracking = search.lookupFields({
                 type: 'customrecord_vk_traking_information',
                 id: id_dimention,
@@ -404,6 +410,7 @@ function(record,search,https,runtime,currentRecord,dialog) {
           
             //si la respuesta es correcta crea un nuevo registro de traking
             if( JSON.parse(responseService).mensaje == 'Exitoso' ){
+
                 var acLogistic = JSON.parse(responseService)
                 console.log('acLogistic',acLogistic);
                 var obj_traking= record.create({
@@ -453,7 +460,10 @@ function(record,search,https,runtime,currentRecord,dialog) {
                     message: 'Guía generada correctamente'
                 });
                 try{
-                    
+                    var location = objSO.getValue('location')
+                    if(location == 53){
+                        objSO.setValue('ordertype',1)
+                    }
                     objSO.setValue('custbody_tracking_dimensions','');
                     objSO.save();
                 }catch(err_update){
