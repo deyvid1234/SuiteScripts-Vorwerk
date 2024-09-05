@@ -114,10 +114,10 @@ function(log,email,record,file,https,search,runtime,file) {
             log.debug("email send to",employee);
             log.debug('file',file)
             email.send({
-                author: runtime.getCurrentUser().id,
+                author: '16581',
                 recipients: 'pilar.torres@thermomix.mx',//employee.email,
-                cc: ['griselrdz@gmail'],
-                subject: 'Reporte de Compensación',
+                cc: ['compensaciones@thermomix.mx'],
+                subject: 'CFDI y Reporte de Compensación',
                 body: 'CFDI y Reporte de Compensación : '+employee.name,
                 attachments: file,
                 relatedRecords: {
