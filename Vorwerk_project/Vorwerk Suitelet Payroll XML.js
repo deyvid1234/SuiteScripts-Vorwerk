@@ -271,7 +271,7 @@ function(record, search, email, render, file,runtime, encode, https, format, xml
                     }
                 });
                 var editFolio= record.load({
-                    id: recordid,
+                    id: recordId,
                     type: recordType,
                     isDynamic: false
                 });
@@ -911,7 +911,9 @@ function(record, search, email, render, file,runtime, encode, https, format, xml
             var currentYear = currentDate[1]
 
             var currentMonth = currentDate[0]
+            log.debug('currentMonth',currentMonth)
             currentMonth = parseInt(currentMonth)-1
+            log.debug('currentMonth',currentMonth)
             //currentYear = 2020;
             var arrMonths = [ "enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre" ];
             log.debug('arrMonths[currentMonth]',arrMonths[currentMonth])
