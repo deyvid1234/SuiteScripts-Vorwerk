@@ -335,9 +335,15 @@ function(https, url,record,runtime,currentRecord,message,log,search) {
     }
     function cfdiReporteSend(){
         try{
+            var url_aux = ""
+            if(runtime.envType != 'PRODUCTION'){ 
+                url_aux = "https://3367613-sb1.app.netsuite.com/app/common/scripting/mapreducescriptstatus.nl?daterange=TODAY&datefrom=3%2F9%2F2020&dateto=3%2F9%2F2020&scripttype=1506&primarykey=&jobstatefilterselect=&sortcol=dateCreated&sortdir=DESC&csv=HTML&OfficeXML=F&pdf=&size=50&_csrf=XC8MEeA9RWlvYvXprkCo2j_ZOjHBgMRvpFEMUFaSSZZ59cK-6H3TYHyQdaFe8Ku-20spfhfzq2XnKEYS_hAn73PyT8bzHDA6iNmbtu3oXQjK8l81ygn_XqmK0hJv2OvytuG351pzcgLs-hhkI9gKU-lk5Cy6y5UXcvvTRb_1Cfs%3D&datemodi=WITHIN&date=TODAY&showall=F"
+            }else{
+                url_aux ='https://3367613.app.netsuite.com/app/common/scripting/mapreducescriptstatus.nl?whence=';
+            };  
             var myMsg = message.create({
                 title: "Envio de email ",
-                message: "El envio de de los Registros de compensacion y CFDI están en progreso",
+                message: "Para ver el progreso del envio de los Registros de compensacion y CFDI de click al siguiente enlace: <a href='"+url_aux+"'>Ver Progreso<a>",
                 type: message.Type.CONFIRMATION
             });
             myMsg.show({
