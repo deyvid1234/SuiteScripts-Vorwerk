@@ -84,8 +84,12 @@ function(record,search,http,https,encode,runtime,serverWidget) {
         	try{
         		//Fuerza de ventas bajo demanda
 	    		if(scriptContext.type == 'edit' || scriptContext.type == 'create' || scriptContext.type == 'xedit'){ 
-
-	    			var oldInactive = oldrecord.getValue('isinactive')
+	    			var oldInactive
+	    			if(scriptContext.type == 'create'){
+	    				oldInactive = 'sin Datos de Old record'
+	    			}else{
+	    			 	oldInactive = oldrecord.getValue('isinactive')
+	    			}
 	    			var newInactive = thisRecord.getValue('isinactive')   			
 
 	    			//Variables para elegir nuevo Sales Rep si se inactiva
