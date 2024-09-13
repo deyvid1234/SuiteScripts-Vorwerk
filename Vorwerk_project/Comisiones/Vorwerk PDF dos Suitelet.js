@@ -105,7 +105,7 @@ function onRequest(context){
 	        var my_file = fileR.save();
 	  		
 	        log.debug('my_file',my_file)
-	        if(type_emp == 3){
+          if(type_emp == 3){
 	            type_search = "customrecord_compensaciones_jdg"
 	        }else if(type_emp == 2){
 	            type_search = "customrecord_compensaciones_gtm"
@@ -568,7 +568,7 @@ function table_b_Permanente (data){
 	    strTable += "</table>";
 	    //fin bonos permanentes
 	    
-	    return strTable
+	    return {strTable:strTable, bPermanenteTotal:obj_bonos.bonoTotal}
   	}catch(e){
   		log.error('error bonos permanentes',e)
   	}
@@ -653,8 +653,10 @@ function createTable(data,CompConfigDetails,type_emp_text,period_name,type_emp,c
 		if((type_emp == 1 || type_emp == 3) && promocion == 2 && data.ids_garantia != ''){
 			strTable +=createtablewarranty(data,dataSO)
 		}
-		strTable +=table_b_Permanente(data)
+		
+		var b_permanentes = table_b_Permanente(data)
 		var b_manuales = table_b_Manual(data)
+		strTable +=b_permanentes.strTable
 		strTable +=b_manuales.strTable
 		//resumen
 		strTable +="<br/><h3>Resumen</h3>";
@@ -671,6 +673,11 @@ function createTable(data,CompConfigDetails,type_emp_text,period_name,type_emp,c
         strTable += "<tr>";
 		strTable += "<td border='0.5' border-style='dotted-narrow'>Movimientos Manuales</td>";
         strTable += "<td border='0.5' border-style='dotted-narrow' align='right'>"+ currencyFormat('$',(b_manuales.bManualTotal != ''? (b_manuales.bManualTotal+'.00'):'0.00')) +"</td>";
+        strTable += "</tr>"
+
+        strTable += "<tr>";
+		strTable += "<td border='0.5' border-style='dotted-narrow'>Bonos Permanentes</td>";
+        strTable += "<td border='0.5' border-style='dotted-narrow' align='right'>"+ currencyFormat('$',(b_permanentes.bPermanenteTotal != ''? (b_permanentes.bPermanenteTotal+'.00'):'0.00')) +"</td>";
         strTable += "</tr>"
         	//Solo JDG
         if (type_emp == 3){
