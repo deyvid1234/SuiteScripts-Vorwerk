@@ -230,6 +230,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             const listaEquipoRecluta=listasPresentadora.equipoYRecluta
             //log.debug('listaEquipoRecluta', listaEquipoRecluta)
             const listaNombramientos=listasPresentadora.nombramiento
+            log.debug('listaNombramientos',listaNombramientos)
             newCheckTime = new Date();
             timeDiff = newCheckTime - startTime; //in ms
             timeDiff /= 1000;
@@ -298,7 +299,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 var objCook = false
                 switch(tipoReporteGloobal){
                     case 1: //Reporte LE
-                        if(empType == 3 && empPromo == 2 /*&& allPresentadoras[i].internalid == '92577'*/){
+                        if(empType == 3 && empPromo == 2 /*&& allPresentadoras[i].internalid == '3136515'*/){
                             //Calcular reporte para la persona
                             var reclutas = listaReclutas[i]
                             var integrantesEquipo = listaGrupos[i]   
@@ -320,14 +321,14 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                             //log.debug('objEntrega',objEntrega)
                             
                             objXmasDos = bonoXmasDos(dataEmp,reclutasEquipo,thisPeriodSO,ventasEmp,historicoSO,allPresentadoras,dHistorico,integrantesEquipo,reclutas,listaReclutas)
-                            log.debug('objXmasDos',objXmasDos)
+                            //log.debug('objXmasDos',objXmasDos)
                             objProductividad = bonoProductividad(dataEmp,ventasEmp,compConfigDetails)
                              //log.debug('objProductividad',objProductividad)
                             
                             objVentaEquipo = bonoVentaEquipo(ventasEmp,compConfigDetails,conf,integrantesEquipo,thisPeriodSO)
                             //log.debug('objVentaEquipo',objVentaEquipo)
                             objVentasEquipoNLE=bonoVentaEquipoNLE(listaNombramientos,dataEmp,thisPeriodSO,listaGrupos,allPresentadoras,compConfigDetails)
-                            //log.debug('objVentasEquipoNLE',objVentasEquipoNLE)
+                            log.debug('objVentasEquipoNLE',objVentasEquipoNLE)
                             objGarantia = bonoGarantia(dataEmp,garantiaSO,compConfigDetails)
                             //log.debug('objGarantia',objGarantia)
                             objXmasdosNLE=bonoXmasdosNLE(listaNombramientos,dataEmp,thisPeriodSO,listaGrupos,allPresentadoras,listaEquipoRecluta,historicoSO,dHistorico,namePeriodo,cust_period,listaReclutas)
@@ -420,63 +421,63 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
         var v
         if(ventasPropias){  
             v = ventasPropias.monto>0?ventasPropias.monto:0
-            subtotal+=parseInt(v)
+            subtotal+=parseInt(v,10)
         }
         if(entrega){
             v = entrega.monto>0?entrega.monto:0
-            subtotal+=parseInt(v)
+            subtotal+=parseInt(v,10)
         }
 
         if(supercomision){
           v = supercomision.monto>0?supercomision.monto:0
-          subtotal+=parseInt(v)
+          subtotal+=parseInt(v,10)
         }
         
         if(reclutamiento){      
           v = reclutamiento.monto>0?reclutamiento.monto:0
-          subtotal+=parseInt(v)
+          subtotal+=parseInt(v,10)
         }
         if(objXmasDos){
           v = objXmasDos.monto32>0?objXmasDos.monto32:0
-          subtotal+=parseInt(v)
+          subtotal+=parseInt(v,10)
           
           v = objXmasDos.monto52>0?objXmasDos.monto52:0
-          subtotal+=parseInt(v)
+          subtotal+=parseInt(v,10)
         }
         
         if(productividad){
           v = productividad.monto>0?productividad.monto:0
-          subtotal+=parseInt(v)
+          subtotal+=parseInt(v,10)
           
         }
         if(ventaEquipo){
           v = ventaEquipo.monto>0?ventaEquipo.monto:0
-          subtotal+=parseInt(v)
+          subtotal+=parseInt(v,10)
         }
         if(ventasEquipoNLE){
           v = ventasEquipoNLE.monto>0?ventasEquipoNLE.monto:0
-          subtotal+=parseInt(v)
+          subtotal+=parseInt(v,10)
         }
 
         if(garantia){
           v = garantia.monto>0?garantia.monto:0
-          subtotal+=parseInt(v)
+          subtotal+=parseInt(v,10)
         }
         if(joya){
             v = joya.monto>0?joya.monto:0
-            subtotal+=parseInt(v)
+            subtotal+=parseInt(v,10)
         }
         if(cookKey){
         
             v = cookKey.monto>0?cookKey.monto:0
-            subtotal+=parseInt(v)
+            subtotal+=parseInt(v,10)
         }
         if(xMasdosNLE){
           v = xMasdosNLE.monto52>0?xMasdosNLE.monto52:0
           subtotal+=parseInt(v)
           
           v = xMasdosNLE.monto32>0?xMasdosNLE.monto32:0
-          subtotal+=parseInt(v)
+          subtotal+=parseInt(v,10)
         }
 
         v = subtotal>0?true:false
@@ -556,7 +557,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             //log.debug('ventasPropias',ventasPropias)
             var v
             v = ventasPropias.monto>0?ventasPropias.monto:0
-            subtotal+=parseInt(v)
+            subtotal+=parseInt(v,10)
             sublist.setSublistValue({
                 id : 'custentity_venta_propia',
                 line : linea,
@@ -587,7 +588,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             var v
             //Entrega monto
             v = entrega.monto>0?entrega.monto:0
-            subtotal+=parseInt(v)
+            subtotal+=parseInt(v,10)
             sublist.setSublistValue({
                 id : 'custentity_entrega',
                 line : linea,
@@ -612,7 +613,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             });
             //Bono supercomision 
             v = supercomision.monto>0?supercomision.monto:0
-            subtotal+=parseInt(v)
+            subtotal+=parseInt(v,10)
             sublist.setSublistValue({
                 id : 'custentity_bono_sc',
                 line : linea,
@@ -622,7 +623,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
         //reclutamiento
         if(reclutamiento){         
             v = reclutamiento.monto>0?reclutamiento.monto:0
-            subtotal+=parseInt(v)
+            subtotal+=parseInt(v,10)
             sublist.setSublistValue({
                 id : 'custentity_bono_rec',
                 line : linea,
@@ -654,7 +655,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             });
             //Bono 3+2
             v = objXmasDos.monto32>0?objXmasDos.monto32:0
-            subtotal+=parseInt(v)
+            subtotal+=parseInt(v,10)
             sublist.setSublistValue({
                 id : 'custentity_bono_tres_dos',
                 line : linea,
@@ -662,7 +663,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             });
             //Bono 5+2
             v = objXmasDos.monto52>0?objXmasDos.monto52:0
-            subtotal+=parseInt(v)
+            subtotal+=parseInt(v,10)
             sublist.setSublistValue({
                 id : 'custentity_bono_cinco_dos',
                 line : linea,
@@ -672,7 +673,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
         //productividad
         if(productividad){
             v = productividad.monto>0?productividad.monto:0
-            subtotal+=parseInt(v)
+            subtotal+=parseInt(v,10)
             sublist.setSublistValue({
                 id : 'custentity_bono_productividad',
                 line : linea,
@@ -692,7 +693,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             });
           
             v = ventaEquipo.monto>0?ventaEquipo.monto:0
-            subtotal+=parseInt(v)
+            subtotal+=parseInt(v,10)
             sublist.setSublistValue({
                 id : 'custentity_venta_equipo',
                 line : linea,
@@ -723,7 +724,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             });
           
             v = ventasEquipoNLE.monto>0?ventasEquipoNLE.monto:0
-            subtotal+=parseInt(v)
+            subtotal+=parseInt(v,10)
             sublist.setSublistValue({
                 id : 'custentity_nle_monto',
                 line : linea,
@@ -747,7 +748,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 value : v!=''?v:''
               });
             v = garantia.monto>0?garantia.monto:0
-            subtotal+=parseInt(v)
+            subtotal+=parseInt(v,10)
             sublist.setSublistValue({
                 id : 'custentity_garantia_monto',
                 line : linea,
@@ -756,7 +757,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
         }
         if(joya){
             v = joya.monto>0?joya.monto:0
-            subtotal+=parseInt(v)
+            subtotal+=parseInt(v,10)
             sublist.setSublistValue({
                 id : 'custentity_bono_emerald',
                 line : linea,
@@ -772,7 +773,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 value : v!=''?v:''
             });
             v = cookKey.monto>0?cookKey.monto:0
-            subtotal+=parseInt(v)
+            subtotal+=parseInt(v,10)
             sublist.setSublistValue({
                 id : 'custentity_cookkey_comision',
                 line : linea,
@@ -789,14 +790,14 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             });
           
             v = xMasdosNLE.monto52>0?xMasdosNLE.monto52:0
-            subtotal+=parseInt(v)
+            subtotal+=parseInt(v,10)
             sublist.setSublistValue({
                 id : 'custentity_cincomasdos_nle_monto',
                 line : linea,
                 value : v
             });
             v = xMasdosNLE.monto32>0?xMasdosNLE.monto32:0
-            subtotal+=parseInt(v)
+            subtotal+=parseInt(v,10)
             sublist.setSublistValue({
                 id : 'custentity_tresmasdos_nle_monto',
                 line : linea,
@@ -852,7 +853,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 var t_venta_propia = data.length
                 //log.debug('t_venta_propia',t_venta_propia)
                 //log.debug('conf',conf)
-                var bono_emerald = parseInt(compConfigDetails[conf]['esquemaVentasPresentadora'][t_venta_propia]['bonoProductividad']) - parseInt(compConfigDetails['1']['esquemaVentasPresentadora'][t_venta_propia]['bonoProductividad'])
+                var bono_emerald = parseInt(compConfigDetails[conf]['esquemaVentasPresentadora'][t_venta_propia]['bonoProductividad'],10) - parseInt(compConfigDetails['1']['esquemaVentasPresentadora'][t_venta_propia]['bonoProductividad'],10)
                 //log.debug('bono_emerald',bono_emerald)
                 return {monto:bono_emerald}
             }else{
@@ -935,26 +936,27 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
         try{
             var liderM=dataEmp.internalid//lider madre
             var montoTotal= 0
-            
+                log.debug('liderM',liderM)
+                log.debug('listaNombramientos',listaNombramientos)
             if(listaNombramientos.hasOwnProperty(liderM)){//Se valida si la lider tiene lideres hijos
                 var liderHijo = {}
-                //log.debug('liderM',liderM)
-                //log.debug('listaNombramientos de la lider ', listaNombramientos[liderM])
+                log.debug('liderM',liderM)
+                log.debug('listaNombramientos de la lider ', listaNombramientos[liderM])
                 for(i in listaNombramientos[liderM]){//por cada lider hijo se obtiene su configuracion, equipo y ventas y se llama al bono Venta equpi para calcular el monto
                     var empConf=allPresentadoras[listaNombramientos[liderM][i]].emp_conf
-                       // log.debug('lista empConf', empConf)
+                        log.debug('lista empConf', empConf)
                     var configH=Utils.getConf(empConf);
-                        //log.debug('lista configH', configH)
+                        log.debug('lista configH', configH)
                     var equipoH=listaGrupos[listaNombramientos[liderM][i]]
-                       // log.debug('lista equipoH', equipoH)
+                        log.debug('lista equipoH', equipoH)
                     var ventasH= thisPeriodSO[listaNombramientos[liderM][i]]
-                        //log.debug('lista ventasH', ventasH)
+                        log.debug('lista ventasH', ventasH)
                     
                     var ventaEquipoH=bonoVentaEquipo(ventasH,compConfigDetails,configH,equipoH,thisPeriodSO)
-                       // log.debug('ventaEquipoH',ventaEquipoH)
+                        log.debug('ventaEquipoH',ventaEquipoH)
                     var montoNLE=ventaEquipoH.monto
                     montoTotal += montoNLE//se suman los montos de cada lider hijo para obtener el monto total a pagar a la lider madre
-                    
+
                 }
                 liderHijo= listaNombramientos[liderM]
                 return {monto:montoTotal, data:liderHijo}
@@ -1031,7 +1033,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                     var hasta= compConfigDetails[conf]['esquemaVentasJefaGrupo']['grupo'][num_]['hasta']
                     var desde= compConfigDetails[conf]['esquemaVentasJefaGrupo']['grupo'][num_]['desde']
                     if(numeroVentasEquipo >= desde && numeroVentasEquipo <= hasta){
-                        venta_equipo = (compConfigDetails[conf]['esquemaVentasJefaGrupo']['grupo'][num_]['compensacion'])*(parseInt(porcentaje)/100)
+                        venta_equipo = (compConfigDetails[conf]['esquemaVentasJefaGrupo']['grupo'][num_]['compensacion'])*(parseInt(porcentaje,10)/100)
                         //log.debug('venta_equipo',venta_equipo)
                         break;
                     }
@@ -1153,11 +1155,11 @@ una rcluta de algun miembro del equipo*/
                
             }
             if (integrantesEquipo && bonoLogrado == false){
-                log.debug('inicia recorido de reclutas del equipo')
+                //log.debug('inicia recorido de reclutas del equipo')
                    integrantesEquipo.forEach(function(i,index) {//recorremos cada integrante del equipo y obtenemos sus reclutas
                         var reclutasXintegranteEquipo = listaReclutas[i] 
                         for (y in reclutasXintegranteEquipo){//de cada recluta obtenemos su fecha de contratacion o reactivacion, fin objetivo 1 y reclutador
-                            log.debug('reclutasXintegranteEquipo y', reclutasXintegranteEquipo[y]) 
+                            //log.debug('reclutasXintegranteEquipo y', reclutasXintegranteEquipo[y]) 
                             var hiredate=allPresentadoras[reclutasXintegranteEquipo[y]]['hiredate']
                             var reactivacion=allPresentadoras[reclutasXintegranteEquipo[y]]['fechaReactivacion']
                             var fechaObjetivo = allPresentadoras[reclutasXintegranteEquipo[y]]['objetivo_1']
@@ -1199,7 +1201,7 @@ una rcluta de algun miembro del equipo*/
                         }
                         
                     })
-                    log.debug('salesOrdersEq',salesOrdersEq)
+                    //log.debug('salesOrdersEq',salesOrdersEq)
                     equipoActivas=Object.keys(salesOrdersEq)//reclutas de algun miembro del equipo activas
                     if(ventasEmp){//considera 1 recluta del lider y una recluta de algun miembro del equipo
                         if(ventasEmp.length> 2 && ventasEmp.length<5 && preActivas.length >= 1 && equipoActivas.length >= 1){
@@ -1446,7 +1448,7 @@ una rcluta de algun miembro del equipo*/
                 
                 //monto: Monto a partir del numero de ventas 
                 //data: Arreglo de Internal id de Sales Order del EMP
-                montoEntrega=parseInt(ventasNo)*500
+                montoEntrega=parseInt(ventasNo,10)*500
                 return {monto:montoEntrega, data:dataEnt}                        
             }else if (cust_entrega == 2){
                 return false
@@ -1610,14 +1612,19 @@ una rcluta de algun miembro del equipo*/
 
                     if(objEMP.nombramientoPor != '' && objEMP.tipoNombramento == 4){
                         var periodo=namePeriodo.split('/')
-                        var mesPeriodo = parseInt(periodo[0])
-                        var yearPeriodo=parseInt(periodo[1])
+                        var mesPeriodo = parseInt(periodo[0],10)
+                        var yearPeriodo=parseInt(periodo[1],10)
 
                         var mesMinimo=mesPeriodo-3    
                         var fechaNombramiento=objEMP.fechaNombramiento.split('/')
-                        var mesNombramiento=parseInt(fechaNombramiento[1])
-                        var yearNom=parseInt(fechaNombramiento[2])
-
+                        var mesNombramiento=parseInt(fechaNombramiento[1],10)
+                        var yearNom=parseInt(fechaNombramiento[2],10)
+                        log.debug('periodo',periodo)
+                            log.debug('mesNombramiento',mesNombramiento)
+                            log.debug('mesMinimo',mesMinimo)
+                            log.debug('mesPeriodo',mesPeriodo)
+                            log.debug('yearNom',yearNom)
+                            log.debug('yearPeriodo',yearPeriodo)
                         if(mesNombramiento>mesMinimo && mesNombramiento <= mesPeriodo && yearNom ==yearPeriodo && mesNombramiento >= 5){
 
                             if(nombradsPor.hasOwnProperty(objEMP.nombramientoPor)){
