@@ -115,7 +115,7 @@ function(log,email,record,file,https,search,runtime,file) {
             log.debug('file',file)
             email.send({
                 author: '16581',
-                recipients: 'pilar.torres@thermomix.mx',//employee.email,
+                recipients: employee.email,
                 cc: ['compensaciones@thermomix.mx'],
                 subject: 'CFDI y Reporte de Compensación',
                 body: 'CFDI y Reporte de Compensación : '+employee.name,
