@@ -300,7 +300,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 var objCook = false
                 switch(tipoReporteGloobal){
                     case 1: //Reporte LE
-                        if(empType == 3 && empPromo == 2 && allPresentadoras[i].internalid == '3136515'){
+                        if(empType == 3 && empPromo == 2 /*&& allPresentadoras[i].internalid == '15929'*/){
                             //Calcular reporte para la persona
                             var reclutas = listaReclutas[i]
                             var integrantesEquipo = listaGrupos[i]   
@@ -713,12 +713,15 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 line : linea,
                 value : v
             });
-            v = ventaEquipo.infoNle!=''?ventaEquipo.infoNle:''
-            sublist.setSublistValue({
-                id : 'custentity_lider_nle',
-                line : linea,
-                value : JSON.stringify(v)
-            });
+            if(ventaEquipo.infoNle){
+                v = ventaEquipo.infoNle!=''?ventaEquipo.infoNle:''
+                sublist.setSublistValue({
+                    id : 'custentity_lider_nle',
+                    line : linea,
+                    value : JSON.stringify(v)
+                });
+            }
+            
         }
         //NLE
         /*if(ventasEquipoNLE){
@@ -939,25 +942,29 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             var liderM=dataEmp.internalid//lider madre
             var montoTotal= 0
             var nle = {}
-            //log.debug('liderM',liderM)
-            //log.debug('listaNombramientos',listaNombramientos)
+            log.debug('liderM',liderM)
+            log.debug('listaNombramientos',listaNombramientos)
             if(listaNombramientos.hasOwnProperty(liderM)){//Se valida si la lider tiene lideres hijos
                 var liderHijo = {}
-                //log.debug('listaNombramientos de la lider ', listaNombramientos[liderM])
+                log.debug('listaNombramientos de la lider ', listaNombramientos[liderM])
                 for(i in listaNombramientos[liderM]){//por cada lider hijo se obtiene sus ventas pripias, equipo y ventas  del equipo
                     
                     var equipoH=listaGrupos[listaNombramientos[liderM][i]]
-                    //log.debug('lista equipoH', equipoH)
+                    log.debug('lista equipoH', equipoH)
                     var ventasH= thisPeriodSO[listaNombramientos[liderM][i]]
-                    //log.debug('lista ventasH', ventasH)
-                    var ventaPropia= {}
+                    log.debug('lista ventasH', ventasH)
+                    var ventaPropia= []
                     for (y in ventasH){
+
                         var key = Object.keys(ventasH[y])
                         var salesrep = ventasH[y][key].salesrep
                         log.debug('salesrep',salesrep)
                         var idso = ventasH[y][key].internalid
                         log.debug('idso',idso)
-                        ventaPropia[salesrep]=idso
+                        
+                            ventaPropia.push(idso)
+                        
+                        
                     }
                     var numeroVentasEquipo=0
                     var infoVentasEquipo ={}
@@ -984,9 +991,12 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                                                      
                         }
                     }
-                    numeroVentasEquipo = numeroVentasEquipo+ventasH.length//se suman las ventas del equipo con las ventas propias
-                    /*log.debug('numeroVentasEquipo 2',numeroVentasEquipo)
-                    log.debug('infoVentasEquipo',infoVentasEquipo)*/
+                    if(ventaPropia != ''){
+                        numeroVentasEquipo = numeroVentasEquipo+ventasH.length//se suman las ventas del equipo con las ventas propias
+                    }
+                    
+                    log.debug('numeroVentasEquipo 2',numeroVentasEquipo)
+                    log.debug('infoVentasEquipo',infoVentasEquipo)
                 }
                 nle[listaNombramientos[liderM]] = { dataEquipo:infoVentasEquipo, ventaPropia:ventaPropia }
                 
@@ -1049,7 +1059,10 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             //log.debug('numeroVentasEquipo',numeroVentasEquipo)
             var nle = ventaEquipoNLE(listaNombramientos,dataEmp,thisPeriodSO,listaGrupos,allPresentadoras,compConfigDetails)
             log.debug('nle',nle)
-            numeroVentasEquipo = numeroVentasEquipo + nle.noVentas
+            if(nle != false){
+                numeroVentasEquipo = numeroVentasEquipo + nle.noVentas
+            }
+            
             log.debug('numeroVentasEquipo',numeroVentasEquipo)
             for ( i in compConfigDetails[1]['esquemaVentasJefaGrupo']['propias'] ){//SE OBTIENE EL PORCENTAJE
                 var desde = compConfigDetails[1]['esquemaVentasJefaGrupo']['propias'][i]['desde']
