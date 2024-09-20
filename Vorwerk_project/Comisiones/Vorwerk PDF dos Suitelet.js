@@ -169,7 +169,7 @@ function salesOrdersTP(cust_period){
       	const salesOrderSearchColItem = search.createColumn({ name: 'item' });
       	const salesOrderSearchColentity = search.createColumn({ name: 'entity' });
       	const salesOrderSearchcustipo_venta = search.createColumn({ name: 'custbody_tipo_venta' });
-
+      	const salesOrderSearchColSalesRepLider = search.createColumn({ name: 'supervisor', join: 'salesrep' });
       	const searchSalesGar = search.create({
           	type: 'salesorder',
           	filters: salesOrderSearchFilters,
@@ -180,7 +180,8 @@ function salesOrdersTP(cust_period){
               	salesOrderSearchColTranDate,
               	salesOrderSearchColItem,
               	salesOrderSearchColentity,
-              	salesOrderSearchcustipo_venta
+              	salesOrderSearchcustipo_venta,
+              	salesOrderSearchColSalesRepLider
              
           	],
       	});
@@ -196,7 +197,7 @@ function salesOrdersTP(cust_period){
               	var dataSO = r.getAllValues()
               	var salrep = r.getValue('salesrep')
               	var internalID = r.getValue('internalid')
-              
+                var liderSalesRep = r.getValue({ name: 'supervisor', join: 'salesrep' })
 
               	if(salrep in objSObyEmp){
                	 	objSObyEmp[salrep].push(dataSO);
@@ -292,10 +293,32 @@ function table_v_propia(data,tmp_emp,type_emp,promocion,dataSO,CompConfigDetails
   		//Ventas Equipo
 	  	var equipoMonto = data.comision_equipo
 	    var dataEquipo = data.equipo
-	    //log.debug('equipoMonto',equipoMonto)
-	    //log.debug('dataEquipo',dataEquipo)
+	    var ventaPropia = []
+	    if(data.odvNle != ''){//si hay data en el campo odv NLE
+	    	var dataNle = JSON.parse(data.odvNle)
+		    var keyNle = Object.keys(dataNle)
+		    
+		    for (x in keyNle){
+		    	ventaPropia = dataNle[keyNle[x]].ventaPropia
+		    	log.debug('ventasEquipo',ventasEquipo)
+		    	log.debug('ventaPropia',ventaPropia)
+		    	
+		    	var ventasEquipo = dataNle[keyNle[x]].dataEquipo
+		    	for (y in ventasEquipo){
+		    		var odv = ventasEquipo[y]
+		    		log.debug('odv',odv)
+		    		ventaPropia.push(JSON.parse(odv))
+		    	}
+		    	
+		    }
+
+		    log.debug('ventaPropia',ventaPropia)
+		    log.debug('dataNle',keyNle )
+	    }
+	    
 	    var ids = []
     	var arregloVentas= JSON.parse(dataEquipo)
+    	log.debug('arregloVentas',arregloVentas)
     	if(dataEquipo != ""){
     	    for (i in arregloVentas){
     	        for(e in arregloVentas[i]){
@@ -308,18 +331,21 @@ function table_v_propia(data,tmp_emp,type_emp,promocion,dataSO,CompConfigDetails
 		strTable += "<table width='670px'>";
 		strTable += "<tr>";
 		strTable += "<td border='0.5' width='10px'><b>#</b></td>";		
+		strTable += "<td border='0.5' width='0px'><b>LIDER DE EQUIPO</b></td>";
 		strTable += "<td border='0.5' width='0px'><b>VENTA REALIZADA POR</b></td>";
 		strTable += "<td border='0.5' width='200px'><b>CLIENTE</b></td>";
 		strTable += "<td border='0.5' width='0px'><b>FECHA</b></td>";
 		strTable += "<td border='0.5' width='0px'><b>PEDIDO</b></td>";
 		strTable += "</tr>";
 		lineaRec=0
-				
-		for(var i in ids){
+
+		for(var i in ids){//llena la tabla venta eqipo con ventas equipo de la LM
 			try{
 				lineaRec++
 				var objSObyid = dataSO.objSObyid
 				var thisSO = objSObyid[ids[i]]
+				var lider = data.lider
+				log.debug('lider',lider)
 				var salesRep = thisSO.salesrep[0].text
 				var cliente = thisSO.entity[0].text
 				var fecha = thisSO.trandate
@@ -327,7 +353,8 @@ function table_v_propia(data,tmp_emp,type_emp,promocion,dataSO,CompConfigDetails
 				
 				cliente = cliente.replace(/&/gi," ")
 				strTable += "<tr>";
-				strTable += "<td border='0.5' border-style='dotted-narrow'>" + lineaRec 	+ "</td>";		
+				strTable += "<td border='0.5' border-style='dotted-narrow'>" + lineaRec 	+ "</td>";
+				strTable += "<td border='0.5' border-style='dotted-narrow'>" + lider 	+ "</td>";		
 				strTable += "<td border='0.5' border-style='dotted-narrow'>" + salesRep 	+ "</td>";
 				strTable += "<td border='0.5' border-style='dotted-narrow'>" + cliente	    + "</td>";
 				strTable += "<td border='0.5' border-style='dotted-narrow'>" + fecha 		+ "</td>";
@@ -338,6 +365,39 @@ function table_v_propia(data,tmp_emp,type_emp,promocion,dataSO,CompConfigDetails
 			}
 					
 		}
+		if(ventaPropia != ''){//llena la tabla con las ventas esquipo del lH y sus ventas propias
+			for(var i in ventaPropia){
+				try{
+					lineaRec++
+					var objSObyid = dataSO.objSObyid
+					var thisSO = objSObyid[ventaPropia[i]]
+					//var lider = data.lider
+					log.debug('thisSO',thisSO)
+					var lider = thisSO['salesrep.supervisor'][0].text
+					log.debug('lider',lider)
+					var salesRep = thisSO.salesrep[0].text
+					var cliente = thisSO.entity[0].text
+					var fecha = thisSO.trandate
+					var pedido = thisSO.tranid
+					
+					cliente = cliente.replace(/&/gi," ")
+					strTable += "<tr>";
+					strTable += "<td border='0.5' border-style='dotted-narrow'>" + lineaRec 	+ "</td>";
+					strTable += "<td border='0.5' border-style='dotted-narrow'>" + lider 	+ "</td>";		
+					strTable += "<td border='0.5' border-style='dotted-narrow'>" + salesRep 	+ "</td>";
+					strTable += "<td border='0.5' border-style='dotted-narrow'>" + cliente	    + "</td>";
+					strTable += "<td border='0.5' border-style='dotted-narrow'>" + fecha 		+ "</td>";
+					strTable += "<td border='0.5' border-style='dotted-narrow'>" + pedido		+ "</td>";		
+					strTable += "</tr>";
+				}catch(errT2){
+					log.error('errT2',errT2);
+				}
+						
+			}
+		}
+				
+		
+		
 		var porcentaje
 		var odv_p = data.odv_entrega.split(',')
 	
@@ -901,6 +961,8 @@ function search_crecord(id_jdg,type_emp,promocion){
         });
     	//log.debug('type_search',type_search)
     	if(type_emp== 3){
+    		data.lider = r.getValue('custrecord_c_jdg_empleado')
+    		data.odvNle = r.getValue('custrecordodv_nle')// prod custrecord_odv_nle
             data.comision_equipo = r.getValue(config_fields.comision_equipo[type_emp])
             data.equipo = r.getValue(config_fields.equipo[type_emp]) 
     	}
