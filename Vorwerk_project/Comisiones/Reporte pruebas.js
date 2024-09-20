@@ -997,8 +997,9 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                     
                     log.debug('numeroVentasEquipo 2',numeroVentasEquipo)
                     log.debug('infoVentasEquipo',infoVentasEquipo)
+                    nle[listaNombramientos[liderM][i]] = { dataEquipo:infoVentasEquipo, ventaPropia:ventaPropia }
                 }
-                nle[listaNombramientos[liderM]] = { dataEquipo:infoVentasEquipo, ventaPropia:ventaPropia }
+                
                 
                 return {noVentas:numeroVentasEquipo, dataNle:nle }
             }else{
