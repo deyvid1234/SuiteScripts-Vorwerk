@@ -125,7 +125,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 	        	var type = scriptContext.type;
 	    		var rec = scriptContext.newRecord;
 	    		var recordid = rec.id;
-	    		var entity = parseInt(rec.getValue('entity'));
+	    		var entity = parseInt(rec.getValue('entity'),10);
 	    		var salesrep = rec.getValue('salesrep')
 	    		var idTpl="",idUSer="",email_send="";
 	    		var valid_line = 0;
@@ -144,6 +144,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 	    		log.debug('type',type);
                 if(type == 'create' || type == 'edit'){
                 	log.debug('se activo por el evento ')
+
                 	var numOdv = validSalesOrder(scriptContext);
                 	//dd
                 	try{
@@ -418,7 +419,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 	    		var oldrec = scriptContext.oldRecord;
 	    		var recordid = rec.id;
 
-	    		var customer = parseInt(rec.getValue('entity'));
+	    		var customer = parseInt(rec.getValue('entity'),10);
 	    		var fecha_venta = rec.getValue('trandate')
 	    		var numOrden = rec.getValue('tranid')
 	    		var idOrden = rec.getValue('id')
@@ -719,7 +720,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 		            });
 
 	    			log.debug('dataItem',dataItem)
-	    			var disponible_eshop = parseInt(dataItem['custitem_disponible_eshop']) //Stock dedicado a eshop
+	    			var disponible_eshop = parseInt(dataItem['custitem_disponible_eshop'],10) //Stock dedicado a eshop
 		    		log.debug('disponible_eshop',disponible_eshop)
 		    		var itemType = dataItem['recordtype']
 		    		log.debug('itemType',itemType)
@@ -858,7 +859,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 	                    });
 
 	                    log.debug('dataItem',dataItem)
-	                    var disponible_eshop = parseInt(dataItem['custitem_disponible_eshop']) //Stock dedicado a eshop
+	                    var disponible_eshop = parseInt(dataItem['custitem_disponible_eshop'],10) //Stock dedicado a eshop
 	                    log.debug('disponible_eshop',disponible_eshop)
 	                    var itemType = dataItem['recordtype']
 	                    log.debug('itemType',itemType)
@@ -1011,7 +1012,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
         
     }
 
-    function setRecruiter(objRecord){
+    function  setRecruiter(objRecord){
         try{
             var idSalesRep = objRecord.getValue('salesrep');
             var objRecruiter = search.lookupFields({
