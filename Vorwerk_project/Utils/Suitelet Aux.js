@@ -9,7 +9,7 @@
 define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file','N/encode','N/https','N/email'], 
 function(plugin,task, serverWidget, search, runtime,file,encode,https,email){
     function onRequest(scriptContext) {
-      try{
+      try{/*
         log.debug('scriptContext',scriptContext.request.method)
         var mesAgo = '07'
         log.debug('mesAgo',mesAgo)
@@ -19,37 +19,39 @@ function(plugin,task, serverWidget, search, runtime,file,encode,https,email){
         var mesSep = '08'
         log.debug('mesSep',mesSep)
         var mesSep = parseInt(mesSep,10)
-        log.debug('mesSep parse',mesSep)
-
-        var form = createForm();
-        const params = scriptContext.request.parameters;
+        log.debug('mesSep parse',mesSep)*/
         
-        if(scriptContext.request.method == 'POST'){
-                var startTime = new Date();
-                scriptContext.response.writePage(form);
+        var request = scriptContext.request;
+        var response = scriptContext.response;
+        var paramsurl = scriptContext.request.parameters;
+        
+        log.debug('params',paramsurl)
+        var form = createForm();
+             
+        scriptContext.response.writePage(form);
 
-                //Obtiene los datos ingresados de los campos
-                cust_promo = params.custpage_promo;
-                cust_type = params.custpage_type;
-                cust_period = params.custpage_periodo;
-                cust_presentadora = params.custpage_presentadora;
-                log.debug('cust_presentadora',cust_presentadora)
+        //Obtiene los datos ingresados de los campos
+        var cust_promo = paramsurl.promo;
+        var cust_type = paramsurl.tipo;
+        var cust_period_inicio = paramsurl.periodoI;
+        var cust_period_fin = paramsurl.periodoF;
+        var cust_presentadora = paramsurl.pre;
+        log.debug('cust_presentadora',cust_presentadora)
+        var custpage_periodo = form.getField({ id:'custpage_periodo'});
+        custpage_periodo.defaultValue = cust_period_inicio;
+        var custpage_type = form.getField({ id:'custpage_type'});
+        custpage_type.defaultValue = cust_type;
+        var custpage_promo = form.getField({ id:'custpage_promo'});
+        custpage_promo.defaultValue = cust_promo;
+        var custpage_presentadora = form.getField({ id:'custpage_presentadora'});
+        custpage_presentadora.defaultValue = cust_presentadora;
+        
+        scriptContext.response.writePage(form);  
 
-                //Asignacion de valores
-                var custpage_date = form.getField({ id:'custpage_periodo'});
-                custpage_date.defaultValue = cust_period;
-                var custpage_type_ = form.getField({ id:'custpage_type'});
-                custpage_type_.defaultValue = cust_type;
-                var custpage_promo = form.getField({ id:'custpage_promo'});
-                custpage_promo.defaultValue = cust_promo;
-                //var custpage_presentadora = form.getField({ id:'vista_presentadora'});
-                //custpage_presentadora.defaultValue = cust_presentadora;
-                scriptContext.response.writePage(form);  
-
-                log.debug('Filtros','Tipo : '+cust_type+' Promocion : '+cust_promo+' Periodo : '+cust_period+' Presentadora : '+cust_presentadora)
-                tablas(form,cust_type,cust_promo,cust_period,cust_presentadora);
-          
-            }
+        
+        tablas(form,cust_type,cust_promo,cust_period_inicio,cust_presentadora);
+                
+            
             scriptContext.response.writePage(form); 
             
       }catch(err){
@@ -64,15 +66,14 @@ function(plugin,task, serverWidget, search, runtime,file,encode,https,email){
           title: 'Detalle Presentadoras'
         });
           form.addFieldGroup({
-                id: 'custpage_filtros',
-                label: 'Filtros'
+                id: 'custpage_data_pre',
+                label: 'Informacion Presentadora'
             })
           form.addField({
                 id: 'custpage_periodo',
-                type: serverWidget.FieldType.SELECT,
+                type: serverWidget.FieldType.TEXT,
                 label: 'Periodo de Comision',
-                source: 'customrecord_periods',
-                container: 'custpage_filtros'
+                container: 'custpage_data_pre'
             });
 
             form.addField({
@@ -80,21 +81,21 @@ function(plugin,task, serverWidget, search, runtime,file,encode,https,email){
                 type: serverWidget.FieldType.SELECT,
                 label: 'Promocion',
                 source: 'customlist_promocion',
-                container: 'custpage_filtros'
+                container: 'custpage_data_pre'
             });
             form.addField({
                 id: 'custpage_presentadora',
                 type: serverWidget.FieldType.SELECT,
                 label: 'Presentadora',
                 source: 'employee',
-                container: 'custpage_filtros'
+                container: 'custpage_data_pre'
             });
               
             var select = form.addField({
                 id: 'custpage_type',
                 type: serverWidget.FieldType.SELECT,
                 label: 'Tipo',
-                container: 'custpage_filtros'
+                container: 'custpage_data_pre'
             });
             select.addSelectOption({
                 value : 1,
@@ -104,10 +105,7 @@ function(plugin,task, serverWidget, search, runtime,file,encode,https,email){
                 value : 3,
                 text : 'Lideres de Equipo'
             });
-            form.addSubmitButton({
-               label: 'Consultar',
-               container: 'custpage_filtros'
-            });
+            
             
         return form;
             
@@ -118,182 +116,446 @@ function(plugin,task, serverWidget, search, runtime,file,encode,https,email){
     }
     function tablas(form,cust_type,cust_promo,cust_period,cust_presentadora){
       try{
-          var dataPresentadora = searchDataPresentadoras(cust_presentadora)          
+        
+          var dataPresentadora = searchDataPresentadoras(cust_presentadora)  
+          
+             
           var line = 0
+          var idEquipo= []
           var sublistEq = sublistEquipo(form,cust_type,cust_promo)
+          log.debug('sublistEq',sublistEq)
+          var sublistEqS = sublistEq.s
+          log.debug('sublistEqS',sublistEqS)
+          var sublistEqVentas = sublistEq.sv
+          log.debug('sublistEqVentas',sublistEqVentas)
           var sublistaRec = sublistRec(form,cust_type,cust_promo)
-          var tab = form.addTab({
-          id : 'tabid2',
-          label : 'Tab 2'
-      });
+          pruebatabs(form,cust_type,cust_promo,cust_presentadora)
+        
+          
+        for (i in dataPresentadora.empGrupos[cust_presentadora]){
 
-      form.addField({
-            id : 'custpage_tabid2',
-           type: serverWidget.FieldType.TEXT,
-           label: 'Tab 1 Field'
-      });
-          for (i in dataPresentadora.empGrupos[cust_presentadora]){
-
-            log.debug('i',dataPresentadora.empGrupos[cust_presentadora][i])
+            
             var v = dataPresentadora.allPresentadorData[dataPresentadora.empGrupos[cust_presentadora][i]].internalid
-            sublistEq.setSublistValue({
+            idEquipo.push(parseInt(v))
+            sublistEqS.setSublistValue({
                 id : 'nombre',
                 line : line,
                 value : v!=null?v:''
             });
             var v = dataPresentadora.allPresentadorData[dataPresentadora.empGrupos[cust_presentadora][i]].internalid
-            sublistEq.setSublistValue({
+            sublistEqS.setSublistValue({
                 id : 'id',
                 line : line,
                 value : v!=null?v:''
             });
             var v = dataPresentadora.allPresentadorData[dataPresentadora.empGrupos[cust_presentadora][i]].promocion
-            sublistEq.setSublistValue({
+            sublistEqS.setSublistValue({
                 id : 'promocion',
                 line : line,
                 value : v!=null?v:''
             });
             var v = dataPresentadora.allPresentadorData[dataPresentadora.empGrupos[cust_presentadora][i]].hiredate
-            sublistEq.setSublistValue({
+            sublistEqS.setSublistValue({
                 id : 'hiredate',
                 line : line,
                 value : v!=null?v:''
             });
             var v = dataPresentadora.allPresentadorData[dataPresentadora.empGrupos[cust_presentadora][i]].objetivo_1
-            sublistEq.setSublistValue({
+            sublistEqS.setSublistValue({
                 id : 'objetivo_1',
                 line : line,
                 value : v!=null?v:''
             });
             var v = dataPresentadora.allPresentadorData[dataPresentadora.empGrupos[cust_presentadora][i]].objetivo_2
-            sublistEq.setSublistValue({
+            sublistEqS.setSublistValue({
                 id : 'objetivo_2',
                 line : line,
                 value : v!=null?v:''
             });
+
             var v = dataPresentadora.allPresentadorData[dataPresentadora.empGrupos[cust_presentadora][i]].fechaReactivacion
-            sublistEq.setSublistValue({
+            if(v != ''){
+                sublistEqS.setSublistValue({
                 id : 'fecha_reactivacion',
                 line : line,
                 value : v!=null?v:''
             });
             var v = dataPresentadora.allPresentadorData[dataPresentadora.empGrupos[cust_presentadora][i]].obj_1_reactivacion
-            sublistEq.setSublistValue({
+            sublistEqS.setSublistValue({
                 id : 'obj_1_reactivacion',
                 line : line,
                 value : v!=null?v:''
             });
             var v = dataPresentadora.allPresentadorData[dataPresentadora.empGrupos[cust_presentadora][i]].obj_2_reactivacion
-            sublistEq.setSublistValue({
+            sublistEqS.setSublistValue({
                 id : 'obj_2_reactivacion',
                 line : line,
                 value : v!=null?v:''
             });
+            }
+            
             var v = dataPresentadora.allPresentadorData[dataPresentadora.empGrupos[cust_presentadora][i]].emp_conf
-            sublistEq.setSublistValue({
+            sublistEqS.setSublistValue({
                 id : 'emp_conf',
                 line : line,
                 value : v!=null?v:''
             });
             var v = dataPresentadora.allPresentadorData[dataPresentadora.empGrupos[cust_presentadora][i]].conf_reclutamiento
-            log.debug('v',v)
-            sublistEq.setSublistValue({
-                id : 'conf_reclutamiento',
-                line : line,
-                value : !v?v:''
-            });
+            
+            if(v != ''){
+                sublistEqS.setSublistValue({
+                    id : 'conf_reclutamiento',
+                    line : line,
+                    value : v
+                });
+            }
+            
+            
+            
             
             line ++
-          }
-
+        }
+        ventasEquipo(sublistEq,idEquipo)
           var line_rec = 0
           for (i in dataPresentadora.empReclutas[cust_presentadora]){
 
-            log.debug('i',dataPresentadora.empReclutas[cust_presentadora][i])
+            //log.debug('i',dataPresentadora.empReclutas[cust_presentadora][i])
             var v = dataPresentadora.allPresentadorData[dataPresentadora.empReclutas[cust_presentadora][i]].internalid
+            //log.debug('v',v)
             sublistaRec.setSublistValue({
                 id : 'nombre_rec',
                 line : line_rec,
-                value : !v?v:'' 
+                value : v
             });
             var v = dataPresentadora.allPresentadorData[dataPresentadora.empReclutas[cust_presentadora][i]].internalid
             sublistaRec.setSublistValue({
                 id : 'id_rec',
                 line : line_rec,
-                value : !v?v:''
+                value : v
             });
-            var v = dataPresentadora.allPresentadorData[dataPresentadora.empGrupos[cust_presentadora][i]].promocion
+            var v = dataPresentadora.allPresentadorData[dataPresentadora.empReclutas[cust_presentadora][i]].promocion
             sublistaRec.setSublistValue({
                 id : 'promocion_rec',
-                line : line,
-                value : !v?v:''
+                line : line_rec,
+                value : v
             });
-            var v = dataPresentadora.allPresentadorData[dataPresentadora.empGrupos[cust_presentadora][i]].hiredate
+            var v = dataPresentadora.allPresentadorData[dataPresentadora.empReclutas[cust_presentadora][i]].hiredate
             sublistaRec.setSublistValue({
                 id : 'hiredate_rec',
-                line : line,
-                value : !v?v:''
+                line : line_rec,
+                value : v
             });
-            var v = dataPresentadora.allPresentadorData[dataPresentadora.empGrupos[cust_presentadora][i]].objetivo_1
+            var v = dataPresentadora.allPresentadorData[dataPresentadora.empReclutas[cust_presentadora][i]].objetivo_1
             sublistaRec.setSublistValue({
                 id : 'objetivo_1_rec',
-                line : line,
-                value : !v?v:''
+                line : line_rec,
+                value : v
             });
-            var v = dataPresentadora.allPresentadorData[dataPresentadora.empGrupos[cust_presentadora][i]].objetivo_2
+            var v = dataPresentadora.allPresentadorData[dataPresentadora.empReclutas[cust_presentadora][i]].objetivo_2
             sublistaRec.setSublistValue({
                 id : 'objetivo_2_rec',
-                line : line,
-                value : !v?v:''
+                line : line_rec,
+                value : v
             });
-            var v = dataPresentadora.allPresentadorData[dataPresentadora.empGrupos[cust_presentadora][i]].fechaReactivacion
-            sublistaRec.setSublistValue({
-                id : 'fechareactivacion_rec',
-                line : line,
-                value : !v?v:''
-            });
-            var v = dataPresentadora.allPresentadorData[dataPresentadora.empGrupos[cust_presentadora][i]].obj_1_reactivacion
-            sublistaRec.setSublistValue({
-                id : 'obj_1_reactivacion_rec',
-                line : line,
-                value : !v?v:''
-            });
-            var v = dataPresentadora.allPresentadorData[dataPresentadora.empGrupos[cust_presentadora][i]].obj_2_reactivacion
-            sublistaRec.setSublistValue({
-                id : 'obj_2_reactivacion_rec',
-                line : line,
-                value : !v?v:''
-            });
-            var v = dataPresentadora.allPresentadorData[dataPresentadora.empGrupos[cust_presentadora][i]].emp_conf
+            var v = dataPresentadora.allPresentadorData[dataPresentadora.empReclutas[cust_presentadora][i]].fechaReactivacion
+            if(v != ''){
+                sublistaRec.setSublistValue({
+                    id : 'fechareactivacion_rec',
+                    line : line_rec,
+                    value : v
+                });
+                var v = dataPresentadora.allPresentadorData[dataPresentadora.empReclutas[cust_presentadora][i]].obj_1_reactivacion
+                sublistaRec.setSublistValue({
+                    id : 'obj_1_reactivacion_rec',
+                    line : line_rec,
+                    value : v
+                });
+                var v = dataPresentadora.allPresentadorData[dataPresentadora.empReclutas[cust_presentadora][i]].obj_2_reactivacion
+                sublistaRec.setSublistValue({
+                    id : 'obj_2_reactivacion_rec',
+                    line : line_rec,
+                    value : v
+                });
+            }
+            var v = dataPresentadora.allPresentadorData[dataPresentadora.empReclutas[cust_presentadora][i]].emp_conf
             sublistaRec.setSublistValue({
                 id : 'emp_conf_rec',
-                line : line,
-                value : !v?v:''
+                line : line_rec,
+                value : v
             });
-            var v = dataPresentadora.allPresentadorData[dataPresentadora.empGrupos[cust_presentadora][i]].conf_reclutamiento
-            sublistaRec.setSublistValue({
+            var v = dataPresentadora.allPresentadorData[dataPresentadora.empReclutas[cust_presentadora][i]].conf_reclutamiento
+            if(v != ''){
+                sublistaRec.setSublistValue({
                 id : 'conf_reclutamiento_rec',
-                line : line,
-                value : !v?v:''
+                line : line_rec,
+                value : v
             });
+            }
+
             line_rec ++
           }
           
-
+      
   
       }catch(e){
         log.debug('error tablas',e)
       }
 
     }
+    function ventasEquipo(sublistEq,idEquipo){
+        var sublistEqVentas = sublistEq.sv
+        var mySearch = search.load({
+                id : 'customsearch_ventas_pre_detalle'
+            });
+            
+            log.debug('sin tabla integrantes equipo',idEquipo)
+            
+            mySearch.filters.push(search.createFilter({
+                   name: 'trandate',
+                   operator: 'within',
+                   values: ['1/1/2023', '30/7/2024']
+            }));
+            try {
+                mySearch.filters.push(search.createFilter({
+                    name: 'salesrep',
+                    operator: 'anyof',
+                    values: idEquipo
+                }));
+            } catch (error) {
+                log.error('Error adding salesrep filter', error);
+            }
+    
+
+            // Run the paged search
+            try {
+                
+
+                var e = 0;
+            log.debug('inicia busqueda')
+            var pagedResults = mySearch.runPaged();
+            pagedResults.pageRanges.forEach(function (pageRange){
+                var currentPage = pagedResults.fetch({index: pageRange.index});
+                currentPage.data.forEach(function (result) {
+                    var data = result.getAllValues()
+                    log.debug('data ventas equipo',data)
+                        sublistEqVentas.setSublistValue({
+                            id: 'custpage_efecha',
+                            value: result.getValue({
+                                name: 'trandate'
+                            }),
+                            line: e
+                        });
+                        sublistEqVentas.setSublistValue({
+                            id: 'custpage_epedido',
+                            value: result.getValue({
+                                name: 'tranid'
+                            }),
+                            line: e
+                        });
+                        sublistEqVentas.setSublistValue({
+                            id: 'custpage_epre',
+                            value: result.getText({
+                                name: 'entity'
+                            }),
+                            line: e
+                        });
+                        sublistEqVentas.setSublistValue({
+                            id: 'custpage_etipo_venta',
+                            value: result.getValue({
+                                name: 'custbody_tipo_venta'
+                            }),
+                            line: e
+                        });
+                        var reclutadora = result.getValue({
+                                name: 'custbody_vw_recruiter'
+                            })
+                        if(reclutadora != ''){
+                            sublistEqVentas.setSublistValue({
+                                id: 'custpage_ereclutadora_odv',
+                                value: reclutadora,
+                                line: e
+                            });
+                        }
+                        
+                        /*resultSublist.setSublistValue({
+                            id: 'custpage_alta',
+                            value: result.getValue({
+                                name: ({ name: 'hiredate', join: 'salesrep' });
+                            }),
+                            line: i
+                        });
+                        resultSublist.setSublistValue({
+                            id: 'custpage_promocion',
+                            value: result.getValue({
+                                name: ({ name: 'custentity_promocion', join: 'salesrep' });
+                            }),
+                            line: i
+                        });*/
+                        e++;
+                    
+                });
+            });
+                
+            } catch (error) {
+                log.error('Search error', error.message);
+            }
+    }
+    function pruebatabs(form,cust_type,cust_promo,cust_presentadora){
+        try {
+           
+
+            var resultSublist = form.addSublist({
+                id: 'sublistid',
+                type: serverWidget.SublistType.STATICLIST,
+                label: 'Ventas Propias'
+            });
+
+            var mySearch = search.load({
+                id : 'customsearch_ventas_pre_detalle'
+            });
+            mySearch.filters.push(search.createFilter({
+                   name: 'salesrep',
+                   operator: 'anyof',
+                   values: cust_presentadora
+            }));
+            mySearch.filters.push(search.createFilter({
+                   name: 'trandate',
+                   operator: 'within',
+                   values: ['1/1/2024', '30/7/2024']
+            }));
+
+            // Run the paged search
+            var pagedData = mySearch.runPaged({
+                pageSize: 25
+            });
+
+            
+            resultSublist.addField({
+                id: 'custpage_fecha',
+                label: 'Fecha',
+                type: serverWidget.FieldType.TEXT
+            });
+            resultSublist.addField({
+                id: 'custpage_pedido',
+                label: 'Pedido',
+                type: serverWidget.FieldType.TEXT
+            });
+            resultSublist.addField({
+                id: 'custpage_pre',
+                label: 'Presentadora',
+                type: serverWidget.FieldType.TEXT
+            });
+            resultSublist.addField({
+                id: 'custpage_tipo_venta',
+                label: 'Tipo De Venta',
+                type: serverWidget.FieldType.TEXT
+            });
+            resultSublist.addField({
+                id: 'custpage_reclutadora_odv',
+                label: 'Reclutadora ODV',
+                type: serverWidget.FieldType.TEXT
+            });
+            resultSublist.addField({
+                id: 'custpage_alta',
+                label: 'Alta Presentadora',
+                type: serverWidget.FieldType.TEXT
+            });
+            resultSublist.addField({
+                id: 'custpage_promocion',
+                label: 'Promocion',
+                type: serverWidget.FieldType.TEXT
+            });
+
+            var i = 0;
+            pagedData.pageRanges.forEach(function (pageRange) {
+                var myPage = pagedData.fetch({
+                    index: pageRange.index
+                });
+                myPage.data.forEach(function (result) {
+                    var data = result.getAllValues()
+                    //log.debug('data',data)
+                        resultSublist.setSublistValue({
+                            id: 'custpage_fecha',
+                            value: result.getValue({
+                            name: 'trandate'
+                            }),
+                            line: i
+                        });
+                        resultSublist.setSublistValue({
+                            id: 'custpage_pedido',
+                            value: result.getValue({
+                                name: 'tranid'
+                            }),
+                            line: i
+                        });
+                        resultSublist.setSublistValue({
+                            id: 'custpage_pre',
+                            value: result.getText({
+                                name: 'entity'
+                            }),
+                            line: i
+                        });
+                        resultSublist.setSublistValue({
+                            id: 'custpage_tipo_venta',
+                            value: result.getValue({
+                                name: 'custbody_tipo_venta'
+                            }),
+                            line: i
+                        });
+                        var reclutadora = result.getValue({
+                                name: 'custbody_vw_recruiter'
+                            })
+                        if(reclutadora != ''){
+                            resultSublist.setSublistValue({
+                            id: 'custpage_reclutadora_odv',
+                            value: reclutadora,
+                            line: i
+                        });
+                        }
+                        
+                        /*resultSublist.setSublistValue({
+                            id: 'custpage_alta',
+                            value: result.getValue({
+                                name: ({ name: 'hiredate', join: 'salesrep' });
+                            }),
+                            line: i
+                        });
+                        resultSublist.setSublistValue({
+                            id: 'custpage_promocion',
+                            value: result.getValue({
+                                name: ({ name: 'custentity_promocion', join: 'salesrep' });
+                            }),
+                            line: i
+                        });*/
+                        i++;
+                    
+                });
+            });
+
+            resultSublist.label = 'Ventas Propias (' + resultSublist.lineCount + ')';
+            
+        
+            
+            return resultSublist;
+        }catch(e){
+            log.debug('error tabs',e)
+        }
+        
+    }
     function sublistEquipo(form,cust_type,cust_promo){
        
-        
+            var tab = form.addTab({
+                id : 'inf_equipo',
+                label : 'Informacion equipo'
+            });
             var thidField
+            var fieldSublistVentas
+                
             var sublist = form.addSublist({
                 id: 'custpage_equipo',
                 type: serverWidget.SublistType.STATICLIST,
-                label: 'integrantes del Equipo'
+                label: 'Integrantes del Equipo',
+                tab: 'inf_equipo'
             });            
 
             thidField = sublist.addField({
@@ -355,16 +617,66 @@ function(plugin,task, serverWidget, search, runtime,file,encode,https,email){
                 label: 'Configuración de reclutamiento'
             }).updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
 
+
+            var sublistventas = form.addSublist({
+                id: 'custpage_equipo_ventas',
+                type: serverWidget.SublistType.STATICLIST,
+                label: 'Ventas del equipo',
+                tab: 'inf_equipo'
+            });  
+            sublistventas.addField({
+                id: 'custpage_efecha',
+                label: 'Fecha',
+                type: serverWidget.FieldType.TEXT
+            }).updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
+            sublistventas.addField({
+                id: 'custpage_epedido',
+                label: 'Pedido',
+                type: serverWidget.FieldType.TEXT
+            }).updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
+            sublistventas.addField({
+                id: 'custpage_epre',
+                label: 'Presentadora',
+                type: serverWidget.FieldType.TEXT
+            }).updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
+            sublistventas.addField({
+                id: 'custpage_etipo_venta',
+                label: 'Tipo De Venta',
+                type: serverWidget.FieldType.TEXT
+            }).updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
+            sublistventas.addField({
+                id: 'custpage_ereclutadora_odv',
+                label: 'Reclutadora ODV',
+                type: serverWidget.FieldType.TEXT
+            }).updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
+            sublistventas.addField({
+                id: 'custpage_ealta',
+                label: 'Alta Presentadora',
+                type: serverWidget.FieldType.TEXT
+            }).updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
+            sublistventas.addField({
+                id: 'custpage_epromocion',
+                label: 'Promocion',
+                type: serverWidget.FieldType.TEXT
+            }).updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
             
-            return sublist;
+            return {s:sublist,sv:sublistventas}
     }
     function sublistRec(form,cust_type,cust_promo){
       
-        
+            var tab2 = form.addTab({
+                id : 'inf_reclutas',
+                label : 'Informacion de Reclutas'
+            });
+            /*form.insertTab({
+                tab: tab2,
+                nexttab:'inf_equipo'
+            });*/
             var sublist = form.addSublist({
                 id: 'custpage_reclutas',
-                type: serverWidget.SublistType.LIST,
-                label: 'Reclutas'
+                type: serverWidget.SublistType.STATICLIST,
+                label: 'Reclutas',
+                tab: 'inf_reclutas'
             });            
 
             thidField = sublist.addField({
