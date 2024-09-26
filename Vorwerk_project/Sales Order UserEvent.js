@@ -3,9 +3,9 @@
  * @NScriptType UserEventScript
  * @NModuleScope SameAccount
  */
-define(['N/runtime','N/config','N/record','N/render','N/runtime','N/email','N/search','N/format','N/http','N/https', "N/ui/serverWidget"],
+define(['N/runtime','N/config','N/record','N/render','N/runtime','N/email','N/search','N/format','N/http','N/https', "N/ui/serverWidget",'SuiteScripts/Vorwerk_project/Vorwerk Utils V2.js'],
 
-function(runtime,config,record,render,runtime,email,search,format,http,https,serverWidget) {
+function(runtime,config,record,render,runtime,email,search,format,http,https,serverWidget,Utils) {
     var date = new Date();
     var fdate = format.parse({
         value: date,
@@ -21,7 +21,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
      * @param {Form} scriptContext.form - Current form
      * @Since 2015.2
      */
-    function beforeLoad(scriptContext) {
+    function beforeLoad(scriptContext) {        
         try{
             
             //log.debug("start","Add Buton");
@@ -127,6 +127,9 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                 var recordid = rec.id;
                 var entity = parseInt(rec.getValue('entity'),10);
                 var salesrep = rec.getValue('salesrep')
+                log.debug('salesrep',salesrep)
+                var fecha = rec.getValue('trandate')
+                var tipoventa = rec.getValue('custbody_tipo_venta')
                 var idTpl="",idUSer="",email_send="";
                 var valid_line = 0;
                 if(rec.getValue('custbody_vw_recruiter')== ""){
@@ -145,7 +148,33 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                 if(type == 'create' || type == 'edit'){
                     log.debug('se activo por el evento ')
 
-                    var numOdv = validSalesOrder(scriptContext);
+                    // actualizacion de commission status atravez de un suitelet
+                    try{
+                        
+                        if(type == 'edit'){
+                            var oldRec = scriptContext.oldRecord;
+                            var fechaOld = oldRec.getValue('trandate')
+                            var salesrepOld = oldRec.getValue('salesrep')
+                            var tipoventaOld = oldRec.getValue('custbody_tipo_venta')
+                            
+                            if (fechaOld != fecha || salesrepOld != salesrep || tipoventaOld != tipoventa ){
+                                if(salesrepOld != salesrep){
+                                    setRecruiter(rec);
+                                }
+                               var commissionStatusf = commissionStatus(salesrep,recordid) 
+                               //tm ganada
+                            }
+
+                        } else if (type == 'create'){
+                            var commissionStatusf = commissionStatus(salesrep,recordid)
+                            //tm ganada
+                        }
+                         
+                    } catch(e){
+                        log.debug('error actualizacion de commission status',e)
+                    }
+                    
+                    var numOdv = tmGanada(scriptContext);
                     //dd
                     try{
                         var numLines = salesorder.getLineCount({
@@ -1011,8 +1040,99 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
         
         
     }
+    function commissionStatus(salesrep,recordid){
+        try{
+            log.debug('salesrep',salesrep)
+            var presentador = record.load({//Cargar registro del sales rep
+                type: 'employee',
+                id: salesrep,
+                isDynamic: false
+            });
+            var configuracion = presentador.getValue('custentity123')
+            log.debug('configuracion',configuracion)
+            var fechaObj2
+            var hiredate 
+            var reactivacion = presentador.getValue('custentity72')
+            if(reactivacion != ''){
+                fechaObj2 = presentador.getValue('custentity_fin_objetivo_2_reactivacion')
+                hiredate = reactivacion
+                
+            } else{    
+                fechaObj2 = presentador.getValue('custentity_fin_objetivo_2')
+                hiredate = presentador.getValue('hiredate')
 
-    function  setRecruiter(objRecord){
+            }
+            log.debug('hiredate1',hiredate)
+            hiredate = Utils.dateToString(hiredate)
+            log.debug('hiredate2',hiredate)
+            log.debug('fechaObj21',fechaObj2)
+            //fechaObj2 = Utils.dateToString(fechaObj2)
+            //log.debug('fechaObj22',fechaObj2)
+            fechaObj2.setDate(fechaObj2.getDate() + 2);
+            log.debug('fechaObj23',fechaObj2)
+            var limit = 6
+            for (i = 0; i < configuracion.length ; i++){
+                //log.debug('configuracion[i].value',configuracion[i])
+                if(configuracion[i] == 11 || configuracion[i] == 12 || configuracion[i] == 13 || configuracion[i] == 14){//TM6R o TM4U
+                    limit = 4
+                }
+            }
+            var cont = 1
+            var soSearch = search.load({
+                id: 'customsearch_so_commission_status' //busqueda de so 
+            });
+            soSearch.filters.push(search.createFilter({
+                   name: 'salesrep',
+                   operator: 'is',
+                   values: salesrep
+            }));
+            soSearch.filters.push(search.createFilter({
+                   name: 'trandate',
+                   operator: 'onorafter',
+                   values: hiredate
+            }));
+            //agregar filtro de fecha a partir de contratacion o reactivación
+            soSearch.run().each(function(r){//validar
+                var internalId = r.getValue('internalid')
+                log.debug('internalId',internalId)
+                var tipoVenta = r.getValue('custbody_tipo_venta')
+                var fechaSO = r.getValue('trandate')
+                fechaSO = Utils.stringToDate(fechaSO)
+                log.debug('fechaSO',fechaSO)
+                log.debug('cont',cont)
+                if((tipoVenta == '2'|| tipoVenta == '19') && fechaSO <= fechaObj2 && cont <= limit){// tipo venta tm pagada?
+                    //log.debug('internalId',internalId)
+                    log.debug('set com status no comisionable')
+                    var submitFields = record.submitFields({// record load?
+                        type: record.Type.SALES_ORDER,
+                        id: internalId,
+                        values: {'custbody_vw_comission_status':'2'}
+                    });
+                    cont ++
+        
+                }else if (cont > limit){
+                    log.debug('si comisiona break')
+                    var submitFields = record.submitFields({// aun es necesario?
+                        type: record.Type.SALES_ORDER,
+                        id: internalId,
+                        values: {'custbody_vw_comission_status':''}
+                    });
+                    
+                }
+                
+               
+                return true
+                
+            });
+            
+
+        }catch (e){
+            log.debug('error funcion comision status',e)
+        }
+
+    }
+
+    function setRecruiter(objRecord){
         try{
             var idSalesRep = objRecord.getValue('salesrep');
             var objRecruiter = search.lookupFields({
@@ -1185,7 +1305,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
     }
     
     
-    function validSalesOrder(scriptContext){
+    function tmGanada(scriptContext){
         try{
                 
                 var date;
@@ -1198,7 +1318,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                 var internals = [];
                 var odv=  "";
                 var odv_ganaTM = 6
-                if(rec.getValue('salesrep') == 12000 || rec.getValue('salesrep') == 16581){
+                if(rec.getValue('salesrep') == 12000 || rec.getValue('salesrep') == 16581){//validaar quienes son estos sales rep
                     return false;
                 }
                 if(rec.getValue('custbody_tipo_venta') == 19){
@@ -1289,48 +1409,12 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                   
                   log.debug('context',runtime.executionContext);
                     //AJUSTE PARA CONSIDERAR PROMOCION TM EN PRESTAMO
-                    if (scriptContext.type == 'create' && rec.getValue('custbody_tipo_venta') == 2 && delegate == 5 && delegate != 2){//TIPO DE VENTA 'VENTAS TM', PROMO 'TM EN PRESTAMO'
-                        
-                        if(count == odv_ganaTM && delegate==5 ){//CONTADOR ES IGUAL AL NUMERO DE VENTAS DE LA CONFIGURACION
-                          
-                           /*var objEmployee = record.load({//CARGAR REGISTRO DEL EMPLOYEE PARA CAMBIAR LA PROMOCION DE TM EN PRESTAMO A TM PROPIA
-                              type: 'employee',
-                              id: rec.getValue('salesrep'),
-                              isDynamic: false
-                          });
-                            
-                          objEmployee.setValue('custentity_promocion','2')
-                          objEmployee.save();*/
-                          for(inter in internals){//RECORRE LAS VENTAS Y ASIGAN COMMISSION STATUS 2(NO COMISIONABLE)
-                              record.submitFields({
-                                  type: 'salesorder',
-                                  id: internals[inter].internalodv,
-                                  values: {'custbody_vw_comission_status':'2'}
-                              })
-                            }
-                       }else if(count < odv_ganaTM && delegate==5){//si aun no se cumplen las ventas asigna no comisionble a las que ya existan
-                            for(inter in internals){//RECORRE LAS VENTAS Y ASIGAN COMMISSION STATUS 2(NO COMISIONABLE)
-                                  record.submitFields({
-                                      type: 'salesorder',
-                                      id: internals[inter].internalodv,
-                                      values: {'custbody_vw_comission_status':'2'}
-                                  })
-                            }
-                       }
-
-                    }
-                    if(scriptContext.type == 'create' && rec.getValue('custbody_tipo_venta') != 19 && delegate != 5 && delegate != 2){
+                    
+                    if(scriptContext.type == 'create' && rec.getValue('custbody_tipo_venta') != 19 && delegate != 5 && delegate != 2){//edit
                         log.debug('cuantos',count)
-                        if(count == odv_ganaTM && firstso != '' ){//Necesita tener First SO porque es la que cambia a TM Ganada
+                        if(count >= odv_ganaTM && firstso != '' ){//Necesita tener First SO porque es la que cambia a TM Ganada
                             log.debug('comission antes de flujo TM ganada')
-                            for(inter in internals){
-                          
-                              record.submitFields({
-                                  type: 'salesorder',
-                                  id: internals[inter].internalodv,
-                                  values: {'custbody_vw_comission_status':'2'}
-                              })
-                            }
+                            
                           var salesorder = record.load({//Cargar registro 
                               type: 'salesorder',
                               id: firstso,
@@ -1345,32 +1429,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                           var numLines = salesorder.getLineCount({//cuenta las lineas de mi sublista 
                               sublistId : 'item'
                           });
-                          /*for(var i=0; i<=numLines; i++){//recorre el numero de lineas 
-                              var idItem = objRecord.getSublistValue({//obtencion de item 
-                                sublistId : 'item',//la sublista a entrar 
-                                fieldId : 'item',//el campo a obtener
-                                line : i
-                              });
-                              if(idItem == 2001 || idItem == 2170 ){
-                                  objRecord.setSublistValue({//seteo de la informacion a modificar 
-                                    sublistId : 'item',
-                                    fieldId : 'rate',
-                                    line : i,
-                                    value : 0.01
-                                });
-                                  
-                                  objRecord.setSublistValue({
-                                        sublistId : 'item',
-                                        fieldId : 'amount',
-                                        line : i,
-                                        value : 0.01
-                                    });
-    
-                              }
-    
-                          }
-    
-                          salesorder.save();*/
+                         
 
                           //Descuento TM Ganada 
                           var arr_aux =[];
@@ -1548,213 +1607,22 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                          
                          return numOdv;
                          
-                        }else if(count <= odv_ganaTM ){//963
+                        }else if(count <= odv_ganaTM ){//igual? se borra?
                             for(inter in internals){
-                              record.submitFields({
+                              /*record.submitFields({
                                   type: 'salesorder',
                                   id: internals[inter].internalodv,
                                   values: {'custbody_vw_comission_status':'2'}
-                              })
+                              })*/
                             }
                         }
                         
                     }
                     log.debug('test')
                     log.debug('custbody_tipo_venta',rec.getValue('custbody_tipo_venta'))
-                    /*if(scriptContext.type == 'edit' && rec.getValue('custbody_tipo_venta') == 19){
-                        //dd
-                        //validacion tm pagada
-                            log.debug('desc',rec.getValue('custbody_vorwerk_descuento'))
-                         if( rec.getValue('custbody_vorwerk_descuento') == false ){
-                            try{    
-                                //llamado de funciones 
-                                log.debug('validacion tm pagada')
-                                
-                                var arr_aux =[];
-                               
-                                var salesorder = record.load({//Cargar registro 
-                                  type: 'salesorder',
-                                  id: rec.id,
-                                  isDynamic: false
-                                });
-                                var descuentoTm = pagatutm(numOdv,odv)*(-.84);
-                                
-                                var numLines = salesorder.getLineCount({
-                                    sublistId: 'item'
-                                });
-                                
-                                for(var e =0; e<numLines; e++){ 
-                                     var tmp_id = salesorder.getSublistValue({
-                                         sublistId: 'item',
-                                         fieldId: 'item',
-                                         line: e
-                                     })
-                                     var location = salesorder.getSublistValue({
-                                         sublistId: 'item',
-                                         fieldId: 'location',
-                                         line: e
-                                     })
-                                    if(tmp_id != 2170 && tmp_id != 2001 && tmp_id != 2280 && tmp_id != 2571){//&& tmp_id != 2280 eliminado hasta definir descuento de tmr
-                                        var tmp_amount = salesorder.getSublistValue({
-                                             sublistId: 'item',
-                                             fieldId: 'amount',
-                                             line: e
-                                         })      
-                                        arr_aux.push({
-                                            id:tmp_id,
-                                            mount:tmp_amount,
-                                            location:location
-                                        })
-                                    }else{
-                                        valid_line = e;
-                                    }
-                                    
-                                }
-                                
-                                for(var i =0; i<arr_aux.length; i++){
-                                    var x =0;
-                                    if(valid_line == 0){
-                                           x=1;
-                                    }
-                                    var tmp_id = salesorder.getSublistValue({
-                                         sublistId: 'item',
-                                         fieldId: 'item',
-                                         line: x
-                                     })
-                                    if(tmp_id != 2170 && tmp_id != 2001 && tmp_id != 2280 && tmp_id != 2571 ){//&& tmp_id != 2280 eliminado hasta definir descuento de tmr
-                                        log.debug('remover')
-                                        try{
-                                            salesorder.removeLine({
-                                                sublistId: 'item',
-                                                line: x
-                                            });
-                                        }catch(e){
-                                            log.debug('Error removeLine',e)
-                                        }
-                                    }
-                                }
-                                salesorder.save({
-                                    enableSourcing: false,
-                                    ignoreMandatoryFields: true
-                                });
-                                var salesorder = record.load({//Cargar registro 
-                                  type: 'salesorder',
-                                  id: rec.id,
-                                  isDynamic: true
-                                });
-                                log.debug('descuentoTm',descuentoTm);
-                                salesorder.selectNewLine({
-                                    sublistId : 'item',//seleccion de linea
-                                });
-                                salesorder.setCurrentSublistValue({//seteo de valor quantity
-                                    sublistId: 'item',
-                                    fieldId: 'quantity',
-                                    value: 1
-                                });
-                                salesorder.setCurrentSublistValue({//seteo de location
-                                    sublistId: 'item',
-                                    fieldId: 'location',
-                                    value: rec.getValue('location')
-                                });
-                                salesorder.setCurrentSublistValue({//seteo de item
-                                    sublistId: 'item',
-                                    fieldId: 'item',
-                                    value: '1876'// descuento original 911 - cambio por 1876
-                                });
-                                salesorder.setCurrentSublistValue({//seteo de descuento aplicado 
-                                    sublistId: 'item',
-                                    fieldId: 'amount',
-                                    value: descuentoTm
-                                });
-                                salesorder.setCurrentSublistValue({//seteo de descuento aplicado
-                                    sublistId: 'item',
-                                    fieldId: 'rate',
-                                    value: descuentoTm
-                                });
-                                salesorder.setCurrentSublistValue({//seteo de descuento aplicado
-                                    sublistId: 'item',
-                                    fieldId: 'description',
-                                    value: 'DESCUENTO PROMOCIONAL'
-                                });
-                                salesorder.setCurrentSublistValue({//seteo de descuento aplicado
-                                    sublistId: 'item',
-                                    fieldId: 'taxcode',
-                                    value: 202
-                                });
-                                salesorder.commitLine({//cierre de linea seleccionada 
-                                    sublistId: 'item'
-                                });
-                                log.debug('que trae',arr_aux)
-                                
-                                
-                                
-                                for(var x in arr_aux){
-                                    try{
-                                    salesorder.selectNewLine({
-                                        sublistId : 'item',//seleccion de linea
-                                    });
-                                    salesorder.setCurrentSublistValue({
-                                        sublistId: 'item',
-                                        fieldId: 'item',
-                                        value: arr_aux[x].id
-                                    });
-                                    salesorder.setCurrentSublistValue({
-                                        sublistId: 'item',
-                                        fieldId: 'rate',
-                                        value: arr_aux[x].mount
-                                    });
-                                    salesorder.setCurrentSublistValue({
-                                        sublistId: 'item',
-                                        fieldId: 'amount',
-                                        value: arr_aux[x].mount
-                                    });
-                                    salesorder.setCurrentSublistValue({
-                                        sublistId: 'item',
-                                        fieldId: 'location',
-                                        value: arr_aux[x].location
-                                    });
-                                    salesorder.commitLine({//cierre de linea seleccionada 
-                                        sublistId: 'item'
-                                    });
-                                    
-                                    }catch(aux){
-                                        
-                                        log.debug('que pasa',aux)
-                                    }
-                                }
-                                
-                                
-                                salesorder.setValue('custbody_vorwerk_descuento',true) //seteo de checkbox descuento
-                                
-                                var idODV = salesorder.save();
-                                log.debug('idODV',idODV);
-                                var objEmployee = record.load({//Cargar registro 
-                                  type: 'employee',
-                                  id: rec.getValue('custbody_presentadora_tm_paga'),
-                                  isDynamic: false
-                              });
-                                log.debug('paso la busqueda')
-                                objEmployee.setValue('custentity_promocion','2')
-                                objEmployee.setValue('custentity_pedido_tm_pagada',rec.id)
-                                objEmployee.save();
-                                
-                      
-                            }catch(err_sales_order){
-                                log.error('errorsaveorder',err_sales_order)
-                            }
-                         return numOdv;
-        
-                        }
-                    }*/
-                  
-                  
-
-                  
-                  
-                 
-                  
+                                            
         }catch(err){
-            log.debug('errorvalidSaleOrder',err);
+            log.debug('error flujo tm ganada',err);
         }
     }
     
