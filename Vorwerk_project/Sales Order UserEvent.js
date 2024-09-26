@@ -162,12 +162,12 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                                     setRecruiter(rec);
                                 }
                                var commissionStatusf = commissionStatus(salesrep,recordid) 
-                               //tm ganada
+                               var numOdv = tmGanada(scriptContext);
                             }
 
                         } else if (type == 'create'){
                             var commissionStatusf = commissionStatus(salesrep,recordid)
-                            //tm ganada
+                            var numOdv = tmGanada(scriptContext);
                         }
                          
                     } catch(e){
@@ -1110,7 +1110,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                     });
                     cont ++
         
-                }else if (cont > limit){
+                }else if (cont > limit|| fechaSO > fechaObj2){
                     log.debug('si comisiona break')
                     var submitFields = record.submitFields({// aun es necesario?
                         type: record.Type.SALES_ORDER,
@@ -1326,10 +1326,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                 }else{
                     odv = rec.getValue('salesrep');
                 }
-                /*if(rec.getValue('custbody_tipo_venta') != 2){
-                    return false;
-                }*/
-                // Data de Presentador y Ventas
+                
                 var type_promotion = search.lookupFields({
                     type: 'employee',
                     id: rec.getValue('salesrep'),
@@ -1343,14 +1340,14 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                      columns: ['custentity72','hiredate','custentity123']//obtencion de fechas 
                  });
                  var configuracion = salesRep.custentity123
-                 log.debug('configuracion',configuracion)
+                 
                  for (i = 0; i < configuracion.length ; i++){
-                    log.debug('configuracion[i].value',configuracion[i].value)
+                    
                     if(configuracion[i].value == 11 || configuracion[i].value == 12 || configuracion[i].value == 13 || configuracion[i].value == 14){//TM6R o TM4U
                         odv_ganaTM = 4
                     }
                  }
-                 log.debug('odv_ganaTM',odv_ganaTM)
+                
                 if(salesRep.custentity72 != ''){
                     dateReact = salesRep.custentity72//si la fecha esta vacia toma la fecha de reactivacion
                 }else{
@@ -1410,7 +1407,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                   log.debug('context',runtime.executionContext);
                     //AJUSTE PARA CONSIDERAR PROMOCION TM EN PRESTAMO
                     
-                    if(scriptContext.type == 'create' && rec.getValue('custbody_tipo_venta') != 19 && delegate != 5 && delegate != 2){//edit
+                    if( rec.getValue('custbody_tipo_venta') != 19 && delegate != 5 && delegate != 2){//edit
                         log.debug('cuantos',count)
                         if(count >= odv_ganaTM && firstso != '' ){//Necesita tener First SO porque es la que cambia a TM Ganada
                             log.debug('comission antes de flujo TM ganada')
