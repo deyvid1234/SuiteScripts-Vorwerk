@@ -50,17 +50,17 @@ function(plugin,task, serverWidget, search, runtime,file,encode,https,email,reco
         log.debug('arregloEquipo',arregloEquipo)
         log.debug('arregloReclutas',arregloReclutas)
         log.debug('nombramientos',nombramientos)
-        if(busquedaPresentadora.empGrupos ){
+        if(JSON.stringify(busquedaPresentadora.empGrupos).length > 2 ){
             log.debug('hay equipo')
             var sublistEq = sublistEquipo(form)
             var tablasEquipo = ventasEquipo(sublistEq,arregloEquipo,cust_period_inicio,cust_period_fin,cust_presentadora,allPresentadorData)
         }
-        if(busquedaPresentadora.empReclutas){
+        if(JSON.stringify(busquedaPresentadora.empReclutas).length > 2){
             log.debug('hay reclutas')
             var sublistRec = sublistRec(form)
             var tablasReclutas = ventasReclutas(sublistRec,arregloReclutas,cust_period_inicio,cust_period_fin,cust_presentadora,allPresentadorData)
         }
-        if (nombramientos){//como
+        if (JSON.stringify(nombramientos).length > 2){//como
             log.debug('hay nombramientos')
             var sublistNombramientos = sublistNombramientos(form)
             var tablasReclutas = ventasEquipoNLE(nombramientos[cust_presentadora],sublistNombramientos,cust_period_inicio,cust_period_fin,cust_presentadora,allPresentadorData)
@@ -91,81 +91,81 @@ function(plugin,task, serverWidget, search, runtime,file,encode,https,email,reco
             type: serverWidget.FieldType.TEXT,
             label: 'Inicio Periodo de Comision',
             container: 'custpage_data_pre'
-        }).updateDisplayType({displayType: serverWidget.FieldDisplayType.DISABLED});
+        }).updateDisplayType({displayType: serverWidget.FieldDisplayType.INLINE});
         var b =form.addField({
             id: 'custpage_periodo_fin',
             type: serverWidget.FieldType.TEXT,
             label: 'Fin Periodo de Comision',
             container: 'custpage_data_pre'
-        }).updateDisplayType({displayType: serverWidget.FieldDisplayType.DISABLED});
+        }).updateDisplayType({displayType: serverWidget.FieldDisplayType.INLINE});
 
         var c =form.addField({
             id: 'custpage_promo',
             type: serverWidget.FieldType.TEXT,
             label: 'Promocion',
             container: 'custpage_data_pre'
-        }).updateDisplayType({displayType: serverWidget.FieldDisplayType.DISABLED});
+        }).updateDisplayType({displayType: serverWidget.FieldDisplayType.INLINE});
         var d =form.addField({
             id: 'custpage_presentadora',
             type: serverWidget.FieldType.TEXT,
             label: 'Presentadora',
             container: 'custpage_data_pre'
-        }).updateDisplayType({displayType: serverWidget.FieldDisplayType.DISABLED});
+        }).updateDisplayType({displayType: serverWidget.FieldDisplayType.INLINE});
         var e =form.addField({
             id: 'custpage_hiredate',
             type: serverWidget.FieldType.TEXT,
             label: 'Fecha de contratación',
             container: 'custpage_data_pre'
-        }).updateDisplayType({displayType: serverWidget.FieldDisplayType.DISABLED});
+        }).updateDisplayType({displayType: serverWidget.FieldDisplayType.INLINE});
         var m =form.addField({
             id: 'custpage_obj1',
             type: serverWidget.FieldType.TEXT,
             label: 'Objetivo 1',
             container: 'custpage_data_pre'
-        }).updateDisplayType({displayType: serverWidget.FieldDisplayType.DISABLED});
+        }).updateDisplayType({displayType: serverWidget.FieldDisplayType.INLINE});
         var f =form.addField({
             id: 'custpage_obj2',
             type: serverWidget.FieldType.TEXT,
             label: 'Objetivo 2',
             container: 'custpage_data_pre'
-        }).updateDisplayType({displayType: serverWidget.FieldDisplayType.DISABLED});
+        }).updateDisplayType({displayType: serverWidget.FieldDisplayType.INLINE});
         var g =form.addField({
             id: 'custpage_react',
             type: serverWidget.FieldType.TEXT,
             label: 'Fecha reactivación',
             container: 'custpage_data_pre'
-        }).updateDisplayType({displayType: serverWidget.FieldDisplayType.DISABLED});
+        }).updateDisplayType({displayType: serverWidget.FieldDisplayType.INLINE});
         var h =form.addField({
             id: 'custpage_obj1react',
             type: serverWidget.FieldType.TEXT,
             label: 'Objetivo 1 Reactivación',
             container: 'custpage_data_pre'
-        }).updateDisplayType({displayType: serverWidget.FieldDisplayType.DISABLED});
+        }).updateDisplayType({displayType: serverWidget.FieldDisplayType.INLINE});
         var i =form.addField({
             id: 'custpage_obj2react',
             type: serverWidget.FieldType.TEXT,
             label: 'Objetivo 2 Reactivación',
             container: 'custpage_data_pre'
-        }).updateDisplayType({displayType: serverWidget.FieldDisplayType.DISABLED});
+        }).updateDisplayType({displayType: serverWidget.FieldDisplayType.INLINE});
         var j =form.addField({
             id: 'custpage_conf',
             type: serverWidget.FieldType.TEXT,
             label: 'Configuracion de ingreso',
             container: 'custpage_data_pre'
-        }).updateDisplayType({displayType: serverWidget.FieldDisplayType.DISABLED});
+        }).updateDisplayType({displayType: serverWidget.FieldDisplayType.INLINE});
         var k =form.addField({
             id: 'custpage_confrec',
             type: serverWidget.FieldType.TEXT,
             label: 'Configuración de Reclutamiento',
             container: 'custpage_data_pre'
-        }).updateDisplayType({displayType: serverWidget.FieldDisplayType.DISABLED});
+        }).updateDisplayType({displayType: serverWidget.FieldDisplayType.INLINE});
               
         var l =form.addField({
             id: 'custpage_type',
             type: serverWidget.FieldType.TEXT,
             label: 'Tipo',
             container: 'custpage_data_pre'
-        }).updateDisplayType({displayType: serverWidget.FieldDisplayType.DISABLED});
+        }).updateDisplayType({displayType: serverWidget.FieldDisplayType.INLINE});
         
 
 
@@ -252,6 +252,11 @@ function(plugin,task, serverWidget, search, runtime,file,encode,https,email,reco
                 type: serverWidget.FieldType.TEXT
             });
             resultSublist.addField({
+                id: 'custpage_com_st',
+                label: 'Commission Status',
+                type: serverWidget.FieldType.TEXT
+            });
+            resultSublist.addField({
                 id: 'custpage_reclutadora_odv',
                 label: 'Reclutadora ODV',
                 type: serverWidget.FieldType.TEXT
@@ -266,44 +271,49 @@ function(plugin,task, serverWidget, search, runtime,file,encode,https,email,reco
                 myPage.data.forEach(function (result) {
                     var data = result.getAllValues()
                     log.debug('data',data)
+                    var v
+                    
+                    v = result.getValue({name: 'trandate'})
                     resultSublist.setSublistValue({
                         id: 'custpage_fecha',
-                        value: result.getValue({
-                            name: 'trandate'
-                        }),
+                        value: v!=''?v:"-",
                         line: i
                     });
+                    v = result.getValue({name: 'tranid'})
                     resultSublist.setSublistValue({
                         id: 'custpage_pedido',
-                        value: result.getValue({
-                            name: 'tranid'
-                        }),
+                        value:v!=''?v:"-" ,
                         line: i
                     });
+                    v = result.getText({name: 'salesrep'})
                     resultSublist.setSublistValue({
                         id: 'custpage_pre',
-                        value: result.getText({
-                            name: 'entity'
-                        }),
+                        value:v!=''?v:"-" ,
                         line: i
                     });
+                    v = result.getText({name: 'custbody_tipo_venta'})
                     resultSublist.setSublistValue({
                         id: 'custpage_tipo_venta',
-                        value: result.getValue({
-                            name: 'custbody_tipo_venta'
-                        }),
+                        value: v!=''?v:"-",
                         line: i
                     });
-                    var reclutadora = result.getValue({
-                            name: 'custbody_vw_recruiter'
-                        })
-                    if(reclutadora != ''){
-                        resultSublist.setSublistValue({
-                            id: 'custpage_reclutadora_odv',
-                            value: reclutadora,
-                            line: i
-                        });
-                    }
+                    var v = result.getText({name: 'custbody_vw_comission_status'})
+                    
+                    resultSublist.setSublistValue({
+                        id: 'custpage_com_st',
+                        value: v!=''?v:"-",
+                        line: i
+                    });
+                    
+                    
+                    var v = result.getValue({name: 'custbody_vw_recruiter'})
+                    
+                    resultSublist.setSublistValue({
+                        id: 'custpage_reclutadora_odv',
+                        value:v!=''?v:"-" ,
+                        line: i
+                    });
+                    
                     
             
                     i++;
@@ -329,81 +339,82 @@ function(plugin,task, serverWidget, search, runtime,file,encode,https,email,reco
         log.debug('sublistRecVentas',sublistRecVentas)
         var idReclutas= []
         var line_rec = 0
+        var v
         for (i in arregloReclutas[cust_presentadora]){
             //log.debug('i',dataPresentadora.empReclutas[cust_presentadora][i])
-            var v = allPresentadorData[arregloReclutas[cust_presentadora][i]].internalid
+            v = allPresentadorData[arregloReclutas[cust_presentadora][i]].internalid
             idReclutas.push(parseInt(v))
             sublistRecS.setSublistValue({
                 id : 'nombre_rec',
                 line : line_rec,
-                value : v
+                value : v!=''?v:"-"
             });
-            var v = allPresentadorData[arregloReclutas[cust_presentadora][i]].internalid
+            v = allPresentadorData[arregloReclutas[cust_presentadora][i]].internalid
             sublistRecS.setSublistValue({
                 id : 'id_rec',
                 line : line_rec,
-                value : v
+                value : v!=''?v:"-"
             });
-            var v = allPresentadorData[arregloReclutas[cust_presentadora][i]].promocion
+            v = allPresentadorData[arregloReclutas[cust_presentadora][i]].promocion
             sublistRecS.setSublistValue({
                 id : 'promocion_rec',
                 line : line_rec,
-                value : v
+                value : v!=''?v:"-"
             });
-            var v = allPresentadorData[arregloReclutas[cust_presentadora][i]].hiredate
+            v = allPresentadorData[arregloReclutas[cust_presentadora][i]].hiredate
             sublistRecS.setSublistValue({
                 id : 'hiredate_rec',
                 line : line_rec,
-                value : v
+                value : v!=''?v:"-"
             });
-            var v = allPresentadorData[arregloReclutas[cust_presentadora][i]].objetivo_1
+            v = allPresentadorData[arregloReclutas[cust_presentadora][i]].objetivo_1
             sublistRecS.setSublistValue({
                 id : 'objetivo_1_rec',
                 line : line_rec,
-                value : v
+                value : v!=''?v:"-"
             });
-            var v = allPresentadorData[arregloReclutas[cust_presentadora][i]].objetivo_2
+            v = allPresentadorData[arregloReclutas[cust_presentadora][i]].objetivo_2
             sublistRecS.setSublistValue({
                 id : 'objetivo_2_rec',
                 line : line_rec,
-                value : v
+                value : v!=''?v:"-"
             });
-            var v = allPresentadorData[arregloReclutas[cust_presentadora][i]].fechaReactivacion
-            if(v != ''){
-                sublistRecS.setSublistValue({
-                    id : 'fechareactivacion_rec',
-                    line : line_rec,
-                    value : v
-                });
-                var v = allPresentadorData[arregloReclutas[cust_presentadora][i]].obj_1_reactivacion
-                sublistRecS.setSublistValue({
-                    id : 'obj_1_reactivacion_rec',
-                    line : line_rec,
-                    value : v
-                });
-                var v = allPresentadorData[arregloReclutas[cust_presentadora][i]].obj_2_reactivacion
-                sublistRecS.setSublistValue({
-                    id : 'obj_2_reactivacion_rec',
-                    line : line_rec,
-                    value : v
-                });
-            }
-            var v = allPresentadorData[arregloReclutas[cust_presentadora][i]].emp_conf
-            if(v != ''){
-                sublistRecS.setSublistValue({
-                    id : 'emp_conf_rec',
-                    line : line_rec,
-                    value : v
-                });
-            }
-            var v = allPresentadorData[arregloReclutas[cust_presentadora][i]].conf_reclutamiento
-            if(v != ''){
-                sublistRecS.setSublistValue({
-                    id : 'conf_reclutamiento_rec',
-                    line : line_rec,
-                    value : v
-                });
-            }
+            v = allPresentadorData[arregloReclutas[cust_presentadora][i]].fechaReactivacion
+            
+            sublistRecS.setSublistValue({
+                id : 'fechareactivacion_rec',
+                line : line_rec,
+                value : v!=''?v:"-"
+            });
+            v = allPresentadorData[arregloReclutas[cust_presentadora][i]].obj_1_reactivacion
+            sublistRecS.setSublistValue({
+                id : 'obj_1_reactivacion_rec',
+                line : line_rec,
+                value : v!=''?v:"-"
+            });
+            v = allPresentadorData[arregloReclutas[cust_presentadora][i]].obj_2_reactivacion
+            sublistRecS.setSublistValue({
+                id : 'obj_2_reactivacion_rec',
+                line : line_rec,
+                value : v!=''?v:"-"
+            });
+            
+            v = allPresentadorData[arregloReclutas[cust_presentadora][i]].emp_conf
+            
+            sublistRecS.setSublistValue({
+                id : 'emp_conf_rec',
+                line : line_rec,
+                value : v!=''?v:"-"
+            });
+            
+            v = allPresentadorData[arregloReclutas[cust_presentadora][i]].conf_reclutamiento
+            
+            sublistRecS.setSublistValue({
+                id : 'conf_reclutamiento_rec',
+                line : line_rec,
+                value : v!=''?v:"-"
+            });
+            
 
             line_rec ++
         }
@@ -438,76 +449,91 @@ function(plugin,task, serverWidget, search, runtime,file,encode,https,email,reco
                 var currentPage = pagedResults.fetch({index: pageRange.index});
                 currentPage.data.forEach(function (result) {
                     var data = result.getAllValues()
-                    log.debug('data ventas equipo',data)
-                    sublistRecVentas.setSublistValue({
-                        id: 'custpage_rfecha',
-                        value: result.getValue({
-                            name: 'trandate'
-                        }),
-                        line: e
-                    });
-                    sublistRecVentas.setSublistValue({
-                        id: 'custpage_rpedido',
-                        value: result.getValue({
-                            name: 'tranid'
-                        }),
-                        line: e
-                    });
-                    sublistRecVentas.setSublistValue({
-                        id: 'custpage_rint_id',
-                        value: result.getValue({
-                            name: 'internalid'
-                        }),
-                        line: e
-                    });
-                    sublistRecVentas.setSublistValue({
-                        id: 'custpage_rpre',
-                        value: result.getText({
-                            name: 'salesrep'
-                        }),
-                        line: e
-                    });
-                    sublistRecVentas.setSublistValue({
-                        id: 'custpage_rtipo_venta',
-                        value: result.getText({
-                            name: 'custbody_tipo_venta'
-                        }),
-                        line: e
-                    });
-                    var reclutadora = result.getText({
-                            name: 'custbody_vw_recruiter'
-                        })
-                    if(reclutadora != ''){
+                    log.debug('data ventas reclutas',data)
+                    var v
+                    try {
+                        
+                        v = result.getValue({
+                                name: 'trandate'
+                            })
                         sublistRecVentas.setSublistValue({
-                            id: 'custpage_rreclutadora_odv',
-                            value: reclutadora,
+                            id: 'custpage_rfecha',
+                            value:v!=''?v:"-" ,
                             line: e
                         });
-                    }
-                    sublistRecVentas.setSublistValue({
-                        id: 'custpage_rcom_status',
-                        value: result.getText({
-                            name: 'custbody_vw_comission_status'
-                        }),
-                        line: e
-                    }); 
-                    sublistRecVentas.setSublistValue({
-                        id: 'custpage_rtipo_venta',
-                        value: result.getText({
+                        v = result.getValue({
+                                name: 'tranid'
+                            })
+                        sublistRecVentas.setSublistValue({
+                            id: 'custpage_rpedido',
+                            value:v!=''?v:"-" ,
+                            line: e
+                        });
+                        v = result.getValue({
+                                name: 'internalid'
+                            })
+                        sublistRecVentas.setSublistValue({
+                            id: 'custpage_rint_id',
+                            value:v!=''?v:"-" ,
+                            line: e
+                        });
+                        v = result.getText({
+                                name: 'salesrep'
+                            })
+                        sublistRecVentas.setSublistValue({
+                            id: 'custpage_rpre',
+                            value:v!=''?v:"-" ,
+                            line: e
+                        });
+                        v =  result.getText({
                             name: 'custbody_tipo_venta'
-                        }),
-                        line: e
-                    }); 
-                    sublistRecVentas.setSublistValue({
-                        id: 'custpage_ralta',
-                        value: data['salesRep.hiredate'],
-                        line: e
-                    });
-                    sublistRecVentas.setSublistValue({
-                        id: 'custpage_rpromocion',
-                        value: data['salesRep.custentity_promocion'][0].text,
-                        line: e
-                    });
+                        })
+                        sublistRecVentas.setSublistValue({
+                            id: 'custpage_rtipo_venta',
+                            value:v!=''?v:"-",
+                            line: e
+                        });
+                        var v = result.getText({
+                                name: 'custbody_vw_recruiter'
+                            })
+                        
+                        sublistRecVentas.setSublistValue({
+                            id: 'custpage_rreclutadora_odv',
+                            value: v!=''?v:"-",
+                            line: e
+                        });
+                        v = result.getText({
+                                name: 'custbody_vw_comission_status'
+                            })
+                        sublistRecVentas.setSublistValue({
+                            id: 'custpage_rcom_status',
+                            value:v!=''?v:"-" ,
+                            line: e
+                        }); 
+                        v = result.getText({
+                                name: 'custbody_tipo_venta'
+                            })
+                        sublistRecVentas.setSublistValue({
+                            id: 'custpage_rtipo_venta',
+                            value:v!=''?v:"-" ,
+                            line: e
+                        }); 
+                        v = data['salesRep.hiredate']
+                        sublistRecVentas.setSublistValue({
+                            id: 'custpage_ralta',
+                            value:v!=''?v:"-" ,
+                            line: e
+                        });
+                        v = data['salesRep.custentity_promocion'][0].text
+                        sublistRecVentas.setSublistValue({
+                            id: 'custpage_rpromocion',
+                            value:v!=''?v:"-" ,
+                            line: e
+                        });
+                    }catch(e){
+                        log.error('error set value buqueda reclutasventas',e)
+                    }
+                    
                     e++;
                     
                 });
@@ -529,90 +555,85 @@ function(plugin,task, serverWidget, search, runtime,file,encode,https,email,reco
         log.debug('sublistEqVentas',sublistEqVentas)
         var idEquipo= []
         var line = 0
+        var v
         for (i in arregloEquipo[cust_presentadora]){
 
             
-            var v = allPresentadorData[arregloEquipo[cust_presentadora][i]].internalid
+            v = allPresentadorData[arregloEquipo[cust_presentadora][i]].internalid
             idEquipo.push(parseInt(v))
             sublistEqS.setSublistValue({
                 id : 'nombre',
                 line : line,
-                value : v!=null?v:''
+                value : v!=''?v:"-"
             });
-            var v = allPresentadorData[arregloEquipo[cust_presentadora][i]].internalid
+            v = allPresentadorData[arregloEquipo[cust_presentadora][i]].internalid
             sublistEqS.setSublistValue({
                 id : 'id',
                 line : line,
-                value : v!=null?v:''
+                value : v!=''?v:"-"
             });
-            var v = allPresentadorData[arregloEquipo[cust_presentadora][i]].promocion
+            v = allPresentadorData[arregloEquipo[cust_presentadora][i]].promocion
             sublistEqS.setSublistValue({
                 id : 'promocion',
                 line : line,
-                value : v!=null?v:''
+                value : v!=''?v:"-"
             });
-            var v = allPresentadorData[arregloEquipo[cust_presentadora][i]].hiredate
+            v = allPresentadorData[arregloEquipo[cust_presentadora][i]].hiredate
             sublistEqS.setSublistValue({
                 id : 'hiredate',
                 line : line,
-                value : v!=null?v:''
+                value : v!=''?v:"-"
             });
-            var v = allPresentadorData[arregloEquipo[cust_presentadora][i]].objetivo_1
+            v = allPresentadorData[arregloEquipo[cust_presentadora][i]].objetivo_1
             sublistEqS.setSublistValue({
                 id : 'objetivo_1',
                 line : line,
-                value : v!=null?v:''
+                value : v!=''?v:"-"
             });
-            var v = allPresentadorData[arregloEquipo[cust_presentadora][i]].objetivo_2
+            v = allPresentadorData[arregloEquipo[cust_presentadora][i]].objetivo_2
             sublistEqS.setSublistValue({
                 id : 'objetivo_2',
                 line : line,
-                value : v!=null?v:''
+                value : v!=''?v:"-"
             });
 
-            var v = allPresentadorData[arregloEquipo[cust_presentadora][i]].fechaReactivacion
-            if(v != ''){
-                sublistEqS.setSublistValue({
-                    id : 'fecha_reactivacion',
-                    line : line,
-                    value : v!=null?v:''
-                });
-                var v = allPresentadorData[arregloEquipo[cust_presentadora][i]].obj_1_reactivacion
-                sublistEqS.setSublistValue({
-                    id : 'obj_1_reactivacion',
-                    line : line,
-                    value : v!=null?v:''
-                });
-                var v = allPresentadorData[arregloEquipo[cust_presentadora][i]].obj_2_reactivacion
-                sublistEqS.setSublistValue({
-                    id : 'obj_2_reactivacion',
-                    line : line,
-                    value : v!=null?v:''
-                });
-            }
-            var v = allPresentadorData[arregloEquipo[cust_presentadora][i]].emp_conf
-            if(v != ''){
-                sublistEqS.setSublistValue({
-                    id : 'emp_conf',
-                    line : line,
-                    value : v!=null?v:''
-                });
-            }
+            v = allPresentadorData[arregloEquipo[cust_presentadora][i]].fechaReactivacion
             
+            sublistEqS.setSublistValue({
+                id : 'fecha_reactivacion',
+                line : line,
+                value : v!=''?v:"-"
+            });
+            v = allPresentadorData[arregloEquipo[cust_presentadora][i]].obj_1_reactivacion
+            sublistEqS.setSublistValue({
+                id : 'obj_1_reactivacion',
+                line : line,
+                value : v!=''?v:"-"
+            });
+            v = allPresentadorData[arregloEquipo[cust_presentadora][i]].obj_2_reactivacion
+            sublistEqS.setSublistValue({
+                id : 'obj_2_reactivacion',
+                line : line,
+                value : v!=''?v:"-"
+            });
             
-            var v = allPresentadorData[arregloEquipo[cust_presentadora][i]].conf_reclutamiento
+            v = allPresentadorData[arregloEquipo[cust_presentadora][i]].emp_conf
             
-            if(v != ''){
-                sublistEqS.setSublistValue({
-                    id : 'conf_reclutamiento',
-                    line : line,
-                    value : v
-                });
-            }
+            sublistEqS.setSublistValue({
+                id : 'emp_conf',
+                line : line,
+                value : v!=''?v:"-"
+            });
+                        
+            v = allPresentadorData[arregloEquipo[cust_presentadora][i]].conf_reclutamiento
             
+            sublistEqS.setSublistValue({
+                id : 'conf_reclutamiento',
+                line : line,
+                value : v!=''?v:"-"
+            });
             
-            
-            
+                
             line ++
         }
         
@@ -636,7 +657,7 @@ function(plugin,task, serverWidget, search, runtime,file,encode,https,email,reco
                 
 
             // Run the paged search
-            try {
+        try {
                 
 
             var e = 0;
@@ -647,76 +668,93 @@ function(plugin,task, serverWidget, search, runtime,file,encode,https,email,reco
                 currentPage.data.forEach(function (result) {
                     var data = result.getAllValues()
                     log.debug('data ventas equipo',data)
-                    sublistEqVentas.setSublistValue({
-                        id: 'custpage_efecha',
-                        value: result.getValue({
-                            name: 'trandate'
-                        }),
-                        line: e
-                    });
-                    sublistEqVentas.setSublistValue({
-                        id: 'custpage_epedido',
-                        value: result.getValue({
-                            name: 'tranid'
-                        }),
-                        line: e
-                    });
-                    sublistEqVentas.setSublistValue({
-                        id: 'custpage_eint_id',
-                        value: result.getValue({
-                            name: 'internalid'
-                        }),
-                        line: e
-                    });
-                    sublistEqVentas.setSublistValue({
-                        id: 'custpage_epre',
-                        value: result.getText({
-                            name: 'salesrep'
-                        }),
-                        line: e
-                    });
-                    sublistEqVentas.setSublistValue({
-                        id: 'custpage_etipo_venta',
-                        value: result.getText({
-                            name: 'custbody_tipo_venta'
-                        }),
-                        line: e
-                    });
-                    var reclutadora = result.getText({
-                            name: 'custbody_vw_recruiter'
-                        })
-                    if(reclutadora != ''){
+                    var hiredate = data['salesRep.hiredate']
+                    log.debug('hiredate',hiredate)
+                    var v
+                    try {
+                        v =result.getValue({
+                                name: 'trandate'
+                            })
                         sublistEqVentas.setSublistValue({
-                            id: 'custpage_ereclutadora_odv',
-                            value: reclutadora,
+                            id: 'custpage_efecha',
+                            value:v!=''?v:"-" ,
                             line: e
                         });
+                        v = result.getValue({
+                                name: 'tranid'
+                            })
+                        sublistEqVentas.setSublistValue({
+                            id: 'custpage_epedido',
+                            value:v!=''?v:"-" ,
+                            line: e
+                        });
+                        v = result.getValue({
+                                name: 'internalid'
+                            })
+                        sublistEqVentas.setSublistValue({
+                            id: 'custpage_eint_id',
+                            value:v!=''?v:"-" ,
+                            line: e
+                        });
+                        v = result.getText({
+                                name: 'salesrep'
+                            })
+                        sublistEqVentas.setSublistValue({
+                            id: 'custpage_epre',
+                            value:v!=''?v:"-" ,
+                            line: e
+                        });
+                        v = result.getText({
+                                name: 'custbody_tipo_venta'
+                            })
+                        sublistEqVentas.setSublistValue({
+                            id: 'custpage_etipo_venta',
+                            value: v!=''?v:"-",
+                            line: e
+                        });
+                        var v = result.getText({
+                                name: 'custbody_vw_recruiter'
+                            })
+                        
+                        sublistEqVentas.setSublistValue({
+                            id: 'custpage_ereclutadora_odv',
+                            value: v!=''?v:"-",
+                            line: e
+                        });
+                        
+                        v = result.getText({name: 'custbody_vw_comission_status'})
+                        
+                        sublistEqVentas.setSublistValue({
+                            id: 'custpage_ecom_status',
+                            value: v!=''?v:"-",
+                            line: e
+                        });
+                    
+                        v = result.getText({
+                                name: 'custbody_tipo_venta'
+                            })
+                        sublistEqVentas.setSublistValue({
+                            id: 'custpage_etipo_venta',
+                            value: v!=''?v:"-",
+                            line: e
+                        }); 
+                        v = hiredate
+                        sublistEqVentas.setSublistValue({
+                            id: 'custpage_ealta',
+                            value: v!=''?v:"-",
+                            line: e
+                        });
+                        v = data['salesRep.custentity_promocion'][0].text
+                        sublistEqVentas.setSublistValue({
+                            id: 'custpage_epromocion',
+                            value:v!=''?v:"-" ,
+                            line: e
+                        });
+                       
+                    }catch(e){
+                        log.error('error seteo en busqueda',e)
                     }
-                    sublistEqVentas.setSublistValue({
-                        id: 'custpage_ecom_status',
-                        value: result.getText({
-                            name: 'custbody_vw_comission_status'
-                        }),
-                        line: e
-                    }); 
-                    sublistEqVentas.setSublistValue({
-                        id: 'custpage_etipo_venta',
-                        value: result.getText({
-                            name: 'custbody_tipo_venta'
-                        }),
-                        line: e
-                    }); 
-                    sublistEqVentas.setSublistValue({
-                        id: 'custpage_ealta',
-                        value: data['salesRep.hiredate'],
-                        line: e
-                    });
-                    sublistEqVentas.setSublistValue({
-                        id: 'custpage_epromocion',
-                        value: data['salesRep.custentity_promocion'][0].text,
-                        line: e
-                    });
-                    e++;
+                     e++;
                     
                 });
             });
@@ -742,31 +780,32 @@ function(plugin,task, serverWidget, search, runtime,file,encode,https,email,reco
         log.debug('sublistNombramientosVentas',sublistNombramientosVentas)
         
         var line = 0
+        var v
         for (i in nombramientos){
 
-            var v = allPresentadorData[nombramientos[i]].internalid
+            v = allPresentadorData[nombramientos[i]].internalid
             sublistNombramientosS.setSublistValue({
                 id : 'nombre_nle',
                 line : line,
-                value : v!=null?v:''
+                value : v!=''?v:"-"
             });
-            var v = allPresentadorData[nombramientos[i]].internalid
+            v = allPresentadorData[nombramientos[i]].internalid
             sublistNombramientosS.setSublistValue({
                 id : 'id_nle',
                 line : line,
-                value : v!=null?v:''
+                value : v!=''?v:"-"
             });
-            var v = allPresentadorData[nombramientos[i]].fechaNombramiento
+            v = allPresentadorData[nombramientos[i]].fechaNombramiento
             sublistNombramientosS.setSublistValue({
                 id : 'fecha_nombramiento',
                 line : line,
-                value : v!=null?v:''
+                value : v!=''?v:"-"
             });
-            var v = integrantes//pendiente
+            v = integrantes//pendiente
             sublistNombramientosS.setSublistValue({
                 id : 'equipo_nle',
                 line : line,
-                value : v!=null?v:''
+                value : v!=''?v:"-"
             });
             
             line ++
@@ -802,81 +841,96 @@ function(plugin,task, serverWidget, search, runtime,file,encode,https,email,reco
                 var currentPage = pagedResults.fetch({index: pageRange.index});
                 currentPage.data.forEach(function (result) {
                     var data = result.getAllValues()
-                    log.debug('data ventas equipo',data)
-                    sublistNombramientosVentas.setSublistValue({
-                        id: 'custpage_lider_nle',
-                        value: data['salesRep.supervisor'][0].text,
-                        line: e
-                    });
-                    sublistNombramientosVentas.setSublistValue({
-                        id: 'custpage_fecha_nle',
-                        value: result.getValue({
-                            name: 'trandate'
-                        }),
-                        line: e
-                    });
-                    sublistNombramientosVentas.setSublistValue({
-                        id: 'custpage_pedido_nle',
-                        value: result.getValue({
-                            name: 'tranid'
-                        }),
-                        line: e
-                    });
-                    sublistNombramientosVentas.setSublistValue({
-                        id: 'custpage_int_id_nle',
-                        value: result.getValue({
-                            name: 'internalid'
-                        }),
-                        line: e
-                    });
-                    sublistNombramientosVentas.setSublistValue({
-                        id: 'custpage_pre_nle',
-                        value: result.getText({
-                            name: 'salesrep'
-                        }),
-                        line: e
-                    });
-                    sublistNombramientosVentas.setSublistValue({
-                        id: 'custpage_tipo_venta_nle',
-                        value: result.getText({
-                            name: 'custbody_tipo_venta'
-                        }),
-                        line: e
-                    });
-                    var reclutadora = result.getText({
-                            name: 'custbody_vw_recruiter'
-                        })
-                    if(reclutadora != ''){
+                    log.debug('data ventas equipo nle',data)
+                    var v 
+                    try{
+                        v = data['salesRep.supervisor'][0].text
                         sublistNombramientosVentas.setSublistValue({
-                            id: 'custpage_reclutadora_odv_nle',
-                            value: reclutadora,
+                            id: 'custpage_lider_nle',
+                            value: v!=''?v:"-",
                             line: e
                         });
+                        v = result.getValue({
+                                name: 'trandate'
+                            })
+                        sublistNombramientosVentas.setSublistValue({
+                            id: 'custpage_fecha_nle',
+                            value:v!=''?v:"-",
+                            line: e
+                        });
+                        v = result.getValue({
+                                name: 'tranid'
+                            })
+                        sublistNombramientosVentas.setSublistValue({
+                            id: 'custpage_pedido_nle',
+                            value:v!=''?v:"-" ,
+                            line: e
+                        });
+                        v = result.getValue({
+                                name: 'internalid'
+                            })
+                        sublistNombramientosVentas.setSublistValue({
+                            id: 'custpage_int_id_nle',
+                            value:v!=''?v:"-" ,
+                            line: e
+                        });
+                        v = result.getText({
+                                name: 'salesrep'
+                            })
+                        sublistNombramientosVentas.setSublistValue({
+                            id: 'custpage_pre_nle',
+                            value: v!=''?v:"-",
+                            line: e
+                        });
+                        v= result.getText({
+                                name: 'custbody_tipo_venta'
+                            })
+                        sublistNombramientosVentas.setSublistValue({
+                            id: 'custpage_tipo_venta_nle',
+                            value: v!=''?v:"-",
+                            line: e
+                        });
+                        var v = result.getText({
+                                name: 'custbody_vw_recruiter'
+                            })
+                        
+                        sublistNombramientosVentas.setSublistValue({
+                            id: 'custpage_reclutadora_odv_nle',
+                            value:v!=''?v:"-",
+                            line: e
+                        });
+                        v = result.getText({
+                                name: 'custbody_vw_comission_status'
+                            })
+                        sublistNombramientosVentas.setSublistValue({
+                            id: 'custpage_com_status_nle',
+                            value:v!=''?v:"-" ,
+                            line: e
+                        }); 
+                        v = result.getText({
+                                name: 'custbody_tipo_venta'
+                            })
+                        sublistNombramientosVentas.setSublistValue({
+                            id: 'custpage_tipo_venta_nle',
+                            value: v!=''?v:"-",
+                            line: e
+                        }); 
+                        v = data['salesRep.hiredate']
+                        sublistNombramientosVentas.setSublistValue({
+                            id: 'custpage_alta_nle',
+                            value:v!=''?v:"-" ,
+                            line: e
+                        });
+                        v = data['salesRep.custentity_promocion'][0].text
+                        sublistNombramientosVentas.setSublistValue({
+                            id: 'custpage_promocion_nle',
+                            value: v!=''?v:"-",
+                            line: e
+                        });
+                    }catch(e){
+                        log.error('error set NLEbusqueda',e)
                     }
-                    sublistNombramientosVentas.setSublistValue({
-                        id: 'custpage_com_status_nle',
-                        value: result.getText({
-                            name: 'custbody_vw_comission_status'
-                        }),
-                        line: e
-                    }); 
-                    sublistNombramientosVentas.setSublistValue({
-                        id: 'custpage_tipo_venta_nle',
-                        value: result.getText({
-                            name: 'custbody_tipo_venta'
-                        }),
-                        line: e
-                    }); 
-                    sublistNombramientosVentas.setSublistValue({
-                        id: 'custpage_alta_nle',
-                        value: data['salesRep.hiredate'],
-                        line: e
-                    });
-                    sublistNombramientosVentas.setSublistValue({
-                        id: 'custpage_promocion_nle',
-                        value: data['salesRep.custentity_promocion'][0].text,
-                        line: e
-                    });
+                    
                     e++;
                     
                 });
@@ -1254,11 +1308,11 @@ function(plugin,task, serverWidget, search, runtime,file,encode,https,email,reco
                 'AND',
                 ['custentity_estructura_virtual', 'is', 'F'],
                 'AND',
-                ['supervisor', 'is', cust_presentadora],
+               [ ['supervisor', 'is', cust_presentadora],
                 'OR',
                 ['custentity_reclutadora', 'is', cust_presentadora],
                 'OR',
-                ['custentity_nombramiento', 'is', cust_presentadora],
+                ['custentity_nombramiento', 'is', cust_presentadora]],
                 'AND',
                 ['employeetype', 'anyof', '3', '1', '8', '5', '9'],//tipos 3 Lider de equipo, 1 presentadora, 8 area manager, 5 gerente de ventas, 9 sales director
             ];
