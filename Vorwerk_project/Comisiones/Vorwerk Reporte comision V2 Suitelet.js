@@ -311,7 +311,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                             //log.debug('ventasEmp',ventasEmp)
                             
                             objVentasPropias = bonoVentaPropia(dataEmp,ventasEmp,compConfigDetails)
-                            //log.debug('objVentasPropias',objVentasPropias)
+                            log.debug('objVentasPropias'+empID,objVentasPropias)
                             
                             objSupercomision = bonoSupercomision(integrantesEquipo,historicoSO,thisPeriodSO,allPresentadoras,dHistorico)
                             //log.debug('objSupercomision',objSupercomision)
