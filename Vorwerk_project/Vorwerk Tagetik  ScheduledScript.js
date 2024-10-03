@@ -384,7 +384,7 @@ function(record,search,https,file,http,format,encode,email,runtime,format) {
             if(runtime.envType != 'PRODUCTION'){ 
                 url = '';//añadir url si se trabaja en sandbox, debe ser url externa
             }else{
-                url = 'https://3367613.extforms.netsuite.com/app/site/hosting/scriptlet.nl?script=1238&deploy=1&compid=3367613&h=7eb7b9f2db01f33313a9';
+                url = 'https://3367613.extforms.netsuite.com/app/site/hosting/scriptlet.nl?script=1238&deploy=1&compid=3367613&ns-at=AAEJ7tMQWqForgbZ0YHYNMCSFTQd9PvpYnfXl3GxNqlFWpTPqS4';
             }
             var head_document = [//Titulos excel
                                  'SOURCE',
