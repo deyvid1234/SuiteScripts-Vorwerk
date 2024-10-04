@@ -298,10 +298,10 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 var objXmasdosNLE= false
                 var objJoya = false 
                 var objCook = false
-                var urlDetalle = 'https://3367613-sb1.app.netsuite.com/app/site/hosting/scriptlet.nl?script=1358&deploy=2'+'&periodoI='+inicioPeriodo+'&periodoF='+finPeriodo+'&promo='+empPromo+'&tipo='+empType+'&pre='+empID
+                var urlDetalle = 'https://3367613.app.netsuite.com/app/site/hosting/scriptlet.nl?script=1358&deploy=2'+'&periodoI='+inicioPeriodo+'&periodoF='+finPeriodo+'&promo='+empPromo+'&tipo='+empType+'&pre='+empID
                 switch(tipoReporteGloobal){
                     case 1: //Reporte LE
-                        if(empType == 3 && empPromo == 2 /*&& allPresentadoras[i].internalid == '15929'*/){
+                        if(empType == 3 && empPromo == 2 /*&& allPresentadoras[i].internalid == '3281037'*/){
                             //Calcular reporte para la persona
                             var reclutas = listaReclutas[i]
                             var integrantesEquipo = listaGrupos[i]   
@@ -311,7 +311,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                             //log.debug('ventasEmp',ventasEmp)
                             
                             objVentasPropias = bonoVentaPropia(dataEmp,ventasEmp,compConfigDetails)
-                            log.debug('objVentasPropias'+empID,objVentasPropias)
+                            //log.debug('objVentasPropias'+empID,objVentasPropias)
                             
                             objSupercomision = bonoSupercomision(integrantesEquipo,historicoSO,thisPeriodSO,allPresentadoras,dHistorico)
                             //log.debug('objSupercomision',objSupercomision)
@@ -328,7 +328,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                              //log.debug('objProductividad',objProductividad)
                             
                             objVentaEquipo = bonoVentaEquipo(ventasEmp,compConfigDetails,conf,integrantesEquipo,thisPeriodSO,listaNombramientos,dataEmp,listaGrupos,allPresentadoras)
-                            log.debug('objVentaEquipo',objVentaEquipo)
+                            //log.debug('objVentaEquipo',objVentaEquipo)
                             /*objVentasEquipoNLE=ventaEquipoNLE(listaNombramientos,dataEmp,thisPeriodSO,listaGrupos,allPresentadoras,compConfigDetails)
                             log.debug('objVentasEquipoNLE',objVentasEquipoNLE)*/
                             objGarantia = bonoGarantia(dataEmp,garantiaSO,compConfigDetails)
@@ -950,6 +950,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             var nle = {}
             log.debug('liderM',liderM)
             log.debug('listaNombramientos',listaNombramientos)
+            var numeroVentasEquipo=0
             if(listaNombramientos.hasOwnProperty(liderM)){//Se valida si la lider tiene lideres hijos
                 var liderHijo = {}
                 log.debug('listaNombramientos de la lider ', listaNombramientos[liderM])
@@ -967,12 +968,14 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                         log.debug('salesrep',salesrep)
                         var idso = ventasH[y][key].internalid
                         log.debug('idso',idso)
-                        
+                        var tipoVenta=ventasH[y][key]['custbody_tipo_venta'] 
+                        if(tipoVenta != 'TM Ganada'){
                             ventaPropia.push(idso)
+                        }
                         
                         
                     }
-                    var numeroVentasEquipo=0
+                    
                     var infoVentasEquipo ={}
                     var venta_equipo = 0
                     for(n in equipoH){//Recorrido de integrantes del equipo
@@ -998,7 +1001,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                         }
                     }
                     if(ventaPropia != ''){
-                        numeroVentasEquipo = numeroVentasEquipo+ventasH.length//se suman las ventas del equipo con las ventas propias
+                        numeroVentasEquipo = numeroVentasEquipo+ventaPropia.length//se suman las ventas del equipo con las ventas propias
                     }
                     
                     log.debug('numeroVentasEquipo 2',numeroVentasEquipo)
@@ -1070,7 +1073,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 numeroVentasEquipo = numeroVentasEquipo + nle.noVentas
             }
             
-            log.debug('numeroVentasEquipo',numeroVentasEquipo)
+            //log.debug('numeroVentasEquipo',numeroVentasEquipo)
             for ( i in compConfigDetails[1]['esquemaVentasJefaGrupo']['propias'] ){//SE OBTIENE EL PORCENTAJE
                 var desde = compConfigDetails[1]['esquemaVentasJefaGrupo']['propias'][i]['desde']
                 var hasta = compConfigDetails[1]['esquemaVentasJefaGrupo']['propias'][i]['hasta']
@@ -1195,6 +1198,7 @@ una rcluta de algun miembro del equipo*/
                 
                 //log.debug('preActivas',preActivas)
                 if(ventasEmp){//considera 2 solo reclutas
+                    
                     if(ventasEmp.length> 2 && ventasEmp.length<5 && preActivas.length >= 2){
                         bonoLogrado = true
                         monto32 = 5000
@@ -2107,7 +2111,7 @@ una rcluta de algun miembro del equipo*/
             
                 thidField = sublist.addField({
                     id : 'custentity_lider_nle',
-                    type : serverWidget.FieldType.TEXT,
+                    type : serverWidget.FieldType.TEXTAREA,
                     label : 'NLE'
                 }).updateDisplayType({displayType : serverWidget.FieldDisplayType.READONLY});
                 arrayFields.push({idfield : thidField.id, namefield : thidField.label})
