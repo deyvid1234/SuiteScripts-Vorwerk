@@ -77,7 +77,7 @@ function(record, search, runtime, format) {
         getSearchFiltersSO: function(objData,objPeriod,tm_pagada,historico,h_ingreso){
             var startDate = objPeriod['startDate'],
                 endDate = objPeriod['endDate'];
-                id_period = parseInt(objPeriod['internalid']);
+                id_period = parseInt(objPeriod['internalid'],10);
             var arrFilters = [];
             for(idEmp in objData){
                 if(objData[idEmp][0] != null){

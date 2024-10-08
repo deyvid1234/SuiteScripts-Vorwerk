@@ -86,7 +86,7 @@ function(serverWidget, search, runtime,format,record) {
                     
                     var taxRec= record.load({
                         type: 'taxschedule',
-                        id: parseInt(taxSchedule),
+                        id: parseInt(taxSchedule,10),
                         isDynamic: false,
                     });
                     var sub = taxRec.getSublistValue({//se obtiene el vendor, su moneda y se setea en el campo de moneda del proveedor

@@ -32,7 +32,7 @@ function(record, search,https,format,url,email) {
             currentPage.data.forEach(function (r) {
                 var values = r.getAllValues();
                 var email = r.getValue('email').toLowerCase();
-                var internalid = parseInt(r.getValue('internalid')) 
+                var internalid = parseInt(r.getValue('internalid'),10) 
                 
                 const idMaximoActual = emailsFiltrados[email] || 0;
                 
@@ -69,7 +69,7 @@ function(record, search,https,format,url,email) {
             currentPage.data.forEach(function (r) {
                 var values = r.getAllValues();
                 //log.debug('values',values)
-                var internalid = parseInt(r.getValue('internalid')) 
+                var internalid = parseInt(r.getValue('internalid'),10) 
                 var email = r.getValue('email').toLowerCase();
                 //log.debug('emailsFiltradosDuplicados[email]',emailsFiltradosDuplicados[email])
                 //log.debug('keys.hasOwnProperty(email)',keys.indexOf(email))
@@ -90,7 +90,7 @@ function(record, search,https,format,url,email) {
             currentPage.data.forEach(function (r) {
                 var valuesT = r.getAllValues();
                 log.debug('keys',keys)
-                var internalidT = parseInt(r.getValue('internalid')) 
+                var internalidT = parseInt(r.getValue('internalid'),10) 
                 var emailT = r.getValue('email').toLowerCase();
 
         if (keys.indexOf(internalidT)) {

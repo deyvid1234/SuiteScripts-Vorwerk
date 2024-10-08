@@ -33,9 +33,9 @@ function(email,record,render, file, search, https, runtime,format,Dictionary,Ema
     function map(context) {
         try{
             var registeInfo = JSON.parse(context.value);
-            var type_rec= parseInt(registeInfo.level);
-            var idReg= parseInt(registeInfo.idReg);
-            var period = parseInt(registeInfo.comision_id);
+            var type_rec= parseInt(registeInfo.level,10);
+            var idReg= parseInt(registeInfo.idReg,10);
+            var period = parseInt(registeInfo.comision_id,10);
             var periodText = registeInfo.periodText;
             var levelText = registeInfo.levelText;
             var folder;

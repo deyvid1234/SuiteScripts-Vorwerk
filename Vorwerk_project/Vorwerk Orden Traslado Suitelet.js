@@ -160,7 +160,7 @@ function(render,email,file,record,search,format,runtime,formati18n) {
             }); 
             var total = sumaQuantity
                 log.debug('total', total)
-                total = parseInt(total)
+                total = parseInt(total,10)
                 log.debug('total', total)
                 total =  currencyFormat(total)
                 log.debug('total', total)

@@ -20,7 +20,7 @@ function(render,email,file,record,search,format,runtime) {
         try{
             var method = context.request.method;
             var params = context.request.parameters;
-            var recordid = recordid = parseInt(params.oppID);
+            var recordid = recordid = parseInt(params.oppID,10);
             log.debug('method',method);
                         
             

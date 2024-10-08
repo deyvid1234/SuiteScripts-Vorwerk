@@ -92,7 +92,7 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 
                         log.debug('dataItem',dataItem)
 
-                        var disponible_eshop = parseInt(dataItem['custitem_disponible_eshop']) //Stock dedicado a eshop
+                        var disponible_eshop = parseInt(dataItem['custitem_disponible_eshop'],10) //Stock dedicado a eshop
                             
                             if (!disponible_eshop||disponible_eshop =='' ) {
                                     disponible_eshop = 0

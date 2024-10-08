@@ -36,7 +36,7 @@ function(email,record,render, file, search, https, runtime,format,Dictionary,Ema
             log.debug('context map',context);
             var registeInfo = JSON.parse(context.value);
             log.debug('registeInfo',registeInfo);
-            var type_rec= parseInt(registeInfo.level);
+            var type_rec= parseInt(registeInfo.level,10);
             switch(type_rec){
                 case 1://presentadora
                     type_to_add = "customrecord_comisiones_presentadora";
@@ -64,9 +64,9 @@ function(email,record,render, file, search, https, runtime,format,Dictionary,Ema
             //var objReport = EmailLib.getpdf(idEmp,registeInfo.comision_id,objRecord.id,email_emp)
 //Parche
             var registeInfo = JSON.parse(context.value);
-            var type_rec= parseInt(registeInfo.level);
-            var idReg= parseInt(registeInfo.idReg);
-            var period = parseInt(registeInfo.comision_id);
+            var type_rec= parseInt(registeInfo.level,10);
+            var idReg= parseInt(registeInfo.idReg,10);
+            var period = parseInt(registeInfo.comision_id,10);
             var periodText = registeInfo.periodText;
             var levelText = registeInfo.levelText;
            

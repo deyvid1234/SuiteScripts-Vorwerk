@@ -266,10 +266,10 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                     
                     var stock = 0
                     //Parche solo Septiebre/hasta liberar 100 Ermita -> Regresar a parseInt(values['custitem_disponible_eshop'])||0
-                    if(parseInt(values['custitem_disponible_eshop']) > 0){
-                        stock = parseInt(values['custitem_disponible_eshop'])
+                    if(parseInt(values['custitem_disponible_eshop'],10) > 0){
+                        stock = parseInt(values['custitem_disponible_eshop'],10)
                     }else{
-                        stock = parseInt(values['locationquantityavailable'])||0
+                        stock = parseInt(values['locationquantityavailable'],10)||0
                     }
 
                     var obj_aux = {
@@ -566,7 +566,7 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                     for(var x in req_info.items){
                         if(req_info.items[x].item_id != "859"){
                             var item_to = req_info.items[x];
-                            total_amount_aux+= (parseFloat(item_to.amount)*parseInt(item_to.quantity));
+                            total_amount_aux+= (parseFloat(item_to.amount)*parseInt(item_to.quantity,10));
                         }else{
                             shipping_cost = req_info.items[x];
                         }
@@ -651,7 +651,7 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                 });
                 
                 if(total_amount_aux > 0 && item_mine.item_id != "859"){
-                    var discount_item = parseFloat(item_mine.amount)*discount_aux*parseInt(item_mine.quantity);
+                    var discount_item = parseFloat(item_mine.amount)*discount_aux*parseInt(item_mine.quantity,10);
 //                  log.debug('item_mine.amount',item_mine.amount);
 //                  log.debug('discount_aux',discount_aux);
                     setItemDiscount(obj_sales_order,discount_item);
@@ -1016,7 +1016,7 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                                 obj_payment.setValue(y,ccexp)
                             }else{
                                 if (y == 'payment'){
-                                    total_payment = total_payment+parseInt(info_payment[x][y])                              
+                                    total_payment = total_payment+parseInt(info_payment[x][y],10)                              
                                     }
                                 log.debug(y,info_payment[x][y]);
                                 obj_payment.setValue(y,info_payment[x][y])

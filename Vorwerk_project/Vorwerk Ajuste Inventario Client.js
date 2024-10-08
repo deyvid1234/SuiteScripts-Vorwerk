@@ -9,7 +9,7 @@ cliente
  function (currentRecord, url, dialog, format,runtime) {
             // Usuario ejecutando
              var userObj = runtime.getCurrentUser();
-             var userId = parseInt(userObj.id);
+             var userId = parseInt(userObj.id,10);
      /**
       * Function to be executed after page is initialized.
       *

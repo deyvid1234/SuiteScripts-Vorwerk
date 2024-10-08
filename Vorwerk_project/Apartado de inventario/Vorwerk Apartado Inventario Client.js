@@ -96,8 +96,8 @@ function(record,dialog,http,https,search) {
                             currentPage.data.forEach(function (result) {
                                 var values = result.getAllValues();
                                 console.log('values search articulos del kit',values)
-                                locationquantityavailable = parseInt(result.getValue('locationquantityavailable'));
-                                disponibleEshopComponente = parseInt(result.getValue('custitem_disponible_eshop'));
+                                locationquantityavailable = parseInt(result.getValue('locationquantityavailable'),10);
+                                disponibleEshopComponente = parseInt(result.getValue('custitem_disponible_eshop'),10);
 
                                 var nameArtSearch = result.getValue('name')
                                 console.log('nameArtSearch',nameArtSearch)
