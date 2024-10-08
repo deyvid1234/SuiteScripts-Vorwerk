@@ -9,7 +9,7 @@
 define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file','N/encode','N/https','N/email','N/record'], 
 function(plugin,task, serverWidget, search, runtime,file,encode,https,email,record){
     function onRequest(scriptContext) {
-      try{/*
+    try{/*
         log.debug('scriptContext',scriptContext.request.method)
         var mesAgo = '07'
         log.debug('mesAgo',mesAgo)
@@ -46,10 +46,10 @@ function(plugin,task, serverWidget, search, runtime,file,encode,https,email,reco
         var arregloReclutas = busquedaPresentadora.empReclutas
         var nombramientos = busquedaPresentadora.nombramiento
         
-        log.debug('busquedaPresentadora',busquedaPresentadora)
+        /*log.debug('busquedaPresentadora',busquedaPresentadora)
         log.debug('arregloEquipo',arregloEquipo)
         log.debug('arregloReclutas',arregloReclutas)
-        log.debug('nombramientos',nombramientos)
+        log.debug('nombramientos',nombramientos)*/
         if(JSON.stringify(busquedaPresentadora.empGrupos).length > 2 ){
             log.debug('hay equipo')
             var sublistEq = sublistEquipo(form)
@@ -63,17 +63,16 @@ function(plugin,task, serverWidget, search, runtime,file,encode,https,email,reco
         if (JSON.stringify(nombramientos).length > 2){//como
             log.debug('hay nombramientos')
             var sublistNombramientos = sublistNombramientos(form)
+            var ventaPropiaNLE = ventaPropiaNL(nombramientos[cust_presentadora],sublistNombramientos,cust_period_inicio,cust_period_fin,cust_presentadora,allPresentadorData)
             var tablasReclutas = ventasEquipoNLE(nombramientos[cust_presentadora],sublistNombramientos,cust_period_inicio,cust_period_fin,cust_presentadora,allPresentadorData)
 
         }
         
-                
+        scriptContext.response.writePage(form); 
             
-            scriptContext.response.writePage(form); 
-            
-      }catch(err){
+    }catch(err){
         log.error("Error onRequest",err)
-      }
+    }
       
     
     
@@ -306,7 +305,7 @@ function(plugin,task, serverWidget, search, runtime,file,encode,https,email,reco
                     });
                     
                     
-                    var v = result.getValue({name: 'custbody_vw_recruiter'})
+                    var v = result.getText({name: 'custbody_vw_recruiter'})
                     
                     resultSublist.setSublistValue({
                         id: 'custpage_reclutadora_odv',
@@ -331,12 +330,11 @@ function(plugin,task, serverWidget, search, runtime,file,encode,https,email,reco
            log.debug("error create form",e)
         }
     }
+
     function ventasReclutas(sublistRec,arregloReclutas,cust_period_inicio,cust_period_fin,cust_presentadora,allPresentadorData){
       try{
         var sublistRecS = sublistRec.s
-        log.debug('sublistRecS',sublistRecS)
         var sublistRecVentas = sublistRec.sv
-        log.debug('sublistRecVentas',sublistRecVentas)
         var idReclutas= []
         var line_rec = 0
         var v
@@ -423,8 +421,7 @@ function(plugin,task, serverWidget, search, runtime,file,encode,https,email,reco
                 id : 'customsearch_ventas_pre_detalle'
             });
             
-            log.debug('Reclutas',idReclutas)
-            
+            //log.debug('Reclutas',idReclutas)
             mySearch.filters.push(search.createFilter({
                    name: 'trandate',
                    operator: 'within',
@@ -436,9 +433,7 @@ function(plugin,task, serverWidget, search, runtime,file,encode,https,email,reco
                 operator: 'anyof',
                 values: idReclutas
             }));
-                
-
-            // Run the paged search
+          
             try {
                 
 
@@ -449,7 +444,7 @@ function(plugin,task, serverWidget, search, runtime,file,encode,https,email,reco
                 var currentPage = pagedResults.fetch({index: pageRange.index});
                 currentPage.data.forEach(function (result) {
                     var data = result.getAllValues()
-                    log.debug('data ventas reclutas',data)
+                    //log.debug('data ventas reclutas',data)
                     var v
                     try {
                         
@@ -550,9 +545,7 @@ function(plugin,task, serverWidget, search, runtime,file,encode,https,email,reco
     }
     function ventasEquipo(sublistEq,arregloEquipo,cust_period_inicio,cust_period_fin,cust_presentadora,allPresentadorData){
         var sublistEqS = sublistEq.s
-        log.debug('sublistEqS',sublistEqS)
         var sublistEqVentas = sublistEq.sv
-        log.debug('sublistEqVentas',sublistEqVentas)
         var idEquipo= []
         var line = 0
         var v
@@ -641,8 +634,7 @@ function(plugin,task, serverWidget, search, runtime,file,encode,https,email,reco
                 id : 'customsearch_ventas_pre_detalle'
             });
             
-            log.debug('integrantes equipo',idEquipo)
-            
+            //log.debug('integrantes equipo',idEquipo)
             mySearch.filters.push(search.createFilter({
                    name: 'trandate',
                    operator: 'within',
@@ -654,11 +646,8 @@ function(plugin,task, serverWidget, search, runtime,file,encode,https,email,reco
                 operator: 'anyof',
                 values: idEquipo
             }));
-                
-
-            // Run the paged search
-        try {
-                
+         
+        try {   
 
             var e = 0;
             
@@ -667,9 +656,9 @@ function(plugin,task, serverWidget, search, runtime,file,encode,https,email,reco
                 var currentPage = pagedResults.fetch({index: pageRange.index});
                 currentPage.data.forEach(function (result) {
                     var data = result.getAllValues()
-                    log.debug('data ventas equipo',data)
+                    //log.debug('data ventas equipo',data)
                     var hiredate = data['salesRep.hiredate']
-                    log.debug('hiredate',hiredate)
+                    
                     var v
                     try {
                         v =result.getValue({
@@ -763,22 +752,134 @@ function(plugin,task, serverWidget, search, runtime,file,encode,https,email,reco
                 log.error('Search error', error.message);
             }
     }
+    function ventaPropiaNL(nombramientos,sublistNombramientos,cust_period_inicio,cust_period_fin,cust_presentadora,allPresentadorData){
+        try{
+            //log.debug('nombramientos',nombramientos)
+            var mySearch = search.load({
+                id : 'customsearch_ventas_pre_detalle'
+            });
+            
+            
+            mySearch.filters.push(search.createFilter({
+                   name: 'trandate',
+                   operator: 'within',
+                   values: [cust_period_inicio, cust_period_fin]
+            }));
+            
+            mySearch.filters.push(search.createFilter({
+                name: 'salesrep',
+                operator: 'anyof',
+                values: nombramientos
+            }));
+            var sublistNombramientosVentasPropias = sublistNombramientos.sp
+
+            var e = 0;
+            
+            var pagedResults = mySearch.runPaged();
+            pagedResults.pageRanges.forEach(function (pageRange){
+                var currentPage = pagedResults.fetch({index: pageRange.index});
+                currentPage.data.forEach(function (result) {
+                    var data = result.getAllValues()
+                    //log.debug('data ventas propias nle',data)
+                    var v 
+                    try{
+                        
+                        v = result.getValue({
+                                name: 'trandate'
+                            })
+                        sublistNombramientosVentasPropias.setSublistValue({
+                            id: 'custpage_fecha_nlep',
+                            value:v!=''?v:"-",
+                            line: e
+                        });
+                        v = result.getValue({
+                                name: 'tranid'
+                            })
+                        sublistNombramientosVentasPropias.setSublistValue({
+                            id: 'custpage_pedido_nlep',
+                            value:v!=''?v:"-" ,
+                            line: e
+                        });
+                        v = result.getValue({
+                                name: 'internalid'
+                            })
+                        sublistNombramientosVentasPropias.setSublistValue({
+                            id: 'custpage_int_id_nlep',
+                            value:v!=''?v:"-" ,
+                            line: e
+                        });
+                        v = result.getText({
+                                name: 'salesrep'
+                            })
+                        sublistNombramientosVentasPropias.setSublistValue({
+                            id: 'custpage_pre_nlep',
+                            value: v!=''?v:"-",
+                            line: e
+                        });
+                        v= result.getText({
+                                name: 'custbody_tipo_venta'
+                            })
+                        sublistNombramientosVentasPropias.setSublistValue({
+                            id: 'custpage_tipo_venta_nlep',
+                            value: v!=''?v:"-",
+                            line: e
+                        });
+                        var v = result.getText({
+                                name: 'custbody_vw_recruiter'
+                            })
+                        
+                        sublistNombramientosVentasPropias.setSublistValue({
+                            id: 'custpage_reclutadora_odv_nlep',
+                            value:v!=''?v:"-",
+                            line: e
+                        });
+                        v = result.getText({
+                                name: 'custbody_vw_comission_status'
+                            })
+                        sublistNombramientosVentasPropias.setSublistValue({
+                            id: 'custpage_com_status_nlep',
+                            value:v!=''?v:"-" ,
+                            line: e
+                        }); 
+                        v = data['salesRep.hiredate']
+                        sublistNombramientosVentasPropias.setSublistValue({
+                            id: 'custpage_alta_nlep',
+                            value:v!=''?v:"-" ,
+                            line: e
+                        });
+                        v = data['salesRep.custentity_promocion'][0].text
+                        sublistNombramientosVentasPropias.setSublistValue({
+                            id: 'custpage_promocion_nlep',
+                            value: v!=''?v:"-",
+                            line: e
+                        });
+                    }catch(e){
+                        log.error('error set NLEbusqueda',e)
+                    }
+                    
+                    e++;
+                    
+                });
+            });
+
+        }catch(e){
+            log.error('error venta propia nle',e)
+        }
+
+    }
     function ventasEquipoNLE(nombramientos,sublistNombramientos,cust_period_inicio,cust_period_fin,cust_presentadora,allPresentadorData){
         var integrantes = []
         for (n in nombramientos){
-            log.debug('nombramientos[n]',nombramientos[n])
+            //log.debug('nombramientos[n]',nombramientos[n])
             var busquedaEquipoNLE = searchDataPresentadoras(nombramientos[n])
             var equipoNLE = busquedaEquipoNLE.empGrupos[nombramientos[n]]
             for(x in equipoNLE){
                 integrantes.push(equipoNLE[x])
             }
         }
-        log.debug('integrantes',integrantes)
+        //log.debug('integrantes',integrantes)
         var sublistNombramientosS = sublistNombramientos.s
-        log.debug('sublistNombramientosS',sublistNombramientosS)
-        var sublistNombramientosVentas = sublistNombramientos.sv
-        log.debug('sublistNombramientosVentas',sublistNombramientosVentas)
-        
+        var sublistNombramientosVentas = sublistNombramientos.sv        
         var line = 0
         var v
         for (i in nombramientos){
@@ -815,8 +916,8 @@ function(plugin,task, serverWidget, search, runtime,file,encode,https,email,reco
                 id : 'customsearch_ventas_pre_detalle'
             });
             
-            log.debug('integrantes',integrantes)
-            
+            //log.debug('integrantes',integrantes)
+              
             mySearch.filters.push(search.createFilter({
                    name: 'trandate',
                    operator: 'within',
@@ -828,12 +929,9 @@ function(plugin,task, serverWidget, search, runtime,file,encode,https,email,reco
                 operator: 'anyof',
                 values: integrantes
             }));
-                
-
-            // Run the paged search
+          
             try {
-                
-
+            
             var e = 0;
             
             var pagedResults = mySearch.runPaged();
@@ -841,7 +939,7 @@ function(plugin,task, serverWidget, search, runtime,file,encode,https,email,reco
                 var currentPage = pagedResults.fetch({index: pageRange.index});
                 currentPage.data.forEach(function (result) {
                     var data = result.getAllValues()
-                    log.debug('data ventas equipo nle',data)
+                    //log.debug('data ventas equipo nle',data)
                     var v 
                     try{
                         v = data['salesRep.supervisor'][0].text
@@ -879,14 +977,6 @@ function(plugin,task, serverWidget, search, runtime,file,encode,https,email,reco
                             })
                         sublistNombramientosVentas.setSublistValue({
                             id: 'custpage_pre_nle',
-                            value: v!=''?v:"-",
-                            line: e
-                        });
-                        v= result.getText({
-                                name: 'custbody_tipo_venta'
-                            })
-                        sublistNombramientosVentas.setSublistValue({
-                            id: 'custpage_tipo_venta_nle',
                             value: v!=''?v:"-",
                             line: e
                         });
@@ -976,12 +1066,69 @@ function(plugin,task, serverWidget, search, runtime,file,encode,https,email,reco
                 label: 'Fecha de Nombramiento'
             }).updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
             thidField = sublist.addField({
+                id: 'ventas_propias_nle',
+                type: serverWidget.FieldType.TEXTAREA,
+                label: 'Ventas propias'
+            }).updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
+            thidField = sublist.addField({
                 id: 'equipo_nle',
                 type: serverWidget.FieldType.TEXTAREA,
                 label: 'Integrantes del equipo'
             }).updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
             
 
+            //insertar sublista y campos de ventas propias
+            var sublistventas_nle_propias = form.addSublist({
+                id: 'custpage_equipo_ventas_propias_nle',
+                type: serverWidget.SublistType.STATICLIST,
+                label: 'Ventas Propias NLE',
+                tab: 'inf_nombramientos'
+            });  
+            sublistventas_nle_propias.addField({
+                id: 'custpage_fecha_nlep',
+                label: 'Fecha',
+                type: serverWidget.FieldType.TEXT
+            }).updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
+            sublistventas_nle_propias.addField({
+                id: 'custpage_pedido_nlep',
+                label: 'Pedido',
+                type: serverWidget.FieldType.TEXT
+            }).updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
+            sublistventas_nle_propias.addField({
+                id: 'custpage_int_id_nlep',
+                label: 'Internal ID',
+                type: serverWidget.FieldType.TEXT
+            }).updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
+            sublistventas_nle_propias.addField({
+                id: 'custpage_pre_nlep',
+                label: 'Presentadora',
+                type: serverWidget.FieldType.TEXT
+            }).updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
+            sublistventas_nle_propias.addField({
+                id: 'custpage_tipo_venta_nlep',
+                label: 'Tipo De Venta',
+                type: serverWidget.FieldType.TEXT
+            }).updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
+            sublistventas_nle_propias.addField({
+                id: 'custpage_com_status_nlep',
+                label: 'Commission status',
+                type: serverWidget.FieldType.TEXT
+            }).updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
+            sublistventas_nle_propias.addField({
+                id: 'custpage_reclutadora_odv_nlep',
+                label: 'Reclutadora ODV',
+                type: serverWidget.FieldType.TEXT
+            }).updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
+            sublistventas_nle_propias.addField({
+                id: 'custpage_alta_nlep',
+                label: 'Alta Presentadora',
+                type: serverWidget.FieldType.TEXT
+            }).updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
+            sublistventas_nle_propias.addField({
+                id: 'custpage_promocion_nlep',
+                label: 'Promocion',
+                type: serverWidget.FieldType.TEXT
+            }).updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
             //insertar sublista y campos de ventas
             var sublistventas_nle = form.addSublist({
                 id: 'custpage_equipo_ventas_nle',
@@ -1039,7 +1186,10 @@ function(plugin,task, serverWidget, search, runtime,file,encode,https,email,reco
                 label: 'Promocion',
                 type: serverWidget.FieldType.TEXT
             }).updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
-            return {s:sublist,sv:sublistventas_nle}
+
+
+            
+            return {s:sublist,sv:sublistventas_nle,sp:sublistventas_nle_propias}
     }
     
     function sublistEquipo(form){
