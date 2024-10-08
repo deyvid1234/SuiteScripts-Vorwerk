@@ -302,20 +302,27 @@ function table_v_propia(data,tmp_emp,type_emp,promocion,dataSO,CompConfigDetails
 		    var keyNle = Object.keys(dataNle)
 		    
 		    for (x in keyNle){
-		    	ventaPropia = dataNle[keyNle[x]].ventaPropia
-		    	log.debug('ventasEquipo',ventasEquipo)
-		    	log.debug('ventaPropia',ventaPropia)
+		    	var ventaPropiaN = dataNle[keyNle[x]].ventaPropia
+		    	for (n in ventaPropiaN){
+		    		ventaPropia.push(ventaPropiaN[n])
+		    	}
+		    	
+		    	log.debug('ventaPropiaN',ventaPropiaN)
 		    	
 		    	var ventasEquipo = dataNle[keyNle[x]].dataEquipo
+		    	log.debug('ventasEquipo',ventasEquipo)
 		    	for (y in ventasEquipo){
 		    		var odv = ventasEquipo[y]
 		    		log.debug('odv',odv)
-		    		ventaPropia.push(JSON.parse(odv))
+		    		for(e in odv){
+		    			ventaPropia.push(parseInt(odv[e]))
+		    		}
+		    		
 		    	}
-		    	
+		    	log.debug('ventaPropia en for',ventaPropia)
 		    }
 
-		    log.debug('ventaPropia',ventaPropia)
+		    log.debug('ventaPropia final',ventaPropia)
 		    log.debug('dataNle',keyNle )
 	    }
 	    
@@ -593,7 +600,7 @@ function table_b_Permanente (data){
 		    bono6: {label:(data.bono_6 != '' && data.bono_6 != null? data.bono_6 : "Bono Permanente 6"),valor:(data.bono_m_6 != '' ? data.bono_m_6+'.00' : "0.00")},
 		    bono7: {label:(data.bono_7 != '' && data.bono_7 != null? data.bono_7 : "Bono Permanente 7"),valor:(data.bono_m_7 != '' ? data.bono_m_7+'.00' : "0.00")},
 		    bono8: {label:(data.bono_8 != '' && data.bono_8 != null? data.bono_8 : "Bono Permanente 8"),valor:(data.bono_m_8 != '' ? data.bono_m_8+'.00' : "0.00")},
-		    bono9: {label:(data.bono_9 != '' && data.bono_9 != null? data.bono_9 : "Bono Permanente 9"),valor:(data.bono_m_9 != '' ? data.bono_m_9+'.00' : "0.00")},
+		    bono9: {label:(data.bono_9 != '' && data.bono_9 != null? "Bono Permanente 9" : "Bono Permanente 9"),valor:(data.bono_m_9 != '' ? data.bono_m_9+'.00' : "0.00")},
 		    bono10: {label:(data.bono_10 != '' && data.bono_10 != null? data.bono_10 : "Bono Permanente 10"),valor:(data.bono_m_10 != '' ? data.bono_m_10+'.00' : "0.00")},
 		    bonoTotal: parseInt(data.bono_m_1 != '' ? data.bono_m_1 : 0)+parseInt(data.bono_m_2 != '' ? data.bono_m_2 : 0)+parseInt(data.bono_m_3 != '' ? data.bono_m_3 : 0)+parseInt(data.bono_m_4 != '' ? data.bono_m_4 : 0)+parseInt(data.bono_m_5 != '' ? data.bono_m_5 : 0)+parseInt(data.bono_m_6 != '' ? data.bono_m_6 : 0)+parseInt(data.bono_m_7 != '' ? data.bono_m_7 : 0)+parseInt(data.bono_m_8 != '' ? data.bono_m_8 : 0)+parseInt(data.bono_m_9 != '' ? data.bono_m_9 : 0)+parseInt(data.bono_m_10 != '' ? data.bono_m_10 : 0)
 	    }
