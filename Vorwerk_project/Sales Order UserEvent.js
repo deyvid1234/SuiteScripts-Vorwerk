@@ -1318,7 +1318,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                 var internals = [];
                 var odv=  "";
                 var odv_ganaTM = 6
-                if(rec.getValue('salesrep') == 12000 || rec.getValue('salesrep') == 16581){//validaar quienes son estos sales rep
+                if(rec.getValue('salesrep') == 12000 || rec.getValue('salesrep') == 16581){//Mixivorwerk y compensaciones thermomix
                     return false;
                 }
                 if(rec.getValue('custbody_tipo_venta') == 19){
@@ -1326,35 +1326,27 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                 }else{
                     odv = rec.getValue('salesrep');
                 }
-                
-                var type_promotion = search.lookupFields({
+                                
+                var salesRep = search.lookupFields({//busqueda de presentadora
                     type: 'employee',
-                    id: rec.getValue('salesrep'),
-                    columns: ['altname','custentity_promocion']
+                    id: odv,
+                    columns: ['custentity72','hiredate','custentity123','altname','custentity_promocion']//obtencion de fechas 
                 });
-                 delegate = type_promotion.custentity_promocion[0]['value'];
-                 
-                 var salesRep = search.lookupFields({//busqueda de presentadora
-                     type: 'employee',
-                     id: odv,
-                     columns: ['custentity72','hiredate','custentity123']//obtencion de fechas 
-                 });
-                 var configuracion = salesRep.custentity123
-                 
-                 for (i = 0; i < configuracion.length ; i++){
+                var configuracion = salesRep.custentity123
+                var delegate = salesRep.custentity_promocion[0]['value'];
+                for (i = 0; i < configuracion.length ; i++){
                     
                     if(configuracion[i].value == 11 || configuracion[i].value == 12 || configuracion[i].value == 13 || configuracion[i].value == 14){//TM6R o TM4U
                         odv_ganaTM = 4
                     }
-                 }
+                }
                 
                 if(salesRep.custentity72 != ''){
                     dateReact = salesRep.custentity72//si la fecha esta vacia toma la fecha de reactivacion
                 }else{
                     dateReact = salesRep.hiredate//si no toma la fecha de creacion 
                 }
-                 log.debug('dateReact',dateReact);
-                 log.debug('odv',odv)
+                
                  var busqueda = search.create({
                      type: 'salesorder',
                      columns: ['internalid','custbody_tipo_venta','tranid'],
@@ -1380,176 +1372,176 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                     });
                 });
                 log.debug('numOrders',numOrders);
-               if(numOrders.length >  6 || delegate == 2){
-                   return false;
-               }
+                if(numOrders.length >  6 || delegate == 2){
+                    return false;
+                }
                 log.debug('count pre if ',count)
                 //Agrupado de ordenes 
-                  for(var index in numOrders){
+                for(var index in numOrders){
                       
-                      log.debug('orders',numOrders[index])
-                      if(numOrders[index].typeso == 2){
-                          internals.push({
-                              internalodv: numOrders[index].internalid
-                          })
-                          count++
+                    log.debug('orders',numOrders[index])
+                    if(numOrders[index].typeso == 2){
+                        internals.push({
+                            internalodv: numOrders[index].internalid
+                        })
+                        count++
                       }
                       if(numOrders[index].typeso == 35 || numOrders[index].typeso == 33){//TM6 Pagada en Espera, Nuevo Presentador Digital Credit
                         firstso = numOrders[index].internalid  
-                         var digital_id = numOrders[index].tranid
+                        var digital_id = numOrders[index].tranid
                       }
                       
-                  }
-                  var numOdv = internals.length;//extrallendo numero de valores en el arreglo
-                  log.debug('numOdv',numOdv) 
-                  log.debug('info debug','count'+count+' firstso '+firstso+' type '+scriptContext.type );
+                }
+                var numOdv = internals.length;//extrallendo numero de valores en el arreglo
+                log.debug('numOdv',numOdv) 
+                log.debug('info debug','count'+count+' firstso '+firstso+' type '+scriptContext.type );
                   
-                  log.debug('context',runtime.executionContext);
-                    //AJUSTE PARA CONSIDERAR PROMOCION TM EN PRESTAMO
-                    
-                    if( rec.getValue('custbody_tipo_venta') != 19 && delegate != 5 && delegate != 2){//edit
-                        log.debug('cuantos',count)
-                        if(count >= odv_ganaTM && firstso != '' ){//Necesita tener First SO porque es la que cambia a TM Ganada
-                            log.debug('comission antes de flujo TM ganada')
-                            
-                          var salesorder = record.load({//Cargar registro 
-                              type: 'salesorder',
-                              id: firstso,
-                              isDynamic: false
-                          });
-                          
-                          date = salesorder.getValue('trandate');
-                          numOrder = salesorder.getValue('tranid')
-                          salesorder.setValue('trandate',date);
-                          salesorder.setValue('custbody_tipo_venta','1')
-                          salesorder.setValue('custbody_vw_comission_status','2')
-                          var numLines = salesorder.getLineCount({//cuenta las lineas de mi sublista 
-                              sublistId : 'item'
-                          });
-                         
+                log.debug('context',runtime.executionContext);
+                //AJUSTE PARA CONSIDERAR PROMOCION TM EN PRESTAMO
+                
+                if( rec.getValue('custbody_tipo_venta') != 19 && delegate != 5 && delegate != 2){//edit
+                    log.debug('cuantos',count)
+                    if(count >= odv_ganaTM && firstso != '' ){//Necesita tener First SO porque es la que cambia a TM Ganada
+                        log.debug('comission antes de flujo TM ganada')
+                        
+                        var salesorder = record.load({//Cargar registro 
+                            type: 'salesorder',
+                            id: firstso,
+                            isDynamic: false
+                        });
+                      
+                        date = salesorder.getValue('trandate');
+                        numOrder = salesorder.getValue('tranid')
+                        salesorder.setValue('trandate',date);
+                        salesorder.setValue('custbody_tipo_venta','1')
+                        salesorder.setValue('custbody_vw_comission_status','2')
+                        var numLines = salesorder.getLineCount({//cuenta las lineas de mi sublista 
+                            sublistId : 'item'
+                        });
+                     
 
-                          //Descuento TM Ganada 
-                          var arr_aux =[];
-                          var valid_line = 0  
+                        //Descuento TM Ganada 
+                        var arr_aux =[];
+                        var valid_line = 0  
+                        
+                        var descuentoTm = 0//pagatutm(numOdv,salesrep)*(-1);
+                        
+                        for(var e =0; e<numLines; e++){ 
+                             var tmp_id = salesorder.getSublistValue({
+                                 sublistId: 'item',
+                                 fieldId: 'item',
+                                 line: e
+                             })
+                             var location = salesorder.getSublistValue({
+                                 sublistId: 'item',
+                                 fieldId: 'location',
+                                 line: e
+                             })
+                            if(tmp_id != 2170 && tmp_id != 2001 && tmp_id != 2280 && tmp_id != 2490 && tmp_id != 2571 && tmp_id !=2638){//2170=TM6 & Varoma 120V UL USA CA MX (24),2001=TM6 & Varoma 120V UL MX US,2280=TM6R,2490= Black,2571=Spark,2638=kit k00190
+                                var tmp_amount = salesorder.getSublistValue({
+                                    sublistId: 'item',
+                                    fieldId: 'amount',
+                                    line: e
+                                })      
+                                arr_aux.push({
+                                    id:tmp_id,
+                                    mount:tmp_amount,
+                                    location:location
+                                })
+                            }else{
+                                valid_line = e;
+                                var tmp_amount = salesorder.getSublistValue({
+                                    sublistId: 'item',
+                                    fieldId: 'amount',
+                                    line: e
+                                })  
+                                log.debug('tmp_amount tm',tmp_amount)
+                                log.debug('tmp_id tm',tmp_id)
+                                descuentoTm = (tmp_amount-0.01)*(-.84)
+                            }
                             
-                            var descuentoTm = 0//pagatutm(numOdv,salesrep)*(-1);
-                            
-                            for(var e =0; e<numLines; e++){ 
-                                 var tmp_id = salesorder.getSublistValue({
-                                     sublistId: 'item',
-                                     fieldId: 'item',
-                                     line: e
-                                 })
-                                 var location = salesorder.getSublistValue({
-                                     sublistId: 'item',
-                                     fieldId: 'location',
-                                     line: e
-                                 })
-                                if(tmp_id != 2170 && tmp_id != 2001 && tmp_id != 2280 && tmp_id != 2490 && tmp_id != 2571 && tmp_id !=2638){//2170=TM6 & Varoma 120V UL USA CA MX (24),2001=TM6 & Varoma 120V UL MX US,2280=TM6R,2490= Black,2571=Spark,2638=kit k00190
-                                    var tmp_amount = salesorder.getSublistValue({
-                                         sublistId: 'item',
-                                         fieldId: 'amount',
-                                         line: e
-                                     })      
-                                    arr_aux.push({
-                                        id:tmp_id,
-                                        mount:tmp_amount,
-                                        location:location
-                                    })
-                                }else{
-                                    valid_line = e;
-                                    var tmp_amount = salesorder.getSublistValue({
-                                         sublistId: 'item',
-                                         fieldId: 'amount',
-                                         line: e
-                                     })  
-                                    log.debug('tmp_amount tm',tmp_amount)
-                                    log.debug('tmp_id tm',tmp_id)
-                                    descuentoTm = (tmp_amount-0.01)*(-.84)
+                        }
+                        
+                        for(var i =0; i<numLines-1; i++){
+                            var x =0;
+                            if(valid_line == 0){
+                                   x=1;
+                            }
+                            var tmp_id = salesorder.getSublistValue({
+                                sublistId: 'item',
+                                fieldId: 'item',
+                                line: x
+                            })
+                            log.debug('tmp_id',tmp_id+'  line  '+i)
+                            if(tmp_id != 2170 && tmp_id != 2001 && tmp_id != 2280 && tmp_id != 2490 && tmp_id != 2571 && tmp_id !=2638){//2170=TM6 & Varoma 120V UL USA CA MX (24),2001=TM6 & Varoma 120V UL MX US,2280=TM6R,2490= Black,2571=Spark,2638=kit k00190
+                                try{
+                                    salesorder.removeLine({
+                                        sublistId: 'item',
+                                        line: x
+                                    });
+                                }catch(e){
+                                    log.debug('Error removeLine',e)
                                 }
                                 
                             }
-                            
-                            for(var i =0; i<numLines-1; i++){
-                                var x =0;
-                                if(valid_line == 0){
-                                       x=1;
-                                }
-                                var tmp_id = salesorder.getSublistValue({
-                                     sublistId: 'item',
-                                     fieldId: 'item',
-                                     line: x
-                                 })
-                                log.debug('tmp_id',tmp_id+'  line  '+i)
-                                if(tmp_id != 2170 && tmp_id != 2001 && tmp_id != 2280 && tmp_id != 2490 && tmp_id != 2571 && tmp_id !=2638){//2170=TM6 & Varoma 120V UL USA CA MX (24),2001=TM6 & Varoma 120V UL MX US,2280=TM6R,2490= Black,2571=Spark,2638=kit k00190
-                                    try{
-                                        salesorder.removeLine({
-                                            sublistId: 'item',
-                                            line: x
-                                        });
-                                    }catch(e){
-                                        log.debug('Error removeLine',e)
-                                    }
-                                    
-                                }
-                            }
-                            salesorder.save({
-                                enableSourcing: false,
-                                ignoreMandatoryFields: true
-                            });
-                            var salesorder = record.load({//Cargar registro 
-                              type: 'salesorder',
-                              id: firstso,
-                              isDynamic: true
-                            });
-                            log.debug('descuentoTm',descuentoTm);
-                            salesorder.selectNewLine({
-                                sublistId : 'item',//seleccion de linea
-                            });
-                            salesorder.setCurrentSublistValue({//seteo de valor quantity
-                                sublistId: 'item',
-                                fieldId: 'quantity',
-                                value: 1
-                            });
-                            salesorder.setCurrentSublistValue({//seteo de location
-                                sublistId: 'item',
-                                fieldId: 'location',
-                                value: salesorder.getValue('location')
-                            });
-                            salesorder.setCurrentSublistValue({//seteo de item
-                                sublistId: 'item',
-                                fieldId: 'item',
-                                value: '1876'// descuento original 911 - cambio por 1876
-                            });
-                            salesorder.setCurrentSublistValue({//seteo de descuento aplicado 
-                                sublistId: 'item',
-                                fieldId: 'amount',
-                                value: descuentoTm
-                            });
-                            salesorder.setCurrentSublistValue({//seteo de descuento aplicado
-                                sublistId: 'item',
-                                fieldId: 'rate',
-                                value: descuentoTm
-                            });
-                            salesorder.setCurrentSublistValue({//seteo de descuento aplicado
-                                sublistId: 'item',
-                                fieldId: 'description',
-                                value: 'DESCUENTO PROMOCIONAL'
-                            });
-                            salesorder.setCurrentSublistValue({//seteo de descuento aplicado
-                                sublistId: 'item',
-                                fieldId: 'taxcode',
-                                value: 202
-                            });
-                            salesorder.commitLine({//cierre de linea seleccionada 
-                                sublistId: 'item'
-                            });
-                            log.debug('que trae',arr_aux)
-                            
-                            
-                            
-                            for(var x in arr_aux){
-                                try{
+                        }
+                        salesorder.save({
+                            enableSourcing: false,
+                            ignoreMandatoryFields: true
+                        });
+                        var salesorder = record.load({//Cargar registro 
+                            type: 'salesorder',
+                            id: firstso,
+                            isDynamic: true
+                        });
+                        log.debug('descuentoTm',descuentoTm);
+                        salesorder.selectNewLine({
+                            sublistId : 'item',//seleccion de linea
+                        });
+                        salesorder.setCurrentSublistValue({//seteo de valor quantity
+                            sublistId: 'item',
+                            fieldId: 'quantity',
+                            value: 1
+                        });
+                        salesorder.setCurrentSublistValue({//seteo de location
+                            sublistId: 'item',
+                            fieldId: 'location',
+                            value: salesorder.getValue('location')
+                        });
+                        salesorder.setCurrentSublistValue({//seteo de item
+                            sublistId: 'item',
+                            fieldId: 'item',
+                            value: '1876'// descuento original 911 - cambio por 1876
+                        });
+                        salesorder.setCurrentSublistValue({//seteo de descuento aplicado 
+                            sublistId: 'item',
+                            fieldId: 'amount',
+                            value: descuentoTm
+                        });
+                        salesorder.setCurrentSublistValue({//seteo de descuento aplicado
+                            sublistId: 'item',
+                            fieldId: 'rate',
+                            value: descuentoTm
+                        });
+                        salesorder.setCurrentSublistValue({//seteo de descuento aplicado
+                            sublistId: 'item',
+                            fieldId: 'description',
+                            value: 'DESCUENTO PROMOCIONAL'
+                        });
+                        salesorder.setCurrentSublistValue({//seteo de descuento aplicado
+                            sublistId: 'item',
+                            fieldId: 'taxcode',
+                            value: 202
+                        });
+                        salesorder.commitLine({//cierre de linea seleccionada 
+                            sublistId: 'item'
+                        });
+                        log.debug('que trae',arr_aux)
+                        
+                        
+                        
+                        for(var x in arr_aux){
+                            try{
                                 salesorder.selectNewLine({
                                     sublistId : 'item',//seleccion de linea
                                 });
@@ -1576,47 +1568,47 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                                 salesorder.commitLine({//cierre de linea seleccionada 
                                     sublistId: 'item'
                                 });
+                            
+                            }catch(aux){
                                 
-                                }catch(aux){
-                                    
-                                    log.debug('que pasa',aux)
-                                }
-                            }
-                            
-                            
-                            salesorder.setValue('custbody_vorwerk_descuento',true) //seteo de checkbox descuento
-                            salesorder.setValue('trandate',fdate)
-                            var idODV = salesorder.save();
-                            log.debug('idODV',idODV);
-                          //Fin Descuento TM Ganada 
-                          
-                          var objEmployee = record.load({//Cargar registro 
-                              type: 'employee',
-                              id: odv,
-                              isDynamic: false
-                          });
-                            log.debug('Sales order UE 879')
-                          objEmployee.setValue('custentity_promocion','2')
-                          objEmployee.setValue('custentity_pedido_tm_ganada',digital_id)
-                          objEmployee.save();
-                           
-                         
-                         
-                         return numOdv;
-                         
-                        }else if(count <= odv_ganaTM ){//igual? se borra?
-                            for(inter in internals){
-                              /*record.submitFields({
-                                  type: 'salesorder',
-                                  id: internals[inter].internalodv,
-                                  values: {'custbody_vw_comission_status':'2'}
-                              })*/
+                                log.debug('que pasa',aux)
                             }
                         }
                         
+                        
+                        salesorder.setValue('custbody_vorwerk_descuento',true) //seteo de checkbox descuento
+                        salesorder.setValue('trandate',fdate)
+                        var idODV = salesorder.save();
+                        log.debug('idODV',idODV);
+                        //Fin Descuento TM Ganada 
+                      
+                        var objEmployee = record.load({//Cargar registro 
+                            type: 'employee',
+                            id: odv,
+                            isDynamic: false
+                        });
+                        log.debug('Sales order UE 879')
+                        objEmployee.setValue('custentity_promocion','2')
+                        objEmployee.setValue('custentity_pedido_tm_ganada',digital_id)
+                        objEmployee.save();
+                       
+                     
+                     
+                     return numOdv;
+                     
+                    }else if(count <= odv_ganaTM ){//igual? se borra?
+                        for(inter in internals){
+                          /*record.submitFields({
+                              type: 'salesorder',
+                              id: internals[inter].internalodv,
+                              values: {'custbody_vw_comission_status':'2'}
+                          })*/
+                        }
                     }
-                    log.debug('test')
-                    log.debug('custbody_tipo_venta',rec.getValue('custbody_tipo_venta'))
+                    
+                }
+                
+                log.debug('custbody_tipo_venta',rec.getValue('custbody_tipo_venta'))
                                             
         }catch(err){
             log.debug('error flujo tm ganada',err);
