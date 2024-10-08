@@ -289,10 +289,13 @@ function table_v_propia(data,tmp_emp,type_emp,promocion,dataSO,CompConfigDetails
 
   function table_v_equipo(data,dataSO,CompConfigDetails){
   	try{
+  		log.debug('entramos')
   		var strTable = ''
   		//Ventas Equipo
 	  	var equipoMonto = data.comision_equipo
+	  	log.debug('equipoMonto',equipoMonto)
 	    var dataEquipo = data.equipo
+	    log.debug('dataEquipo',dataEquipo)
 	    var ventaPropia = []
 	    if(data.odvNle != ''){//si hay data en el campo odv NLE
 	    	var dataNle = JSON.parse(data.odvNle)
@@ -361,7 +364,7 @@ function table_v_propia(data,tmp_emp,type_emp,promocion,dataSO,CompConfigDetails
 				strTable += "<td border='0.5' border-style='dotted-narrow'>" + pedido		+ "</td>";		
 				strTable += "</tr>";
 			}catch(errT2){
-				log.error('errT2',errT2);
+				log.error('errT2 vequipo',errT2);
 			}
 					
 		}
@@ -373,7 +376,14 @@ function table_v_propia(data,tmp_emp,type_emp,promocion,dataSO,CompConfigDetails
 					var thisSO = objSObyid[ventaPropia[i]]
 					//var lider = data.lider
 					log.debug('thisSO',thisSO)
-					var lider = thisSO['salesrep.supervisor'][0].text
+					log.debug('supervisor de nle',thisSO['salesrep.supervisor'])
+					log.debug('supervisor de nle 2',thisSO['salesrep.supervisor'][0])
+					if(thisSO['salesrep.supervisor']!= ''){
+						var lider = thisSO['salesrep.supervisor'][0].text
+					} else{
+						var lider = thisSO.salesrep[0].text
+					}
+
 					log.debug('lider',lider)
 					var salesRep = thisSO.salesrep[0].text
 					var cliente = thisSO.entity[0].text
@@ -390,7 +400,7 @@ function table_v_propia(data,tmp_emp,type_emp,promocion,dataSO,CompConfigDetails
 					strTable += "<td border='0.5' border-style='dotted-narrow'>" + pedido		+ "</td>";		
 					strTable += "</tr>";
 				}catch(errT2){
-					log.error('errT2',errT2);
+					log.error('errT2 vnle',errT2);
 				}
 						
 			}
@@ -412,18 +422,18 @@ function table_v_propia(data,tmp_emp,type_emp,promocion,dataSO,CompConfigDetails
 		var com_aux = data.comision_equipo==0?0:currencyFormat('$',data.comision_equipo/(parseInt(porcentaje)/100)+'.00')
 				
 		strTable += "<tr>";
-		strTable += "<td border='0.5' colspan= '4' border-style='none' align='right'><b>   </b></td>";
+		strTable += "<td border='0.5' colspan= '5' border-style='none' align='right'><b>   </b></td>";
 		strTable += "</tr>";
 		strTable += "<tr>";
-		strTable += "<td border='0.5' colspan= '4' border-style='none' align='right'><b>Total comisión Venta de Equipos</b></td>";
+		strTable += "<td border='0.5' colspan= '5' border-style='none' align='right'><b>Total comisión Venta de Equipos</b></td>";
 		strTable += "<td border='0.5' border-style='dotted-narrow' align='right'><b>" + com_aux	+ "</b></td>";
 		strTable += "</tr>";
 		strTable += "<tr>";
-		strTable += "<td border='0.5' colspan= '4' border-style='none' align='right'><b> % Pagado </b></td>";
+		strTable += "<td border='0.5' colspan= '5' border-style='none' align='right'><b> % Pagado </b></td>";
 		strTable += "<td border='0.5' border-style='dotted-narrow' align='right'><b>" + porcentaje	+ "</b></td>";
 		strTable += "</tr>";
 		strTable += "<tr>";
-		strTable += "<td border='0.5' colspan= '4' border-style='none' align='right'><b>Total comisión</b></td>";
+		strTable += "<td border='0.5' colspan= '5' border-style='none' align='right'><b>Total comisión</b></td>";
 		strTable += "<td border='0.5' border-style='dotted-narrow' align='right'><b>" + currencyFormat('$',data.comision_equipo+'.00')	+ "</b></td>";
 		strTable += "</tr>";
 		strTable += "</table>";
@@ -961,8 +971,8 @@ function search_crecord(id_jdg,type_emp,promocion){
         });
     	//log.debug('type_search',type_search)
     	if(type_emp== 3){
-    		data.lider = r.getValue('custrecord_c_jdg_empleado')
-    		data.odvNle = r.getValue('custrecordodv_nle')// prod custrecord_odv_nle
+    		data.lider = r.getText('custrecord_c_jdg_empleado')
+    		data.odvNle = r.getValue('custrecord_odv_nle')// prod custrecord_odv_nle
             data.comision_equipo = r.getValue(config_fields.comision_equipo[type_emp])
             data.equipo = r.getValue(config_fields.equipo[type_emp]) 
     	}

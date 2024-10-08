@@ -187,7 +187,7 @@ function(email,record, file, search, https, runtime,format,Dictionary) {
                     value: comissionInfo.ventas_propias_ids    
                 });
                 registerEmp.setValue({
-                    fieldId: 'custrecordodv_nle',// prod custrecord_odv_nle
+                    fieldId: 'custrecord_odv_nle',// prod custrecord_odv_nle
                     value: comissionInfo.nle    
                 });
                 //bono Joya
@@ -281,20 +281,20 @@ function(email,record, file, search, https, runtime,format,Dictionary) {
                 });*/
 
                 registerEmp.setValue({
-                    fieldId: config_fields.bp8[config.type],
+                    fieldId: config_fields.bp7[config.type],
                     value: 189  //  3+2 NLE
                 });
                 registerEmp.setValue({
-                    fieldId: config_fields.bp8_monto[config.type],
+                    fieldId: config_fields.bp7_monto[config.type],
                     value: comissionInfo.tresdos_nle  
                 });
 
                 registerEmp.setValue({
-                    fieldId: config_fields.bp9[config.type],
+                    fieldId: config_fields.bp8[config.type],
                     value: 190  //  5+2 NLE
                 });
                 registerEmp.setValue({
-                    fieldId: config_fields.bp9_monto[config.type],
+                    fieldId: config_fields.bp8_monto[config.type],
                     value: comissionInfo.cincodos_nle  
                 });
 
