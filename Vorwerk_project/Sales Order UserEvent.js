@@ -159,6 +159,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                             
                             if (fechaOld != fecha || salesrepOld != salesrep || tipoventaOld != tipoventa ){
                                 if(salesrepOld != salesrep){
+                                    log.debug('cambio de sales rep')
                                     setRecruiter(rec);
                                 }
                                var commissionStatusf = commissionStatus(salesrep,recordid) 
@@ -1078,6 +1079,8 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                 }
             }
             var cont = 1
+            var contVentas = 0
+            var arregloPrimerasVentas= []
             var soSearch = search.load({
                 id: 'customsearch_so_commission_status' //busqueda de so 
             });
@@ -1091,19 +1094,37 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                    operator: 'onorafter',
                    values: hiredate
             }));
-            //agregar filtro de fecha a partir de contratacion o reactivación
+            
             soSearch.run().each(function(r){//validar
+                contVentas ++
                 var internalId = r.getValue('internalid')
+                arregloPrimerasVentas.push(internalId)
                 log.debug('internalId',internalId)
                 var tipoVenta = r.getValue('custbody_tipo_venta')
                 var fechaSO = r.getValue('trandate')
                 fechaSO = Utils.stringToDate(fechaSO)
                 log.debug('fechaSO',fechaSO)
-                log.debug('cont',cont)
-                if((tipoVenta == '2'|| tipoVenta == '19') && fechaSO <= fechaObj2 && cont <= limit){// tipo venta tm pagada?
+                log.debug('contVentas',contVentas)
+                log.debug('arregloPrimerasVentas',arregloPrimerasVentas)
+
+                if (contVentas == 7){
+                    if(arregloPrimerasVentas.hasOwnProperty(recordid)){
+                        log.debug('esta en el arreglo, ya paso por el for')
+                    }else{
+                        log.debug('vamos a actualizar el com status de ',recordid)
+                        var submitFields = record.submitFields({
+                            type: record.Type.SALES_ORDER,
+                            id: recordid,
+                            values: {'custbody_vw_comission_status':''}
+                        });
+                    }
+
+                    return false
+                }
+                if((tipoVenta == '2'|| tipoVenta == '19') && fechaSO <= fechaObj2 && cont <= limit){
                     //log.debug('internalId',internalId)
                     log.debug('set com status no comisionable')
-                    var submitFields = record.submitFields({// record load?
+                    var submitFields = record.submitFields({
                         type: record.Type.SALES_ORDER,
                         id: internalId,
                         values: {'custbody_vw_comission_status':'2'}
@@ -1112,7 +1133,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
         
                 }else if (cont > limit|| fechaSO > fechaObj2){
                     log.debug('si comisiona break')
-                    var submitFields = record.submitFields({// aun es necesario?
+                    var submitFields = record.submitFields({
                         type: record.Type.SALES_ORDER,
                         id: internalId,
                         values: {'custbody_vw_comission_status':''}
