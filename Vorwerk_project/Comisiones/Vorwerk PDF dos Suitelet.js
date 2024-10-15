@@ -107,10 +107,13 @@ function onRequest(context){
 	        log.debug('my_file',my_file)
           if(type_emp == 3){
 	            type_search = "customrecord_compensaciones_jdg"
+	            campoRegistro = "custrecord_registro_pdf"
 	        }else if(type_emp == 2){
 	            type_search = "customrecord_compensaciones_gtm"
+	            campoRegistro = "custrecord_registro_pdf_gtm"
 	        }else{
 	            type_search = "customrecord_comisiones_presentadora"
+	            campoRegistro = "custrecord_registro_pdf_pre"
 	        }
 	        var reg = record.load({
 	            type:  type_search,
@@ -118,7 +121,7 @@ function onRequest(context){
 	            isDynamic: false
 	        });
 
-	        var compensacionesPdf = reg.setValue({ fieldId: 'custrecord_registro_pdf', value: my_file })
+	        var compensacionesPdf = reg.setValue({ fieldId: campoRegistro, value: my_file })
 	        reg.save()
 	        context.response.write(JSON.stringify(my_file));
   		}else{
@@ -960,6 +963,7 @@ function currencyFormat(signo,v){
 function search_crecord(id_jdg,type_emp,promocion){
     try{
         var type_search = ""
+        var campoRegistro = ""
         var columns = config_fields[type_emp]
         //log.debug('config_fields[type_emp]',config_fields[type_emp]);
         if(type_emp == 3){

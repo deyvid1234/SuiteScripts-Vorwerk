@@ -41,14 +41,17 @@ function(email,record,render, file, search, https, runtime,format,Dictionary,Ema
                 case 1://presentadora
                     type_to_add = "customrecord_comisiones_presentadora";
                     replace_string = 'pre';
+                    campoRegistro = 'custrecord_registro_pdf_pre';
                 break;
                 case 2:
                     type_to_add = "customrecord_compensaciones_gtm";
                     replace_string = 'gtm';
+                    campoRegistro = 'custrecord_registro_pdf_gtm';
                 break;
                 case 3://JDG
                     type_to_add = "customrecord_compensaciones_jdg";
                     replace_string = 'jdg';
+                    campoRegistro = 'custrecord_registro_pdf';
                 break;
             }
             var objRecord = record.load({
@@ -60,7 +63,7 @@ function(email,record,render, file, search, https, runtime,format,Dictionary,Ema
             var idEmp = objRecord.getValue(config_fields.emleado[type_rec]);
             var xml = objRecord.getValue(config_fields.xml[type_rec]);
             var pdf = objRecord.getValue(config_fields.pdf[type_rec]);
-            var registroCompPdf = objRecord.getValue('custrecord_registro_pdf');
+            var registroCompPdf = objRecord.getValue(campoRegistro);
             var email_emp = EmailLib.getEmployee(idEmp);
             var pdfObj = file.load({
                 id: pdf
