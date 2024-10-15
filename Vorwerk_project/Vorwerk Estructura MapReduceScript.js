@@ -69,9 +69,9 @@ function(search,https,runtime) {
 	    	delete obj_detail.mostrador
 	    	log.debug('JSON send',obj_detail)
 	    	if(runtime.envType != 'PRODUCTION'){ 
-		        urlAD = 'https://dev-apiagenda.mxthermomix.com/users/registerUserNetsuite'
+		        urlAD = 'https://dev-apiagenda.mxthermomix.com/users/postUserNetsuite'
 		    }else{//prod
-		        urlAD = 'https://apiagenda.mxthermomix.com/users/registerUserNetsuite'
+		        urlAD = 'https://apiagenda.mxthermomix.com/users/postUserNetsuite'
 		    }
 		     log.debug('urlAD',urlAD)
 	    	var responseService = https.post({
