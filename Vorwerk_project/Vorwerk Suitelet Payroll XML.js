@@ -588,7 +588,7 @@ function(record, search, email, render, file,runtime, encode, https, format, xml
                 rfc: rfc,
                 curp: loadedRecord.getValue('custentity_curp'),
                 employeeNumer: loadedRecord.getValue('entitynumber'),
-                fullName: loadedRecord.getValue('altname'),
+                fullName: loadedRecord.getValue('altname').replace(/\s+/g, ' ');,
                 email: loadedRecord.getValue('email'),
                 //pasar a dinamico si se requiere con registro patronal para de 1 a 8 tipo de contrato
                 contractType : '99'/*loadedRecord.getText('custentity_c_nom_tipocontrato')*/,//'99', -> customrecord_c_tipo_contrato
