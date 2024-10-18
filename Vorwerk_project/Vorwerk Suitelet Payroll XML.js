@@ -116,7 +116,7 @@ function(record, search, email, render, file,runtime, encode, https, format, xml
                 var str = 0;
                 var nT = (xmlString.length/3500)+1;
                 for(var i=0; i < nT; i++){
-                    log.debug('This is a part xml'+i, xmlString.substring(str, str+3500));
+                    //log.debug('This is a part xml'+i, xmlString.substring(str, str+3500));
                     str+=3500;
                 }
                 //-->
@@ -141,40 +141,40 @@ function(record, search, email, render, file,runtime, encode, https, format, xml
                     log.debug('folderId',folderId);
                     var xmlProcessResult = xmlProcessed['data'],
                         bodyResult = xmlProcessResult.body;
-                    log.debug('xmlProcessResult, verify me',xmlProcessResult);
-                    log.debug('bodyResult, verify me',bodyResult);
+                    //log.debug('xmlProcessResult, verify me',xmlProcessResult);
+                    //log.debug('bodyResult, verify me',bodyResult);
                     objUpdate[equivalenceData['responseCode']] = xmlProcessResult['code'];
                     //objUpdate[equivalenceData['responseMessage']] = JSON.stringify(xmlProcessResult);
                     //Si el código fué exitoso -> 200
                     if(xmlProcessResult['code'] == '200'){
-                        log.debug('xmlProcessResult[code] == 200, verify me',xmlProcessResult);
+                        //log.debug('xmlProcessResult[code] == 200, verify me',xmlProcessResult);
                         //validar el nodo reponse/result, si viene en falso puede ser falla de normas/reglas
                         var xmlDocument = xml.Parser.fromString({
                             text : bodyResult
                         });
-                        log.debug('5 verify me','ok');
+                        //log.debug('5 verify me','ok');
                         var xmlResult = xmlDocument.getElementsByTagName({
                             tagName : 'Result'
                         })[0]['textContent'];
-                        log.debug('xmlResult',xmlResult);
+                        //log.debug('xmlResult',xmlResult);
                         if(xmlResult == 'true'){
-                            log.debug('6','ok');
+                            //log.debug('6','ok');
                             objUpdate[equivalenceData['responseMessage']] = 'Timbrado exitoso';
-                            log.debug('7','ok');
+                            //log.debug('7','ok');
                             //xml timbrado
                             var response1 = xmlDocument.getElementsByTagName({
                                 tagName : 'ResponseData1'
                             });
-                            log.debug('8','ok');
+                            //log.debug('8','ok');
                             //pdf
                             var response3 = xmlDocument.getElementsByTagName({
                                 tagName : 'ResponseData3'
                             });
-                            log.debug('9','ok');
+                            //log.debug('9','ok');
                             var xmlDecoded = decodeB64(response1[0]['textContent']),
                                 pdfDecoded = response3[0]['textContent'];
                                 //pdfDecoded = decodeB64(response3[0]['textContent']);
-                            log.debug('10','ok');
+                            //log.debug('10','ok');
                             var xmlFile = createFile('XMLDOC',xmlDecoded,'xml_'+fileName,folderId),
                                 pdfFile = createFile('PDF',pdfDecoded,'pdf_'+fileName,folderId);
                             log.debug('xmlFile',xmlFile);
@@ -763,6 +763,8 @@ function(record, search, email, render, file,runtime, encode, https, format, xml
             var cdgPaisReceptor = objData['conectionSettings']['isTestig'] ? 'MX' : objData['receptor']['countryCode'];
             var RFCReceptor = objData['conectionSettings']['isTestig'] ? 'FUNK671228PH6' : objData['receptor']['rfc'];
             var nombreReceptor = objData['conectionSettings']['isTestig'] ? 'KARLA FUENTE NOLASCO' : objData['receptor']['fullName'];
+            log.debug('nombreReceptor',nombreReceptor)
+            log.debug('nombreReceptor.length',nombreReceptor,length)
             var domicilioFiscalReceptor = objData['conectionSettings']['isTestig'] ? '01030' : objData['receptor']['billzip'];
             var usoCFDI = objData['conectionSettings']['isTestig'] ? 'CN01' : objData['receptor']['cfdiUse'];
             var claveEntFed = objData['conectionSettings']['isTestig'] ? 'MEX' : objData['receptor']['stateValue'];
