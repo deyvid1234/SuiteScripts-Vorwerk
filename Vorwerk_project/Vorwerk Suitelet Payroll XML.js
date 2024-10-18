@@ -764,7 +764,7 @@ function(record, search, email, render, file,runtime, encode, https, format, xml
             var RFCReceptor = objData['conectionSettings']['isTestig'] ? 'FUNK671228PH6' : objData['receptor']['rfc'];
             var nombreReceptor = objData['conectionSettings']['isTestig'] ? 'KARLA FUENTE NOLASCO' : objData['receptor']['fullName'];
             log.debug('nombreReceptor',nombreReceptor)
-            log.debug('nombreReceptor.length',nombreReceptor,length)
+            log.debug('nombreReceptor.length',nombreReceptor.length)
             var domicilioFiscalReceptor = objData['conectionSettings']['isTestig'] ? '01030' : objData['receptor']['billzip'];
             var usoCFDI = objData['conectionSettings']['isTestig'] ? 'CN01' : objData['receptor']['cfdiUse'];
             var claveEntFed = objData['conectionSettings']['isTestig'] ? 'MEX' : objData['receptor']['stateValue'];
