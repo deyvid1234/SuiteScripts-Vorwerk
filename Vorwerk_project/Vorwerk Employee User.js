@@ -104,7 +104,7 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 		                    ,'and',
 		                    ['internalid','is',thisRecord.getValue('id')]
 		                    ,'and',
-		                    ['employeetype','anyof',[1,3,5,8]]
+		                    ['employeetype','anyof',[1,3,5,8,9]]
 		                ]
 		            });
 		    		var search_obj_detailAD = [];
@@ -187,7 +187,7 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 			    	delete obj_detail[0].mostrador
 
 
-			    	if( newInactive != oldInactive ){
+			    	
 
 
 			    		//1 Notificacion a LMS y AD de cambio de status inactive
@@ -407,9 +407,7 @@ function(record,search,http,https,encode,runtime,serverWidget) {
 
 				    	}
 
-			    	}else{
-			    		log.debug('No hay cambios de status inactive')
-			    	}
+			    	
 			    	
 			    	
 			    	
