@@ -73,7 +73,7 @@ function(search,https,runtime) {
 		    }else{//prod
 		        urlAD = 'https://apiagenda.mxthermomix.com/users/postUserNetsuite'
 		    }
-		     log.debug('urlAD',urlAD)
+		     //log.debug('urlAD',urlAD)
 	    	var responseService = https.post({
 			    url: urlAD,
 				body : JSON.stringify(obj_detail),
@@ -127,7 +127,7 @@ function(search,https,runtime) {
                 filters: [
                     ['salesrep','is',true],
                     'and',
-                    ['employeetype', 'anyof', '5', '3', '1', '8'],
+                    ['employeetype', 'anyof', '5', '3', '1', '8','9'],
 				    'AND',
 				    ['email', 'isnotempty', ''],
 				    'AND',
