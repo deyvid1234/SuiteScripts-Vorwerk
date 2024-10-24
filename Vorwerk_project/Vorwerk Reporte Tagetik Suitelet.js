@@ -434,6 +434,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 data[i]['item'] == '62431' || 
                 data[i]['item'] == '62752' ||
                 data[i]['item'] == '62959' ||
+                data[i]['item'] == '61780' ||
                 data[i]['item'] == 'TM6R'  ||
                 data[i]['item'] == 'K00190'  ){
                 isTM = true
@@ -445,8 +446,8 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 if(data.hasOwnProperty(fechaPivote+'-'+'K00190')){
                     log.debug('sumar ')
 
-                    data[i]['suma']=parseInt(data[i]['suma'])+parseInt(data[fechaPivote+'-'+'K00190']['suma'])
-                    data[i]['odvs']=parseInt(data[i]['odvs'])+parseInt(data[fechaPivote+'-'+'K00190']['odvs'])
+                    data[i]['suma']=parseInt(data[i]['suma'],10)+parseInt(data[fechaPivote+'-'+'K00190']['suma'],10)
+                    data[i]['odvs']=parseInt(data[i]['odvs'],10)+parseInt(data[fechaPivote+'-'+'K00190']['odvs'],10)
                     log.debug('data[i]',data[i])
                 }
                 
@@ -548,7 +549,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
 
                 var resta = data_cancelacion[i]['suma']
                 var sumaRegular = data[i]['suma']
-                v = numFormatter2.format({number: parseInt(sumaRegular - resta)})
+                v = numFormatter2.format({number: parseInt(sumaRegular - resta,10)})
                 log.debug('v cancelacion',v)
 
                 if(data_cancelacion[i]['item'] == 62431){
@@ -570,7 +571,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                         var resta = data_cancelacion[i]['suma'] + montoCancelacionKit
                         log.debug('resta item kit', resta)
                         var sumaRegular = data[i]['suma']
-                        v = numFormatter2.format({number: parseInt(sumaRegular - resta)})
+                        v = numFormatter2.format({number: parseInt(sumaRegular - resta,10)})
                         log.debug('v cancelacion',v)
                     }
                 } 
@@ -594,7 +595,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 var resta = montoCancelacionKit
                 log.debug('resta kit', resta)
                 var sumaRegular = data[i]['suma']
-                v = numFormatter2.format({number: parseInt(sumaRegular - resta)})
+                v = numFormatter2.format({number: parseInt(sumaRegular - resta,10)})
                 log.debug('v cancelacion',v)
 
             }else{
@@ -608,7 +609,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
 
                 v = isTM == true?data[i]['suma']:'0'//monto total sin restar
                 //log.debug('v 0',v)
-                v = v > 1 ? numFormatter2.format({number:parseInt(v)}):'0'
+                v = v > 1 ? numFormatter2.format({number:parseInt(v,10)}):'0'
             }
             result.setSublistValue({
                 id : 'custpage_out_nmo',//out_NETSALES_MAIN_ORDERS
