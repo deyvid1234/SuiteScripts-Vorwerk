@@ -187,7 +187,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                                  fieldId: 'item',
                                  line: e
                              })
-                             if(tmp_id == 1126 || tmp_id == 1757 || tmp_id == 2001|| tmp_id == 2170|| tmp_id == 2035 || tmp_id == 2571 || tmp_id == 2280){
+                             if(tmp_id == 1126 || tmp_id == 1757 || tmp_id == 2001|| tmp_id == 2170|| tmp_id == 2035 || tmp_id == 2571 || tmp_id == 2280 || tmp_id == 2671){
                                  var subrec = rec.getSublistSubrecord({
                                     sublistId: 'item',
                                     fieldId: 'inventorydetail',
@@ -1458,7 +1458,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                                  fieldId: 'location',
                                  line: e
                              })
-                            if(tmp_id != 2170 && tmp_id != 2001 && tmp_id != 2280 && tmp_id != 2490 && tmp_id != 2571 && tmp_id !=2638){//2170=TM6 & Varoma 120V UL USA CA MX (24),2001=TM6 & Varoma 120V UL MX US,2280=TM6R,2490= Black,2571=Spark,2638=kit k00190
+                            if(tmp_id != 2170 && tmp_id != 2001 && tmp_id != 2280 && tmp_id != 2490 && tmp_id != 2571 && tmp_id !=2638 && tmp_id != 2671){//2170=TM6 & Varoma 120V UL USA CA MX (24),2001=TM6 & Varoma 120V UL MX US,2280=TM6R,2490= Black,2571=Spark,2638=kit k00190
                                 var tmp_amount = salesorder.getSublistValue({
                                     sublistId: 'item',
                                     fieldId: 'amount',
@@ -1494,7 +1494,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                                 line: x
                             })
                             log.debug('tmp_id',tmp_id+'  line  '+i)
-                            if(tmp_id != 2170 && tmp_id != 2001 && tmp_id != 2280 && tmp_id != 2490 && tmp_id != 2571 && tmp_id !=2638){//2170=TM6 & Varoma 120V UL USA CA MX (24),2001=TM6 & Varoma 120V UL MX US,2280=TM6R,2490= Black,2571=Spark,2638=kit k00190
+                            if(tmp_id != 2170 && tmp_id != 2001 && tmp_id != 2280 && tmp_id != 2490 && tmp_id != 2571 && tmp_id !=2638 && tmp_id !=2671){//2170=TM6 & Varoma 120V UL USA CA MX (24),2001=TM6 & Varoma 120V UL MX US,2280=TM6R,2490= Black,2571=Spark,2638=kit k00190
                                 try{
                                     salesorder.removeLine({
                                         sublistId: 'item',
