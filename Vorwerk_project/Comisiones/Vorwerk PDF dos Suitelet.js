@@ -152,7 +152,7 @@ function salesOrdersTP(cust_period){
       	var objSObyEmp = {};
       	var objSObyid = [];
       	const salesOrderSearchFilters = [
-          	['item', 'anyof', '2638','2280','2001','2571','2170','1757','1126','2035','2402','2490'],
+          	['item', 'anyof', '2638','2280','2001','2571','2170','1757','1126','2035','2402','2490','2671'],
           	'AND',
           	['salesrep.isinactive', 'is', 'F'],
           	'AND',
