@@ -18,6 +18,33 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils,runtime) {
      */
     function pageInit(scriptContext) {
     	var thisRecord = scriptContext.currentRecord;
+        thisRecord.getField({
+            fieldId: 'custbody_metodo_repeticion'
+        }).isDisabled = true;
+        thisRecord.getField({
+            fieldId: 'custbody_no_repeticiones'
+        }).isDisabled = true;
+        thisRecord.getField({
+            fieldId: 'custbody_a_partir'
+        }).isDisabled = true;
+        thisRecord.getField({
+            fieldId: 'custbody_veces_repetir'
+        }).isDisabled = true;
+        thisRecord.getField({
+            fieldId: 'custbody_repetir_cada'
+        }).isDisabled = true;
+        thisRecord.getField({
+            fieldId: 'custbody_fechas_personalizadas'
+        }).isDisabled = true;
+        thisRecord.getField({
+            fieldId: 'custbody_url_contrato'
+        }).isDisabled = true;
+        thisRecord.getField({
+            fieldId: 'custbodyregistro_relacionado'
+        }).isDisabled = true;
+        thisRecord.getField({
+            fieldId: 'custbody_total_solicitud_recurrente'
+        }).isDisabled = true;
         thisRecord.getCurrentSublistField({
             sublistId: 'expense',
             fieldId: 'estimatedamount'
@@ -788,6 +815,14 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils,runtime) {
     	}catch(err){
     		log.error("error fieldChanged",err);
     	}
+        try{
+            if(fieldid == 'custbody_solicitud_recurrente_contrato' ){
+
+            }
+
+        }catch(e){
+            log.error('error fieldChanged solicitus recurrente por contrato',e)
+        }
     }
 
     /**
