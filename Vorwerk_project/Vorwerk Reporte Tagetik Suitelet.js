@@ -74,7 +74,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                title: 'MX Daily sales VI'//'Format flat file MX'
            });
        if(runtime.envType != 'PRODUCTION'){ 
-        form.clientScriptFileId = 1525922;
+        form.clientScriptFileId = 1876427;
        }else{
         form.clientScriptFileId = 1876427;
        }
