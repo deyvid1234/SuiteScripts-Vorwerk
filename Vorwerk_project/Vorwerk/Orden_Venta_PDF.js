@@ -111,7 +111,7 @@ function Orden_Venta_PDF(request,response)
                 };
                
 
-                if(tmp_item == 2001 || tmp_item == 2170 || tmp_item == 2490 || tmp_item == 2571 || tmp_item == 2280|| tmp_item == 2650){
+                if(tmp_item == 2001 || tmp_item == 2170 || tmp_item == 2490 || tmp_item == 2571 || tmp_item == 2280|| tmp_item == 2650 || tmp_item == 2671){
                     var subrecord = salesorder.viewLineItemSubrecord('item', 'inventorydetail',i);
                     nlapiLogExecution('debug', 'subrecord', JSON.stringify(subrecord));
                     if(subrecord != null) {

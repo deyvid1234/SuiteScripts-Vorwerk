@@ -200,7 +200,7 @@ function HojaSalidaPDF(request, response)
 	for(var i=1;i<itemcount + 1;i++){
 				var tmp_item = hsRec.getLineItemValue('item', 'item', i);
 				nlapiLogExecution('debug', 'tmp_item', tmp_item);
-				if(tmp_item == 2001 || tmp_item == 2170 || tmp_item == 2490|| tmp_item == 2280 || tmp_item == 2571){
+				if(tmp_item == 2001 || tmp_item == 2170 || tmp_item == 2490|| tmp_item == 2280 || tmp_item == 2571 || tmp_item == 2671){
 					 var subrecord = hsRec.viewLineItemSubrecord('item', 'inventorydetail',i);
 					 nlapiLogExecution('debug', 'subrecord', JSON.stringify(subrecord));
 					 if(subrecord != null) {
