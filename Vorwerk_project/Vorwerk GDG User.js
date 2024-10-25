@@ -82,16 +82,17 @@ function(record,search,Utils,Dictionary,file,xml) {
     function afterSubmit(scriptContext) {
         try{
             log.debug("start afeter submit","start");
-            
             var rec = scriptContext.newRecord;
-            var rec_type = rec.type;
-            var subtotal = rec.getValue('custrecord_total_reporte_jdg');
-            var total = 0; 
-            var retencion = 0;
-            var sumBonos = Utils.getBonos(3,rec);
-            log.debug('sumBonos',sumBonos);
-            
-            
+            var registro_congelado = rec.getValue('custrecord_record_frozen');
+            if(!registro_congelado){
+                var rec_type = rec.type;
+                var subtotal = rec.getValue('custrecord_total_reporte_jdg');
+                var total = 0; 
+                var retencion = 0;
+                var sumBonos = Utils.getBonos(3,rec);
+                log.debug('sumBonos',sumBonos);
+                
+                
                 log.debug('subtotal',subtotal);
                 subtotal= subtotal+sumBonos;
                 var rec_related = rec.getValue('custrecord_sub__registro_compensaciones');
@@ -133,6 +134,8 @@ function(record,search,Utils,Dictionary,file,xml) {
                 
                 
                 log.debug('listISR',listISR);
+            }
+            
                 
             
             
