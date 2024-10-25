@@ -1424,6 +1424,15 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                     log.debug('cuantos',count)
                     if(count >= odv_ganaTM && firstso != '' ){//Necesita tener First SO porque es la que cambia a TM Ganada
                         log.debug('comission antes de flujo TM ganada')
+                        var objEmployee = record.load({//Cargar registro 
+                            type: 'employee',
+                            id: odv,
+                            isDynamic: false
+                        });
+                        log.debug('seteo tm propia al employee: ',odv)
+                        objEmployee.setValue('custentity_promocion','2')
+                        objEmployee.setValue('custentity_pedido_tm_ganada',digital_id)
+                        objEmployee.save();
                         
                         var salesorder = record.load({//Cargar registro 
                             type: 'salesorder',
@@ -1433,9 +1442,15 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                       
                         date = salesorder.getValue('trandate');
                         numOrder = salesorder.getValue('tranid')
+                        record.submitFields({//setear tipo de venta tm ganada
+                              type: 'salesorder',
+                              id: firstso,
+                              values: {'custbody_tipo_venta':'1','trandate':date,'custbody_vw_comission_status':'2'}
+                        })
+                        /*
                         salesorder.setValue('trandate',date);
                         salesorder.setValue('custbody_tipo_venta','1')
-                        salesorder.setValue('custbody_vw_comission_status','2')
+                        salesorder.setValue('custbody_vw_comission_status','2')*/
                         var numLines = salesorder.getLineCount({//cuenta las lineas de mi sublista 
                             sublistId : 'item'
                         });
@@ -1603,15 +1618,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                         log.debug('idODV',idODV);
                         //Fin Descuento TM Ganada 
                       
-                        var objEmployee = record.load({//Cargar registro 
-                            type: 'employee',
-                            id: odv,
-                            isDynamic: false
-                        });
-                        log.debug('Sales order UE 879')
-                        objEmployee.setValue('custentity_promocion','2')
-                        objEmployee.setValue('custentity_pedido_tm_ganada',digital_id)
-                        objEmployee.save();
+                        
                        
                      
                      
