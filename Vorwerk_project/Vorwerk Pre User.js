@@ -83,7 +83,9 @@ function(record,search,Utils,Dictionary,file,xml) {
     function afterSubmit(scriptContext) {
         try{
             var rec = scriptContext.newRecord;
-            var rec_type = rec.type;
+            var registro_congelado = rec.getValue('custrecord_record_frozen_p');
+            if(!registro_congelado){
+               var rec_type = rec.type;
             var subtotal = rec.getValue('custrecord_total_reporte_pre');
             var total = 0; 
             var retencion = 0;
@@ -126,7 +128,9 @@ function(record,search,Utils,Dictionary,file,xml) {
                 }
                 
                 
-                log.debug('listISR',listISR);
+                log.debug('listISR',listISR); 
+            }
+            
                 
             
             
