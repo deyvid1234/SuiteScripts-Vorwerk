@@ -1516,7 +1516,12 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                                         line: x
                                     });
                                 }catch(e){
-                                    log.debug('Error removeLine',e)
+                                    log.error('Error removeLine',e)
+                                    record.submitFields({//setear tipo de venta tm ganada
+                                          type: 'salesorder',
+                                          id: firstso,
+                                          values: {'memo': e.message}
+                                    })
                                 }
                                 
                             }
