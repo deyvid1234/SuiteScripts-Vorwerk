@@ -170,7 +170,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
         //Busqueda guardada
         var serachId = ''
         if(runtime.envType != 'PRODUCTION'){ 
-            serachId = '000'
+            serachId = 'customsearch1991'
            }else{
             serachId = 'customsearch1991'
            }
@@ -278,7 +278,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
         //BUSQUEDA CANCELACIONES
         var serachIdCancelaciones = ''
         if(runtime.envType != 'PRODUCTION'){ 
-            serachIdCancelaciones = '000'
+            serachIdCancelaciones = 'customsearch1991'
            }else{
             serachIdCancelaciones = 'customsearch1991'
            }
