@@ -167,7 +167,7 @@ function HojaSalidaPDF(request, response)
 	 var internalIdimage
 
 	if (nlapiGetContext().getEnvironment() == "SANDBOX") {
-		internalIdimage = 2461144 //sandbox
+		internalIdimage = 2576941 //sandbox
 	}
 	else {
 		internalIdimage = 2576941 //prod

@@ -61,7 +61,7 @@ function Orden_Venta_PDF(request,response)
             companyInfoLogoObj  = nlapiLoadFile(NO_LOGO_ID);
         }
         if (nlapiGetContext().getEnvironment() == "SANDBOX") {
-            companyInfoLogoURL = '/core/media/media.nl?id=2461144&c=3367613_SB1&h=eEB3Zn7T6vRFsbPljmmuN0ORPNQ5jSQGt3ys437w_kszrBvh'
+            companyInfoLogoURL = '/core/media/media.nl?id=2576941&c=3367613_SB1&h=EVQpFOUkyARO0Xup5ue_KhGuik1V9R-xb--eYG7FiF_7YPaV'
         }
         else {
             companyInfoLogoURL = '/core/media/media.nl?id=2576941&c=3367613&h=EVQpFOUkyARO0Xup5ue_KhGuik1V9R-xb--eYG7FiF_7YPaV'
