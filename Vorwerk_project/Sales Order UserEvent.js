@@ -1440,7 +1440,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                             isDynamic: false
                         });
                       
-                        date = salesorder.getValue('trandate');
+                        date = rec.getValue('trandate');
                         numOrder = salesorder.getValue('tranid')
                         record.submitFields({//setear tipo de venta tm ganada
                               type: 'salesorder',
@@ -1497,39 +1497,41 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                             }
                             
                         }
-                        
-                        for(var i =0; i<numLines-1; i++){
-                            var x =0;
-                            if(valid_line == 0){
-                                   x=1;
-                            }
-                            var tmp_id = salesorder.getSublistValue({
-                                sublistId: 'item',
-                                fieldId: 'item',
-                                line: x
-                            })
-                            log.debug('tmp_id',tmp_id+'  line  '+i)
-                            if(tmp_id != 2170 && tmp_id != 2001 && tmp_id != 2280 && tmp_id != 2490 && tmp_id != 2571 && tmp_id !=2638 && tmp_id !=2671){//2170=TM6 & Varoma 120V UL USA CA MX (24),2001=TM6 & Varoma 120V UL MX US,2280=TM6R,2490= Black,2571=Spark,2638=kit k00190
-                                try{
-                                    salesorder.removeLine({
-                                        sublistId: 'item',
-                                        line: x
-                                    });
-                                }catch(e){
-                                    log.error('Error removeLine',e)
-                                    record.submitFields({//setear tipo de venta tm ganada
-                                          type: 'salesorder',
-                                          id: firstso,
-                                          values: {'memo': e.message}
-                                    })
+                        try {
+                            for(var i =0; i<numLines-1; i++){
+                                var x =0;
+                                if(valid_line == 0){
+                                       x=1;
                                 }
-                                
+                                var tmp_id = salesorder.getSublistValue({
+                                    sublistId: 'item',
+                                    fieldId: 'item',
+                                    line: x
+                                })
+                                log.debug('tmp_id',tmp_id+'  line  '+i)
+                                if(tmp_id != 2170 && tmp_id != 2001 && tmp_id != 2280 && tmp_id != 2490 && tmp_id != 2571 && tmp_id !=2638 && tmp_id !=2671){//2170=TM6 & Varoma 120V UL USA CA MX (24),2001=TM6 & Varoma 120V UL MX US,2280=TM6R,2490= Black,2571=Spark,2638=kit k00190
+                                    
+                                        salesorder.removeLine({
+                                            sublistId: 'item',
+                                            line: x
+                                        });
+                                    
+                                    
+                                }
                             }
+                            salesorder.save({
+                                enableSourcing: false,
+                                ignoreMandatoryFields: true
+                            });
+                        }catch(e){
+                            log.error('Error removeLine',e)
+                            record.submitFields({//setear memo
+                                  type: 'salesorder',
+                                  id: firstso,
+                                  values: {'memo': e.message}
+                            })
                         }
-                        salesorder.save({
-                            enableSourcing: false,
-                            ignoreMandatoryFields: true
-                        });
+                        
                         var salesorder = record.load({//Cargar registro 
                             type: 'salesorder',
                             id: firstso,
