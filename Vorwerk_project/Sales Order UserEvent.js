@@ -1071,6 +1071,30 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
             //log.debug('fechaObj22',fechaObj2)
             fechaObj2.setDate(fechaObj2.getDate() + 2);
             log.debug('fechaObj23',fechaObj2)
+
+
+            var busqueda = search.load({
+                id: 'customsearch_emp_promo_control'
+            });
+            busqueda.filters.push(search.createFilter({
+                name: 'internalid',
+                operator: 'is',
+                values: salesrep
+            }));
+            
+            busqueda.run().each(function(r){
+                var todo = r.getAllValues();
+                log.debug('todo',todo)
+
+                //date_transform_tm_propia
+                return true;
+            });
+
+
+
+
+
+
             var limit = 6
             for (i = 0; i < configuracion.length ; i++){
                 //log.debug('configuracion[i].value',configuracion[i])
