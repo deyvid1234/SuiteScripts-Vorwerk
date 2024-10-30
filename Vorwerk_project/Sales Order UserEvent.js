@@ -1050,6 +1050,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                 isDynamic: false
             });
             var configuracion = presentador.getValue('custentity123')
+            var promocion = presentador.getValue('custentity_promocion')
             log.debug('configuracion',configuracion)
             var fechaObj2
             var hiredate 
@@ -1081,12 +1082,16 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                 operator: 'is',
                 values: salesrep
             }));
-            
+
+            var date_transform_tm_propia = new Date();
+			date_transform_tm_propia.setDate(date_transform_tm_propia.getDate() + 3); //Suma un dia para nunca cumplir la validacion en caso de que el EMP aun no sea TM propia
+
             busqueda.run().each(function(r){
                 var todo = r.getAllValues();
-                log.debug('todo',todo)
 
-                //date_transform_tm_propia
+                date_transform_tm_propia = todo["MAX(systemNotes.date)"]//Fecha en formato 4/10/2024 9:15 AM
+                date_transform_tm_propia = Utils.stringToDate(date_transform_tm_propia.split(' ')[0])
+                log.debug('date_transform_tm_propia',date_transform_tm_propia)
                 return true;
             });
 
@@ -1131,7 +1136,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                 log.debug('contVentas',contVentas)
                 log.debug('arregloPrimerasVentas',arregloPrimerasVentas)
 
-                if (contVentas == 7){
+                if (contVentas >= 10){
                     if(arregloPrimerasVentas.hasOwnProperty(recordid)){
                         log.debug('esta en el arreglo, ya paso por el for')
                     }else{
@@ -1145,7 +1150,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 
                     return false
                 }
-                if((tipoVenta == '2'|| tipoVenta == '19') && fechaSO <= fechaObj2 && cont <= limit){
+                if((tipoVenta == '2'|| tipoVenta == '19') && fechaSO <= fechaObj2 && cont <= limit && fechaSO <= date_transform_tm_propia ){
                     //log.debug('internalId',internalId)
                     log.debug('set com status no comisionable')
                     var submitFields = record.submitFields({
@@ -1155,12 +1160,20 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                     });
                     cont ++
         
-                }else if (cont > limit|| fechaSO > fechaObj2){
+                }else if (cont > limit|| fechaSO > fechaObj2 || promocion ==2){
                     log.debug('si comisiona break')
                     var submitFields = record.submitFields({
                         type: record.Type.SALES_ORDER,
                         id: internalId,
                         values: {'custbody_vw_comission_status':''}
+                    });
+                    
+                }else {
+                    log.debug('else')
+                    var submitFields = record.submitFields({
+                        type: record.Type.SALES_ORDER,
+                        id: internalId,
+                        values: {'custbody_vw_comission_status':'2'}
                     });
                     
                 }
