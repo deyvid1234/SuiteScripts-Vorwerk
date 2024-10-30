@@ -1085,13 +1085,21 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 
             var date_transform_tm_propia = new Date();
 			date_transform_tm_propia.setDate(date_transform_tm_propia.getDate() + 3); //Suma un dia para nunca cumplir la validacion en caso de que el EMP aun no sea TM propia
-
+			
             busqueda.run().each(function(r){
                 var todo = r.getAllValues();
 
-                date_transform_tm_propia = todo["MAX(systemNotes.date)"]//Fecha en formato 4/10/2024 9:15 AM
-                date_transform_tm_propia = Utils.stringToDate(date_transform_tm_propia.split(' ')[0])
-                log.debug('date_transform_tm_propia',date_transform_tm_propia)
+                
+                aux_date_tm_propia = todo["GROUP(custentityaux_date_tm_propia)"]
+                log.debug('aux_date_tm_propia',aux_date_tm_propia)
+                
+                if(aux_date_tm_propia){
+                	date_transform_tm_propia = Utils.stringToDate(aux_date_tm_propia)
+                }else{
+                	date_transform_tm_propia = todo["MAX(systemNotes.date)"]//Fecha en formato 4/10/2024 9:15 AM 
+                	date_transform_tm_propia = Utils.stringToDate(date_transform_tm_propia.split(' ')[0])
+                	log.debug('date_transform_tm_propia',date_transform_tm_propia)
+                }
                 return true;
             });
 
