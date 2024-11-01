@@ -1506,7 +1506,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                         var valid_line = 0  
                         
                         var descuentoTm = 0//pagatutm(numOdv,salesrep)*(-1);
-                        
+                        var setearArticulos = true
                         for(var e =0; e<numLines; e++){ 
                              var tmp_id = salesorder.getSublistValue({
                                  sublistId: 'item',
@@ -1570,104 +1570,107 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                             });
                         }catch(e){
                             log.error('Error removeLine',e)
+                            setearArticulos = false
                             record.submitFields({//setear memo
                                   type: 'salesorder',
                                   id: firstso,
-                                  values: {'memo': e.message}
+                                  values: {'memo': 'Orden ejecuta flujo de TM, pero uno o más artículos cuenta con cumplimiento del pedido por lo que no se puede asignar el descuento.'}
                             })
                         }
-                        
-                        var salesorder = record.load({//Cargar registro 
-                            type: 'salesorder',
-                            id: firstso,
-                            isDynamic: true
-                        });
-                        log.debug('descuentoTm',descuentoTm);
-                        salesorder.selectNewLine({
-                            sublistId : 'item',//seleccion de linea
-                        });
-                        salesorder.setCurrentSublistValue({//seteo de valor quantity
-                            sublistId: 'item',
-                            fieldId: 'quantity',
-                            value: 1
-                        });
-                        salesorder.setCurrentSublistValue({//seteo de location
-                            sublistId: 'item',
-                            fieldId: 'location',
-                            value: salesorder.getValue('location')
-                        });
-                        salesorder.setCurrentSublistValue({//seteo de item
-                            sublistId: 'item',
-                            fieldId: 'item',
-                            value: '1876'// descuento original 911 - cambio por 1876
-                        });
-                        salesorder.setCurrentSublistValue({//seteo de descuento aplicado 
-                            sublistId: 'item',
-                            fieldId: 'amount',
-                            value: descuentoTm
-                        });
-                        salesorder.setCurrentSublistValue({//seteo de descuento aplicado
-                            sublistId: 'item',
-                            fieldId: 'rate',
-                            value: descuentoTm
-                        });
-                        salesorder.setCurrentSublistValue({//seteo de descuento aplicado
-                            sublistId: 'item',
-                            fieldId: 'description',
-                            value: 'DESCUENTO PROMOCIONAL'
-                        });
-                        salesorder.setCurrentSublistValue({//seteo de descuento aplicado
-                            sublistId: 'item',
-                            fieldId: 'taxcode',
-                            value: 202
-                        });
-                        salesorder.commitLine({//cierre de linea seleccionada 
-                            sublistId: 'item'
-                        });
-                        log.debug('que trae',arr_aux)
-                        
-                        
-                        
-                        for(var x in arr_aux){
-                            try{
-                                salesorder.selectNewLine({
-                                    sublistId : 'item',//seleccion de linea
-                                });
-                                salesorder.setCurrentSublistValue({
-                                    sublistId: 'item',
-                                    fieldId: 'item',
-                                    value: arr_aux[x].id
-                                });
-                                salesorder.setCurrentSublistValue({
-                                    sublistId: 'item',
-                                    fieldId: 'rate',
-                                    value: arr_aux[x].mount
-                                });
-                                salesorder.setCurrentSublistValue({
-                                    sublistId: 'item',
-                                    fieldId: 'amount',
-                                    value: arr_aux[x].mount
-                                });
-                                salesorder.setCurrentSublistValue({
-                                    sublistId: 'item',
-                                    fieldId: 'location',
-                                    value: arr_aux[x].location
-                                });
-                                salesorder.commitLine({//cierre de linea seleccionada 
-                                    sublistId: 'item'
-                                });
+                        if(setearArticulos == true){
+                            var salesorder = record.load({//Cargar registro 
+                                type: 'salesorder',
+                                id: firstso,
+                                isDynamic: true
+                            });
+                            log.debug('descuentoTm',descuentoTm);
+                            salesorder.selectNewLine({
+                                sublistId : 'item',//seleccion de linea
+                            });
+                            salesorder.setCurrentSublistValue({//seteo de valor quantity
+                                sublistId: 'item',
+                                fieldId: 'quantity',
+                                value: 1
+                            });
+                            salesorder.setCurrentSublistValue({//seteo de location
+                                sublistId: 'item',
+                                fieldId: 'location',
+                                value: salesorder.getValue('location')
+                            });
+                            salesorder.setCurrentSublistValue({//seteo de item
+                                sublistId: 'item',
+                                fieldId: 'item',
+                                value: '1876'// descuento original 911 - cambio por 1876
+                            });
+                            salesorder.setCurrentSublistValue({//seteo de descuento aplicado 
+                                sublistId: 'item',
+                                fieldId: 'amount',
+                                value: descuentoTm
+                            });
+                            salesorder.setCurrentSublistValue({//seteo de descuento aplicado
+                                sublistId: 'item',
+                                fieldId: 'rate',
+                                value: descuentoTm
+                            });
+                            salesorder.setCurrentSublistValue({//seteo de descuento aplicado
+                                sublistId: 'item',
+                                fieldId: 'description',
+                                value: 'DESCUENTO PROMOCIONAL'
+                            });
+                            salesorder.setCurrentSublistValue({//seteo de descuento aplicado
+                                sublistId: 'item',
+                                fieldId: 'taxcode',
+                                value: 202
+                            });
+                            salesorder.commitLine({//cierre de linea seleccionada 
+                                sublistId: 'item'
+                            });
+                            log.debug('que trae',arr_aux)
                             
-                            }catch(aux){
+                            
+                            
+                            for(var x in arr_aux){
+                                try{
+                                    salesorder.selectNewLine({
+                                        sublistId : 'item',//seleccion de linea
+                                    });
+                                    salesorder.setCurrentSublistValue({
+                                        sublistId: 'item',
+                                        fieldId: 'item',
+                                        value: arr_aux[x].id
+                                    });
+                                    salesorder.setCurrentSublistValue({
+                                        sublistId: 'item',
+                                        fieldId: 'rate',
+                                        value: arr_aux[x].mount
+                                    });
+                                    salesorder.setCurrentSublistValue({
+                                        sublistId: 'item',
+                                        fieldId: 'amount',
+                                        value: arr_aux[x].mount
+                                    });
+                                    salesorder.setCurrentSublistValue({
+                                        sublistId: 'item',
+                                        fieldId: 'location',
+                                        value: arr_aux[x].location
+                                    });
+                                    salesorder.commitLine({//cierre de linea seleccionada 
+                                        sublistId: 'item'
+                                    });
                                 
-                                log.debug('que pasa',aux)
+                                }catch(aux){
+                                    
+                                    log.debug('que pasa',aux)
+                                }
                             }
+                            
+                            
+                            salesorder.setValue('custbody_vorwerk_descuento',true) //seteo de checkbox descuento
+                            salesorder.setValue('trandate',fdate)
+                            var idODV = salesorder.save();
+                            log.debug('idODV',idODV);
                         }
                         
-                        
-                        salesorder.setValue('custbody_vorwerk_descuento',true) //seteo de checkbox descuento
-                        salesorder.setValue('trandate',fdate)
-                        var idODV = salesorder.save();
-                        log.debug('idODV',idODV);
                         //Fin Descuento TM Ganada 
                       
                         
