@@ -27,14 +27,50 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils,runtime) {
         thisRecord.getField({
             fieldId: 'custbody_a_partir'
         }).isDisabled = true;
-        thisRecord.getField({
+        thisRecord.getField({    
             fieldId: 'custbody_veces_repetir'
+        }).isDisabled = true;
+        thisRecord.getField({    
+            fieldId: 'custbody_dias'
         }).isDisabled = true;
         thisRecord.getField({
             fieldId: 'custbody_repetir_cada'
         }).isDisabled = true;
         thisRecord.getField({
             fieldId: 'custbody_fechas_personalizadas'
+        }).isDisabled = true;
+        thisRecord.getField({
+            fieldId: 'custbody_fecha_personalizada_2'
+        }).isDisabled = true;
+        thisRecord.getField({
+            fieldId: 'custbody_fecha_personalizada_3'
+        }).isDisabled = true;
+        thisRecord.getField({
+            fieldId: 'custbody_fecha_personalizada_4'
+        }).isDisabled = true;
+        thisRecord.getField({
+            fieldId: 'custbody_fecha_personalizada_5'
+        }).isDisabled = true;
+        thisRecord.getField({
+            fieldId: 'custbody_fecha_personalizada_6'
+        }).isDisabled = true;
+        thisRecord.getField({
+            fieldId: 'custbody_fecha_personalizada_7'
+        }).isDisabled = true;
+        thisRecord.getField({
+            fieldId: 'custbody_fecha_personalizada_8'
+        }).isDisabled = true;
+        thisRecord.getField({
+            fieldId: 'custbody_fecha_personalizada_9'
+        }).isDisabled = true;
+        thisRecord.getField({
+            fieldId: 'custbody_fecha_personalizada_10'
+        }).isDisabled = true;
+        thisRecord.getField({
+            fieldId: 'custbody_fecha_personalizada_11'
+        }).isDisabled = true;
+        thisRecord.getField({
+            fieldId: 'custbody_fecha_personalizada_12'
         }).isDisabled = true;
         thisRecord.getField({
             fieldId: 'custbody_url_contrato'
@@ -88,7 +124,7 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils,runtime) {
             });
             var formEployeeCentre
             if(runtime.envType  == "SANDBOX"){
-                formEployeeCentre = '231'
+                formEployeeCentre = '230'
             }else{
                 formEployeeCentre = '230'
             }
@@ -97,7 +133,7 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils,runtime) {
             var thisRecord = scriptContext.currentRecord;
             var url
             if(runtime.envType  == "SANDBOX"){
-                url = 'https://3367613-sb1.app.netsuite.com/app/site/hosting/scriptlet.nl?script=1506&deploy=1';
+                url = 'https://3367613-sb1.app.netsuite.com/app/site/hosting/scriptlet.nl?script=1412&deploy=1';
             } else{
                 url = 'https://3367613.app.netsuite.com/app/site/hosting/scriptlet.nl?script=1412&deploy=1';
             }
@@ -816,9 +852,191 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils,runtime) {
     		log.error("error fieldChanged",err);
     	}
         try{
-            if(fieldid == 'custbody_solicitud_recurrente_contrato' ){
-
+            var xContrato = thisRecord.getValue('custbody_solicitud_recurrente_contrato')
+            
+            if(fieldid == 'custbody_solicitud_recurrente_contrato' &&  xContrato == true){
+                thisRecord.getField({
+                    fieldId: 'custbody_metodo_repeticion'
+                }).isDisabled = false;
             }
+            if(fieldid == 'custbody_metodo_repeticion'){
+                    var metodo = thisRecord.getValue('custbody_metodo_repeticion')
+                    console.log('metodo',metodo)
+                    switch(metodo){
+                    case '1'://Periodos recurrentes
+                         thisRecord.getField({
+                            fieldId: 'custbody_no_repeticiones'
+                        }).isDisabled = false;
+                        thisRecord.getField({
+                            fieldId: 'custbody_a_partir'
+                        }).isDisabled = false;
+                        thisRecord.getField({
+                            fieldId: 'custbody_veces_repetir'
+                        }).isDisabled = false;
+                        thisRecord.getField({
+                            fieldId: 'custbody_repetir_cada'
+                        }).isDisabled = false;
+                        thisRecord.getField({
+                            fieldId: 'custbody_fechas_personalizadas'
+                        }).isDisabled = true;
+                        thisRecord.getField({
+                            fieldId: 'custbody_fecha_personalizada_2'
+                        }).isDisabled = true;
+                        thisRecord.getField({
+                            fieldId: 'custbody_fecha_personalizada_3'
+                        }).isDisabled = true;
+                        thisRecord.getField({
+                            fieldId: 'custbody_fecha_personalizada_4'
+                        }).isDisabled = true;
+                        thisRecord.getField({
+                            fieldId: 'custbody_fecha_personalizada_5'
+                        }).isDisabled = true;
+                        thisRecord.getField({
+                            fieldId: 'custbody_fecha_personalizada_6'
+                        }).isDisabled = true;
+                        thisRecord.getField({
+                            fieldId: 'custbody_fecha_personalizada_7'
+                        }).isDisabled = true;
+                        thisRecord.getField({
+                            fieldId: 'custbody_fecha_personalizada_8'
+                        }).isDisabled = true;
+                        thisRecord.getField({
+                            fieldId: 'custbody_fecha_personalizada_9'
+                        }).isDisabled = true;
+                        thisRecord.getField({
+                            fieldId: 'custbody_fecha_personalizada_10'
+                        }).isDisabled = true;
+                        thisRecord.getField({
+                            fieldId: 'custbody_fecha_personalizada_11'
+                        }).isDisabled = true;
+                        thisRecord.getField({
+                            fieldId: 'custbody_fecha_personalizada_12'
+                        }).isDisabled = true;
+                        thisRecord.getField({
+                            fieldId: 'custbody_dias'
+                        }).isDisabled = true;
+                        thisRecord.getField({
+                            fieldId: 'custbody_url_contrato'
+                        }).isDisabled = false;
+                    break;
+                    case '2'://fechas personalizadas
+                        thisRecord.getField({
+                            fieldId: 'custbody_no_repeticiones'
+                        }).isDisabled = false;
+                        thisRecord.getField({
+                            fieldId: 'custbody_fechas_personalizadas'
+                        }).isDisabled = false;
+                        thisRecord.getField({
+                            fieldId: 'custbody_fecha_personalizada_2'
+                        }).isDisabled = false;
+                        thisRecord.getField({
+                            fieldId: 'custbody_fecha_personalizada_3'
+                        }).isDisabled = false;
+                        thisRecord.getField({
+                            fieldId: 'custbody_fecha_personalizada_4'
+                        }).isDisabled = false;
+                        thisRecord.getField({
+                            fieldId: 'custbody_fecha_personalizada_5'
+                        }).isDisabled = false;
+                        thisRecord.getField({
+                            fieldId: 'custbody_fecha_personalizada_6'
+                        }).isDisabled = false;
+                        thisRecord.getField({
+                            fieldId: 'custbody_fecha_personalizada_7'
+                        }).isDisabled = false;
+                        thisRecord.getField({
+                            fieldId: 'custbody_fecha_personalizada_8'
+                        }).isDisabled = false;
+                        thisRecord.getField({
+                            fieldId: 'custbody_fecha_personalizada_9'
+                        }).isDisabled = false;
+                        thisRecord.getField({
+                            fieldId: 'custbody_fecha_personalizada_10'
+                        }).isDisabled = false;
+                        thisRecord.getField({
+                            fieldId: 'custbody_fecha_personalizada_11'
+                        }).isDisabled = false;
+                        thisRecord.getField({
+                            fieldId: 'custbody_fecha_personalizada_12'
+                        }).isDisabled = false;
+                        thisRecord.getField({
+                            fieldId: 'custbody_a_partir'
+                        }).isDisabled = true;
+                        thisRecord.getField({
+                            fieldId: 'custbody_veces_repetir'
+                        }).isDisabled = true;
+                        thisRecord.getField({
+                            fieldId: 'custbody_repetir_cada'
+                        }).isDisabled = true;
+                        thisRecord.getField({
+                            fieldId: 'custbody_dias'
+                        }).isDisabled = true;
+                        thisRecord.getField({
+                            fieldId: 'custbody_url_contrato'
+                        }).isDisabled = false;
+                    break;
+                    case '3'://por numero de edias
+                        thisRecord.getField({
+                            fieldId: 'custbody_no_repeticiones'
+                        }).isDisabled = false;
+                        thisRecord.getField({
+                            fieldId: 'custbody_a_partir'
+                        }).isDisabled = false;
+                        thisRecord.getField({
+                            fieldId: 'custbody_dias'
+                        }).isDisabled = false;
+                        thisRecord.getField({
+                            fieldId: 'custbody_veces_repetir'
+                        }).isDisabled = true;
+                        thisRecord.getField({
+                            fieldId: 'custbody_repetir_cada'
+                        }).isDisabled = true;
+                        thisRecord.getField({
+                            fieldId: 'custbody_fechas_personalizadas'
+                        }).isDisabled = true;
+                        thisRecord.getField({
+                            fieldId: 'custbody_fecha_personalizada_2'
+                        }).isDisabled = true;
+                        thisRecord.getField({
+                            fieldId: 'custbody_fecha_personalizada_3'
+                        }).isDisabled = true;
+                        thisRecord.getField({
+                            fieldId: 'custbody_fecha_personalizada_4'
+                        }).isDisabled = true;
+                        thisRecord.getField({
+                            fieldId: 'custbody_fecha_personalizada_5'
+                        }).isDisabled = true;
+                        thisRecord.getField({
+                            fieldId: 'custbody_fecha_personalizada_6'
+                        }).isDisabled = true;
+                        thisRecord.getField({
+                            fieldId: 'custbody_fecha_personalizada_7'
+                        }).isDisabled = true;
+                        thisRecord.getField({
+                            fieldId: 'custbody_fecha_personalizada_8'
+                        }).isDisabled = true;
+                        thisRecord.getField({
+                            fieldId: 'custbody_fecha_personalizada_9'
+                        }).isDisabled = true;
+                        thisRecord.getField({
+                            fieldId: 'custbody_fecha_personalizada_10'
+                        }).isDisabled = true;
+                        thisRecord.getField({
+                            fieldId: 'custbody_fecha_personalizada_11'
+                        }).isDisabled = true;
+                        thisRecord.getField({
+                            fieldId: 'custbody_fecha_personalizada_12'
+                        }).isDisabled = true;
+                        thisRecord.getField({
+                            fieldId: 'custbody_url_contrato'
+                        }).isDisabled = false;
+                    break;
+                    
+                        
+                        
+                    }
+            }
+            
 
         }catch(e){
             log.error('error fieldChanged solicitus recurrente por contrato',e)
