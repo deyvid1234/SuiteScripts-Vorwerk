@@ -40,6 +40,7 @@ function(search,record,format,Utils) {
      	    log.debug('aprovalStatus',aprovalStatus)
             var idRequisitionPrincipal =  registeInfo.id
             log.debug('idRequisitionPrincipal',idRequisitionPrincipal)
+            var estimatedtotal =  registeInfo.values.estimatedtotal
             var solicitante = registeInfo.values.entity.value
             var today = new Date
             today = Utils.dateToString(today)
@@ -80,7 +81,7 @@ function(search,record,format,Utils) {
                                var idCopy = makeCopy(solicitante,idRequisitionPrincipal)
                                 log.debug('idCopy periodos mes',idCopy)
 
-                                var idPO = transformPO(solicitante,idCopy)
+                                var idPO = transformPO(solicitante,idCopy,estimatedtotal)
                                 log.debug('idPO periodos mes',idPO)
                                 
                             }else{
@@ -107,7 +108,7 @@ function(search,record,format,Utils) {
                                var idCopy = makeCopy(solicitante,idRequisitionPrincipal)
                                 log.debug('idCopy periodos semana',idCopy)
 
-                                var idPO = transformPO(solicitante,idCopy)
+                                var idPO = transformPO(solicitante,idCopy,estimatedtotal)
                                 log.debug('idPO periodos semana',idPO)
                                 
                             }else{
@@ -160,7 +161,7 @@ function(search,record,format,Utils) {
                                 var idCopy = makeCopy(solicitante,idRequisitionPrincipal)
                                 log.debug('idCopy',idCopy)
 
-                                var idPO = transformPO(solicitante,idCopy)
+                                var idPO = transformPO(solicitante,idCopy,estimatedtotal)
                                 log.debug('idPO',idPO)
                                 
                                 
@@ -201,7 +202,7 @@ function(search,record,format,Utils) {
                             var idCopy = makeCopy(solicitante,idRequisitionPrincipal)
                             log.debug('idCopy periodos dias',idCopy)
 
-                            var idPO = transformPO(solicitante,idCopy)
+                            var idPO = transformPO(solicitante,idCopy,estimatedtotal)
                             log.debug('idPO periodos dias',idPO)
                             
                         }else{
@@ -225,7 +226,7 @@ function(search,record,format,Utils) {
     	}catch(err){
     		log.error("err map",err);
     	}
-        function transformPO(solicitante,idCopy){
+        function transformPO(solicitante,idCopy,estimatedtotal){
             try{
                 var transformToSO = record.transform({
                     fromType: 'purchaserequisition',
@@ -237,6 +238,10 @@ function(search,record,format,Utils) {
                     fieldId: 'employee',
                     value: solicitante
                 });
+                /*transformToSO.setValue({
+                    fieldId: 'total',
+                    value: parseInt(estimatedtotal)
+                });*/
                 var idPO = transformToSO.save()
                 return idPO;
             }catch(e){

@@ -43,6 +43,8 @@ function(runtime,url,https,record) {
             var form = scriptContext.form;
             var formulario = rec.getValue('customform')
             var formEployeeCentre
+
+            
             if(runtime.envType  == "SANDBOX"){
                 formEployeeCentre = '230'
             }else{
@@ -126,6 +128,19 @@ function(runtime,url,https,record) {
                 value : total                                                                                                                                                                 
             });
 
+            var checkRecurrente = rec.getValue('custbody_solicitud_recurrente_contrato')
+          
+            if(checkRecurrente == true){
+                                           
+                var totalIndividual = rec.getValue('custbody_monto_pesos')
+                var repeticiones = rec.getValue('custbody_no_repeticiones')
+                var total = totalIndividual*repeticiones 
+                rec.setValue({
+                    fieldId: "custbody_total_solicitud_recurrente",
+                    value : total                                                                                                                                                                 
+                });
+            }
+
         }catch(err){
             log.error("error beforeSubmit",err);
         }
@@ -154,15 +169,52 @@ function(runtime,url,https,record) {
                     isDynamic: false
                 });
                            
-                var totalIndividual = solicitud.getValue('custbody_monto_pesos')
-                var repeticiones = solicitud.getValue('custbody_no_repeticiones')
-                var total = totalIndividual*repeticiones 
-                solicitud.setValue({
-                    fieldId: "custbody_total_solicitud_recurrente",
-                    value : total                                                                                                                                                                 
+                var listLineCountExpense = solicitud.getLineCount({
+                    sublistId: "expense"
                 });
+                var listLineCountItem = solicitud.getLineCount({
+                    sublistId: "item"
+                });
+                if(listLineCountExpense){
+                
+                    for (var i = 0; i < listLineCountExpense; i++) {
+                        
+                        var montoMonedaProveedor = solicitud.getSublistValue({
+                            sublistId: "expense",
+                            fieldId: "estimatedamount",//vendor
+                            line: i
+                        });
+                        log.debug('montoMonedaProveedor',montoMonedaProveedor)
+                        var amount = solicitud.setSublistValue({
+                            sublistId: "expense",
+                            fieldId: "amount",//vendor
+                            line: i,
+                            value : montoMonedaProveedor
 
+                        });
+                        
+                        
+                    }   
+                    
+                }
                 solicitud.save();
+                /*if(listLineCountItem){
+                     
+                    for (var i = 0; i < listLineCountItem; i++) {
+                        
+                        var montoPesos = solicitud.getSublistValue({
+                            sublistId: "item",
+                            fieldId: "custcolsub_impuestos",//vendor 
+                            line: i
+                        });
+                        
+                        totalItem = totalItem+montoPesos
+                        log.debug('total',totalItem)
+                        
+                        
+                    }   
+                    
+                }*/
             }
             
         }catch (e){
