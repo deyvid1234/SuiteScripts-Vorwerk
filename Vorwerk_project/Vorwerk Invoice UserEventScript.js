@@ -105,33 +105,40 @@ function(runtime,config,record,render,runtime,email,search,format) {
 
 		            		//Parche error en Serie por Invoice, Traemos datos de busqueda guardada de SO
 		            		if(!inventorydetail || inventorydetail == ''){
-		            			log.debug('Parche')
 		            			var mySearch = search.load({
 						            id: 'customsearch2006'
 						        });
-
-
-						        if(item == 2638){//id interno del kit tm en produccion es 2638 y en sandbox 2555
-						        	mySearch.filters.push(search.createFilter({
-					                   name: 'createdfrom',
-					                   operator: 'is',
-					                   values: createdfrom
-					               	}));
-						        }else{
-						        	mySearch.filters.push(search.createFilter({
-					                   name: 'internalid',
-					                   operator: 'is',
-					                   values: createdfrom
-					               	}));
-						        }
 		            			
+		            			mySearch.filters.push(search.createFilter({
+				                   name: 'createdfrom',
+				                   operator: 'is',
+				                   values: createdfrom
+				               	}));
 
-				               	mySearch.run().each(function(r){
+		            			mySearch.run().each(function(r){
 					                inventorydetail = r.getValue('serialnumbers')
 					                log.debug('inventorydetail',inventorydetail)
 					                return true;
 					            });
 
+					            if(!inventorydetail || inventorydetail == ''){
+
+					            	var mySearch2 = search.load({
+							            id: 'customsearch2006'
+							        });
+
+					            	mySearch2.filters.push(search.createFilter({
+					                   name: 'internalid',
+					                   operator: 'is',
+					                   values: createdfrom
+					               	}));
+
+					               	mySearch2.run().each(function(r){
+						                inventorydetail = r.getValue('serialnumbers')
+						                log.debug('inventorydetail',inventorydetail)
+						                return true;
+						            });
+					            }
 		            		}
 
 
