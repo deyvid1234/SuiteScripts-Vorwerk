@@ -51,7 +51,6 @@ function(search,record,format,Utils) {
                 case '1':
                     
                     var arregloFechas = []
-                    var cuantasXperiodo = registeInfo.values.custbody_veces_repetir
                     var periodo = registeInfo.values.custbody_repetir_cada.value
                     var noRepeticiones = registeInfo.values.custbody_no_repeticiones
                         noRepeticiones = parseInt(noRepeticiones)
@@ -257,12 +256,16 @@ function(search,record,format,Utils) {
                     
                 });
                 requisitionCopy.setValue({
+                    fieldId: 'custbody_createdfrom_plantilla',
+                    value: true
+                });
+                requisitionCopy.setValue({
                     fieldId: 'entity',
                     value: solicitante
                 });
                 requisitionCopy.setValue({
                     fieldId: 'approvalstatus',
-                    value: 1
+                    value: 2
                 });
                 requisitionCopy.setValue({
                     fieldId: 'custbody_dias',
@@ -270,10 +273,6 @@ function(search,record,format,Utils) {
                 });
                 requisitionCopy.setValue({
                     fieldId: 'custbody_a_partir',
-                    value: ''
-                });
-                requisitionCopy.setValue({
-                    fieldId: 'custbody_veces_repetir',
                     value: ''
                 });
                 requisitionCopy.setValue({
