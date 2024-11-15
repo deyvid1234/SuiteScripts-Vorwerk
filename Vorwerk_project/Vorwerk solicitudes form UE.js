@@ -139,6 +139,8 @@ function(runtime,url,https,record) {
                     fieldId: "custbody_total_solicitud_recurrente",
                     value : total                                                                                                                                                                 
                 });
+            }else{
+                
             }
 
         }catch(err){
@@ -161,8 +163,184 @@ function(runtime,url,https,record) {
             var rec = scriptContext.newRecord;
             var recordid = rec.id;
             var checkRecurrente = rec.getValue('custbody_solicitud_recurrente_contrato')
-          
-            if(checkRecurrente == true){
+            var type = scriptContext.type;
+            
+            if (type == 'edit' && checkRecurrente == true){
+                if(runtime.envType  == "SANDBOX"){
+                    url = 'https://3367613-sb1.app.netsuite.com/app/site/hosting/scriptlet.nl?script=1412&deploy=1';
+                } else{
+                    url = 'https://3367613.app.netsuite.com/app/site/hosting/scriptlet.nl?script=1412&deploy=1';
+                }
+                var fechaAprobacion = rec.getValue('custbody_fecha_aprobacion')
+                log.debug('fechaAprobacion',fechaAprobacion)
+                var metodo = rec.getValue('custbody_metodo_repeticion')
+                var solicitante = rec.getValue('entity')
+                var aPartir
+
+                switch(metodo){
+                case '1':
+                    
+                    var arregloFechas = []
+                    var noRepeticiones = rec.getValue('custbody_no_repeticiones')
+                        noRepeticiones = parseInt(noRepeticiones)
+                    var cadaNoDias = rec.getValue('custbody_dias')
+                        cadaNoDias = parseInt(cadaNoDias)    
+                    var aPartir = rec.getValue('custbody_a_partir')
+                    var fecha = rec.getValue('custbody_a_partir')
+                    var periodo = rec.getValue('custbody_repetir_cada')
+                    
+                     
+                
+                    if(periodo == 2){//mes
+                        arregloFechas.push(aPartir)
+                        for (var i = 1; i < noRepeticiones; i++) {
+                            
+                            fecha.setMonth(fecha.getMonth() + 1);
+                            var fechaPeriodo = new Date(fecha);
+                            arregloFechas.push(fechaPeriodo);
+                        }
+                        log.debug('arregloFechas',arregloFechas)
+                        for (i in arregloFechas){
+    
+                            if(arregloFechas[i] <= fechaAprobacion){
+                                log.debug('hacer copia y transform')
+                                var proceso = 'copyTransform'
+                    
+                                var headers = {'Content-Type': 'application/json'};
+                                var response = https.post({
+                                    url: 'https://3367613-sb1.extforms.netsuite.com/app/site/hosting/scriptlet.nl?script=1412&deploy=1&compid=3367613_SB1&ns-at=AAEJ7tMQ2_GXpW7Lfp-egrDWKNpkJiX1YgDH7322yGC9SC99dow',
+                                    body : JSON.stringify({solicitante:solicitante,recordid:recordid,proceso:proceso}),
+                                    headers: headers
+                                }).body;
+                                log.debug('response',response)
+                                
+                            }else{
+                                log.debug('n hay que ejecutar hoy')
+                            }
+                        }
+
+                    } else if(periodo == 1){//semana
+                        arregloFechas.push(aPartir)
+                        for (var i = 1; i < noRepeticiones; i++) {
+                            
+                            fecha.setDate(fecha.getDate() + 7);
+                            var fechaPeriodo = new Date(fecha);
+                            arregloFechas.push(fechaPeriodo);
+                        }
+                        log.debug('arregloFechas',arregloFechas)
+                        for (i in arregloFechas){
+                          
+                            if(arregloFechas[i] <= fechaAprobacion){
+                                log.debug('hacer copia y transformsem')
+
+                                var proceso = 'copyTransform'
+                    
+                                var headers = {'Content-Type': 'application/json'};
+                                var response = https.post({
+                                    url: 'https://3367613-sb1.extforms.netsuite.com/app/site/hosting/scriptlet.nl?script=1412&deploy=1&compid=3367613_SB1&ns-at=AAEJ7tMQ2_GXpW7Lfp-egrDWKNpkJiX1YgDH7322yGC9SC99dow',
+                                    body : JSON.stringify({solicitante:solicitante,recordid:recordid,proceso:proceso}),
+                                    headers: headers
+                                }).body;
+                                log.debug('response',response)
+                                
+                            }else{
+                                log.debug('n hay que ejecutar hoysem')
+                            }
+                        } 
+                    }                     
+                    
+                break;
+                case '2':
+                    var arregloFechas = []
+                    var camposFecha =  [
+                        'custbody_fechas_personalizadas',
+                        'custbody_fecha_personalizada_2',
+                        'custbody_fecha_personalizada_3',
+                        'custbody_fecha_personalizada_4',
+                        'custbody_fecha_personalizada_5',
+                        'custbody_fecha_personalizada_6',
+                        'custbody_fecha_personalizada_7',
+                        'custbody_fecha_personalizada_8',
+                        'custbody_fecha_personalizada_9',
+                        'custbody_fecha_personalizada_10',
+                        'custbody_fecha_personalizada_11',
+                        'custbody_fecha_personalizada_12'
+                    ]
+                    for (i in camposFecha){
+                        var fecha = rec.getValue(camposFecha[i])
+
+                        if(fecha){
+                            arregloFechas.push(fecha)
+                        }
+                        
+                    }
+                    log.debug('arregloFechas',arregloFechas)
+                   
+                    for (i in arregloFechas){
+                           
+                            if(arregloFechas[i] <= fechaAprobacion){
+                                log.debug('hacer copia y transform')
+
+                                var proceso = 'copyTransform'
+                    
+                                var headers = {'Content-Type': 'application/json'};
+                                var response = https.post({
+                                    url: 'https://3367613-sb1.extforms.netsuite.com/app/site/hosting/scriptlet.nl?script=1412&deploy=1&compid=3367613_SB1&ns-at=AAEJ7tMQ2_GXpW7Lfp-egrDWKNpkJiX1YgDH7322yGC9SC99dow',
+                                    body : JSON.stringify({solicitante:solicitante,recordid:recordid,proceso:proceso}),
+                                    headers: headers
+                                }).body;
+                                log.debug('response',response)
+                                
+                            }else{
+                                log.debug('no ejecutar')
+                            }                        
+                    }
+                break;
+                case '3':
+                    var arregloFechas = []
+                    var noRepeticiones = rec.getValue('custbody_no_repeticiones')
+                        noRepeticiones = parseInt(noRepeticiones)
+                    var cadaNoDias = rec.getValue('custbody_dias')
+                        cadaNoDias = parseInt(cadaNoDias)    
+                    var aPartir = rec.getValue('custbody_a_partir')
+                    var fecha = rec.getValue('custbody_a_partir')
+                    arregloFechas.push(aPartir)
+                    
+                    for (var i = 1; i < noRepeticiones; i++) {
+                        
+                        fecha.setDate(fecha.getDate() + cadaNoDias);
+                        var fechaPeriodo = new Date(fecha);
+                        arregloFechas.push(fechaPeriodo);
+                        
+                    }
+                    log.debug('arregloFechas dias',arregloFechas)
+                    for (i in arregloFechas){
+
+                        var fechaFormato = arregloFechas[i]
+                        if(arregloFechas[i] <= fechaAprobacion){
+                            log.debug('hacer copia y transform')
+
+                            var proceso = 'copyTransform'
+                    
+                            var headers = {'Content-Type': 'application/json'};
+                            var response = https.post({
+                                url: 'https://3367613-sb1.extforms.netsuite.com/app/site/hosting/scriptlet.nl?script=1412&deploy=1&compid=3367613_SB1&ns-at=AAEJ7tMQ2_GXpW7Lfp-egrDWKNpkJiX1YgDH7322yGC9SC99dow',
+                                body : JSON.stringify({solicitante:solicitante,recordid:recordid,proceso:proceso}),
+                                headers: headers
+                            }).body;
+                            log.debug('response',response)
+                            
+                        }else{
+                            log.debug('n hay que ejecutar hoy dias')
+                        }
+                    
+                    }
+                    
+                break;
+
+                } 
+            }
+            if(type == 'create' && checkRecurrente == true){
                 var solicitud = record.load({
                     id: recordid,
                     type: 'purchaserequisition',
@@ -192,38 +370,19 @@ function(runtime,url,https,record) {
                             value : montoMonedaProveedor
 
                         });
-                        
-                        
-                    }   
-                    
+                    }     
                 }
                 solicitud.save();
-                /*if(listLineCountItem){
-                     
-                    for (var i = 0; i < listLineCountItem; i++) {
-                        
-                        var montoPesos = solicitud.getSublistValue({
-                            sublistId: "item",
-                            fieldId: "custcolsub_impuestos",//vendor 
-                            line: i
-                        });
-                        
-                        totalItem = totalItem+montoPesos
-                        log.debug('total',totalItem)
-                        
-                        
-                    }   
-                    
-                }*/
+                
             }
-            
+
         }catch (e){
             log.error('error afterSubmit',e)
         }
         
         
     }
-
+    
   
     return {
         beforeLoad: beforeLoad,

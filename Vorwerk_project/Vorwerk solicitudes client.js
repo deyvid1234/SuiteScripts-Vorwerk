@@ -17,70 +17,40 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils,runtime) {
      * @since 2015.2
      */
     function pageInit(scriptContext) {
-    	var thisRecord = scriptContext.currentRecord;
-        thisRecord.getField({
-            fieldId: 'custbody_metodo_repeticion'
-        }).isDisabled = true;
-        thisRecord.getField({
-            fieldId: 'custbody_no_repeticiones'
-        }).isDisabled = true;
-        thisRecord.getField({
-            fieldId: 'custbody_a_partir'
-        }).isDisabled = true;
-        thisRecord.getField({    
-            fieldId: 'custbody_veces_repetir'
-        }).isDisabled = true;
-        thisRecord.getField({    
-            fieldId: 'custbody_dias'
-        }).isDisabled = true;
-        thisRecord.getField({
-            fieldId: 'custbody_repetir_cada'
-        }).isDisabled = true;
-        thisRecord.getField({
-            fieldId: 'custbody_fechas_personalizadas'
-        }).isDisabled = true;
-        thisRecord.getField({
-            fieldId: 'custbody_fecha_personalizada_2'
-        }).isDisabled = true;
-        thisRecord.getField({
-            fieldId: 'custbody_fecha_personalizada_3'
-        }).isDisabled = true;
-        thisRecord.getField({
-            fieldId: 'custbody_fecha_personalizada_4'
-        }).isDisabled = true;
-        thisRecord.getField({
-            fieldId: 'custbody_fecha_personalizada_5'
-        }).isDisabled = true;
-        thisRecord.getField({
-            fieldId: 'custbody_fecha_personalizada_6'
-        }).isDisabled = true;
-        thisRecord.getField({
-            fieldId: 'custbody_fecha_personalizada_7'
-        }).isDisabled = true;
-        thisRecord.getField({
-            fieldId: 'custbody_fecha_personalizada_8'
-        }).isDisabled = true;
-        thisRecord.getField({
-            fieldId: 'custbody_fecha_personalizada_9'
-        }).isDisabled = true;
-        thisRecord.getField({
-            fieldId: 'custbody_fecha_personalizada_10'
-        }).isDisabled = true;
-        thisRecord.getField({
-            fieldId: 'custbody_fecha_personalizada_11'
-        }).isDisabled = true;
-        thisRecord.getField({
-            fieldId: 'custbody_fecha_personalizada_12'
-        }).isDisabled = true;
-        thisRecord.getField({
-            fieldId: 'custbody_url_contrato'
-        }).isDisabled = true;
-        thisRecord.getField({
-            fieldId: 'custbodyregistro_relacionado'
-        }).isDisabled = true;
-        thisRecord.getField({
-            fieldId: 'custbody_total_solicitud_recurrente'
-        }).isDisabled = true;
+        var rec = currentRecord.get();
+        var customform = rec.getValue({
+            fieldId: 'customform'
+        });
+        var thisRecord = scriptContext.currentRecord;
+        if(customform  == '230'){
+            var campos = [
+                'custbody_metodo_repeticion',
+                'custbody_no_repeticiones',
+                'custbody_a_partir',
+                'custbody_dias',
+                'custbody_repetir_cada',
+                'custbody_fechas_personalizadas',
+                'custbody_fecha_personalizada_2',
+                'custbody_fecha_personalizada_3',
+                'custbody_fecha_personalizada_4',
+                'custbody_fecha_personalizada_5',
+                'custbody_fecha_personalizada_6',
+                'custbody_fecha_personalizada_7',
+                'custbody_fecha_personalizada_8',
+                'custbody_fecha_personalizada_9',
+                'custbody_fecha_personalizada_10',
+                'custbody_fecha_personalizada_11',
+                'custbody_fecha_personalizada_12',
+                'custbody_url_contrato',
+                'custbodyregistro_relacionado',
+                'custbody_total_solicitud_recurrente'
+
+             ]
+            var deshabilitarCampos = disabled(scriptContext,campos,true)
+        }
+    	
+        
+       
         thisRecord.getCurrentSublistField({
             sublistId: 'expense',
             fieldId: 'estimatedamount'
@@ -131,6 +101,192 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils,runtime) {
             var fieldid = scriptContext.fieldId;
             var sublistName = scriptContext.sublistId;
             var thisRecord = scriptContext.currentRecord;
+
+
+            // solicitudes por contrato
+        try{
+            var xContrato = thisRecord.getValue('custbody_solicitud_recurrente_contrato')
+            
+            if(fieldid == 'custbody_solicitud_recurrente_contrato' &&  xContrato == true){
+                thisRecord.getField({
+                    fieldId: 'custbody_metodo_repeticion'
+                }).isDisabled = false;
+                thisRecord.getField({
+                    fieldId: 'custbody_metodo_repeticion'
+                }).isMandatory = true;
+                var options = {
+                    title: 'Aviso',
+                    message: 'Estás activando una Solicitud para Compras periódicas por el mismo monto que incluye un contrato, ¿Deseas continuar?'
+                };
+
+                function success(result) {
+                    console.log('Success with value ', result);
+                    if(result == false){
+                        thisRecord.setValue({
+                            fieldId: 'custbody_solicitud_recurrente_contrato',
+                            value: false
+                        });
+                    }
+
+                }
+
+                function failure(reason) {
+                    console.log('Failure: ', reason);
+                }
+
+                dialog.confirm(options).then(success).catch(failure);
+            }
+            if(fieldid == 'custbody_solicitud_recurrente_contrato' &&  xContrato == false){
+                var campos = [
+                    'custbody_metodo_repeticion',
+                    'custbody_no_repeticiones',
+                    'custbody_a_partir',
+                    'custbody_dias',
+                    'custbody_repetir_cada',
+                    'custbody_fechas_personalizadas',
+                    'custbody_fecha_personalizada_2',
+                    'custbody_fecha_personalizada_3',
+                    'custbody_fecha_personalizada_4',
+                    'custbody_fecha_personalizada_5',
+                    'custbody_fecha_personalizada_6',
+                    'custbody_fecha_personalizada_7',
+                    'custbody_fecha_personalizada_8',
+                    'custbody_fecha_personalizada_9',
+                    'custbody_fecha_personalizada_10',
+                    'custbody_fecha_personalizada_11',
+                    'custbody_fecha_personalizada_12',
+                    'custbody_url_contrato',
+                    'custbodyregistro_relacionado',
+                    'custbody_total_solicitud_recurrente'
+
+                 ]
+                var deshabilitarCampos = disabled(scriptContext,campos,true)
+                var noMandatory = mandatory(scriptContext,campos,false)
+                var vaicarCampos = emptyField(scriptContext,campos)
+                
+                
+            }
+            if(fieldid == 'custbody_metodo_repeticion'){
+                var metodo = thisRecord.getValue('custbody_metodo_repeticion')
+                console.log('metodo',metodo)
+                switch(metodo){
+                    case '1'://Periodos recurrentes
+                        var camposHabilitarYobligar = [
+                            'custbody_no_repeticiones',
+                            'custbody_a_partir',
+                            'custbody_repetir_cada',
+                            'custbody_url_contrato'
+                        ]
+                         
+                        disabled(scriptContext,camposHabilitarYobligar,false)
+                        mandatory(scriptContext,camposHabilitarYobligar,true)
+
+                        var camposDeshabilitarNoObligar = [
+                            'custbody_fechas_personalizadas',
+                            'custbody_fecha_personalizada_2',
+                            'custbody_fecha_personalizada_3',
+                            'custbody_fecha_personalizada_4',
+                            'custbody_fecha_personalizada_5',
+                            'custbody_fecha_personalizada_6',
+                            'custbody_fecha_personalizada_7',
+                            'custbody_fecha_personalizada_8',
+                            'custbody_fecha_personalizada_9',
+                            'custbody_fecha_personalizada_10',
+                            'custbody_fecha_personalizada_11',
+                            'custbody_fecha_personalizada_12',
+                            'custbody_dias'
+
+                        ]
+
+                        disabled(scriptContext,camposDeshabilitarNoObligar,true)
+                        mandatory(scriptContext,camposDeshabilitarNoObligar,false)
+                        
+                    break;
+                    case '2'://fechas personalizadas
+
+                        var camposHabilitar = [
+                            'custbody_no_repeticiones',
+                            'custbody_fechas_personalizadas',
+                            'custbody_fecha_personalizada_2',
+                            'custbody_fecha_personalizada_3',
+                            'custbody_fecha_personalizada_4',
+                            'custbody_fecha_personalizada_5',
+                            'custbody_fecha_personalizada_6',
+                            'custbody_fecha_personalizada_7',
+                            'custbody_fecha_personalizada_8',
+                            'custbody_fecha_personalizada_9',
+                            'custbody_fecha_personalizada_10',
+                            'custbody_fecha_personalizada_11',
+                            'custbody_fecha_personalizada_12',
+                            'custbody_url_contrato'
+
+                        ]
+                        var camposObligar = [
+                            'custbody_no_repeticiones',
+                            'custbody_fechas_personalizadas',
+                            'custbody_url_contrato'
+
+                        ]
+                         
+                        disabled(scriptContext,camposHabilitar,false)
+                        mandatory(scriptContext,camposObligar,true)
+
+                        var camposDeshabilitarNoObligar = [
+                            'custbody_a_partir',
+                            'custbody_repetir_cada',
+                            'custbody_dias'
+
+                        ]
+
+                        disabled(scriptContext,camposDeshabilitarNoObligar,true)
+                        mandatory(scriptContext,camposDeshabilitarNoObligar,false)
+                        
+                        
+                    break;
+                    case '3'://por numero de edias
+
+                        var camposHabilitarYobligar = [
+                            'custbody_no_repeticiones',
+                            'custbody_a_partir',
+                            'custbody_dias',
+                            'custbody_url_contrato'
+                        ]
+                         
+                        disabled(scriptContext,camposHabilitarYobligar,false)
+                        mandatory(scriptContext,camposHabilitarYobligar,true)
+
+                        var camposDeshabilitarNoObligar = [
+                            'custbody_fechas_personalizadas',
+                            'custbody_fecha_personalizada_2',
+                            'custbody_fecha_personalizada_3',
+                            'custbody_fecha_personalizada_4',
+                            'custbody_fecha_personalizada_5',
+                            'custbody_fecha_personalizada_6',
+                            'custbody_fecha_personalizada_7',
+                            'custbody_fecha_personalizada_8',
+                            'custbody_fecha_personalizada_9',
+                            'custbody_fecha_personalizada_10',
+                            'custbody_fecha_personalizada_11',
+                            'custbody_fecha_personalizada_12',
+                            'custbody_repetir_cada'
+
+                        ]
+
+                        disabled(scriptContext,camposDeshabilitarNoObligar,true)
+                        mandatory(scriptContext,camposDeshabilitarNoObligar,false)
+                        
+                    break;
+                        
+                }
+            }
+            
+
+        }catch(e){
+            log.error('error fieldChanged solicitus recurrente por contrato',e)
+        }
+
+
+//Solicitudes employee centre
             var url
             if(runtime.envType  == "SANDBOX"){
                 url = 'https://3367613-sb1.app.netsuite.com/app/site/hosting/scriptlet.nl?script=1412&deploy=1';
@@ -171,7 +327,7 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils,runtime) {
                     
                     
                 }
-                var sublista = ''
+                var sublista = 'expense'
                 //console.log('sublistName',sublistName)
                 var campoVendor = ''
                 if(sublistName =='expense'){
@@ -181,7 +337,7 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils,runtime) {
                     sublista = 'item'
                     campoVendor = 'povendor'
                 }
-                //console.log('sublista',sublista)
+                console.log('sublista',sublista)
 
                 if(fieldid ==campoVendor){//cuando se agrega el vendor llamamos al suitelet para obtener la moneda del proveedor
                     var vendor = rec.getCurrentSublistValue({
@@ -286,7 +442,7 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils,runtime) {
                         value: sub
                     });
                 }
-                var montoPesos = rec.getCurrentSublistValue({
+                var montoPesos = rec.getCurrentSublistValue({//creo que aqui salta el error
                     sublistId: sublista,
                     fieldId: 'custcolmonto_enpesos'
                 });
@@ -515,7 +671,7 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils,runtime) {
 
 
             //form 222
-            var sublista = ''
+            var sublista = 'expense'
             if(sublistName =='expense'){
                     sublista = 'expense'
             }else if(sublistName =='item'){
@@ -851,198 +1007,48 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils,runtime) {
     	}catch(err){
     		log.error("error fieldChanged",err);
     	}
-        try{
-            var xContrato = thisRecord.getValue('custbody_solicitud_recurrente_contrato')
-            
-            if(fieldid == 'custbody_solicitud_recurrente_contrato' &&  xContrato == true){
-                thisRecord.getField({
-                    fieldId: 'custbody_metodo_repeticion'
-                }).isDisabled = false;
-            }
-            if(fieldid == 'custbody_metodo_repeticion'){
-                    var metodo = thisRecord.getValue('custbody_metodo_repeticion')
-                    console.log('metodo',metodo)
-                    switch(metodo){
-                    case '1'://Periodos recurrentes
-                         thisRecord.getField({
-                            fieldId: 'custbody_no_repeticiones'
-                        }).isDisabled = false;
-                        thisRecord.getField({
-                            fieldId: 'custbody_a_partir'
-                        }).isDisabled = false;
-                        thisRecord.getField({
-                            fieldId: 'custbody_veces_repetir'
-                        }).isDisabled = false;
-                        thisRecord.getField({
-                            fieldId: 'custbody_repetir_cada'
-                        }).isDisabled = false;
-                        thisRecord.getField({
-                            fieldId: 'custbody_fechas_personalizadas'
-                        }).isDisabled = true;
-                        thisRecord.getField({
-                            fieldId: 'custbody_fecha_personalizada_2'
-                        }).isDisabled = true;
-                        thisRecord.getField({
-                            fieldId: 'custbody_fecha_personalizada_3'
-                        }).isDisabled = true;
-                        thisRecord.getField({
-                            fieldId: 'custbody_fecha_personalizada_4'
-                        }).isDisabled = true;
-                        thisRecord.getField({
-                            fieldId: 'custbody_fecha_personalizada_5'
-                        }).isDisabled = true;
-                        thisRecord.getField({
-                            fieldId: 'custbody_fecha_personalizada_6'
-                        }).isDisabled = true;
-                        thisRecord.getField({
-                            fieldId: 'custbody_fecha_personalizada_7'
-                        }).isDisabled = true;
-                        thisRecord.getField({
-                            fieldId: 'custbody_fecha_personalizada_8'
-                        }).isDisabled = true;
-                        thisRecord.getField({
-                            fieldId: 'custbody_fecha_personalizada_9'
-                        }).isDisabled = true;
-                        thisRecord.getField({
-                            fieldId: 'custbody_fecha_personalizada_10'
-                        }).isDisabled = true;
-                        thisRecord.getField({
-                            fieldId: 'custbody_fecha_personalizada_11'
-                        }).isDisabled = true;
-                        thisRecord.getField({
-                            fieldId: 'custbody_fecha_personalizada_12'
-                        }).isDisabled = true;
-                        thisRecord.getField({
-                            fieldId: 'custbody_dias'
-                        }).isDisabled = true;
-                        thisRecord.getField({
-                            fieldId: 'custbody_url_contrato'
-                        }).isDisabled = false;
-                    break;
-                    case '2'://fechas personalizadas
-                        thisRecord.getField({
-                            fieldId: 'custbody_no_repeticiones'
-                        }).isDisabled = false;
-                        thisRecord.getField({
-                            fieldId: 'custbody_fechas_personalizadas'
-                        }).isDisabled = false;
-                        thisRecord.getField({
-                            fieldId: 'custbody_fecha_personalizada_2'
-                        }).isDisabled = false;
-                        thisRecord.getField({
-                            fieldId: 'custbody_fecha_personalizada_3'
-                        }).isDisabled = false;
-                        thisRecord.getField({
-                            fieldId: 'custbody_fecha_personalizada_4'
-                        }).isDisabled = false;
-                        thisRecord.getField({
-                            fieldId: 'custbody_fecha_personalizada_5'
-                        }).isDisabled = false;
-                        thisRecord.getField({
-                            fieldId: 'custbody_fecha_personalizada_6'
-                        }).isDisabled = false;
-                        thisRecord.getField({
-                            fieldId: 'custbody_fecha_personalizada_7'
-                        }).isDisabled = false;
-                        thisRecord.getField({
-                            fieldId: 'custbody_fecha_personalizada_8'
-                        }).isDisabled = false;
-                        thisRecord.getField({
-                            fieldId: 'custbody_fecha_personalizada_9'
-                        }).isDisabled = false;
-                        thisRecord.getField({
-                            fieldId: 'custbody_fecha_personalizada_10'
-                        }).isDisabled = false;
-                        thisRecord.getField({
-                            fieldId: 'custbody_fecha_personalizada_11'
-                        }).isDisabled = false;
-                        thisRecord.getField({
-                            fieldId: 'custbody_fecha_personalizada_12'
-                        }).isDisabled = false;
-                        thisRecord.getField({
-                            fieldId: 'custbody_a_partir'
-                        }).isDisabled = true;
-                        thisRecord.getField({
-                            fieldId: 'custbody_veces_repetir'
-                        }).isDisabled = true;
-                        thisRecord.getField({
-                            fieldId: 'custbody_repetir_cada'
-                        }).isDisabled = true;
-                        thisRecord.getField({
-                            fieldId: 'custbody_dias'
-                        }).isDisabled = true;
-                        thisRecord.getField({
-                            fieldId: 'custbody_url_contrato'
-                        }).isDisabled = false;
-                    break;
-                    case '3'://por numero de edias
-                        thisRecord.getField({
-                            fieldId: 'custbody_no_repeticiones'
-                        }).isDisabled = false;
-                        thisRecord.getField({
-                            fieldId: 'custbody_a_partir'
-                        }).isDisabled = false;
-                        thisRecord.getField({
-                            fieldId: 'custbody_dias'
-                        }).isDisabled = false;
-                        thisRecord.getField({
-                            fieldId: 'custbody_veces_repetir'
-                        }).isDisabled = true;
-                        thisRecord.getField({
-                            fieldId: 'custbody_repetir_cada'
-                        }).isDisabled = true;
-                        thisRecord.getField({
-                            fieldId: 'custbody_fechas_personalizadas'
-                        }).isDisabled = true;
-                        thisRecord.getField({
-                            fieldId: 'custbody_fecha_personalizada_2'
-                        }).isDisabled = true;
-                        thisRecord.getField({
-                            fieldId: 'custbody_fecha_personalizada_3'
-                        }).isDisabled = true;
-                        thisRecord.getField({
-                            fieldId: 'custbody_fecha_personalizada_4'
-                        }).isDisabled = true;
-                        thisRecord.getField({
-                            fieldId: 'custbody_fecha_personalizada_5'
-                        }).isDisabled = true;
-                        thisRecord.getField({
-                            fieldId: 'custbody_fecha_personalizada_6'
-                        }).isDisabled = true;
-                        thisRecord.getField({
-                            fieldId: 'custbody_fecha_personalizada_7'
-                        }).isDisabled = true;
-                        thisRecord.getField({
-                            fieldId: 'custbody_fecha_personalizada_8'
-                        }).isDisabled = true;
-                        thisRecord.getField({
-                            fieldId: 'custbody_fecha_personalizada_9'
-                        }).isDisabled = true;
-                        thisRecord.getField({
-                            fieldId: 'custbody_fecha_personalizada_10'
-                        }).isDisabled = true;
-                        thisRecord.getField({
-                            fieldId: 'custbody_fecha_personalizada_11'
-                        }).isDisabled = true;
-                        thisRecord.getField({
-                            fieldId: 'custbody_fecha_personalizada_12'
-                        }).isDisabled = true;
-                        thisRecord.getField({
-                            fieldId: 'custbody_url_contrato'
-                        }).isDisabled = false;
-                    break;
-                    
-                        
-                        
-                    }
-            }
-            
 
+        
+    }
+    function mandatory(scriptContext,campos,valor){
+        try{
+            var thisRecord = scriptContext.currentRecord;
+            for (i in campos){
+                thisRecord.getField({
+                    fieldId: campos[i]
+                }).isMandatory = valor;
+            }
         }catch(e){
-            log.error('error fieldChanged solicitus recurrente por contrato',e)
+            log.error('error mandatory',e)
         }
     }
+    function disabled(scriptContext,campos,valor){
+        try{
+            var thisRecord = scriptContext.currentRecord;
+            for (i in campos){
+                thisRecord.getField({
+                    fieldId: campos[i]
+                }).isDisabled = valor;
+            }
 
+        }catch(e){
+            log.error('error desabilitar campos',e)
+        }
+    }
+    function emptyField(scriptContext,campos){
+        try{
+            var thisRecord = scriptContext.currentRecord;
+            for (i in campos){
+                thisRecord.setValue({
+                    fieldId: campos[i],
+                    value: ''
+                });
+            }
+
+        }catch(e){
+            log.error('error desabilitar campos',e)
+        }
+    }
     /**
      * Function to be executed when field is slaved.
      *
@@ -1157,11 +1163,73 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils,runtime) {
      */
     function saveRecord(scriptContext) {
     	try{
-    		return true;
+            
+            var rec = currentRecord.get();
+            var customform = rec.getValue({
+                fieldId: 'customform'
+            });
+            var thisRecord = scriptContext.currentRecord;
+            var xContrato = thisRecord.getValue('custbody_solicitud_recurrente_contrato')
+            if(customform  == '230' && xContrato == false){
+              
+                if (confirm('Esta solicitud corresponde a una compra sin Contrato, ¿Desea Continuar?')) {
+                    return true;
+                } else {
+                    return false;
+                }
+                
+            }
+            if (customform  == '230'&& xContrato == true){
+                var campos = [
+                    'custbody_metodo_repeticion',
+                    'custbody_no_repeticiones',
+                    'custbody_a_partir',
+                    'custbody_dias',
+                    'custbody_repetir_cada',
+                    'custbody_fechas_personalizadas',
+                    'custbody_fecha_personalizada_2',
+                    'custbody_fecha_personalizada_3',
+                    'custbody_fecha_personalizada_4',
+                    'custbody_fecha_personalizada_5',
+                    'custbody_fecha_personalizada_6',
+                    'custbody_fecha_personalizada_7',
+                    'custbody_fecha_personalizada_8',
+                    'custbody_fecha_personalizada_9',
+                    'custbody_fecha_personalizada_10',
+                    'custbody_fecha_personalizada_11',
+                    'custbody_fecha_personalizada_12',
+                    'custbody_url_contrato'
+
+                 ]
+                for (i in campos){
+                    var objField = thisRecord.getField({
+                        fieldId: campos[i]
+                    });
+                    
+                    if(objField.isMandatory){
+                        
+                        var campoValor = thisRecord.getValue({
+                            fieldId: campos[i]
+                        });
+                        
+                        if(!campoValor){
+                            dialog.alert({
+                                title: 'Campos incompletos',
+                                message: 'Por favor ingrese valor en el campo: '+ objField.label
+                            });
+                            return false;
+                        }  
+                    }
+                } 
+            }
+            
+            return true;
+            
+    		
     	}catch(err){
     		log.error('errorsaverecord',err);
     	}
-    	return true;
+    	
     }
 
    

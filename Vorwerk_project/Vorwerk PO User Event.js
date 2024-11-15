@@ -63,7 +63,10 @@ function(runtime,url,https,record) {
      */
     function afterSubmit(scriptContext) {
         try {
-            var rec = scriptContext.newRecord;
+        
+            var type = scriptContext.type
+            if(type == 'create'){
+               var rec = scriptContext.newRecord;
             var recordid = rec.id;
             log.debug('recordid',recordid)
             var poRec = record.load({
@@ -148,7 +151,9 @@ function(runtime,url,https,record) {
                     
                     
                 }
+            } 
             }
+            
         }catch(e){
             log.debug('error afer submit PO',e)
         }
