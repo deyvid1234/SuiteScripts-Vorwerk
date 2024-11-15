@@ -98,19 +98,7 @@ function(serverWidget, search, runtime,format,record) {
                     
                     context.response.write(JSON.stringify(sub));
                 }
-                if(proceso == 'setPriceItem'){
-                    
-                    var item = body.articulo
-                    var inventoryitem= record.load({
-                        type: 'inventoryitem',
-                        id: item,
-                        isDynamic: false,
-                    });
-                    var precioNuevo = inventoryitem.setValue('cost',body.precioNuevo)
-                    inventoryitem.save()
-                                       
-                
-                }
+               
                 if(proceso == 'copyTransform'){
                     var solicitante = body.solicitante
                     var recordid = body.recordid
