@@ -15,7 +15,7 @@ function(serverWidget, search, runtime,format,record) {
      * @param {ServerResponse} context.response - Encapsulation of the Suitelet response
      * @Since 2015.2
      */
-    function onRequest(context) {
+    function onRequest(context) { 
     	try{
     		log.debug('metohd',context.request.method); 
             var body = JSON.parse(context.request.body);
@@ -111,7 +111,18 @@ function(serverWidget, search, runtime,format,record) {
                                        
                 
                 }
+                if(proceso == 'copyTransform'){
+                    var solicitante = body.solicitante
+                    var recordid = body.recordid
+                    var idCopy = makeCopy(solicitante,recordid)
+                    log.debug('idCopy periodos dias',idCopy)
 
+                    var idPO = transformPO(solicitante,idCopy)
+                    log.debug('idPO periodos dias',idPO)
+                    context.response.write(JSON.stringify(idCopy));
+                                       
+                
+                }
 
     		}
             
@@ -119,7 +130,133 @@ function(serverWidget, search, runtime,format,record) {
     		log.error("Error request",err);
     	}
     }
-    
+    function transformPO(solicitante,idCopy,estimatedtotal){
+            try{
+                var transformToSO = record.transform({
+                    fromType: 'purchaserequisition',
+                    fromId: idCopy,
+                    toType: 'purchaseorder',
+                    isDynamic: true,
+                });
+                transformToSO.setValue({
+                    fieldId: 'employee',
+                    value: solicitante  
+                });
+                /*transformToSO.setValue({
+                    fieldId: 'supervisorapproval',
+                    value: true
+                });*/
+                var idPO = transformToSO.save()
+
+                return idPO;
+            }catch(e){
+                log.error('error al transformar la requisicion a po',e)
+            }
+        } 
+        function makeCopy(solicitante,idRequisition){
+            try{
+                var requisitionCopy = record.copy({
+                    type: 'purchaserequisition',
+                    id: idRequisition,
+                    isDynamic: true,
+                    
+                });
+                requisitionCopy.setValue({
+                    fieldId: 'custbody_createdfrom_plantilla',
+                    value: true
+                });
+                requisitionCopy.setValue({
+                    fieldId: 'entity',
+                    value: solicitante
+                });
+                requisitionCopy.setValue({
+                    fieldId: 'approvalstatus',
+                    value: 2
+                });
+                requisitionCopy.setValue({
+                    fieldId: 'custbody_dias',
+                    value: ''
+                });
+                requisitionCopy.setValue({
+                    fieldId: 'custbody_a_partir',
+                    value: ''
+                });
+                requisitionCopy.setValue({
+                    fieldId: 'custbody_repetir_cada',
+                    value: ''
+                });
+                requisitionCopy.setValue({
+                    fieldId: 'custbody_solicitud_recurrente_contrato',
+                    value: false
+                });
+                requisitionCopy.setValue({
+                    fieldId: 'custbody_metodo_repeticion',
+                    value: ''
+                });
+                requisitionCopy.setValue({
+                    fieldId: 'custbody_no_repeticiones',
+                    value: ''
+                });
+                requisitionCopy.setValue({
+                    fieldId: 'custbody_fechas_personalizadas',
+                    value: ''
+                });
+                requisitionCopy.setValue({
+                    fieldId: 'custbody_fecha_personalizada_2',
+                    value: ''
+                });
+                requisitionCopy.setValue({
+                    fieldId: 'custbody_fecha_personalizada_3',
+                    value: ''
+                });
+                requisitionCopy.setValue({
+                    fieldId: 'custbody_fecha_personalizada_4',
+                    value: ''
+                });
+                requisitionCopy.setValue({
+                    fieldId: 'custbody_fecha_personalizada_5',
+                    value: ''
+                });
+                requisitionCopy.setValue({
+                    fieldId: 'custbody_fecha_personalizada_6',
+                    value: ''
+                });
+                requisitionCopy.setValue({
+                    fieldId: 'custbody_fecha_personalizada_7',
+                    value: ''
+                });
+                requisitionCopy.setValue({
+                    fieldId: 'custbody_fecha_personalizada_8',
+                    value: ''
+                });
+                requisitionCopy.setValue({
+                    fieldId: 'custbody_fecha_personalizada_9',
+                    value: ''
+                });
+                requisitionCopy.setValue({
+                    fieldId: 'custbody_fecha_personalizada_10',
+                    value: ''
+                });
+                requisitionCopy.setValue({
+                    fieldId: 'custbody_fecha_personalizada_11',
+                    value: ''
+                });
+                requisitionCopy.setValue({
+                    fieldId: 'custbody_fecha_personalizada_12',
+                    value: ''
+                });
+                requisitionCopy.setValue({
+                    fieldId: 'custbody_total_solicitud_recurrente',
+                    value: ''
+                });
+                var id_copy = requisitionCopy.save();
+                log.debug('id_copy',id_copy)
+                return id_copy;
+
+            }catch(e){
+                log.error('error al hacer la copia de la requisicion',e)
+            }
+        }
     
     return {
         onRequest: onRequest
