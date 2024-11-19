@@ -157,12 +157,13 @@ function(record,dialog,http,https,search,currentRecord,currency,Utils,runtime) {
                     'custbody_fecha_personalizada_12',
                     'custbody_url_contrato',
                     'custbodyregistro_relacionado',
-                    'custbody_total_solicitud_recurrente'
+                    'custbody_total_solicitud_recurrente',
+                    'custbody_fecha_aprobacion'
 
                  ]
                 var deshabilitarCampos = disabled(scriptContext,campos,true)
                 var noMandatory = mandatory(scriptContext,campos,false)
-                var vaicarCampos = emptyField(scriptContext,campos)
+                var vaciarCampos = emptyField(scriptContext,campos)
                 
                 
             }
