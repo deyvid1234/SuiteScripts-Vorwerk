@@ -19,7 +19,7 @@ function(search,record,format,Utils) {
      */
     function getInputData() {
     	var solicitudesSearch = search.load({
-            id: 'customsearch2307' //  sales rep
+            id: 'customsearch_solicitudes_recurrentes' 
         });
     	
     	return solicitudesSearch;

@@ -98,7 +98,7 @@ function(runtime,url,https,record) {
                     });
                     
                     totalGastos = totalGastos+montoPesos
-                    log.debug('total',total)
+                    log.debug('totalgastos',totalGastos)
                     
                     
                 }   
@@ -115,7 +115,7 @@ function(runtime,url,https,record) {
                     });
                     
                     totalItem = totalItem+montoPesos
-                    log.debug('total',totalItem)
+                    log.debug('totalitem',totalItem)
                     
                     
                 }   
@@ -172,8 +172,10 @@ function(runtime,url,https,record) {
                     url = 'https://3367613.app.netsuite.com/app/site/hosting/scriptlet.nl?script=1412&deploy=1';
                 }
                 var fechaAprobacion = rec.getValue('custbody_fecha_aprobacion')
+                var transaccionInactiva = rec.getValue('custbody_inactiva')
                 log.debug('fechaAprobacion',fechaAprobacion)
-                if (fechaAprobacion){
+                log.debug('transaccionInactiva',transaccionInactiva)
+                if (fechaAprobacion && transaccionInactiva == false){
                     var metodo = rec.getValue('custbody_metodo_repeticion')
                     var solicitante = rec.getValue('entity')
                     var aPartir
