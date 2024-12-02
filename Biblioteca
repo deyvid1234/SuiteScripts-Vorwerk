@@ -1,0 +1,75 @@
+Biblioteca
+Proceso carga masiva de Marcos
+Suitelet
+ https://4570554.app.netsuite.com/app/site/hosting/scriptlet.nl?script=1896&deploy=1&compid=4570554
+LOGS
+https://4570554.app.netsuite.com/app/common/custom/custrecordentrylist.nl?rectype=1244
+Settings
+https://4570554.app.netsuite.com/app/common/custom/custrecordentrylist.nl?rectype=1245
+
+
+https://drive.google.com/drive/folders/1GC_CEuSZgDz7kBc2lkwUOPWWcVhaSzgp
+la plantilla que debes usar para ésta carga es:
+Actualiza TC Persona Moral
+
+
+La encuentras en el siguiente enlace, en el campo SELECCIONA UNA IMPORTACION:
+https://4570554.app.netsuite.com/app/site/hosting/scriptlet.nl?script=1896&deploy=1&compid=4570554
+
+Para usar la carga masiva debes cambiar de rol, que es CSV ML - OPERACIONES
+
+Te comparto el siguiente video del funcionamiento general: 
+https://drive.google.com/file/d/1AJAcB-PfW2Z_49LidoOQ2qTPaRrGVUyv/view?usp=sharing - Conectar para obtener vista previa 
+
+Items duplicados                
+
+https://4570554.app.netsuite.com/app/common/search/savedsearch.nl?id=30679
+
+Suitescripts Change Log today
+https://4570554.app.netsuite.com/app/common/search/searchresults.nl?searchid=22241&whence=
+Suitescripts Change Log
+https://4570554.app.netsuite.com/app/common/search/searchresults.nl?searchid=22146&whence=
+
+Grafana 
+
+https://monitor.kavak.services/d/ksN4sxMWz/pantalla-2?orgId=3&refresh=30s
+
+
+Status Cargas masivas
+https://4570554.app.netsuite.com/app/setup/upload/csv/csvstatus.nl?whence=
+
+
+DD Sync Constraint Monitor Search
+
+https://4570554.app.netsuite.com/app/common/search/savedsearch.nl?id=41853 
+
+Script Logs DD Today
+https://4570554.app.netsuite.com/app/common/search/search.nl?id=58418&e=T&cu=T&whence=
+
+
+Script Logs DD Today Vorwerk
+
+https://3367613.app.netsuite.com/app/common/search/searchresults.nl?whence=%2Fapp%2Fcommon%2Fsearch%2Fsearch.nl%3Fcu%3DT%26e%3DF&searchid=2106&refresh=
+
+Sync Constraint Monitor ERP SSA ARG - Advanced (Search ID) - Uriel
+https://8041213.app.netsuite.com/app/common/search/searchresults.nl?searchid=916&whence=
+
+
+
+Hola @Lucia Maria Ameri Padilla @Dario Otranto  @Lucas Ivan Mazzei observamos que el SKU del auto en global es distinto al SKU que está asociado al stock en local, es necesario darle de alta con el SKU correcto
+
+
+Logs Marco tool LOCAL
+
+https://8041213.app.netsuite.com/app/common/custom/custrecordentrylist.nl?rectype=114&searchtype=Custom&searchid=920&refresh=&whence=
+
+Crear Google Sheet 
+https://docs.google.com/document/d/1LD5ZNJRqgmYj_5ViwcSMffegzYDKG1a8-QeCmH-Hw4A/edit
+
+Agregar busqueda a restlet whitelist
+https://4570554.app.netsuite.com/app/common/custom/custlist.nl?id=2317&e=T&ord=T
+
+Busqueda sync local Velez
+12:45
+https://8041213.app.netsuite.com/app/common/search/searchresults.nl?searchid=685&saverun=T&whence=
+
