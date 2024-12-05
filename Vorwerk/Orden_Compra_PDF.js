@@ -71,6 +71,7 @@ function Orden_Compra_PDF(request, response) {
         }
         var no_orden = nlapiEscapeXML(returnBlank(searchTransaction[0].getValue('tranid')));
         var vendor_name = nlapiEscapeXML(returnBlank(searchTransaction[0]).getText('entity'))
+        vendor_name = vendor_name.replace(/&/g, "&amp;");
         var no_cotizacion = nlapiEscapeXML(returnBlank(searchTransaction[0].getValue('custbody_cotizacion')));
         var fecha_pedido = nlapiEscapeXML(returnBlank(searchTransaction[0].getValue('trandate')));
         var fecha_entrega = nlapiEscapeXML(returnBlank(searchTransaction[0].getValue('custbody_fcha_ent_compromiso')));
