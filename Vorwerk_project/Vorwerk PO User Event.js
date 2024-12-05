@@ -143,7 +143,7 @@ function(runtime,url,https,record) {
                                     line: e,
                                     value : solTax
                                 })
-                                poRec.save();
+                                
                                 break;
                             }
                         } 
@@ -151,6 +151,7 @@ function(runtime,url,https,record) {
                     
                     
                 }
+                poRec.save();
             } 
             }
             
