@@ -167,9 +167,9 @@ function(runtime,url,https,record) {
             
             if (type == 'edit' && checkRecurrente == true){
                 if(runtime.envType  == "SANDBOX"){
-                    url = 'https://3367613-sb1.app.netsuite.com/app/site/hosting/scriptlet.nl?script=1412&deploy=1';
+                    url = 'https://3367613-sb1.extforms.netsuite.com/app/site/hosting/scriptlet.nl?script=1412&deploy=1&compid=3367613_SB1&ns-at=AAEJ7tMQ2_GXpW7Lfp-egrDWKNpkJiX1YgDH7322yGC9SC99dow';
                 } else{
-                    url = 'https://3367613.app.netsuite.com/app/site/hosting/scriptlet.nl?script=1412&deploy=1';
+                    url = 'https://3367613.extforms.netsuite.com/app/site/hosting/scriptlet.nl?script=1412&deploy=1&compid=3367613&ns-at=AAEJ7tMQL3h0Z1Wc5d97UJGb5JrkbAKuurQML7_zRjmB-LoPu-c';
                 }
                 var fechaAprobacion = rec.getValue('custbody_fecha_aprobacion')
                 var transaccionInactiva = rec.getValue('custbody_inactiva')
@@ -211,7 +211,7 @@ function(runtime,url,https,record) {
                         
                                     var headers = {'Content-Type': 'application/json'};
                                     var response = https.post({
-                                        url: 'https://3367613-sb1.extforms.netsuite.com/app/site/hosting/scriptlet.nl?script=1412&deploy=1&compid=3367613_SB1&ns-at=AAEJ7tMQ2_GXpW7Lfp-egrDWKNpkJiX1YgDH7322yGC9SC99dow',
+                                        url: url,
                                         body : JSON.stringify({solicitante:solicitante,recordid:recordid,proceso:proceso}),
                                         headers: headers
                                     }).body;
