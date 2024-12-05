@@ -71,7 +71,6 @@ function Orden_Compra_PDF(request, response) {
         }
         var no_orden = nlapiEscapeXML(returnBlank(searchTransaction[0].getValue('tranid')));
         var vendor_name = nlapiEscapeXML(returnBlank(searchTransaction[0]).getText('entity'))
-        vendor_name = vendor_name.replace(/&/g, "&amp;");
         var no_cotizacion = nlapiEscapeXML(returnBlank(searchTransaction[0].getValue('custbody_cotizacion')));
         var fecha_pedido = nlapiEscapeXML(returnBlank(searchTransaction[0].getValue('trandate')));
         var fecha_entrega = nlapiEscapeXML(returnBlank(searchTransaction[0].getValue('custbody_fcha_ent_compromiso')));
@@ -286,8 +285,7 @@ function Orden_Compra_PDF(request, response) {
             strName += "</table>";
             strName += "</td>";
             strName += "</tr>";  
-        }
-                
+        }    
         //Gastos
         
         if (numberLines > 0) {
@@ -306,7 +304,7 @@ function Orden_Compra_PDF(request, response) {
             strName += "</tr>";
             strName += "</thead>";
             for (i = 1; i <= numberLines; i++) {
-                var cuenta = transaccion.getLineItemValue('expense', 'account_display', i) 
+                var cuenta =  nlapiEscapeXML(returnBlank(transaccion.getLineItemValue('expense', 'account_display', i)))
                 var monto = transaccion.getLineItemValue('expense', 'amount', i);
                 var categoria = transaccion.getLineItemValue('expense', 'category_display', i);
                 //var location = transaccion.getLineItemValue('expense', 'location_display', i);
@@ -385,13 +383,11 @@ function Orden_Compra_PDF(request, response) {
         strName += "<td colspan='3'>Fecha:</td>";
         strName += "</tr>";
         strName += "</table>";
-
         var thermomix = nlapiLoadFile(401096);
         thermomixURL = thermomix.getURL();
         thermomixURL = stringToArray(thermomixURL, 38);
         thermomixURL = thermomixURL.join('&amp;');
         thermomixURL = "src='" + host + thermomixURL + "'/";
-
         var Pie = '';
       
         
