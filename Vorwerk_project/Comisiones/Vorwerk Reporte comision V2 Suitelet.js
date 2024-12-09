@@ -1683,7 +1683,7 @@ una rcluta de algun miembro del equipo*/
                             log.debug('mesPeriodo',mesPeriodo)
                             log.debug('yearNom',yearNom)
                             log.debug('yearPeriodo',yearPeriodo)
-                        if(mesNombramiento>mesMinimo && mesNombramiento <= mesPeriodo && yearNom ==yearPeriodo && mesNombramiento >= 5){
+                        if(mesNombramiento>=mesMinimo && mesNombramiento <= mesPeriodo && yearNom ==yearPeriodo && mesNombramiento >= 5){
 
                             if(nombradsPor.hasOwnProperty(objEMP.nombramientoPor)){
                                 nombradsPor[objEMP.nombramientoPor].push(objEMP.internalid)
