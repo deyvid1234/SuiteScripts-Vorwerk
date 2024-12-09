@@ -21,6 +21,197 @@ function(runtime,url,https,record) {
         try{
             var rec = scriptContext.newRecord;
             var form = scriptContext.form;
+            var userObj = runtime.getCurrentUser();
+            var userId = parseInt(userObj.id);
+            var type = scriptContext.type;
+            if(type == 'view' && userId == 923581){
+                log.debug('usuario',userId)
+                /*var recordid = rec.id;
+            var checkRecurrente = rec.getValue('custbody_solicitud_recurrente_contrato')
+            var type = scriptContext.type;
+                if (checkRecurrente == true){
+                if(runtime.envType  == "SANDBOX"){
+                    url = 'https://3367613-sb1.extforms.netsuite.com/app/site/hosting/scriptlet.nl?script=1412&deploy=1&compid=3367613_SB1&ns-at=AAEJ7tMQ2_GXpW7Lfp-egrDWKNpkJiX1YgDH7322yGC9SC99dow';
+                } else{
+                    url = 'https://3367613.extforms.netsuite.com/app/site/hosting/scriptlet.nl?script=1412&deploy=1&compid=3367613&ns-at=AAEJ7tMQL3h0Z1Wc5d97UJGb5JrkbAKuurQML7_zRjmB-LoPu-c';
+                }
+                var fechaAprobacion = rec.getValue('custbody_fecha_aprobacion')
+                var transaccionInactiva = rec.getValue('custbody_inactiva')
+                log.debug('fechaAprobacion',fechaAprobacion)
+                log.debug('transaccionInactiva',transaccionInactiva)
+                if (fechaAprobacion && transaccionInactiva == false){
+                    var metodo = rec.getValue('custbody_metodo_repeticion')
+                    var solicitante = rec.getValue('entity')
+                    var aPartir
+
+                    switch(metodo){
+                    case '1':
+                        
+                        var arregloFechas = []
+                        var noRepeticiones = rec.getValue('custbody_no_repeticiones')
+                            noRepeticiones = parseInt(noRepeticiones)
+                        var cadaNoDias = rec.getValue('custbody_dias')
+                            cadaNoDias = parseInt(cadaNoDias)    
+                        var aPartir = rec.getValue('custbody_a_partir')
+                        var fecha = rec.getValue('custbody_a_partir')
+                        var periodo = rec.getValue('custbody_repetir_cada')
+                        
+                         
+                    
+                        if(periodo == 2){//mes
+                            arregloFechas.push(aPartir)
+                            for (var i = 1; i < noRepeticiones; i++) {
+                                
+                                fecha.setMonth(fecha.getMonth() + 1);
+                                var fechaPeriodo = new Date(fecha);
+                                arregloFechas.push(fechaPeriodo);
+                            }
+                            log.debug('arregloFechas',arregloFechas)
+                            for (i in arregloFechas){
+        
+                                if(arregloFechas[i] <= fechaAprobacion){
+                                    log.debug('hacer copia y transform')
+                                    var proceso = 'copyTransform'
+                        
+                                    var headers = {'Content-Type': 'application/json'};
+                                    var response = https.post({
+                                        url: url,
+                                        body : JSON.stringify({solicitante:solicitante,recordid:recordid,proceso:proceso}),
+                                        headers: headers
+                                    }).body;
+                                    log.debug('response',response)
+                                    
+                                }else{
+                                    log.debug('n hay que ejecutar hoy')
+                                }
+                            }
+
+                        } else if(periodo == 1){//semana
+                            arregloFechas.push(aPartir)
+                            for (var i = 1; i < noRepeticiones; i++) {
+                                
+                                fecha.setDate(fecha.getDate() + 7);
+                                var fechaPeriodo = new Date(fecha);
+                                arregloFechas.push(fechaPeriodo);
+                            }
+                            log.debug('arregloFechas',arregloFechas)
+                            for (i in arregloFechas){
+                              
+                                if(arregloFechas[i] <= fechaAprobacion){
+                                    log.debug('hacer copia y transformsem')
+
+                                    var proceso = 'copyTransform'
+                        
+                                    var headers = {'Content-Type': 'application/json'};
+                                    var response = https.post({
+                                        url: url,
+                                        body : JSON.stringify({solicitante:solicitante,recordid:recordid,proceso:proceso}),
+                                        headers: headers
+                                    }).body;
+                                    log.debug('response',response)
+                                    
+                                }else{
+                                    log.debug('n hay que ejecutar hoysem')
+                                }
+                            } 
+                        }                     
+                        
+                    break;
+                    case '2':
+                        var arregloFechas = []
+                        var camposFecha =  [
+                            'custbody_fechas_personalizadas',
+                            'custbody_fecha_personalizada_2',
+                            'custbody_fecha_personalizada_3',
+                            'custbody_fecha_personalizada_4',
+                            'custbody_fecha_personalizada_5',
+                            'custbody_fecha_personalizada_6',
+                            'custbody_fecha_personalizada_7',
+                            'custbody_fecha_personalizada_8',
+                            'custbody_fecha_personalizada_9',
+                            'custbody_fecha_personalizada_10',
+                            'custbody_fecha_personalizada_11',
+                            'custbody_fecha_personalizada_12'
+                        ]
+                        for (i in camposFecha){
+                            var fecha = rec.getValue(camposFecha[i])
+
+                            if(fecha){
+                                arregloFechas.push(fecha)
+                            }
+                            
+                        }
+                        log.debug('arregloFechas',arregloFechas)
+                       
+                        for (i in arregloFechas){
+                               
+                                if(arregloFechas[i] <= fechaAprobacion){
+                                    log.debug('hacer copia y transform')
+
+                                    var proceso = 'copyTransform'
+                        
+                                    var headers = {'Content-Type': 'application/json'};
+                                    var response = https.post({
+                                        url: url,
+                                        body : JSON.stringify({solicitante:solicitante,recordid:recordid,proceso:proceso}),
+                                        headers: headers
+                                    }).body;
+                                    log.debug('response',response)
+                                    
+                                }else{
+                                    log.debug('no ejecutar')
+                                }                        
+                        }
+                    break;
+                    case '3':
+                        var arregloFechas = []
+                        var noRepeticiones = rec.getValue('custbody_no_repeticiones')
+                            noRepeticiones = parseInt(noRepeticiones)
+                        var cadaNoDias = rec.getValue('custbody_dias')
+                            cadaNoDias = parseInt(cadaNoDias)    
+                        var aPartir = rec.getValue('custbody_a_partir')
+                        var fecha = rec.getValue('custbody_a_partir')
+                        arregloFechas.push(aPartir)
+                        
+                        for (var i = 1; i < noRepeticiones; i++) {
+                            
+                            fecha.setDate(fecha.getDate() + cadaNoDias);
+                            var fechaPeriodo = new Date(fecha);
+                            arregloFechas.push(fechaPeriodo);
+                            
+                        }
+                        log.debug('arregloFechas dias',arregloFechas)
+                        for (i in arregloFechas){
+
+                            var fechaFormato = arregloFechas[i]
+                            if(arregloFechas[i] <= fechaAprobacion){
+                                log.debug('hacer copia y transform')
+
+                                var proceso = 'copyTransform'
+                        
+                                var headers = {'Content-Type': 'application/json'};
+                                var response = https.post({
+                                    url: url,
+                                    body : JSON.stringify({solicitante:solicitante,recordid:recordid,proceso:proceso}),
+                                    headers: headers
+                                }).body;
+                                log.debug('response',response)
+                                
+                            }else{
+                                log.debug('n hay que ejecutar hoy dias')
+                            }
+                        
+                        }
+                        
+                    break;
+
+                    } 
+
+                }
+                
+                
+            }*/
+            }
             
         }catch(err){
             log.error('Errro beforeLoad',err);
@@ -165,6 +356,7 @@ function(runtime,url,https,record) {
             var checkRecurrente = rec.getValue('custbody_solicitud_recurrente_contrato')
             var type = scriptContext.type;
             
+            
             if (type == 'edit' && checkRecurrente == true){
                 if(runtime.envType  == "SANDBOX"){
                     url = 'https://3367613-sb1.extforms.netsuite.com/app/site/hosting/scriptlet.nl?script=1412&deploy=1&compid=3367613_SB1&ns-at=AAEJ7tMQ2_GXpW7Lfp-egrDWKNpkJiX1YgDH7322yGC9SC99dow';
@@ -240,7 +432,7 @@ function(runtime,url,https,record) {
                         
                                     var headers = {'Content-Type': 'application/json'};
                                     var response = https.post({
-                                        url: 'https://3367613-sb1.extforms.netsuite.com/app/site/hosting/scriptlet.nl?script=1412&deploy=1&compid=3367613_SB1&ns-at=AAEJ7tMQ2_GXpW7Lfp-egrDWKNpkJiX1YgDH7322yGC9SC99dow',
+                                        url: url,
                                         body : JSON.stringify({solicitante:solicitante,recordid:recordid,proceso:proceso}),
                                         headers: headers
                                     }).body;
@@ -288,7 +480,7 @@ function(runtime,url,https,record) {
                         
                                     var headers = {'Content-Type': 'application/json'};
                                     var response = https.post({
-                                        url: 'https://3367613-sb1.extforms.netsuite.com/app/site/hosting/scriptlet.nl?script=1412&deploy=1&compid=3367613_SB1&ns-at=AAEJ7tMQ2_GXpW7Lfp-egrDWKNpkJiX1YgDH7322yGC9SC99dow',
+                                        url: url,
                                         body : JSON.stringify({solicitante:solicitante,recordid:recordid,proceso:proceso}),
                                         headers: headers
                                     }).body;
@@ -327,7 +519,7 @@ function(runtime,url,https,record) {
                         
                                 var headers = {'Content-Type': 'application/json'};
                                 var response = https.post({
-                                    url: 'https://3367613-sb1.extforms.netsuite.com/app/site/hosting/scriptlet.nl?script=1412&deploy=1&compid=3367613_SB1&ns-at=AAEJ7tMQ2_GXpW7Lfp-egrDWKNpkJiX1YgDH7322yGC9SC99dow',
+                                    url: url,
                                     body : JSON.stringify({solicitante:solicitante,recordid:recordid,proceso:proceso}),
                                     headers: headers
                                 }).body;
