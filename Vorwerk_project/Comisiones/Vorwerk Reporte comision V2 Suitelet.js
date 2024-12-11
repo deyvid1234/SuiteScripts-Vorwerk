@@ -1033,7 +1033,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 var comisionables = ventasP[i][ventasData]['custbody_vw_comission_status']
                 var tipoVenta = ventasP[i][ventasData]['custbody_tipo_venta']
                 //log.debug('comisionables',comisionables)
-                if( tipoVenta != 'TM Ganada'){
+                if( tipoVenta != 'TM Ganada' && comisionables != 'No Comisionable'){
                     data.push(ventasData)
                 }
                 
