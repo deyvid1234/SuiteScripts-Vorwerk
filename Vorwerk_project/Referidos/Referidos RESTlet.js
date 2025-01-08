@@ -696,7 +696,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                     body : JSON.stringify(objRequest),
                     headers: {
                         "Content-Type": "application/json",
-                        "Authorization": "Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJJZCI6IjIyMWFmN2U5LTJjMDAtNDYzZC1hYzliLThkZDA2MzhmYzYzMSIsInN1YiI6InRocm14Lm5ldHN1aXRlLmFwaUBsbXMtbGEuY29tIiwiZW1haWwiOiJ0aHJteC5uZXRzdWl0ZS5hcGlAbG1zLWxhLmNvbSIsInVuaXF1ZV9uYW1lIjoidGhybXgubmV0c3VpdGUuYXBpQGxtcy1sYS5jb20iLCJqdGkiOiIzZjc3NzM1NS0zNmI1LTRlYWQtODg2NC0yMzI2MWZlM2VjZjEiLCJuYmYiOjE2OTkzNzIwMDYsImV4cCI6MTczMDk5NDQwNiwiaWF0IjoxNjk5MzcyMDA2fQ.Urf90o2LXL3ZVsepiEDLi5E06AMQHP_ro2FWqEehoDHv1s8fXEoGn7zdU75Q8cZyCYeRT-xEgdr-5koTFHIiuA"
+                        "Authorization": "Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJJZCI6IjIyMWFmN2U5LTJjMDAtNDYzZC1hYzliLThkZDA2MzhmYzYzMSIsInN1YiI6InRocm14Lm5ldHN1aXRlLmFwaUBsbXMtbGEuY29tIiwiZW1haWwiOiJ0aHJteC5uZXRzdWl0ZS5hcGlAbG1zLWxhLmNvbSIsInVuaXF1ZV9uYW1lIjoidGhybXgubmV0c3VpdGUuYXBpQGxtcy1sYS5jb20iLCJqdGkiOiJkMDdkZmJhNy04MjA1LTRkZjYtODdlMS0xZDE2YmUyYTAwOTMiLCJuYmYiOjE3MzYyMTMwNzAsImV4cCI6MTc2Nzc0OTA3MCwiaWF0IjoxNzM2MjEzMDcwfQ.4lCT7MyZ1OPFQhO6opfc1lEUyz-nyDpmE7_ZNVdwbvIIanlzuWIoD5XzjTnojLFO6EThVieiOiPUl7EhqrhkNg"
                     }
                 }).body;
                 log.debug('responseService LMS Experiencia',responseService)
@@ -960,7 +960,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                         'PresentadorAsignadoCorreo': email_p,
                         'PresentadorAsignadoIDU': idu_p,
                         'telefonoQuienRecomienda':objRecomendador.mobilephone,//Espera de LMS
-                        'NetSuiteID':id_cliente
+                        'NetSuiteID': id_cliente,
                         'Semilla': false
 
                     }
