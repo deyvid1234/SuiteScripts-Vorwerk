@@ -94,7 +94,6 @@ function(record,search,http,https,encode,runtime,serverWidget,error) {
             log.debug('scriptContext.type',scriptContext.type)
 
             if(scriptContext.type == 'edit' && runtime.executionContext == 'USERINTERFACE' ){ 
-                var idRec = newRecord.getValue('id')
                 var newSalesRep = newRecord.getValue('salesrep')
                 var newPreRef = newRecord.getValue('custentity_presentadora_referido')
                 var newIDUPreRef = newRecord.getValue('custentityidu_presentador')
@@ -107,45 +106,33 @@ function(record,search,http,https,encode,runtime,serverWidget,error) {
                 log.debug('newPreRef', newPreRef)
                 log.debug('oldSalesRep', oldSalesRep)
                 log.debug('oldPreRef', oldPreRef)
-
-
-
-                if(  newPreRef != oldPreRef ){
-
-                    if(newIDUPreRef == oldIDUPreRef){
-                        var newPre = search.lookupFields({
-                            type: 'employee',
-                            id: newPreRef,
-                            columns: ['entityid']
-                        });
-                        var iduNewPre = newPre['entityid'] 
-                        log.debug('iduNewPre', iduNewPre)
-                        record.submitFields({
-                                    type: 'customer',
-                                    id: idRec,
-                                    values: { custentityidu_presentador: iduNewPre}
-                                })
-                        //lookup del presentador donde traigamos el IDU 
-                        //Asignar el IDU en el campo custentityidu_presentador
-                        //asignacion debe hacerse con un submitfield 
-                    }
+                
+                if(  newPreRef != oldPreRef || newIDUPreRef != oldIDUPreRef ){
 
                     //Ectrar todos los valores que se van a utiliar usando newRecord.getValue('') y asignarlo a las variables que ya se utilizan o crear nuevas
                     var nombre = newRecord.getValue('altname')
                     var correo = newRecord.getValue('email')
                     var telefono = newRecord.getValue('mobilephone')
                     var activo = newRecord.getValue('isinactive')==false?true:false
+                    
                     var referidoSearch
+                    var nombreQuienRecomienda
+                    var correoQuienRecomienda
+                    var telefonoRecomendador
+
                     if(newRecord.getValue('custentity_id_cliente_referido') != '' && newRecord.getValue('custentity_id_cliente_referido')){
                         referidoSearch = search.lookupFields({
                             type: 'customer',
                             id: newRecord.getValue('custentity_id_cliente_referido'),
                             columns: ["altname", "email", "mobilephone"]
                         });
+                        nombreQuienRecomienda = referidoSearch.altname
+                        correoQuienRecomienda = referidoSearch.email
+                        telefonoRecomendador = referidoSearch.mobilephone
                     }else{
-                        referidoSearch.altname = ''
-                        referidoSearch.email = ''
-                        referidoSearch.mobilephone = ''
+                        nombreQuienRecomienda = ''
+                        correoQuienRecomienda = ''
+                        telefonoRecomendador = ''
                     }
                     
                     log.debug('referidoSearch',referidoSearch)
@@ -157,45 +144,47 @@ function(record,search,http,https,encode,runtime,serverWidget,error) {
                     });
                     log.debug('employeeSearch',employeeSearch)
 
-                    var nombreQuienRecomienda = referidoSearch.altname
-                    var correoQuienRecomienda = referidoSearch.email
+                    //var nombreQuienRecomienda = referidoSearch.altname
+                    //var correoQuienRecomienda = referidoSearch.email
                     var correoPresentador = employeeSearch.email
                     var iduPresentador = employeeSearch.entityid
-                    var telefonoRecomendador = referidoSearch.mobilephone
+                    //var telefonoRecomendador = referidoSearch.mobilephone
                     var id = newRecord.getValue('id')
                     var salesRep = newRecord.getValue('salesrep') 
                     var idPresentadorReferido = newRecord.getValue('custentity_presentadora_referido')
-                    var iduSalesRep = employeeSearch.entityid//revisar
-                    var idClienteReferido= newRecord.getValue('custentity_id_cliente_referido')
-                try{
-                    var urlAD
-                    if(runtime.envType != 'PRODUCTION'){ 
-                         urlAD = 'https://dev-apiagenda.mxthermomix.com/users/registerUserExternoNetsuite'
-                    }else{
-                         urlAD = 'https://apiagenda.mxthermomix.com/users/registerUserExternoNetsuite'
-                    }
-                    if(idClienteReferido){ //Envio Agenda Digital
-                        //var nameFormat = req_info.nombre+" "+req_info.apellidos // cambiar por variables
-                        nameFormat = quitarAcentos(nombre)//Traer funcion quitar acentos
-                            
-                        if(nombreQuienRecomienda && correoQuienRecomienda){
-                            var objAD = {
-                                'nombre': nombre,
-                                'correo': correo,
-                                'telefono': telefono,
-                                'activo': activo,
-                                'nombreQuienRecomienda': quitarAcentos(nombreQuienRecomienda),
-                                'correoQuienRecomienda': correoQuienRecomienda,
-                                'PresentadorAsignadoCorreo': correoPresentador,
-                                'PresentadorAsignadoIDU': iduPresentador,
-                                'telefonoQuienRecomienda':telefonoRecomendador,//Espera de LMS
-                                'NetSuiteID':id,
-                                'Semilla': false
-                            }
+                    var iduSalesRep = employeeSearch.entityid
 
-                            log.debug('objAD customer con id cliente referido'+ id,objAD)
-                            log.debug('objAD stringfy',JSON.stringify(objAD))
-                            var responseService = https.post({
+                    if(true ){ //Envio Agenda Digital
+                        
+                        try{
+                            //var nameFormat = req_info.nombre+" "+req_info.apellidos // cambiar por variables
+                            nameFormat = quitarAcentos(nombre)//Traer funcion quitar acentos
+                            
+                            
+                            var urlAD
+                            if(runtime.envType != 'PRODUCTION'){ 
+                                urlAD = 'https://dev-apiagenda.mxthermomix.com/users/registerUserExternoNetsuite'
+                            }else{
+                                urlAD = 'https://apiagenda.mxthermomix.com/users/registerUserExternoNetsuite'
+                            }
+                            if(nombreQuienRecomienda && correoQuienRecomienda){
+                                var objAD = {
+                                    'nombre': nombre,
+                                    'correo': correo,
+                                    'telefono': telefono,
+                                    'activo': activo,
+                                    'nombreQuienRecomienda': quitarAcentos(nombreQuienRecomienda),
+                                    'correoQuienRecomienda': correoQuienRecomienda,
+                                    'PresentadorAsignadoCorreo': correoPresentador,
+                                    'PresentadorAsignadoIDU': iduPresentador,
+                                    'telefonoQuienRecomienda':telefonoRecomendador,//Espera de LMS
+                                    'NetSuiteID':id,
+                                    'Semilla': false
+                                }
+
+                                log.debug('objAD',objAD)
+                                log.debug('objAD stringfy',JSON.stringify(objAD))
+                                var responseService = https.post({
                                 url: urlAD,
                                 body : objAD,//JSON.stringify(
                                 headers: {
@@ -203,10 +192,8 @@ function(record,search,http,https,encode,runtime,serverWidget,error) {
                                     "User-Agent": "NetSuite/2019.2(SuiteScript)",
                                 }
                             }).body;
-                            log.debug('responseService AD de customer con id cliente referido'+ id,responseService)
-                            }
-                       
-                    }else{
+                            log.debug('responseService AD',responseService)
+                            }else{
                                 var objAD = {
                                     'nombre': nombre,
                                     'correo': correo,
@@ -221,7 +208,7 @@ function(record,search,http,https,encode,runtime,serverWidget,error) {
                                     'Semilla': true
                                 }
 
-                                log.debug('objAD customer sin id cliente referido'+id,objAD)
+                                log.debug('objAD',objAD)
                                 log.debug('objAD stringfy',JSON.stringify(objAD))
                                var responseService = https.post({
                                 url: urlAD,
@@ -231,12 +218,14 @@ function(record,search,http,https,encode,runtime,serverWidget,error) {
                                     "User-Agent": "NetSuite/2019.2(SuiteScript)",
                                 }
                                 }).body;
-                                log.debug('responseService AD de customer sin id de cliente referido'+id,responseService) 
+                                log.debug('responseService AD',responseService) 
                             }
-                }catch(e){
-                    log.debug('Error Agenda digital Referidos restlet',e)
-                }
-                    
+                       
+
+                        }catch(e){
+                        log.debug('Error Agenda digital Referidos restlet',e)
+                       }
+                    }
 
                     //Envio LMS 
                     //rellenar con variables
@@ -265,7 +254,9 @@ function(record,search,http,https,encode,runtime,serverWidget,error) {
                             "Content-Type": "application/json",
                             "Authorization": key
                         }
+                      
                     }).body;
+                  
                     var responseService = JSON.parse(responseService)
                     log.debug('responseService LMS',responseService)
 

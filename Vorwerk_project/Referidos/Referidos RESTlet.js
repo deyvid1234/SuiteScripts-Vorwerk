@@ -382,7 +382,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                                 });
                                 cliente_record.setValue({
                                     fieldId: 'custentityidu_presentador',
-                                    value: req_info.IDUsalesRepNuevo
+                                    value: req_info.IDUsalesRepActual
                                 });
 
                                 salesrepNuevoResponse = req_info.salesrepNuevo
