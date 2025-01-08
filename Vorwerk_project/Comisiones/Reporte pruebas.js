@@ -155,7 +155,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 label: 'Sublist Fields Array',
                 container: 'custpage_filters'
             });
-            form.addButton({
+             form.addButton({
                 id : 'custpage_searchData',
                 label : 'Guardar',
                 functionName : 'saveData()'
@@ -164,7 +164,8 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 id : 'custpage_create_excel',
                 label : 'Crear Excel',
                 functionName : 'createExcel()'
-            });*/
+            });
+            */
             //Fin campos Aux
             //Botones
             form.addSubmitButton({
@@ -172,7 +173,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                container: 'custpage_filters'
             });
             
-            
+           
              
             return form;
            
@@ -301,7 +302,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 var urlDetalle = 'https://3367613.app.netsuite.com/app/site/hosting/scriptlet.nl?script=1358&deploy=2'+'&periodoI='+inicioPeriodo+'&periodoF='+finPeriodo+'&promo='+empPromo+'&tipo='+empType+'&pre='+empID
                 switch(tipoReporteGloobal){
                     case 1: //Reporte LE
-                        if(empType == 3 && empPromo == 2 /*&& allPresentadoras[i].internalid == '4266605'*/){
+                        if(empType == 3 && empPromo == 2 /*&& allPresentadoras[i].internalid == '3281037'*/){
                             //Calcular reporte para la persona
                             var reclutas = listaReclutas[i]
                             var integrantesEquipo = listaGrupos[i]   
@@ -311,7 +312,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                             //log.debug('ventasEmp',ventasEmp)
                             
                             objVentasPropias = bonoVentaPropia(dataEmp,ventasEmp,compConfigDetails)
-                            //log.debug('objVentasPropias',objVentasPropias)
+                            //log.debug('objVentasPropias'+empID,objVentasPropias)
                             
                             objSupercomision = bonoSupercomision(integrantesEquipo,historicoSO,thisPeriodSO,allPresentadoras,dHistorico)
                             //log.debug('objSupercomision',objSupercomision)
@@ -335,7 +336,6 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                             //log.debug('objGarantia',objGarantia)
                             objXmasdosNLE=bonoXmasdosNLE(listaNombramientos,dataEmp,thisPeriodSO,listaGrupos,allPresentadoras,listaEquipoRecluta,historicoSO,dHistorico,namePeriodo,cust_period,listaReclutas)
                             objJoya = bonoJoya(conf,ventasEmp,compConfigDetails)
-                            log.debug('objJoya',objJoya)
                             objCook = bonoCk(dataEmp,ckSO)
                             
                             var amounTrue = validateAmount(sublist,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objSupercomision,objReclutamiento,objEntrega,objXmasDos,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objJoya,objCook,objXmasdosNLE)
@@ -536,12 +536,12 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 id : 'custentity_nombre_unidad',
                 line : cont_line,
                 value : v!=''?v:''
-            });
+             });
             sublist.setSublistValue({
                 id : 'custpage_ver_detalle',
                 line : cont_line,
                 value : urlDetalle
-            });
+            });   
               //Reclutas
             if(reclutas){
                 v = JSON.stringify(reclutas) 
@@ -850,7 +850,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
         try{
             if(conf){
                 var ventasP = ventasEmp
-                log.debug('ventas',ventasP)
+                //log.debug('ventas',ventasP)
                 var data = []
                 for (i in ventasP){
                     var ventasData= Object.keys(ventasP[i])
@@ -863,10 +863,10 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                     
                 }
                 var t_venta_propia = data.length
-                log.debug('t_venta_propia',t_venta_propia)
-                log.debug('conf',conf)
+                //log.debug('t_venta_propia',t_venta_propia)
+                //log.debug('conf',conf)
                 var bono_emerald = parseInt(compConfigDetails[conf]['esquemaVentasPresentadora'][t_venta_propia]['bonoProductividad'],10) - parseInt(compConfigDetails['1']['esquemaVentasPresentadora'][t_venta_propia]['bonoProductividad'],10)
-                log.debug('bono_emerald',bono_emerald)
+                //log.debug('bono_emerald',bono_emerald)
                 return {monto:bono_emerald}
             }else{
                 return false
@@ -949,33 +949,36 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             var liderM=dataEmp.internalid//lider madre
             var montoTotal= 0
             var nle = {}
-            //log.debug('liderM',liderM)
-            //log.debug('listaNombramientos',listaNombramientos)
+            log.debug('liderM',liderM)
+            log.debug('listaNombramientos',listaNombramientos)
             var numeroVentasEquipo=0
             if(listaNombramientos.hasOwnProperty(liderM)){//Se valida si la lider tiene lideres hijos
                 var liderHijo = {}
-                //log.debug('listaNombramientos de la lider ', listaNombramientos[liderM])
+                log.debug('listaNombramientos de la lider ', listaNombramientos[liderM])
                 for(i in listaNombramientos[liderM]){//por cada lider hijo se obtiene sus ventas pripias, equipo y ventas  del equipo
                     
                     var equipoH=listaGrupos[listaNombramientos[liderM][i]]
-                    //log.debug('lista equipoH', equipoH)
+                    log.debug('lista equipoH', equipoH)
                     var ventasH= thisPeriodSO[listaNombramientos[liderM][i]]
-                   //log.debug('lista ventasH', ventasH)
+                    log.debug('lista ventasH', ventasH)
                     var ventaPropia= []
                     for (y in ventasH){
 
                         var key = Object.keys(ventasH[y])
                         var salesrep = ventasH[y][key].salesrep
-                        //log.debug('salesrep',salesrep)
+                        log.debug('salesrep',salesrep)
                         var idso = ventasH[y][key].internalid
-                        //log.debug('idso',idso)
+                        log.debug('idso',idso)
+                        var tipoVenta=ventasH[y][key]['custbody_tipo_venta'] 
+                        if(tipoVenta != 'TM Ganada'){
+                            ventaPropia.push(idso)
+                        }
                         
-                        ventaPropia.push(idso)
                         
                     }
-                    //log.debug('ventaPropia',ventaPropia)
                     
                     var infoVentasEquipo ={}
+                    var venta_equipo = 0
                     for(n in equipoH){//Recorrido de integrantes del equipo
                         var ventas=[]
                         var ventasint= thisPeriodSO[equipoH[n]]
@@ -990,7 +993,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                             }
                         }
                         //log.debug('ventasint',ventasint)
-                        //log.debug('ventas integrante ',ventas)
+                        //log.debug('ventas',ventas)
                         if(ventas!=''){
                             //log.debug('ventas length',ventas.length)
                             infoVentasEquipo[equipoH[n]] = ventas
@@ -999,11 +1002,11 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                         }
                     }
                     if(ventaPropia != ''){
-                        numeroVentasEquipo = numeroVentasEquipo+ventasH.length//se suman las ventas del equipo con las ventas propias
+                        numeroVentasEquipo = numeroVentasEquipo+ventaPropia.length//se suman las ventas del equipo con las ventas propias
                     }
-                    /*log.debug('ventasH ',ventasH)
-                    log.debug('numeroVentasEquipo ',numeroVentasEquipo)
-                    log.debug('infoVentasEquipo',infoVentasEquipo)*/
+                    
+                    log.debug('numeroVentasEquipo 2',numeroVentasEquipo)
+                    log.debug('infoVentasEquipo',infoVentasEquipo)
                     nle[listaNombramientos[liderM][i]] = { dataEquipo:infoVentasEquipo, ventaPropia:ventaPropia }
                 }
                 
@@ -1031,7 +1034,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 var comisionables = ventasP[i][ventasData]['custbody_vw_comission_status']
                 var tipoVenta = ventasP[i][ventasData]['custbody_tipo_venta']
                 //log.debug('comisionables',comisionables)
-                if( tipoVenta != 'TM Ganada'){
+                if( tipoVenta != 'TM Ganada' && comisionables != 'No Comisionable'){
                     data.push(ventasData)
                 }
                 
@@ -1066,12 +1069,12 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             }
             //log.debug('numeroVentasEquipo',numeroVentasEquipo)
             var nle = ventaEquipoNLE(listaNombramientos,dataEmp,thisPeriodSO,listaGrupos,allPresentadoras,compConfigDetails)
-            //log.debug('nle',nle)
+            log.debug('nle',nle)
             if(nle != false){
                 numeroVentasEquipo = numeroVentasEquipo + nle.noVentas
             }
             
-            log.debug('numeroVentasEquipo',numeroVentasEquipo)
+            //log.debug('numeroVentasEquipo',numeroVentasEquipo)
             for ( i in compConfigDetails[1]['esquemaVentasJefaGrupo']['propias'] ){//SE OBTIENE EL PORCENTAJE
                 var desde = compConfigDetails[1]['esquemaVentasJefaGrupo']['propias'][i]['desde']
                 var hasta = compConfigDetails[1]['esquemaVentasJefaGrupo']['propias'][i]['hasta']
@@ -1196,21 +1199,7 @@ una rcluta de algun miembro del equipo*/
                 
                 //log.debug('preActivas',preActivas)
                 if(ventasEmp){//considera 2 solo reclutas
-                    var ventasPropias = []
-                    log.debug('ventasEmp',ventasEmp)
-                    for(x in ventasEmp){
-                        var key = Object.keys(ventasEmp[x])
-                        log.debug('key',key)
-                        var tipoVenta = ventasEmp[x][key]['custbody_tipo_venta']
-                        log.debug('tipoVenta',tipoVenta)
-                        var comstatus = ventasEmp[x][key]['custbody_vw_comission_status']
-                        var internalid = ventasEmp[x][key]['internalid']
-                        if (tipoVenta != 'TM Ganada' && comstatus != 'No Comisionable'){
-                            ventasPropias.push(internalid)
-                        }
-
-                    }
-                    log.debug('ventasPropias',ventasPropias)
+                    
                     if(ventasEmp.length> 2 && ventasEmp.length<5 && preActivas.length >= 2){
                         bonoLogrado = true
                         monto32 = 5000
@@ -1695,7 +1684,7 @@ una rcluta de algun miembro del equipo*/
                             log.debug('mesPeriodo',mesPeriodo)
                             log.debug('yearNom',yearNom)
                             log.debug('yearPeriodo',yearPeriodo)
-                        if(mesNombramiento>mesMinimo && mesNombramiento <= mesPeriodo && yearNom ==yearPeriodo && mesNombramiento >= 5){
+                        if(mesNombramiento>=mesMinimo && mesNombramiento <= mesPeriodo && yearNom ==yearPeriodo && mesNombramiento >= 5){
 
                             if(nombradsPor.hasOwnProperty(objEMP.nombramientoPor)){
                                 nombradsPor[objEMP.nombramientoPor].push(objEMP.internalid)
@@ -1995,8 +1984,6 @@ una rcluta de algun miembro del equipo*/
                 label: 'Comision Cook Key'
             }).updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
             arrayFields.push({idfield : thidField.id, namefield : thidField.label})
-
-            
             //Fin Campos Compartidos
             
             //Campos Tm Propia
