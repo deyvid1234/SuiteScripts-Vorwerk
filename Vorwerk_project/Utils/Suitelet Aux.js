@@ -9,18 +9,7 @@
 define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file','N/encode','N/https','N/email','N/record'], 
 function(plugin,task, serverWidget, search, runtime,file,encode,https,email,record){
     function onRequest(scriptContext) {
-    try{/*
-        log.debug('scriptContext',scriptContext.request.method)
-        var mesAgo = '07'
-        log.debug('mesAgo',mesAgo)
-        mesAgo = parseInt(mesAgo)
-        log.debug('mesAgo parse',mesAgo)
-            
-        var mesSep = '08'
-        log.debug('mesSep',mesSep)
-        var mesSep = parseInt(mesSep,10)
-        log.debug('mesSep parse',mesSep)*/
-        
+    try{        
         var request = scriptContext.request;
         var response = scriptContext.response;
         var paramsurl = scriptContext.request.parameters;
