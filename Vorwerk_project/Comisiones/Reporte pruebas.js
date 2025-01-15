@@ -339,12 +339,12 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                             //objXmasdosNLE=bonoXmasdosNLE(listaNombramientos,dataEmp,thisPeriodSO,listaGrupos,allPresentadoras,listaEquipoRecluta,historicoSO,dHistorico,namePeriodo,cust_period,listaReclutas)
                             objJoya = bonoJoya(conf,ventasEmp,compConfigDetails)
                             objCook = bonoCk(dataEmp,ckSO)
-                            objNuevoRecluta = bonoNuevoRecluta(dataEmp,reclutas,thisPeriodSO,historicoSO)
-                            objActividad = bonoActividad(dataEmp,integrantesEquipo,thisPeriodSO,historicoSO)
+                            objNuevoRecluta = bonoNuevoRecluta(dataEmp,reclutas,thisPeriodSO,historicoSO,allPresentadoras,dHistorico)
+                            objActividad = bonoActividad(dataEmp,integrantesEquipo,thisPeriodSO,historicoSO,allPresentadoras,dHistorico)
                             var amounTrue = validateAmount(sublist,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objSupercomision,objReclutamiento,objEntrega,objXmasDos,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objJoya,objCook,objXmasdosNLE)
         
                             if(amounTrue){
-                                fillTable(sublist,urlDetalle,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objSupercomision,objReclutamiento,objEntrega,objXmasDos,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objJoya,objCook,objXmasdosNLE,false)
+                                fillTable(sublist,urlDetalle,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objSupercomision,objReclutamiento,objEntrega,objXmasDos,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objJoya,objCook,objXmasdosNLE,objNuevoRecluta,objActividad,false)
                                 cont_line++
                             }
                         }
@@ -491,7 +491,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
         return v;
 
     }
-    function fillTable(sublist,urlDetalle,dataEmp,ventasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,supercomision,reclutamiento,entrega,objXmasDos,productividad,ventaEquipo,ventasEquipoNLE,garantia,joya,cookKey,xMasdosNLE){
+    function fillTable(sublist,urlDetalle,dataEmp,ventasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,supercomision,reclutamiento,entrega,objXmasDos,productividad,ventaEquipo,ventasEquipoNLE,garantia,joya,cookKey,xMasdosNLE,nuevoRecluta,actividad){
         var linea = cont_line
         var subtotal=0
         
@@ -819,6 +819,37 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             });
           
         }*/
+        if(nuevoRecluta){
+        
+            v = nuevoRecluta.data
+            sublist.setSublistValue({
+                id : 'custentity_nuevo_recluta_activos',
+                line : linea,
+                value : v!=''?v:''
+            });
+            v = nuevoRecluta.monto>0?nuevoRecluta.monto:0
+            subtotal+=parseInt(v,10)
+            sublist.setSublistValue({
+                id : 'custentity_monto_nuevo_recluta',
+                line : linea,
+                 value : v
+            });
+        }if(actividad){
+        
+            v = actividad.data
+            sublist.setSublistValue({
+                id : 'custentity_integrantes_activos',
+                line : linea,
+                value : v!=''?v:''
+            });
+            v = actividad.monto>0?actividad.monto:0
+            subtotal+=parseInt(v,10)
+            sublist.setSublistValue({
+                id : 'custentity_monto_actividad',
+                line : linea,
+                 value : v
+            });
+        }
         var v = subtotal>0?subtotal:0
         // log.debug('subtotal v',v)
         sublist.setSublistValue({
@@ -830,11 +861,10 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
         return fillTable;
         
     }
-    function bonoNuevoRecluta(dataEmp,reclutas,thisPeriodSO,historicoSO){
+    function bonoNuevoRecluta(dataEmp,reclutas,thisPeriodSO,historicoSO,allPresentadoras,dHistorico){
         try{
             if(reclutas){
                 var bono_nuevoRecluta = 0
-                var ordenes = {}
                 var salesReclutas = {}
 
                 reclutas.forEach(function(i,index) {//Se recorren las reclutas del Presentador
@@ -846,7 +876,6 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                         
                         var ventasReclutaH = historicoSO[i];
                         log.debug('ventasReclutaH',ventasReclutaH)
-                        var confRec = allPresentadoras[i]['conf_reclutamiento']?allPresentadoras[i]['conf_reclutamiento']:1
                         var hiredate = allPresentadoras[i]['hiredate']
                         var fechaObjetivo = allPresentadoras[i]['objetivo_2']
                         var reactivacion = allPresentadoras[i]['fechaReactivacion']
@@ -864,15 +893,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                         if(dcontratacion > dHistorico && ventasReclutaTP && ventasReclutaH.length < 1){//Si su contratacion/Reactivacion es anterios a 3 meses se asume que ya se pagó el bono, al igual si hay ventas en el historico
                             
                             var salesReclutaTP =[]
-
-                            if(confRec == 11 || confRec == 12 || confRec == 13 || confRec == 14){
-                                var noComisiona = 4
-                            }else{
-                                var noComisiona = 6
-                            }
-
                             var cont = 0
-                            
                             
                             for(j in ventasReclutaTP){//Se recorren las Ordenes de cada recluta del Presentador
                                 key = Object.keys(ventasReclutaTP[j])
@@ -882,7 +903,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                                 var docNum = ventasReclutaTP[j][key]['tranid']
                                 
                                 fechaSO = Utils.stringToDate(fechaSO)
-                                if(tipoVenta != 'TM Ganada'&& fechaSO <= fechaObjetivo){
+                                if( fechaSO <= fechaObjetivo){
                                     cont ++ 
                                     noReclutasActivos ++
                                     var pedido = { idSO:id,docNum:docNum, noVenta:cont} 
@@ -897,6 +918,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                                 }
                                 
                             }
+                            log.debug('noReclutasActivos',noReclutasActivos)
                             var monto 
                             if(noReclutasActivos >= 1 && noReclutasActivos <= 5){
                                 monto = 600
@@ -904,10 +926,8 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                                 monto = 1200
                             }
                             bono_nuevoRecluta = noReclutasActivos * monto 
-                            
-
-                        }
                         
+                        }
                         
                     }
                 });
@@ -919,9 +939,57 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             log.error('error bono Nuevo recluta',e)
         }
 
-    }function bonoActividad(dataEmp,integrantesEquipo,thisPeriodSO,historicoSO){
+    }function bonoActividad(dataEmp,integrantesEquipo,thisPeriodSO,historicoSO,allPresentadoras,dHistorico){
         try{
-            
+            if(integrantesEquipo){
+                var bono_actividad = 0
+                var salesIntegrante = {}
+                integrantesEquipo.forEach(function(i,index) {//Se recorren las reclutas del Presentador
+                    //log.debug('recluta',i)
+                    var ventasIntegranteTP = thisPeriodSO[i];
+                    //log.debug('ventasIntegranteTP',ventasIntegranteTP)
+                    var noIntegrantesActivos = 0  
+                    if(ventasIntegranteTP){//Debe tener la primer venta en el periodo calculado
+                        
+                        var ventasIntegranteH = historicoSO[i];
+                        log.debug('ventasIntegranteH',ventasIntegranteH)
+                        
+                        
+                        if( ventasIntegranteTP && ventasIntegranteH.length > 0){//si tienen por lo menos una venta en el historico se asume que ya se pago el bono de Nuevo recluta
+                            
+                            var salesIntegranteTP =[]
+                            
+                            for(j in ventasIntegranteTP){//Se recorren las Ordenes de cada recluta del Presentador
+                                key = Object.keys(ventasIntegranteTP[j])
+                                var tipoVenta = ventasIntegranteTP[j][key]['custbody_tipo_venta']
+                                var fechaSO = ventasIntegranteTP[j][key]['trandate']
+                                var id = ventasIntegranteTP[j][key]['internalid']
+                                var docNum = ventasIntegranteTP[j][key]['tranid']
+                                
+                                fechaSO = Utils.stringToDate(fechaSO)
+                                   
+                                noIntegrantesActivos ++
+                                var pedido = { idSO:id,docNum:docNum} 
+                                
+                                salesIntegranteTP.push(pedido)
+                                salesIntegrante[i] = salesIntegranteTP
+                                
+                            }
+                            log.debug('noIntegrantesActivos',noIntegrantesActivos)
+                            var monto 
+                            if(noIntegrantesActivos > 2 && noIntegrantesActivos < 5){
+                                monto = 2000
+                            } else if(noIntegrantesActivos > 4 && noIntegrantesActivos < 8){
+                                monto = 5000
+                            }else if(noIntegrantesActivos > 7 ){
+                                monto = 12000
+                            }
+                            bono_actividad = noIntegrantesActivos * monto 
+                        }
+                    }
+                });
+                return  {monto:bono_actividad, data:salesIntegrante}; 
+            }
             
         }catch(e){
             log.error('error bono Actividad',e)
@@ -2216,13 +2284,40 @@ una rcluta de algun miembro del equipo*/
                     label : 'NLE'
                 }).updateDisplayType({displayType : serverWidget.FieldDisplayType.READONLY});
                 arrayFields.push({idfield : thidField.id, namefield : thidField.label})
-                 
+                //Bono Nuevo Recluta
+                thidField = sublist.addField({
+                    id : 'custentity_monto_nuevo_recluta',
+                    type : serverWidget.FieldType.CURRENCY,
+                    label : 'Bono Nuevo Recluta'
+                }).updateDisplayType({displayType : serverWidget.FieldDisplayType.READONLY});
+                arrayFields.push({idfield : thidField.id, namefield : thidField.label})
+            
+                thidField = sublist.addField({
+                    id : 'custentity_nuevo_recluta_activos',
+                    type : serverWidget.FieldType.TEXTAREA,
+                    label : 'Reclutas Activos'
+                }).updateDisplayType({displayType : serverWidget.FieldDisplayType.READONLY});
+                arrayFields.push({idfield : thidField.id, namefield : thidField.label})
+                //Bono Actividad
+                thidField = sublist.addField({
+                    id : 'custentity_monto_actividad',
+                    type : serverWidget.FieldType.CURRENCY,
+                    label : 'Bono Actividad'
+                }).updateDisplayType({displayType : serverWidget.FieldDisplayType.READONLY});
+                arrayFields.push({idfield : thidField.id, namefield : thidField.label})
+            
+                thidField = sublist.addField({
+                    id : 'custentity_integrantes_activos',
+                    type : serverWidget.FieldType.TEXTAREA,
+                    label : 'Integrantes Activos'
+                }).updateDisplayType({displayType : serverWidget.FieldDisplayType.READONLY});
+                arrayFields.push({idfield : thidField.id, namefield : thidField.label}) 
                 /*thidField = sublist.addField({
                     id : 'custentity_nle_monto',
                     type : serverWidget.FieldType.CURRENCY,
                     label : 'Bono NLE'
                 }).updateDisplayType({displayType : serverWidget.FieldDisplayType.READONLY});
-                arrayFields.push({idfield : thidField.id, namefield : thidField.label})*/
+                arrayFields.push({idfield : thidField.id, namefield : thidField.label})
             
                 thidField = sublist.addField({
                     id : 'custentity_xmasdos_nle',
@@ -2271,11 +2366,11 @@ una rcluta de algun miembro del equipo*/
                     type : serverWidget.FieldType.CURRENCY,
                     label : 'Bono 5 + 2'
                 }).updateDisplayType({displayType : serverWidget.FieldDisplayType.READONLY});
-                arrayFields.push({idfield : thidField.id, namefield : thidField.label})
+                arrayFields.push({idfield : thidField.id, namefield : thidField.label})*/
                 // Fin Campos 3+2 y 5+2
                     
                 // Super Comision 
-                thidField = sublist.addField({
+                /*thidField = sublist.addField({
                     id : 'custentity_odv_pre_supercomision',
                     type : serverWidget.FieldType.TEXTAREA,
                     label : 'ODV Por recluta del mes del Equipo SC'
@@ -2294,7 +2389,7 @@ una rcluta de algun miembro del equipo*/
                     type : serverWidget.FieldType.CURRENCY,
                     label : 'Bono SUPERCOMISIÓN'
                 }).updateDisplayType({displayType : serverWidget.FieldDisplayType.READONLY});
-                arrayFields.push({idfield : thidField.id, namefield : thidField.label})
+                arrayFields.push({idfield : thidField.id, namefield : thidField.label})*/
                 //Fin Campos Super Comision
                     
             }// Fin Campos JDG - Lideres de equipo
