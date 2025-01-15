@@ -292,13 +292,15 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 var objReclutamiento = false
                 var montoTalento = false
                 var objVentaEquipo = false
-                var objXmasDos = false
-                var objSupercomision = false
+                //var objXmasDos = false
+                //var objSupercomision = false
                 var objVentasEquipoNLE= false
                 var objGarantia = false
-                var objXmasdosNLE= false
+                //var objXmasdosNLE= false
                 var objJoya = false 
                 var objCook = false
+                var objNuevoRecluta = false
+                var objActividad = false
                 var urlDetalle = 'https://3367613.app.netsuite.com/app/site/hosting/scriptlet.nl?script=1358&deploy=2'+'&periodoI='+inicioPeriodo+'&periodoF='+finPeriodo+'&promo='+empPromo+'&tipo='+empType+'&pre='+empID
                 switch(tipoReporteGloobal){
                     case 1: //Reporte LE
@@ -314,7 +316,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                             objVentasPropias = bonoVentaPropia(dataEmp,ventasEmp,compConfigDetails)
                             //log.debug('objVentasPropias'+empID,objVentasPropias)
                             
-                            objSupercomision = bonoSupercomision(integrantesEquipo,historicoSO,thisPeriodSO,allPresentadoras,dHistorico)
+                            //objSupercomision = bonoSupercomision(integrantesEquipo,historicoSO,thisPeriodSO,allPresentadoras,dHistorico)
                             //log.debug('objSupercomision',objSupercomision)
                             
                             objReclutamiento = bonoReclutamiento(reclutas,historicoSO,thisPeriodSO,dataEmp,compConfigDetails,allPresentadoras,dHistorico)
@@ -323,7 +325,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                             objEntrega = bonoEntrega(dataEmp,ventasEmp,cust_entrega)
                             //log.debug('objEntrega',objEntrega)
                             
-                            objXmasDos = bonoXmasDos(dataEmp,reclutasEquipo,thisPeriodSO,ventasEmp,historicoSO,allPresentadoras,dHistorico,integrantesEquipo,reclutas,listaReclutas)
+                            //objXmasDos = bonoXmasDos(dataEmp,reclutasEquipo,thisPeriodSO,ventasEmp,historicoSO,allPresentadoras,dHistorico,integrantesEquipo,reclutas,listaReclutas)
                             //log.debug('objXmasDos',objXmasDos)
                             objProductividad = bonoProductividad(dataEmp,ventasEmp,compConfigDetails)
                              //log.debug('objProductividad',objProductividad)
@@ -334,10 +336,11 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                             log.debug('objVentasEquipoNLE',objVentasEquipoNLE)*/
                             objGarantia = bonoGarantia(dataEmp,garantiaSO,compConfigDetails)
                             //log.debug('objGarantia',objGarantia)
-                            objXmasdosNLE=bonoXmasdosNLE(listaNombramientos,dataEmp,thisPeriodSO,listaGrupos,allPresentadoras,listaEquipoRecluta,historicoSO,dHistorico,namePeriodo,cust_period,listaReclutas)
+                            //objXmasdosNLE=bonoXmasdosNLE(listaNombramientos,dataEmp,thisPeriodSO,listaGrupos,allPresentadoras,listaEquipoRecluta,historicoSO,dHistorico,namePeriodo,cust_period,listaReclutas)
                             objJoya = bonoJoya(conf,ventasEmp,compConfigDetails)
                             objCook = bonoCk(dataEmp,ckSO)
-                            
+                            objNuevoRecluta = bonoNuevoRecluta(dataEmp,reclutas,thisPeriodSO,historicoSO)
+                            objActividad = bonoActividad(dataEmp,integrantesEquipo,thisPeriodSO,historicoSO)
                             var amounTrue = validateAmount(sublist,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objSupercomision,objReclutamiento,objEntrega,objXmasDos,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objJoya,objCook,objXmasdosNLE)
         
                             if(amounTrue){
@@ -603,8 +606,8 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 value : v
             });
         }
-        //supercomision
-        if(supercomision){
+        //supercomision bono apagado
+        /*if(supercomision){
             //ODV Por recluta del mes del Equipo SC
             v = JSON.stringify(supercomision.data)
             sublist.setSublistValue({
@@ -627,7 +630,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 line : linea,
                 value : v
             });
-        }
+        }*/
         //reclutamiento
         if(reclutamiento){         
             v = reclutamiento.monto>0?reclutamiento.monto:0
@@ -645,8 +648,8 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             });
           
         }
-        //x+2
-        if(objXmasDos){
+        //x+2 Bono apagado
+        /*if(objXmasDos){
             v = JSON.stringify(objXmasDos.data)
             //Reclutas con ventas
             sublist.setSublistValue({
@@ -677,7 +680,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 line : linea,
                 value : v
             });
-        }
+        }*/
         //productividad
         if(productividad){
             v = productividad.monto>0?productividad.monto:0
@@ -732,8 +735,6 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
         }
         //NLE
         /*if(ventasEquipoNLE){
-          
-            
           
             v = ventasEquipoNLE.monto>0?ventasEquipoNLE.monto:0
             subtotal+=parseInt(v,10)
@@ -792,7 +793,8 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                  value : v
             });
         }
-        if(xMasdosNLE){
+        //x + 2 bono apagado
+        /*if(xMasdosNLE){
           
             v = xMasdosNLE.data
             sublist.setSublistValue({
@@ -816,7 +818,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 value : v
             });
           
-        }
+        }*/
         var v = subtotal>0?subtotal:0
         // log.debug('subtotal v',v)
         sublist.setSublistValue({
@@ -827,6 +829,104 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
         //log.debug('subtotal',subtotal)
         return fillTable;
         
+    }
+    function bonoNuevoRecluta(dataEmp,reclutas,thisPeriodSO,historicoSO){
+        try{
+            if(reclutas){
+                var bono_nuevoRecluta = 0
+                var ordenes = {}
+                var salesReclutas = {}
+
+                reclutas.forEach(function(i,index) {//Se recorren las reclutas del Presentador
+                    //log.debug('recluta',i)
+                    var ventasReclutaTP = thisPeriodSO[i];
+                    //log.debug('ventasReclutaTP',ventasReclutaTP)
+                    var noReclutasActivos = 0  
+                    if(ventasReclutaTP){//Debe tener la primer venta en el periodo calculado
+                        
+                        var ventasReclutaH = historicoSO[i];
+                        log.debug('ventasReclutaH',ventasReclutaH)
+                        var confRec = allPresentadoras[i]['conf_reclutamiento']?allPresentadoras[i]['conf_reclutamiento']:1
+                        var hiredate = allPresentadoras[i]['hiredate']
+                        var fechaObjetivo = allPresentadoras[i]['objetivo_2']
+                        var reactivacion = allPresentadoras[i]['fechaReactivacion']
+                        var dcontratacion
+                        if(reactivacion == ''){
+                            dcontratacion = Utils.stringToDate(hiredate)
+                        }else{
+                            dcontratacion = Utils.stringToDate(reactivacion)
+                            fechaObjetivo = allPresentadoras[i]['obj_2_reactivacion']
+                        }
+                        fechaObjetivo = Utils.stringToDate(fechaObjetivo)
+                        
+                        fechaObjetivo.setDate(fechaObjetivo.getDate() + 2);//mas dos dias de gracia
+                        
+                        if(dcontratacion > dHistorico && ventasReclutaTP && ventasReclutaH.length < 1){//Si su contratacion/Reactivacion es anterios a 3 meses se asume que ya se pagó el bono, al igual si hay ventas en el historico
+                            
+                            var salesReclutaTP =[]
+
+                            if(confRec == 11 || confRec == 12 || confRec == 13 || confRec == 14){
+                                var noComisiona = 4
+                            }else{
+                                var noComisiona = 6
+                            }
+
+                            var cont = 0
+                            
+                            
+                            for(j in ventasReclutaTP){//Se recorren las Ordenes de cada recluta del Presentador
+                                key = Object.keys(ventasReclutaTP[j])
+                                var tipoVenta = ventasReclutaTP[j][key]['custbody_tipo_venta']
+                                var fechaSO = ventasReclutaTP[j][key]['trandate']
+                                var id = ventasReclutaTP[j][key]['internalid']
+                                var docNum = ventasReclutaTP[j][key]['tranid']
+                                
+                                fechaSO = Utils.stringToDate(fechaSO)
+                                if(tipoVenta != 'TM Ganada'&& fechaSO <= fechaObjetivo){
+                                    cont ++ 
+                                    noReclutasActivos ++
+                                    var pedido = { idSO:id,docNum:docNum, noVenta:cont} 
+                                    
+                                    salesReclutaTP.push(pedido)
+                                    salesReclutas[i] = salesReclutaTP
+                                    
+                                    
+                                    if(cont >= 1){
+                                        break
+                                    }
+                                }
+                                
+                            }
+                            var monto 
+                            if(noReclutasActivos >= 1 && noReclutasActivos <= 5){
+                                monto = 600
+                            } else if(noReclutasActivos >= 6){
+                                monto = 1200
+                            }
+                            bono_nuevoRecluta = noReclutasActivos * monto 
+                            
+
+                        }
+                        
+                        
+                    }
+                });
+                return  {monto:bono_nuevoRecluta, data:salesReclutas}; 
+            } 
+            
+            
+        }catch(e){
+            log.error('error bono Nuevo recluta',e)
+        }
+
+    }function bonoActividad(dataEmp,integrantesEquipo,thisPeriodSO,historicoSO){
+        try{
+            
+            
+        }catch(e){
+            log.error('error bono Actividad',e)
+        }
+
     }
     function bonoCk(dataEmp,ckSO){
         try{
@@ -877,7 +977,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
         }
 
     }
-    function bonoXmasdosNLE(listaNombramientos,dataEmp,thisPeriodSO,listaGrupos,allPresentadoras,listaEquipoRecluta,historicoSO,dHistorico,namePeriodo,cust_period,listaReclutas){
+    /*function bonoXmasdosNLE(listaNombramientos,dataEmp,thisPeriodSO,listaGrupos,allPresentadoras,listaEquipoRecluta,historicoSO,dHistorico,namePeriodo,cust_period,listaReclutas){
         try{
             var liderM=dataEmp.internalid//lider madre
             var montoTotal52= 0
@@ -928,7 +1028,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
         }catch(e){
             log.error('error bono X+2 NLE',e)
         }
-    }
+    }*/
     function bonoGarantia(dataEmp,garantiaSO,compConfigDetails){
         try{
             if(garantiaSO.hasOwnProperty(dataEmp.internalid)){
@@ -1282,7 +1382,7 @@ una rcluta de algun miembro del equipo*/
         }    
         
     }
-   function bonoSupercomision(integrantesEquipo,historicoSO,thisPeriodSO,allPresentadoras,dHistorico){
+   /*function bonoSupercomision(integrantesEquipo,historicoSO,thisPeriodSO,allPresentadoras,dHistorico){
         try{
             var ventasNo = 0
             var montoSC = 0
@@ -1394,7 +1494,7 @@ una rcluta de algun miembro del equipo*/
             return false
         }
          
-    }
+    }*/
     function bonoReclutamiento(reclutas,historicoSO,thisPeriodSO,dataEmp,compConfigDetails,allPresentadoras,dHistorico){
         try{
             
