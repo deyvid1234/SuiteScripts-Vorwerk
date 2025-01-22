@@ -28,9 +28,9 @@ function(email,record, file, search, https, runtime,format,Dictionary) {
         log.debug('se llamo getInputData :)');
         //recibe la inforamcion desde la tarea y la extrae por parametros
         var scriptObj = runtime.getCurrentScript();
-        var comissionInfo = scriptObj.getParameter({name: 'custscript_data_commision'});//informacion de la tabla
-        var salesRepInfo = scriptObj.getParameter({name: 'custscriptid_salesrep'});
-        var config = scriptObj.getParameter({name: 'custscript_config_comission'});//informacion de configuracion en headers
+        var comissionInfo = scriptObj.getParameter({name: 'custscript_data_com'});//informacion de la tabla
+        //var salesRepInfo = scriptObj.getParameter({name: 'custscriptid_salesrep'});
+        var config = scriptObj.getParameter({name: 'custscript_config_com'});//informacion de configuracion en headers
   
         
         return JSON.parse(comissionInfo);
@@ -47,7 +47,7 @@ function(email,record, file, search, https, runtime,format,Dictionary) {
             //recorre la informacion de la tabla 
             var comissionInfo = JSON.parse(context.value);
             var scriptObj = runtime.getCurrentScript();
-            var config = JSON.parse(scriptObj.getParameter({name: 'custscript_config_comission'}));//se extrae solo la configcuracion para la creacion del registro principal
+            var config = JSON.parse(scriptObj.getParameter({name: 'custscript_config_com'}));//se extrae solo la configcuracion para la creacion del registro principal
             
             log.debug('comissionInfo map',comissionInfo);
             
@@ -151,7 +151,7 @@ function(email,record, file, search, https, runtime,format,Dictionary) {
                 });
                 registerEmp.setValue({
                     fieldId: config_fields.entregas[config.type],
-                    value: comissionInfo.num_entrega
+                    value: comissionInfo.ventas_propias_num
                 });
                 registerEmp.setValue({
                     fieldId: config_fields.productividad[config.type],
@@ -162,21 +162,21 @@ function(email,record, file, search, https, runtime,format,Dictionary) {
                     value: comissionInfo.total
                 });
                
-//                    registerEmp.setValue({
-//                        fieldId: 'custrecord_c_jdg_idcom',
-//                        value: comissionInfo.ingreso
-//                    });
                 registerEmp.setValue({
+                    fieldId: config_fields.totalReporte[config.type],
+                    value: comissionInfo.total
+                });
+                /*registerEmp.setValue({
                     fieldId: config_fields.retencion[config.type],
                     value: comissionInfo.retencion
-                });
+                });*/
                 registerEmp.setValue({
                     fieldId: config_fields.rec[config.type],
-                    value: comissionInfo.odv_rec_id
+                    value: comissionInfo.odv_de_reclutas
                 });
                 registerEmp.setValue({
                     fieldId: config_fields.equipo[config.type],
-                    value: comissionInfo.odv_pre_id
+                    value: comissionInfo.odv_equipo
                 });
                 registerEmp.setValue({
                     fieldId: config_fields.b_rec[config.type],
@@ -184,12 +184,16 @@ function(email,record, file, search, https, runtime,format,Dictionary) {
                 });
                 registerEmp.setValue({
                     fieldId: config_fields.odv_entrega[config.type],
-                    value: comissionInfo.odv_entrega    
+                    value: comissionInfo.ventas_propias_ids    
                 });
-                //Emerald
+                registerEmp.setValue({
+                    fieldId: 'custrecord_odv_nle',// prod custrecord_odv_nle
+                    value: comissionInfo.nle    
+                });
+                //bono Joya
                 registerEmp.setValue({
                     fieldId: config_fields.bp1[config.type],
-                    value: 34   
+                    value: 176   
                 });
                 registerEmp.setValue({
                     fieldId: config_fields.bp1_monto[config.type],
@@ -236,12 +240,15 @@ function(email,record, file, search, https, runtime,format,Dictionary) {
                     fieldId: config_fields.bp4_monto[config.type],
                     value: comissionInfo.bono_tres_dos  
                 });
-               
-                //rec_period_LE
                 registerEmp.setValue({
+                    fieldId: 'custrecord_reclutas_ventas',
+                    value: comissionInfo.rec_con_ventas  
+                });
+                //rec_period_LE
+                /*registerEmp.setValue({
                     fieldId: config_fields.rec_period_LE[config.type],
                     value: comissionInfo.rec_period_le    
-                }); 
+                }); */
                 registerEmp.setValue({
                     fieldId: config_fields.bp5[config.type],
                     value: 143  //  BONO ADICIONAL 5+2
@@ -264,13 +271,41 @@ function(email,record, file, search, https, runtime,format,Dictionary) {
                     value: comissionInfo.bono_sc  
                 });
 
+                /*registerEmp.setValue({
+                    fieldId: config_fields.bp7[config.type],
+                    value:  188    Equipo NLE
+                });
+                registerEmp.setValue({
+                    fieldId: config_fields.bp7_monto[config.type],
+                    value: comissionInfo.bono_nle  
+                });*/
+
+                registerEmp.setValue({
+                    fieldId: config_fields.bp7[config.type],
+                    value: 189  //  3+2 NLE
+                });
+                registerEmp.setValue({
+                    fieldId: config_fields.bp7_monto[config.type],
+                    value: comissionInfo.tresdos_nle  
+                });
+
+                registerEmp.setValue({
+                    fieldId: config_fields.bp8[config.type],
+                    value: 190  //  5+2 NLE
+                });
+                registerEmp.setValue({
+                    fieldId: config_fields.bp8_monto[config.type],
+                    value: comissionInfo.cincodos_nle  
+                });
+
 
                 registerEmp.setValue({
                     fieldId: field_id[type_to_add][1],
                     value: idrg
                 });
 
-                log.debug('comissionInfo',comissionInfo.odv_entrega)
+                log.debug('odv_de_reclutas',comissionInfo.odv_de_reclutas)
+                log.debug('odv_equipo',comissionInfo.odv_equipo)
                 var recEmp = registerEmp.save({ // Guarda el nuevo registro
                     enableSourcing: true,
                     ignoreMandatoryFields: true
