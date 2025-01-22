@@ -339,12 +339,14 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                             //objXmasdosNLE=bonoXmasdosNLE(listaNombramientos,dataEmp,thisPeriodSO,listaGrupos,allPresentadoras,listaEquipoRecluta,historicoSO,dHistorico,namePeriodo,cust_period,listaReclutas)
                             objJoya = bonoJoya(conf,ventasEmp,compConfigDetails)
                             objCook = bonoCk(dataEmp,ckSO)
-                            objNuevoRecluta = bonoNuevoRecluta(dataEmp,reclutas,thisPeriodSO,historicoSO,allPresentadoras,dHistorico)
-                            objActividad = bonoActividad(dataEmp,integrantesEquipo,thisPeriodSO,historicoSO,allPresentadoras,dHistorico)
-                            var amounTrue = validateAmount(sublist,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objSupercomision,objReclutamiento,objEntrega,objXmasDos,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objJoya,objCook,objXmasdosNLE)
+                            objNuevoRecluta = bonoNuevoRecluta(empID,dataEmp,reclutas,thisPeriodSO,historicoSO,allPresentadoras,dHistorico,integrantesEquipo)
+                            log.debug('objNuevoRecluta',objNuevoRecluta)
+                            objActividad = bonoActividad(dataEmp,integrantesEquipo,thisPeriodSO,historicoSO,allPresentadoras,dHistorico,inicioPeriodo,objNuevoRecluta)
+                            log.debug('objActividad',objActividad)
+                            var amounTrue = validateAmount(sublist,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objReclutamiento,objEntrega,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objJoya,objCook)
         
                             if(amounTrue){
-                                fillTable(sublist,urlDetalle,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objSupercomision,objReclutamiento,objEntrega,objXmasDos,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objJoya,objCook,objXmasdosNLE,objNuevoRecluta,objActividad,false)
+                                fillTable(sublist,urlDetalle,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objReclutamiento,objEntrega,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objJoya,objCook,objNuevoRecluta,objActividad,false)
                                 cont_line++
                             }
                         }
@@ -491,7 +493,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
         return v;
 
     }
-    function fillTable(sublist,urlDetalle,dataEmp,ventasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,supercomision,reclutamiento,entrega,objXmasDos,productividad,ventaEquipo,ventasEquipoNLE,garantia,joya,cookKey,xMasdosNLE,nuevoRecluta,actividad){
+    function fillTable(sublist,urlDetalle,dataEmp,ventasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,reclutamiento,entrega,productividad,ventaEquipo,ventasEquipoNLE,garantia,joya,cookKey,nuevoRecluta,actividad){
         var linea = cont_line
         var subtotal=0
         
@@ -821,9 +823,15 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
         }*/
         if(nuevoRecluta){
         
-            v = nuevoRecluta.data
+            v = JSON.stringify(nuevoRecluta.data)
             sublist.setSublistValue({
                 id : 'custentity_nuevo_recluta_activos',
+                line : linea,
+                value : v!=''?v:''
+            });
+            v = nuevoRecluta.noActivos
+            sublist.setSublistValue({
+                id : 'custentity_no_activos_rec',
                 line : linea,
                 value : v!=''?v:''
             });
@@ -836,9 +844,15 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             });
         }if(actividad){
         
-            v = actividad.data
+            v = JSON.stringify(actividad.data)
             sublist.setSublistValue({
                 id : 'custentity_integrantes_activos',
+                line : linea,
+                value : v!=''?v:''
+            });
+            v = actividad.noActivos
+            sublist.setSublistValue({
+                id : 'custentity_no_activos',
                 line : linea,
                 value : v!=''?v:''
             });
@@ -861,36 +875,41 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
         return fillTable;
         
     }
-    function bonoNuevoRecluta(dataEmp,reclutas,thisPeriodSO,historicoSO,allPresentadoras,dHistorico){
+    function bonoNuevoRecluta(empID,dataEmp,reclutas,thisPeriodSO,historicoSO,allPresentadoras,dHistorico,integrantesEquipo){
         try{
-            if(reclutas){
+            log.debug('thisPeriodSO[empID]',thisPeriodSO[empID])
+            if( thisPeriodSO[empID]){
+                log.debug('siiiii')
                 var bono_nuevoRecluta = 0
                 var salesReclutas = {}
-
-                reclutas.forEach(function(i,index) {//Se recorren las reclutas del Presentador
+                var noReclutasActivos = 0
+                integrantesEquipo.forEach(function(i,index) {//Se recorren las reclutas del Presentador
                     //log.debug('recluta',i)
                     var ventasReclutaTP = thisPeriodSO[i];
                     //log.debug('ventasReclutaTP',ventasReclutaTP)
-                    var noReclutasActivos = 0  
-                    if(ventasReclutaTP){//Debe tener la primer venta en el periodo calculado
+                    var reclutador = allPresentadoras[i]['emp_reclutadora']
+                    //log.debug('reclutador',reclutador)
+                    if( ventasReclutaTP ){//si el reclutador es parte del equipo o es el lider y tiene su primer venta en el periodo calculado
                         
+                        /*log.debug('empID',empID)
+                        log.debug('integrantesEquipo reclutador',integrantesEquipo)*/
                         var ventasReclutaH = historicoSO[i];
                         log.debug('ventasReclutaH',ventasReclutaH)
                         var hiredate = allPresentadoras[i]['hiredate']
-                        var fechaObjetivo = allPresentadoras[i]['objetivo_2']
+                        var fechaObjetivo = allPresentadoras[i]['objetivo_1']
                         var reactivacion = allPresentadoras[i]['fechaReactivacion']
                         var dcontratacion
                         if(reactivacion == ''){
                             dcontratacion = Utils.stringToDate(hiredate)
                         }else{
                             dcontratacion = Utils.stringToDate(reactivacion)
-                            fechaObjetivo = allPresentadoras[i]['obj_2_reactivacion']
+                            fechaObjetivo = allPresentadoras[i]['obj_1_reactivacion']
                         }
                         fechaObjetivo = Utils.stringToDate(fechaObjetivo)
                         
-                        fechaObjetivo.setDate(fechaObjetivo.getDate() + 2);//mas dos dias de gracia
+                        //fechaObjetivo.setDate(fechaObjetivo.getDate() + 2);//mas dos dias de gracia
                         
-                        if(dcontratacion > dHistorico && ventasReclutaTP && ventasReclutaH.length < 1){//Si su contratacion/Reactivacion es anterios a 3 meses se asume que ya se pagó el bono, al igual si hay ventas en el historico
+                        if(dcontratacion > dHistorico && ventasReclutaTP && !ventasReclutaH){//Si su contratacion/Reactivacion es anterios a 3 meses se asume que ya se pagó el bono, al igual si hay ventas en el historico
                             
                             var salesReclutaTP =[]
                             var cont = 0
@@ -903,7 +922,8 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                                 var docNum = ventasReclutaTP[j][key]['tranid']
                                 
                                 fechaSO = Utils.stringToDate(fechaSO)
-                                if( fechaSO <= fechaObjetivo){
+                                if( fechaSO <= fechaObjetivo){//dentro del primer mes natural que es el objetivo 1
+                                    log.debug('esta si ',id)
                                     cont ++ 
                                     noReclutasActivos ++
                                     var pedido = { idSO:id,docNum:docNum, noVenta:cont} 
@@ -918,77 +938,101 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                                 }
                                 
                             }
-                            log.debug('noReclutasActivos',noReclutasActivos)
-                            var monto 
-                            if(noReclutasActivos >= 1 && noReclutasActivos <= 5){
-                                monto = 600
-                            } else if(noReclutasActivos >= 6){
-                                monto = 1200
-                            }
-                            bono_nuevoRecluta = noReclutasActivos * monto 
+                             
                         
                         }
-                        
                     }
+                     
+                    
                 });
-                return  {monto:bono_nuevoRecluta, data:salesReclutas}; 
+                log.debug('noReclutasActivos',noReclutasActivos)
+                var monto 
+                if(noReclutasActivos >= 1 && noReclutasActivos <= 5){
+                    monto = 600
+                } else if(noReclutasActivos >= 6){
+                    monto = 1200
+                }
+                bono_nuevoRecluta = noReclutasActivos * monto
+                log.debug('bono_nuevoRecluta',bono_nuevoRecluta)
+                log.debug('salesReclutas',salesReclutas)
+                if(bono_nuevoRecluta > 0){
+                    return  {monto:bono_nuevoRecluta, noActivos:noReclutasActivos, data:salesReclutas};
+                }else{
+                    return  false;
+                }
+                
             } 
-            
             
         }catch(e){
             log.error('error bono Nuevo recluta',e)
         }
 
-    }function bonoActividad(dataEmp,integrantesEquipo,thisPeriodSO,historicoSO,allPresentadoras,dHistorico){
+    }function bonoActividad(dataEmp,integrantesEquipo,thisPeriodSO,historicoSO,allPresentadoras,dHistorico,inicioPeriodo,objNuevoRecluta){
         try{
             if(integrantesEquipo){
+
                 var bono_actividad = 0
                 var salesIntegrante = {}
-                integrantesEquipo.forEach(function(i,index) {//Se recorren las reclutas del Presentador
+                var noIntegrantesActivos = 0 
+                integrantesEquipo.forEach(function(i,index) {//Se recorren los integrantes del equipo
                     //log.debug('recluta',i)
                     var ventasIntegranteTP = thisPeriodSO[i];
-                    //log.debug('ventasIntegranteTP',ventasIntegranteTP)
-                    var noIntegrantesActivos = 0  
-                    if(ventasIntegranteTP){//Debe tener la primer venta en el periodo calculado
-                        
-                        var ventasIntegranteH = historicoSO[i];
-                        log.debug('ventasIntegranteH',ventasIntegranteH)
-                        
-                        
-                        if( ventasIntegranteTP && ventasIntegranteH.length > 0){//si tienen por lo menos una venta en el historico se asume que ya se pago el bono de Nuevo recluta
-                            
-                            var salesIntegranteTP =[]
-                            
-                            for(j in ventasIntegranteTP){//Se recorren las Ordenes de cada recluta del Presentador
-                                key = Object.keys(ventasIntegranteTP[j])
-                                var tipoVenta = ventasIntegranteTP[j][key]['custbody_tipo_venta']
-                                var fechaSO = ventasIntegranteTP[j][key]['trandate']
-                                var id = ventasIntegranteTP[j][key]['internalid']
-                                var docNum = ventasIntegranteTP[j][key]['tranid']
-                                
-                                fechaSO = Utils.stringToDate(fechaSO)
-                                   
-                                noIntegrantesActivos ++
-                                var pedido = { idSO:id,docNum:docNum} 
-                                
-                                salesIntegranteTP.push(pedido)
-                                salesIntegrante[i] = salesIntegranteTP
-                                
-                            }
-                            log.debug('noIntegrantesActivos',noIntegrantesActivos)
-                            var monto 
-                            if(noIntegrantesActivos > 2 && noIntegrantesActivos < 5){
-                                monto = 2000
-                            } else if(noIntegrantesActivos > 4 && noIntegrantesActivos < 8){
-                                monto = 5000
-                            }else if(noIntegrantesActivos > 7 ){
-                                monto = 12000
-                            }
-                            bono_actividad = noIntegrantesActivos * monto 
-                        }
+                    log.debug('ventasIntegranteTP',ventasIntegranteTP)
+                    var ventasIntegranteH = historicoSO[i];
+                    log.debug('ventasIntegranteH',ventasIntegranteH) 
+                    //Debe tener ventas en el periodo calculado
+                    var hiredate = allPresentadoras[i]['hiredate']
+                    var fechaObjetivo = allPresentadoras[i]['objetivo_1'] //objetivo menor al fin del periodo
+                    var reactivacion = allPresentadoras[i]['fechaReactivacion']
+                    var dcontratacion
+                    if(reactivacion == ''){
+                        dcontratacion = Utils.stringToDate(hiredate)
+                    }else{
+                        dcontratacion = Utils.stringToDate(reactivacion)
                     }
+                    fechaObjetivo = Utils.stringToDate(fechaObjetivo)    
+                    if(  (ventasIntegranteTP y fechafin objetivo uno es mayor a fecha inicio periosdo y menor a fecha fin periodo y tiene historico)||(ventasIntegranteTP  y fecha fin objetivo es anterior al inicio ) ){//si tienen por lo menos una venta en el historico se asume que ya se pago el bono de Nuevo recluta
+                        noIntegrantesActivos ++
+                        log.debug('noIntegrantesActivos dentro',noIntegrantesActivos)
+                        var salesIntegranteTP =[]
+                        
+                        for(j in ventasIntegranteTP){//Se recorren las Ordenes de cada recluta del Presentador
+                            key = Object.keys(ventasIntegranteTP[j])
+                            var tipoVenta = ventasIntegranteTP[j][key]['custbody_tipo_venta']
+                            var fechaSO = ventasIntegranteTP[j][key]['trandate']
+                            var id = ventasIntegranteTP[j][key]['internalid']
+                            var docNum = ventasIntegranteTP[j][key]['tranid']
+                            fechaSO = Utils.stringToDate(fechaSO)
+                            if(tipoVenta != 'TM Ganada'){
+                                var pedido = { idSO:id,docNum:docNum} 
+                                salesIntegranteTP.push(pedido)
+                            }
+                            
+                            salesIntegrante[i] = salesIntegranteTP
+                            
+                        }
+                         
+                    }
+                    
                 });
-                return  {monto:bono_actividad, data:salesIntegrante}; 
+                log.debug('noIntegrantesActivos',noIntegrantesActivos)
+                var monto 
+                if(noIntegrantesActivos > 2 && noIntegrantesActivos < 5){
+                    monto = 2000
+                } else if(noIntegrantesActivos > 4 && noIntegrantesActivos < 8){
+                    monto = 5000
+                }else if(noIntegrantesActivos > 7 ){
+                    monto = 12000
+                }
+                bono_actividad = monto
+                log.debug('bono_actividad',bono_actividad)
+                log.debug('salesIntegrante',salesIntegrante)
+                if(bono_actividad > 0){
+                    return  {monto:bono_actividad, noActivos:noIntegrantesActivos, data:salesIntegrante};
+                }else{
+                    return  false;
+                }
+                
             }
             
         }catch(e){
@@ -1117,26 +1161,26 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             var liderM=dataEmp.internalid//lider madre
             var montoTotal= 0
             var nle = {}
-            log.debug('liderM',liderM)
-            log.debug('listaNombramientos',listaNombramientos)
+            //log.debug('liderM',liderM)
+            //log.debug('listaNombramientos',listaNombramientos)
             var numeroVentasEquipo=0
             if(listaNombramientos.hasOwnProperty(liderM)){//Se valida si la lider tiene lideres hijos
                 var liderHijo = {}
-                log.debug('listaNombramientos de la lider ', listaNombramientos[liderM])
+                //log.debug('listaNombramientos de la lider ', listaNombramientos[liderM])
                 for(i in listaNombramientos[liderM]){//por cada lider hijo se obtiene sus ventas pripias, equipo y ventas  del equipo
                     
                     var equipoH=listaGrupos[listaNombramientos[liderM][i]]
-                    log.debug('lista equipoH', equipoH)
+                    //log.debug('lista equipoH', equipoH)
                     var ventasH= thisPeriodSO[listaNombramientos[liderM][i]]
-                    log.debug('lista ventasH', ventasH)
+                    //log.debug('lista ventasH', ventasH)
                     var ventaPropia= []
                     for (y in ventasH){
 
                         var key = Object.keys(ventasH[y])
                         var salesrep = ventasH[y][key].salesrep
-                        log.debug('salesrep',salesrep)
+                        //log.debug('salesrep',salesrep)
                         var idso = ventasH[y][key].internalid
-                        log.debug('idso',idso)
+                        //log.debug('idso',idso)
                         var tipoVenta=ventasH[y][key]['custbody_tipo_venta'] 
                         if(tipoVenta != 'TM Ganada'){
                             ventaPropia.push(idso)
@@ -1173,8 +1217,8 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                         numeroVentasEquipo = numeroVentasEquipo+ventaPropia.length//se suman las ventas del equipo con las ventas propias
                     }
                     
-                    log.debug('numeroVentasEquipo 2',numeroVentasEquipo)
-                    log.debug('infoVentasEquipo',infoVentasEquipo)
+                   // log.debug('numeroVentasEquipo 2',numeroVentasEquipo)
+                    //log.debug('infoVentasEquipo',infoVentasEquipo)
                     nle[listaNombramientos[liderM][i]] = { dataEquipo:infoVentasEquipo, ventaPropia:ventaPropia }
                 }
                 
@@ -2291,7 +2335,11 @@ una rcluta de algun miembro del equipo*/
                     label : 'Bono Nuevo Recluta'
                 }).updateDisplayType({displayType : serverWidget.FieldDisplayType.READONLY});
                 arrayFields.push({idfield : thidField.id, namefield : thidField.label})
-            
+                thidField = sublist.addField({
+                    id : 'custentity_no_activos_rec',
+                    type : serverWidget.FieldType.TEXT,
+                    label : 'Numero de Reclutas Activos'
+                }).updateDisplayType({displayType : serverWidget.FieldDisplayType.READONLY});
                 thidField = sublist.addField({
                     id : 'custentity_nuevo_recluta_activos',
                     type : serverWidget.FieldType.TEXTAREA,
@@ -2305,7 +2353,12 @@ una rcluta de algun miembro del equipo*/
                     label : 'Bono Actividad'
                 }).updateDisplayType({displayType : serverWidget.FieldDisplayType.READONLY});
                 arrayFields.push({idfield : thidField.id, namefield : thidField.label})
-            
+                thidField = sublist.addField({
+                    id : 'custentity_no_activos',
+                    type : serverWidget.FieldType.TEXT,
+                    label : 'Numero de Integrantes Activos'
+                }).updateDisplayType({displayType : serverWidget.FieldDisplayType.READONLY});
+                arrayFields.push({idfield : thidField.id, namefield : thidField.label})
                 thidField = sublist.addField({
                     id : 'custentity_integrantes_activos',
                     type : serverWidget.FieldType.TEXTAREA,
