@@ -1882,28 +1882,57 @@ una rcluta de algun miembro del equipo*/
                     }
 
                     if(objEMP.nombramientoPor != '' && objEMP.tipoNombramento == 4){
-                        var periodo=namePeriodo.split('/')
-                        var mesPeriodo = parseInt(periodo[0],10)
-                        var yearPeriodo=parseInt(periodo[1],10)
+                        try {
+                            // Convertir fecha de nombramiento a objeto Date
+                            var fechaNombramientoArr = objEMP.fechaNombramiento.split('/');
+                            var fechaNombramiento = new Date(
+                                parseInt(fechaNombramientoArr[2]), // año
+                                parseInt(fechaNombramientoArr[1]) - 1, // mes (0-11)
+                                parseInt(fechaNombramientoArr[0]) // día
+                            );
 
-                        var mesMinimo=mesPeriodo-3    
-                        var fechaNombramiento=objEMP.fechaNombramiento.split('/')
-                        var mesNombramiento=parseInt(fechaNombramiento[1],10)
-                        var yearNom=parseInt(fechaNombramiento[2],10)
-                        log.debug('periodo',periodo)
-                            log.debug('mesNombramiento',mesNombramiento)
-                            log.debug('mesMinimo',mesMinimo)
-                            log.debug('mesPeriodo',mesPeriodo)
-                            log.debug('yearNom',yearNom)
-                            log.debug('yearPeriodo',yearPeriodo)
-                        if(mesNombramiento>=mesMinimo && mesNombramiento <= mesPeriodo && yearNom ==yearPeriodo && mesNombramiento >= 5){
+                            var fechabase = new Date(2024,4,1)
+                            // Obtener los 3 períodos anteriores
+                            var periodoActual = record.load({
+                                type: 'customrecord_periods', // ajusta al ID de tu registro custom
+                                id: cust_period //Pasar el id del periodo actual - 3
+                            });
+                            
+                            var fechaInicioPeriodo = periodoActual.getValue('custrecord_inicio');
+                            var fechaFinPeriodo = periodoActual.getValue('custrecord_final');
+                            
+                            var periodosSearch = search.create({
+                                type: 'customrecord_periods', // ajusta al ID de tu registro custom
+                                filters: [
+                                    ['custrecord_inicio', 'onorafter', fechaInicioPeriodo],
+                                    'AND',
+                                    ['custrecord_final', 'onorbefore', fechaFinPeriodo]
+                                ],
+                                columns: [
+                                    'custrecord_inicio',
+                                    'custrecord_final'
+                                ]
+                            });
+                            
+                            var periodos = periodosSearch.run().getRange(0, 3);
+                            
+                            // Verificar si la fecha de nombramiento está dentro de alguno de los 3 períodos
+                            var fechaValida = periodos.some(function(periodo) {
+                                var inicioP = periodo.getValue('custrecord_inicio');
+                                var finP = periodo.getValue('custrecord_final');
+                                return fechaNombramiento >= inicioP && fechaNombramiento <= finP;
+                            });
 
-                            if(nombradsPor.hasOwnProperty(objEMP.nombramientoPor)){
-                                nombradsPor[objEMP.nombramientoPor].push(objEMP.internalid)
-                            }else{
-                                nombradsPor[objEMP.nombramientoPor] = [objEMP.internalid]
+                            if(fechaValida) {
+                                if(nombradsPor.hasOwnProperty(objEMP.nombramientoPor)){
+                                    nombradsPor[objEMP.nombramientoPor].push(objEMP.internalid);
+                                } else {
+                                    nombradsPor[objEMP.nombramientoPor] = [objEMP.internalid];
+                                }
                             }
-                          
+                            
+                        } catch(e) {
+                            log.error('Error validando fecha de nombramiento', e);
                         }
                     }
 
