@@ -222,7 +222,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             //Busqueda datos Presentadores
             startTime = new Date();
 
-            const listasPresentadora = searchDataPresentadoras(namePeriodo)
+            const listasPresentadora = searchDataPresentadoras(namePeriodo,cust_period)
             const allPresentadoras = listasPresentadora.allPresentadorData
             //log.debug('allPresentadoras', allPresentadoras)
             const listaGrupos= listasPresentadora.empGrupos
@@ -341,7 +341,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                             objCook = bonoCk(dataEmp,ckSO)
                             objNuevoRecluta = bonoNuevoRecluta(empID,dataEmp,reclutas,thisPeriodSO,historicoSO,allPresentadoras,dHistorico,integrantesEquipo)
                             log.debug('objNuevoRecluta',objNuevoRecluta)
-                            objActividad = bonoActividad(dataEmp,integrantesEquipo,thisPeriodSO,historicoSO,allPresentadoras,dHistorico,inicioPeriodo,objNuevoRecluta)
+                            objActividad = bonoActividad(dataEmp,integrantesEquipo,thisPeriodSO,historicoSO,allPresentadoras,dHistorico,inicioPeriodo,finPeriodo)
                             log.debug('objActividad',objActividad)
                             var amounTrue = validateAmount(sublist,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objReclutamiento,objEntrega,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objJoya,objCook)
         
@@ -967,7 +967,8 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             log.error('error bono Nuevo recluta',e)
         }
 
-    }function bonoActividad(dataEmp,integrantesEquipo,thisPeriodSO,historicoSO,allPresentadoras,dHistorico,inicioPeriodo,objNuevoRecluta){
+    }
+    function bonoActividad(dataEmp,integrantesEquipo,thisPeriodSO,historicoSO,allPresentadoras,dHistorico,inicioPeriodo,finPeriodo){
         try{
             if(integrantesEquipo){
 
@@ -991,7 +992,11 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                         dcontratacion = Utils.stringToDate(reactivacion)
                     }
                     fechaObjetivo = Utils.stringToDate(fechaObjetivo)    
-                    if(  (ventasIntegranteTP y fechafin objetivo uno es mayor a fecha inicio periosdo y menor a fecha fin periodo y tiene historico)||(ventasIntegranteTP  y fecha fin objetivo es anterior al inicio ) ){//si tienen por lo menos una venta en el historico se asume que ya se pago el bono de Nuevo recluta
+                    var fechafinPeriodo = finPeriodo
+                    fechafinPeriodo = Utils.stringToDate(fechafinPeriodo) 
+                    var fechainicioPeriodo = inicioPeriodo
+                    fechainicioPeriodo = Utils.stringToDate(fechainicioPeriodo) 
+                    if(  (ventasIntegranteTP && fechaObjetivo > fechainicioPeriodo &&  fechaObjetivo < fechafinPeriodo && ventasIntegranteH)||(ventasIntegranteTP && fechaObjetivo < fechainicioPeriodo ) ){//si tienen por lo menos una venta en el historico se asume que ya se pago el bono de Nuevo recluta
                         noIntegrantesActivos ++
                         log.debug('noIntegrantesActivos dentro',noIntegrantesActivos)
                         var salesIntegranteTP =[]
@@ -1763,7 +1768,7 @@ una rcluta de algun miembro del equipo*/
         }
     }
 
-    function searchDataPresentadoras(namePeriodo){ 
+    function searchDataPresentadoras(namePeriodo,cust_period){ 
         try{
            
             const employeeSearchFilters = [
@@ -1893,14 +1898,21 @@ una rcluta de algun miembro del equipo*/
 
                             var fechabase = new Date(2024,4,1)
                             // Obtener los 3 períodos anteriores
+                           
                             var periodoActual = record.load({
                                 type: 'customrecord_periods', // ajusta al ID de tu registro custom
-                                id: cust_period //Pasar el id del periodo actual - 3
+                                id: cust_period//Pasar el id del periodo actual - 3
                             });
-                            
+                            var menosTresPeriodos = record.load({
+                                type: 'customrecord_periods', // ajusta al ID de tu registro custom
+                                id: cust_period -3 //Pasar el id del periodo actual - 3
+                            });
                             var fechaInicioPeriodo = periodoActual.getValue('custrecord_inicio');
-                            var fechaFinPeriodo = periodoActual.getValue('custrecord_final');
-                            
+                            fechaInicioPeriodo = Utils.dateToString(fechaInicioPeriodo)
+                            var fechaFinPeriodo = menosTresPeriodos.getValue('custrecord_final');
+                            fechaFinPeriodo = Utils.dateToString(fechaFinPeriodo)
+                            log.debug('fechaInicioPeriodo test',fechaInicioPeriodo)
+                            log.debug('fechaFinPeriodo test',fechaFinPeriodo)
                             var periodosSearch = search.create({
                                 type: 'customrecord_periods', // ajusta al ID de tu registro custom
                                 filters: [
@@ -1920,6 +1932,8 @@ una rcluta de algun miembro del equipo*/
                             var fechaValida = periodos.some(function(periodo) {
                                 var inicioP = periodo.getValue('custrecord_inicio');
                                 var finP = periodo.getValue('custrecord_final');
+                                 log.debug('inicioP test',inicioP)
+                                  log.debug('finP test',finP)
                                 return fechaNombramiento >= inicioP && fechaNombramiento <= finP;
                             });
 
