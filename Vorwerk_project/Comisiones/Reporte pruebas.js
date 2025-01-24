@@ -222,7 +222,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             //Busqueda datos Presentadores
             startTime = new Date();
 
-            const listasPresentadora = searchDataPresentadoras(namePeriodo,cust_period)
+            const listasPresentadora = searchDataPresentadoras(fechaPeriodoCalculado,cust_period)
             const allPresentadoras = listasPresentadora.allPresentadorData
             //log.debug('allPresentadoras', allPresentadoras)
             const listaGrupos= listasPresentadora.empGrupos
@@ -1768,9 +1768,19 @@ una rcluta de algun miembro del equipo*/
         }
     }
 
-    function searchDataPresentadoras(namePeriodo,cust_period){ 
+    function searchDataPresentadoras(fechaPeriodoCalculado,cust_period){ 
         try{
            
+            //Periodo actual
+            var namePeriodo_sdp= fechaPeriodoCalculado.name //mm/yyyy
+            var inicioPeriodo_sdp = fechaPeriodoCalculado.custrecord_inicio // dd/mm/yyyy
+            var finPeriodo_sdp = fechaPeriodoCalculado.custrecord_final // dd/mm/yyyy
+            //Periodo 3 meses antes
+            const fechaTresPeriodosAntes = search.lookupFields({ type: 'customrecord_periods', id: cust_period-2, columns: ['custrecord_inicio','custrecord_final','name']});
+            const nameTresPeriodosAntes= fechaTresPeriodosAntes.name //mm/yyyy
+            const inicioTresPeriodosAntes = fechaTresPeriodosAntes.custrecord_inicio // dd/mm/yyyy
+            const finTresPeriodosAnteso = fechaPeriodoCalculado.custrecord_final // dd/mm/yyyy
+
             const employeeSearchFilters = [
                 ['isinactive', 'is', 'F'],
                 'AND',
@@ -1896,48 +1906,7 @@ una rcluta de algun miembro del equipo*/
                                 parseInt(fechaNombramientoArr[0]) // día
                             );
 
-                            var fechabase = new Date(2024,4,1)
-                            // Obtener los 3 períodos anteriores
-                           
-                            var periodoActual = record.load({
-                                type: 'customrecord_periods', // ajusta al ID de tu registro custom
-                                id: cust_period//Pasar el id del periodo actual - 3
-                            });
-                            var menosTresPeriodos = record.load({
-                                type: 'customrecord_periods', // ajusta al ID de tu registro custom
-                                id: cust_period -3 //Pasar el id del periodo actual - 3
-                            });
-                            var fechaInicioPeriodo = periodoActual.getValue('custrecord_inicio');
-                            fechaInicioPeriodo = Utils.dateToString(fechaInicioPeriodo)
-                            var fechaFinPeriodo = menosTresPeriodos.getValue('custrecord_final');
-                            fechaFinPeriodo = Utils.dateToString(fechaFinPeriodo)
-                            log.debug('fechaInicioPeriodo test',fechaInicioPeriodo)
-                            log.debug('fechaFinPeriodo test',fechaFinPeriodo)
-                            var periodosSearch = search.create({
-                                type: 'customrecord_periods', // ajusta al ID de tu registro custom
-                                filters: [
-                                    ['custrecord_inicio', 'onorafter', fechaInicioPeriodo],
-                                    'AND',
-                                    ['custrecord_final', 'onorbefore', fechaFinPeriodo]
-                                ],
-                                columns: [
-                                    'custrecord_inicio',
-                                    'custrecord_final'
-                                ]
-                            });
-                            
-                            var periodos = periodosSearch.run().getRange(0, 3);
-                            
-                            // Verificar si la fecha de nombramiento está dentro de alguno de los 3 períodos
-                            var fechaValida = periodos.some(function(periodo) {
-                                var inicioP = periodo.getValue('custrecord_inicio');
-                                var finP = periodo.getValue('custrecord_final');
-                                 log.debug('inicioP test',inicioP)
-                                  log.debug('finP test',finP)
-                                return fechaNombramiento >= inicioP && fechaNombramiento <= finP;
-                            });
-
-                            if(fechaValida) {
+                            if(fechaNombramientoArr >= inicioTresPeriodosAntes && fechaNombramientoArr <= finPeriodo_sdp) {
                                 if(nombradsPor.hasOwnProperty(objEMP.nombramientoPor)){
                                     nombradsPor[objEMP.nombramientoPor].push(objEMP.internalid);
                                 } else {
