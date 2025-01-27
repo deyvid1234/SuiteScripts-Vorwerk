@@ -376,22 +376,22 @@ function(record,https,currentRecord,runtime,file,search,message) {
                         line: i
                     });*/
                     //3 + 2 y 5 + 2 
-                    var odv_rec_del_periodo = record.getSublistValue({
+                    /*var odv_rec_del_periodo = record.getSublistValue({
                         sublistId: "sublist",
                         fieldId: "custentity_odv_rec_del_periodo",
                         line: i
                     });
-                    /*var rec_period_le = record.getSublistValue({
+                    var rec_period_le = record.getSublistValue({
                         sublistId: "sublist",
                         fieldId: "custentity_odv_rec_de_le_del_periodo",
                         line: i
-                    });*/
+                    });
                     var rec_con_ventas = record.getSublistValue({
                         sublistId: "sublist",
                         fieldId: "custentity_rec_con_ventas",
                         line: i
-                    });
-                    var bono_tres_dos = record.getSublistValue({
+                    });*/
+                    /*var bono_tres_dos = record.getSublistValue({
                         sublistId: "sublist",
                         fieldId: "custentity_bono_tres_dos",
                         line: i
@@ -416,14 +416,44 @@ function(record,https,currentRecord,runtime,file,search,message) {
                         sublistId: "sublist",
                         fieldId: "custentity_bono_sc",
                         line: i
-                    });
+                    });*/
                     //NLE
                     var nle = record.getSublistValue({
                         sublistId: "sublist",
                         fieldId: "custentity_lider_nle",
                         line: i
                     });
-                    var bono_nle = record.getSublistValue({
+                    var montoNR = record.getSublistValue({
+                        sublistId: "sublist",
+                        fieldId: "custentity_monto_nuevo_recluta",
+                        line: i
+                    });
+                    var noNR = record.getSublistValue({
+                        sublistId: "sublist",
+                        fieldId: "custentity_no_activos_rec",
+                        line: i
+                    });
+                    var dataNR = record.getSublistValue({
+                        sublistId: "sublist",
+                        fieldId: "custentity_nuevo_recluta_activos",
+                        line: i
+                    });
+                    var montoActividad = record.getSublistValue({
+                        sublistId: "sublist",
+                        fieldId: "custentity_monto_actividad",
+                        line: i
+                    });
+                    var noActividad = record.getSublistValue({
+                        sublistId: "sublist",
+                        fieldId: "custentity_no_activos",
+                        line: i
+                    });
+                    var dataActividad = record.getSublistValue({
+                        sublistId: "sublist",
+                        fieldId: "custentity_integrantes_activos",
+                        line: i
+                    });
+                    /*var bono_nle = record.getSublistValue({
                         sublistId: "sublist",
                         fieldId: "custentity_nle_monto",
                         line: i
@@ -442,7 +472,7 @@ function(record,https,currentRecord,runtime,file,search,message) {
                         sublistId: "sublist",
                         fieldId: "custentity_cincomasdos_nle_monto",
                         line: i
-                    });
+                    });*/
                     //crea el objeto para enviar al script map
                     object_fill.push({
                             idEmp                 :idEmp,
@@ -480,19 +510,25 @@ function(record,https,currentRecord,runtime,file,search,message) {
                             num_garantia          :num_garantia,
                             monto_garantia        :monto_garantia,
                             ids_garantia          :ids_garantia,
-                            odv_rec_del_periodo   :odv_rec_del_periodo,
-                            rec_con_ventas        :rec_con_ventas,
-                            bono_tres_dos         :bono_tres_dos,
+                            //odv_rec_del_periodo   :odv_rec_del_periodo,
+                            //rec_con_ventas        :rec_con_ventas,
+                            //bono_tres_dos         :bono_tres_dos,
                             //rec_period_le         :rec_period_le,
-                            bono_cinco_dos        :bono_cinco_dos,
-                            odv_pre_supercomision :odv_pre_supercomision,
-                            ventas_sc             :ventas_sc,
-                            bono_sc               :bono_sc,
+                            //bono_cinco_dos        :bono_cinco_dos,
+                            //odv_pre_supercomision :odv_pre_supercomision,
+                            //ventas_sc             :ventas_sc,
+                            //bono_sc               :bono_sc,
                             nle                   :nle,
-                            bono_nle              :bono_nle,
-                            xdos_nle              :xdos_nle,
-                            tresdos_nle           :tresdos_nle,
-                            cincodos_nle          :cincodos_nle
+                            montoNR               :montoNR,
+                            noNR                  :noNR,
+                            dataNR                :dataNR,
+                            montoActividad        :montoActividad,
+                            noActividad           :noActividad,
+                            dataActividad         :dataActividad
+                            //bono_nle              :bono_nle,
+                            //xdos_nle              :xdos_nle,
+                            //tresdos_nle           :tresdos_nle,
+                            //cincodos_nle          :cincodos_nle
                     })  
                 }
             }

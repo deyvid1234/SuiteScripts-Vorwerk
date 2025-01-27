@@ -190,6 +190,22 @@ function(email,record, file, search, https, runtime,format,Dictionary) {
                     fieldId: 'custrecord_odv_nle',// prod custrecord_odv_nle
                     value: comissionInfo.nle    
                 });
+                registerEmp.setValue({
+                    fieldId: 'custrecord_detalle_nuevo_recluta',
+                    value: comissionInfo.dataNR    
+                });
+                registerEmp.setValue({
+                    fieldId: 'custrecord_no_nuevorecluta',
+                    value: comissionInfo.noNR    
+                });
+                registerEmp.setValue({
+                    fieldId: 'custrecord_detalle_actividad',
+                    value: comissionInfo.dataActividad    
+                });
+                registerEmp.setValue({
+                    fieldId: 'custrecordno_pre_activos',
+                    value: comissionInfo.noActividad    
+                });
                 //bono Joya
                 registerEmp.setValue({
                     fieldId: config_fields.bp1[config.type],
@@ -228,22 +244,22 @@ function(email,record, file, search, https, runtime,format,Dictionary) {
                 }); 	
                 
                 //3+2
-                registerEmp.setValue({
+                /*registerEmp.setValue({
                     fieldId: config_fields.tres_dos[config.type],
                     value: comissionInfo.odv_rec_del_periodo    
-                });
+                });*/
                 registerEmp.setValue({
                     fieldId: config_fields.bp4[config.type],
-                    value: 142  // BONO ADICIONAL 3+2
+                    value: 201  // BONO Nuevo recluta sb
                 });
                 registerEmp.setValue({
                     fieldId: config_fields.bp4_monto[config.type],
-                    value: comissionInfo.bono_tres_dos  
+                    value: comissionInfo.montoNR  
                 });
-                registerEmp.setValue({
+                /*registerEmp.setValue({
                     fieldId: 'custrecord_reclutas_ventas',
                     value: comissionInfo.rec_con_ventas  
-                });
+                });*/
                 //rec_period_LE
                 /*registerEmp.setValue({
                     fieldId: config_fields.rec_period_LE[config.type],
@@ -251,14 +267,14 @@ function(email,record, file, search, https, runtime,format,Dictionary) {
                 }); */
                 registerEmp.setValue({
                     fieldId: config_fields.bp5[config.type],
-                    value: 143  //  BONO ADICIONAL 5+2
+                    value: 202  //  BONO Actividad sb
                 });
                 registerEmp.setValue({
                     fieldId: config_fields.bp5_monto[config.type],
-                    value: comissionInfo.bono_cinco_dos  
+                    value: comissionInfo.montoActividad  
                 });
                 //sc
-                registerEmp.setValue({
+                /*registerEmp.setValue({
                     fieldId: config_fields.sc[config.type],
                     value: comissionInfo.odv_pre_supercomision    
                 }); 
@@ -269,7 +285,7 @@ function(email,record, file, search, https, runtime,format,Dictionary) {
                 registerEmp.setValue({
                     fieldId: config_fields.bp6_monto[config.type],
                     value: comissionInfo.bono_sc  
-                });
+                });*/
 
                 /*registerEmp.setValue({
                     fieldId: config_fields.bp7[config.type],
@@ -280,7 +296,7 @@ function(email,record, file, search, https, runtime,format,Dictionary) {
                     value: comissionInfo.bono_nle  
                 });*/
 
-                registerEmp.setValue({
+                /*registerEmp.setValue({
                     fieldId: config_fields.bp7[config.type],
                     value: 189  //  3+2 NLE
                 });
@@ -296,7 +312,7 @@ function(email,record, file, search, https, runtime,format,Dictionary) {
                 registerEmp.setValue({
                     fieldId: config_fields.bp8_monto[config.type],
                     value: comissionInfo.cincodos_nle  
-                });
+                });*/
 
 
                 registerEmp.setValue({
@@ -304,8 +320,8 @@ function(email,record, file, search, https, runtime,format,Dictionary) {
                     value: idrg
                 });
 
-                log.debug('odv_de_reclutas',comissionInfo.odv_de_reclutas)
-                log.debug('odv_equipo',comissionInfo.odv_equipo)
+                //log.debug('odv_de_reclutas',comissionInfo.odv_de_reclutas)
+               // log.debug('odv_equipo',comissionInfo.odv_equipo)
                 var recEmp = registerEmp.save({ // Guarda el nuevo registro
                     enableSourcing: true,
                     ignoreMandatoryFields: true
