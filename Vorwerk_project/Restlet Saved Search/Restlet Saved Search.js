@@ -3,9 +3,9 @@
  * @NScriptType Restlet
  * @NModuleScope SameAccount
  */
-define(['N/record','N/search','N/https','N/file', 'N/http','N/format','N/encode','N/email','N/runtime'],
+define(['N/record','N/search','N/https','N/file', 'N/http','N/format','N/encode','N/email','N/runtime','SuiteScripts/Vorwerk_project/Vorwerk Utils V2.js'],
 
-function(record,search,https,file,http,format,encode,email,runtime) {
+function(record,search,https,file,http,format,encode,email,runtime,Utils) {
    
     /**
      * Function called upon sending a GET request to the RESTlet.
@@ -84,13 +84,18 @@ function(record,search,https,file,http,format,encode,email,runtime) {
         try {
             var today = new Date();
             log.debug("today", today);
+            var todaySplit = Utils.dateToString(today).split('/')
+            log.debug("todaySplit", todaySplit);
+            var start = (todaySplit[0]+'/'+todaySplit[1]+'/'+todaySplit[2])
+
+            log.debug('start',start)
             // Búsqueda del período actual
             var periodSearch = search.create({
                 type: 'customrecord_periods',
                 filters: [
-                    ['custrecord_inicio', 'onorafter', '01/10/2024'],
+                    ['custrecord_inicio', 'onorafter', start],
                     'AND',
-                    ['custrecord_final', 'onorbefore', '01/11/2024']
+                    ['custrecord_final', 'onorbefore', start]
                 ],
                 columns: [
                     'custrecord_inicio',
@@ -99,8 +104,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
             });
 
             var searchResult = periodSearch.run().getRange({ start: 0, end: 1 });
-            var startDate = searchResult[0].getValue('custrecord_inicio');
-            var endDate = searchResult[0].getValue('custrecord_final');
+            
             if (!searchResult || searchResult.length === 0) {
                 
                 log.error('No se encontró un período Vorwerk válido para la fecha actual');
