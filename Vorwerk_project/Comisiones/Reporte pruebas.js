@@ -877,9 +877,8 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
     }
     function bonoNuevoRecluta(empID,dataEmp,reclutas,thisPeriodSO,historicoSO,allPresentadoras,dHistorico,integrantesEquipo){
         try{
-            log.debug('thisPeriodSO[empID]',thisPeriodSO[empID])
+            //log.debug('thisPeriodSO[empID]',thisPeriodSO[empID])
             if( thisPeriodSO[empID]){
-                log.debug('siiiii')
                 var bono_nuevoRecluta = 0
                 var salesReclutas = {}
                 var noReclutasActivos = 0
@@ -894,7 +893,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                         /*log.debug('empID',empID)
                         log.debug('integrantesEquipo reclutador',integrantesEquipo)*/
                         var ventasReclutaH = historicoSO[i];
-                        log.debug('ventasReclutaH',ventasReclutaH)
+                        //log.debug('ventasReclutaH',ventasReclutaH)
                         var hiredate = allPresentadoras[i]['hiredate']
                         var fechaObjetivo = allPresentadoras[i]['objetivo_1']
                         var reactivacion = allPresentadoras[i]['fechaReactivacion']
@@ -936,16 +935,12 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                                         break
                                     }
                                 }
-                                
                             }
-                             
-                        
                         }
                     }
                      
-                    
                 });
-                log.debug('noReclutasActivos',noReclutasActivos)
+                //log.debug('noReclutasActivos',noReclutasActivos)
                 var monto 
                 if(noReclutasActivos >= 1 && noReclutasActivos <= 5){
                     monto = 600
@@ -953,8 +948,8 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                     monto = 1200
                 }
                 bono_nuevoRecluta = noReclutasActivos * monto
-                log.debug('bono_nuevoRecluta',bono_nuevoRecluta)
-                log.debug('salesReclutas',salesReclutas)
+                /*log.debug('bono_nuevoRecluta',bono_nuevoRecluta)
+                log.debug('salesReclutas',salesReclutas)*/
                 if(bono_nuevoRecluta > 0){
                     return  {monto:bono_nuevoRecluta, noActivos:noReclutasActivos, data:salesReclutas};
                 }else{
@@ -978,9 +973,9 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 integrantesEquipo.forEach(function(i,index) {//Se recorren los integrantes del equipo
                     //log.debug('recluta',i)
                     var ventasIntegranteTP = thisPeriodSO[i];
-                    log.debug('ventasIntegranteTP',ventasIntegranteTP)
+                    //log.debug('ventasIntegranteTP',ventasIntegranteTP)
                     var ventasIntegranteH = historicoSO[i];
-                    log.debug('ventasIntegranteH',ventasIntegranteH) 
+                    //log.debug('ventasIntegranteH',ventasIntegranteH) 
                     //Debe tener ventas en el periodo calculado
                     var hiredate = allPresentadoras[i]['hiredate']
                     var fechaObjetivo = allPresentadoras[i]['objetivo_1'] //objetivo menor al fin del periodo
@@ -998,7 +993,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                     fechainicioPeriodo = Utils.stringToDate(fechainicioPeriodo) 
                     if(  (ventasIntegranteTP && fechaObjetivo > fechainicioPeriodo &&  fechaObjetivo < fechafinPeriodo && ventasIntegranteH)||(ventasIntegranteTP && fechaObjetivo < fechainicioPeriodo ) ){//si tienen por lo menos una venta en el historico se asume que ya se pago el bono de Nuevo recluta
                         noIntegrantesActivos ++
-                        log.debug('noIntegrantesActivos dentro',noIntegrantesActivos)
+                        //log.debug('noIntegrantesActivos dentro',noIntegrantesActivos)
                         var salesIntegranteTP =[]
                         
                         for(j in ventasIntegranteTP){//Se recorren las Ordenes de cada recluta del Presentador
@@ -1012,15 +1007,11 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                                 var pedido = { idSO:id,docNum:docNum} 
                                 salesIntegranteTP.push(pedido)
                             }
-                            
                             salesIntegrante[i] = salesIntegranteTP
-                            
                         }
-                         
                     }
-                    
                 });
-                log.debug('noIntegrantesActivos',noIntegrantesActivos)
+                //log.debug('noIntegrantesActivos',noIntegrantesActivos)
                 var monto 
                 if(noIntegrantesActivos > 2 && noIntegrantesActivos < 5){
                     monto = 2000
@@ -1030,8 +1021,8 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                     monto = 12000
                 }
                 bono_actividad = monto
-                log.debug('bono_actividad',bono_actividad)
-                log.debug('salesIntegrante',salesIntegrante)
+                /*log.debug('bono_actividad',bono_actividad)
+                log.debug('salesIntegrante',salesIntegrante)*/
                 if(bono_actividad > 0){
                     return  {monto:bono_actividad, noActivos:noIntegrantesActivos, data:salesIntegrante};
                 }else{
@@ -1773,13 +1764,14 @@ una rcluta de algun miembro del equipo*/
            
             //Periodo actual
             var namePeriodo_sdp= fechaPeriodoCalculado.name //mm/yyyy
-            var inicioPeriodo_sdp = fechaPeriodoCalculado.custrecord_inicio // dd/mm/yyyy
             var finPeriodo_sdp = fechaPeriodoCalculado.custrecord_final // dd/mm/yyyy
+            finPeriodo_sdp = Utils.stringToDate(finPeriodo_sdp)
             //Periodo 3 meses antes
             const fechaTresPeriodosAntes = search.lookupFields({ type: 'customrecord_periods', id: cust_period-2, columns: ['custrecord_inicio','custrecord_final','name']});
             const nameTresPeriodosAntes= fechaTresPeriodosAntes.name //mm/yyyy
-            const inicioTresPeriodosAntes = fechaTresPeriodosAntes.custrecord_inicio // dd/mm/yyyy
-            const finTresPeriodosAnteso = fechaPeriodoCalculado.custrecord_final // dd/mm/yyyy
+            var inicioTresPeriodosAntes = fechaTresPeriodosAntes.custrecord_inicio // dd/mm/yyyy
+            inicioTresPeriodosAntes = Utils.stringToDate(inicioTresPeriodosAntes)
+            
 
             const employeeSearchFilters = [
                 ['isinactive', 'is', 'F'],
@@ -1899,13 +1891,13 @@ una rcluta de algun miembro del equipo*/
                     if(objEMP.nombramientoPor != '' && objEMP.tipoNombramento == 4){
                         try {
                             // Convertir fecha de nombramiento a objeto Date
-                            var fechaNombramientoArr = objEMP.fechaNombramiento.split('/');
-                            var fechaNombramiento = new Date(
-                                parseInt(fechaNombramientoArr[2]), // año
-                                parseInt(fechaNombramientoArr[1]) - 1, // mes (0-11)
-                                parseInt(fechaNombramientoArr[0]) // día
-                            );
+                            var fechaNombramientoArr = objEMP.fechaNombramiento;
+                            //log.debug('fechaNombramientoArr 1',fechaNombramientoArr)
 
+                            fechaNombramientoArr = Utils.stringToDate(fechaNombramientoArr)
+                            /*log.debug('fechaNombramientoArr',fechaNombramientoArr)
+                            log.debug('inicioTresPeriodosAntes',inicioTresPeriodosAntes)
+                            log.debug('finPeriodo_sdp',finPeriodo_sdp)*/
                             if(fechaNombramientoArr >= inicioTresPeriodosAntes && fechaNombramientoArr <= finPeriodo_sdp) {
                                 if(nombradsPor.hasOwnProperty(objEMP.nombramientoPor)){
                                     nombradsPor[objEMP.nombramientoPor].push(objEMP.internalid);
