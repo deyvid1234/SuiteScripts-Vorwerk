@@ -547,7 +547,7 @@ function table_v_propia(data,tmp_emp,type_emp,promocion,dataSO,CompConfigDetails
 	    var keyActividad = Object.keys(dataActividad)
 	    log.debug('dataActividad',keyActividad) 
 
-	    strTable += "<p font-family=\"Helvetica\" font-size=\"6\" align=\"center\"><b>VENTAS Actividad</b></p>";
+	    strTable += "<p font-family=\"Helvetica\" font-size=\"6\" align=\"center\"><b>BONO ACTIVIDAD</b></p>";
 		strTable += "<table width='670px'>";
 		strTable += "<tr>";
 		strTable += "<td border='0.5' width='10px'><b>#</b></td>";		
@@ -877,14 +877,15 @@ function createTable(data,CompConfigDetails,type_emp_text,period_name,type_emp,c
 		if (type_emp == 3 && data.comision_equipo > 0){
 			strTable += table_v_equipo(data,dataSO,CompConfigDetails)
 		}
+		
+		if (data.b_rec > 0){
+			strTable += table_v_rec(data,dataSO,CompConfigDetails)
+		}
 		if (type_emp == 3 && data.montoNR > 0){
 			strTable += table_nuevo_recluta(data,dataSO,CompConfigDetails)
 		}
 		if (type_emp == 3 && data.montoActividad > 0){
 			strTable += table_actividad(data,dataSO,CompConfigDetails)
-		}
-		if (data.b_rec > 0){
-			strTable += table_v_rec(data,dataSO,CompConfigDetails)
 		}
 		if((type_emp == 1 || type_emp == 3) && promocion == 2 && data.ids_garantia != ''){
 			strTable +=createtablewarranty(data,dataSO)
@@ -920,6 +921,14 @@ function createTable(data,CompConfigDetails,type_emp_text,period_name,type_emp,c
         	strTable += "<tr>";
 			strTable += "<td border='0.5' border-style='dotted-narrow'>Ventas Equipo</td>";
         	strTable += "<td border='0.5' border-style='dotted-narrow' align='right'>"+ currencyFormat('$',(data.comision_equipo > 0 ? data.comision_equipo+'.00':'0.00')) +"</td>";
+        	strTable += "</tr>"
+        	strTable += "<tr>";
+			strTable += "<td border='0.5' border-style='dotted-narrow'>Bono Nuevo Recluta</td>";
+        	strTable += "<td border='0.5' border-style='dotted-narrow' align='right'>"+ currencyFormat('$',(data.montoNR > 0 ? data.montoNR+'.00':'0.00')) +"</td>";
+        	strTable += "</tr>"
+        	strTable += "<tr>";
+			strTable += "<td border='0.5' border-style='dotted-narrow'>Bono Actividad</td>";
+        	strTable += "<td border='0.5' border-style='dotted-narrow' align='right'>"+ currencyFormat('$',(data.montoActividad > 0 ? data.montoActividad+'.00':'0.00')) +"</td>";
         	strTable += "</tr>"
         }
         strTable += "<tr>";
