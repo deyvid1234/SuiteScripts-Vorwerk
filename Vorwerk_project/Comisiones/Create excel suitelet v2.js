@@ -88,17 +88,17 @@
                             + '<Cell><Data ss:Type="String">VENTA EQUIPO</Data></Cell>'
                             + '<Cell><Data ss:Type="String">NLE</Data></Cell>'
                             + '<Cell><Data ss:Type="String">BONO NLE</Data></Cell>'
-                            + '<Cell><Data ss:Type="String">X+2 NLE</Data></Cell>'
-                            + '<Cell><Data ss:Type="String">BONO 3+2 NLE</Data></Cell>'
-                            + '<Cell><Data ss:Type="String">BONO 5+2 NLE</Data></Cell>'
-                            + '<Cell><Data ss:Type="String">ODV DEL PERIODO MISMO EQUIPO</Data></Cell>'
+                            //+ '<Cell><Data ss:Type="String">X+2 NLE</Data></Cell>'
+                           // + '<Cell><Data ss:Type="String">BONO 3+2 NLE</Data></Cell>'
+                           // + '<Cell><Data ss:Type="String">BONO 5+2 NLE</Data></Cell>'
+                           // + '<Cell><Data ss:Type="String">ODV DEL PERIODO MISMO EQUIPO</Data></Cell>'
                             //+ '<Cell><Data ss:Type="String">RECLUTAS Y ODV POR RECLUTA DEL LE DEL PERIODO</Data></Cell>'
-                            + '<Cell><Data ss:Type="String">RECLUTAS Y EQUIPO CON VENTAS</Data></Cell>'
-                            + '<Cell><Data ss:Type="String">BONO 3 + 2</Data></Cell>'
-                            + '<Cell><Data ss:Type="String">BONO 5 + 2</Data></Cell>'
-                            + '<Cell><Data ss:Type="String">ODV POR RECLUTA DEL MES DEL EQUIPO SC</Data></Cell>'
-                            + '<Cell><Data ss:Type="String">NUMERO DE VENTAS SC</Data></Cell>'
-                            + '<Cell><Data ss:Type="String">BONO SUPERCOMISIÓN</Data></Cell>'
+                            + '<Cell><Data ss:Type="String">BONO NUEVO RECLUTA</Data></Cell>'
+                            + '<Cell><Data ss:Type="String">No.RECLUTAS ACTIVOS</Data></Cell>'
+                            + '<Cell><Data ss:Type="String">RECLUTAS ACTIVOS</Data></Cell>'
+                            + '<Cell><Data ss:Type="String">BONO ACTIVIDAD</Data></Cell>'
+                            + '<Cell><Data ss:Type="String">No. INTGRANTES ACTIVOS</Data></Cell>'
+                            + '<Cell><Data ss:Type="String">INTEGRANTES ACTIVOS</Data></Cell>'
                             //+ '<Cell><Data ss:Type="String">RETENCION</Data></Cell>'
                                 //+ '<Cell><Data ss:Type="String">AJUSTE</Data></Cell>'
                                 //+ '<Cell><Data ss:Type="String">SUBTOTAL</Data></Cell>'
@@ -154,7 +154,12 @@
                          var xdos_nle = typeof data[x].xdos_nle === 'undefined'?"0":data[x].xdos_nle;
                          var tresdos_nle = typeof data[x].tresdos_nle === 'undefined'?"0":data[x].tresdos_nle;
                          var cincodos_nle = typeof data[x].cincodos_nle === 'undefined'?"0":data[x].cincodos_nle;
-                         
+                         var montoNR = typeof data[x].montoNR === 'undefined'?"0":data[x].montoNR;
+                         var noNR = typeof data[x].noNR === 'undefined'?"0":data[x].noNR;
+                         var dataNR = typeof data[x].dataNR === 'undefined'?"0":data[x].dataNR;
+                         var montoActividad = typeof data[x].montoActividad === 'undefined'?"0":data[x].montoActividad;
+                         var noActividad = typeof data[x].noActividad === 'undefined'?"0":data[x].noActividad;
+                         var dataActividad = typeof data[x].dataActividad === 'undefined'?"0":data[x].dataActividad;
                          xmlStr += '<Row>'
                            +'<Cell><Data ss:Type="String">'+data[x].nameEmp+'</Data></Cell>'
                                + '<Cell><Data ss:Type="String">'+data[x].ingreso+'</Data></Cell>'
@@ -192,12 +197,12 @@
                                + '<Cell><Data ss:Type="String">'+cincodos_nle+'</Data></Cell>'
                                + '<Cell><Data ss:Type="String">'+odv_rec_del_periodo+'</Data></Cell>'
                                //+ '<Cell><Data ss:Type="String">'+rec_period_le+'</Data></Cell>'
-                               + '<Cell><Data ss:Type="String">'+rec_con_ventas+'</Data></Cell>'
-                               + '<Cell><Data ss:Type="String">'+bono_tres_dos+'</Data></Cell>'
-                               + '<Cell><Data ss:Type="String">'+bono_cinco_dos+'</Data></Cell>'
-                               + '<Cell><Data ss:Type="String">'+odv_pre_supercomision+'</Data></Cell>'
-                               + '<Cell><Data ss:Type="String">'+ventas_sc+'</Data></Cell>'
-                               + '<Cell><Data ss:Type="String">'+bono_sc+'</Data></Cell>'
+                               + '<Cell><Data ss:Type="String">'+montoNR+'</Data></Cell>'
+                               + '<Cell><Data ss:Type="String">'+noNR+'</Data></Cell>'
+                               + '<Cell><Data ss:Type="String">'+dataNR+'</Data></Cell>'
+                               + '<Cell><Data ss:Type="String">'+montoActividad+'</Data></Cell>'
+                               + '<Cell><Data ss:Type="String">'+noActividad+'</Data></Cell>'
+                               + '<Cell><Data ss:Type="String">'+dataActividad+'</Data></Cell>'
                                //+ '<Cell><Data ss:Type="String">'+retencion+'</Data></Cell>'
                                //+ '<Cell><Data ss:Type="String">'+ajuste+'</Data></Cell>'
                                //+ '<Cell><Data ss:Type="String">'+subtotal+'</Data></Cell>'
