@@ -455,6 +455,156 @@ function table_v_propia(data,tmp_emp,type_emp,promocion,dataSO,CompConfigDetails
   	}
   	
   }
+  function table_nuevo_recluta(data,dataSO,CompConfigDetails){
+  	try{
+  		log.debug('entramos tabla nuevo recluta')
+  		var strTable = ''
+  		//Ventas Equipo
+	  	var montoNR = data.montoNR
+	  	log.debug('montoNR',montoNR)
+	    var dataNR = JSON.parse(data.dataNR)
+	    log.debug('dataNR',dataNR)
+	    var keyNR = Object.keys(dataNR)
+	    log.debug('dataNR',keyNR) 
+
+		strTable += "<p font-family=\"Helvetica\" font-size=\"6\" align=\"center\"><b>VENTAS NUEVOS RECLUTAS</b></p>";
+		strTable += "<table width='670px'>";
+		strTable += "<tr>";
+		strTable += "<td border='0.5' width='10px'><b>#</b></td>";		
+		strTable += "<td border='0.5' width='0px'><b>VENTA REALIZADA POR</b></td>";
+		strTable += "<td border='0.5' width='200px'><b>CLIENTE</b></td>";
+		strTable += "<td border='0.5' width='0px'><b>FECHA</b></td>";
+		strTable += "<td border='0.5' width='0px'><b>PEDIDO</b></td>";
+		strTable += "</tr>";
+		lineaRec=0  
+
+	    for (x in keyNR){
+	    	var venta = dataNR[keyNR[x]][0].idSO
+	    	log.debug('venta',venta)
+	    	try{
+				lineaRec++
+				var objSObyid = dataSO.objSObyid
+				var thisSO = objSObyid[venta]
+				var salesRep = thisSO.salesrep[0].text
+				var cliente = thisSO.entity[0].text
+				var fecha = thisSO.trandate
+				var pedido = thisSO.tranid
+				
+				cliente = cliente.replace(/&/gi," ")
+				strTable += "<tr>";
+				strTable += "<td border='0.5' border-style='dotted-narrow'>" + lineaRec 	+ "</td>";
+				strTable += "<td border='0.5' border-style='dotted-narrow'>" + salesRep 	+ "</td>";
+				strTable += "<td border='0.5' border-style='dotted-narrow'>" + cliente	    + "</td>";
+				strTable += "<td border='0.5' border-style='dotted-narrow'>" + fecha 		+ "</td>";
+				strTable += "<td border='0.5' border-style='dotted-narrow'>" + pedido		+ "</td>";		
+				strTable += "</tr>";
+			}catch(errT2){
+				log.error('errT2 NUEVO RECLUTA',errT2);
+			}
+	    	
+	    }
+	    var noNR = data.noNR
+	    var montoPorRecluta
+	    if(noNR > 0 && noNR < 6){
+	    	montoPorRecluta = '600.00'
+	    }else if(noNR >= 6){
+            montoPorRecluta = 1200
+        }	
+				
+		strTable += "<tr>";
+		strTable += "<td border='0.5' colspan= '4' border-style='none' align='right'><b>   </b></td>";
+		strTable += "</tr>";
+		strTable += "<tr>";
+		strTable += "<td border='0.5' colspan= '4' border-style='none' align='right'><b>Monto por Recluta</b></td>";
+		strTable += "<td border='0.5' border-style='dotted-narrow' align='right'><b>" + montoPorRecluta	+ "</b></td>";
+		strTable += "</tr>";
+		strTable += "<tr>";
+		strTable += "<td border='0.5' colspan= '4' border-style='none' align='right'><b> Total Nuevos Reclutas  </b></td>";
+		strTable += "<td border='0.5' border-style='dotted-narrow' align='right'><b>" + noNR	+ "</b></td>";
+		strTable += "</tr>";
+		strTable += "<tr>";
+		strTable += "<td border='0.5' colspan= '4' border-style='none' align='right'><b>Total Bono Nuevo Recluta</b></td>";
+		strTable += "<td border='0.5' border-style='dotted-narrow' align='right'><b>" + currencyFormat('$',data.montoNR+'.00')	+ "</b></td>";
+		strTable += "</tr>";
+		strTable += "</table>";
+		//Fin Ventas Equipo
+
+		return strTable
+  	}catch(e){
+  		log.debug('error funcion NUEVO RECLUTA',e)
+  	}
+  	
+  }
+  function table_actividad(data,dataSO,CompConfigDetails){
+  	try{
+  		log.debug('entramostabla Actividad')
+  		var strTable = ''
+  		
+	  	var montoActividad = data.montoActividad
+	  	log.debug('montoActividad',montoActividad)
+	    var dataActividad = JSON.parse(data.dataActividad)
+	    log.debug('dataActividad',dataActividad)
+	    var keyActividad = Object.keys(dataActividad)
+	    log.debug('dataActividad',keyActividad) 
+
+	    strTable += "<p font-family=\"Helvetica\" font-size=\"6\" align=\"center\"><b>VENTAS Actividad</b></p>";
+		strTable += "<table width='670px'>";
+		strTable += "<tr>";
+		strTable += "<td border='0.5' width='10px'><b>#</b></td>";		
+		strTable += "<td border='0.5' width='0px'><b>VENTA REALIZADA POR</b></td>";
+		strTable += "<td border='0.5' width='200px'><b>CLIENTE</b></td>";
+		strTable += "<td border='0.5' width='0px'><b>FECHA</b></td>";
+		strTable += "<td border='0.5' width='0px'><b>PEDIDO</b></td>";
+		strTable += "</tr>";
+		lineaRec=0  
+
+	    for (x in keyActividad){
+	    	var venta = dataActividad[keyActividad[x]][0].idSO
+	    	log.debug('venta Actividad',venta)
+	    	try{
+				lineaRec++
+				var objSObyid = dataSO.objSObyid
+				var thisSO = objSObyid[venta]
+				var salesRep = thisSO.salesrep[0].text
+				var cliente = thisSO.entity[0].text
+				var fecha = thisSO.trandate
+				var pedido = thisSO.tranid
+				
+				cliente = cliente.replace(/&/gi," ")
+				strTable += "<tr>";
+				strTable += "<td border='0.5' border-style='dotted-narrow'>" + lineaRec 	+ "</td>";
+				strTable += "<td border='0.5' border-style='dotted-narrow'>" + salesRep 	+ "</td>";
+				strTable += "<td border='0.5' border-style='dotted-narrow'>" + cliente	    + "</td>";
+				strTable += "<td border='0.5' border-style='dotted-narrow'>" + fecha 		+ "</td>";
+				strTable += "<td border='0.5' border-style='dotted-narrow'>" + pedido		+ "</td>";		
+				strTable += "</tr>";
+			}catch(errT2){
+				log.error('errT2 actividad',errT2);
+			}
+	    	
+	    }
+	    var noActividad = data.noActividad
+	   
+		strTable += "<tr>";
+		strTable += "<td border='0.5' colspan= '4' border-style='none' align='right'><b>   </b></td>";
+		strTable += "</tr>";
+		strTable += "<tr>";
+		strTable += "<td border='0.5' colspan= '4' border-style='none' align='right'><b>Total Presentadores Activos</b></td>";
+		strTable += "<td border='0.5' border-style='dotted-narrow' align='right'><b>" + noActividad	+ "</b></td>";
+		strTable += "</tr>";
+		strTable += "<tr>";
+		strTable += "<td border='0.5' colspan= '4' border-style='none' align='right'><b>Total Bono Actividad</b></td>";
+		strTable += "<td border='0.5' border-style='dotted-narrow' align='right'><b>" + currencyFormat('$',montoActividad+'.00')	+ "</b></td>";
+		strTable += "</tr>";
+		strTable += "</table>";
+		//Fin Ventas Equipo
+
+		return strTable
+  	}catch(e){
+  		log.debug('error funcion venta equipo',e)
+  	}
+  	
+  }
   function table_v_rec(data,dataSO,CompConfigDetails){
   	//Ventas Rec
 	try{
@@ -726,6 +876,12 @@ function createTable(data,CompConfigDetails,type_emp_text,period_name,type_emp,c
 			
 		if (type_emp == 3 && data.comision_equipo > 0){
 			strTable += table_v_equipo(data,dataSO,CompConfigDetails)
+		}
+		if (type_emp == 3 && data.montoNR > 0){
+			strTable += table_nuevo_recluta(data,dataSO,CompConfigDetails)
+		}
+		if (type_emp == 3 && data.montoActividad > 0){
+			strTable += table_actividad(data,dataSO,CompConfigDetails)
 		}
 		if (data.b_rec > 0){
 			strTable += table_v_rec(data,dataSO,CompConfigDetails)
@@ -1045,10 +1201,17 @@ function search_crecord(id_jdg,type_emp,promocion){
         data.garantia = r.getValue(config_fields.garantia[type_emp])
         data.ids_garantia = r.getValue(config_fields.ids_garantia[type_emp])
         data.otranueva = config_fields.ajuste[type_emp];
-        data.odv_tres_dos = r.getValue(config_fields.tres_dos[type_emp]);
-        data.sc = r.getValue(config_fields.sc[type_emp]);
         data.id_presentadora = r.getValue(config_fields.emleado[type_emp])
-    	data.odv_tres_nuevo= r.getValue('custrecord_reclutas_ventas');
+        data.montoNR =  r.getValue('custrecord_nuevo_recluta_monto')
+        data.noNR =  r.getValue('custrecord_no_nuevorecluta')
+        data.dataNR =  r.getValue('custrecord_detalle_nuevo_recluta')
+        data.montoActividad =  r.getValue('custrecord_monto_actividad')
+        data.noActividad =  r.getValue('custrecordno_pre_activos')
+        data.dataActividad =  r.getValue('custrecord_detalle_actividad')
+        /*data.odv_tres_dos = r.getValue(config_fields.tres_dos[type_emp]);
+        data.sc = r.getValue(config_fields.sc[type_emp]);
+        
+    	data.odv_tres_nuevo= r.getValue('custrecord_reclutas_ventas');*/
     	//log.debug('registro',data )
     	return data;
     }catch(e){
