@@ -975,7 +975,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                         var ventasIntegranteTP = thisPeriodSO[i];
                         //log.debug('ventasIntegranteTP',ventasIntegranteTP)
                         var ventasIntegranteH = historicoSO[i];
-                        //log.debug('ventasIntegranteH',ventasIntegranteH) 
+                        log.debug('ventasIntegranteH signo ',!ventasIntegranteH) 
                         //Debe tener ventas en el periodo calculado
                         var hiredate = allPresentadoras[i]['hiredate']
                         var fechaObjetivo = allPresentadoras[i]['objetivo_1'] //objetivo menor al fin del periodo
@@ -991,7 +991,11 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                         fechafinPeriodo = Utils.stringToDate(fechafinPeriodo) 
                         var fechainicioPeriodo = inicioPeriodo
                         fechainicioPeriodo = Utils.stringToDate(fechainicioPeriodo) 
-                        if(  (ventasIntegranteTP && fechaObjetivo > fechainicioPeriodo &&  fechaObjetivo < fechafinPeriodo && ventasIntegranteH)||(ventasIntegranteTP && fechaObjetivo < fechainicioPeriodo ) ){//si tienen por lo menos una venta en el historico se asume que ya se pago el bono de Nuevo recluta
+
+                        //si tienen por lo menos una venta en el historico se asume que ya se pago el bono de Nuevo recluta
+
+                        
+                        if((ventasIntegranteTP && ventasIntegranteH) || (ventasIntegranteTP && fechaObjetivo < fechainicioPeriodo) ){   
                             noIntegrantesActivos ++
                             //log.debug('noIntegrantesActivos dentro',noIntegrantesActivos)
                             var salesIntegranteTP =[]
@@ -1006,6 +1010,26 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                                 if(tipoVenta != 'TM Ganada'){
                                     var pedido = { idSO:id,docNum:docNum} 
                                     salesIntegranteTP.push(pedido)
+                                }
+                                salesIntegrante[i] = salesIntegranteTP
+                            }
+                        }else if(ventasIntegranteTP){
+                           
+                            //log.debug('noIntegrantesActivos dentro',noIntegrantesActivos)
+                            var salesIntegranteTP =[]
+                            
+                            for(j in ventasIntegranteTP){//Se recorren las Ordenes de cada recluta del Presentador
+                                key = Object.keys(ventasIntegranteTP[j])
+                                var tipoVenta = ventasIntegranteTP[j][key]['custbody_tipo_venta']
+                                var fechaSO = ventasIntegranteTP[j][key]['trandate']
+                                var id = ventasIntegranteTP[j][key]['internalid']
+                                var docNum = ventasIntegranteTP[j][key]['tranid']
+                                fechaSO = Utils.stringToDate(fechaSO)
+                                if(tipoVenta != 'TM Ganada' && fechaSO > fechaObjetivo){
+                                    var pedido = { idSO:id,docNum:docNum} 
+                                    salesIntegranteTP.push(pedido)
+                                    noIntegrantesActivos ++
+                                    break
                                 }
                                 salesIntegrante[i] = salesIntegranteTP
                             }
