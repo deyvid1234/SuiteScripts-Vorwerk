@@ -108,8 +108,8 @@ function(record,search,https,file,http,format,encode,email,runtime,Utils) {
             if (!searchResult || searchResult.length === 0) {
                 
                 log.error('No se encontró un período Vorwerk válido para la fecha actual');
-                startDate = '01/10/2024';
-                endDate = '01/11/2024';
+                startDate = '30/03/2024';
+                endDate = '26/02/2024';
             }else{
                 log.debug('Período Vorwerk encontrado', searchResult);
                 startDate = searchResult[0].getValue('custrecord_inicio');
