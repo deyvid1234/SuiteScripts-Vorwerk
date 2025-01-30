@@ -559,28 +559,33 @@ function table_v_propia(data,tmp_emp,type_emp,promocion,dataSO,CompConfigDetails
 		lineaRec=0  
 
 	    for (x in keyActividad){
-	    	var venta = dataActividad[keyActividad[x]][0].idSO
-	    	log.debug('venta Actividad',venta)
-	    	try{
-				lineaRec++
-				var objSObyid = dataSO.objSObyid
-				var thisSO = objSObyid[venta]
-				var salesRep = thisSO.salesrep[0].text
-				var cliente = thisSO.entity[0].text
-				var fecha = thisSO.trandate
-				var pedido = thisSO.tranid
-				
-				cliente = cliente.replace(/&/gi," ")
-				strTable += "<tr>";
-				strTable += "<td border='0.5' border-style='dotted-narrow'>" + lineaRec 	+ "</td>";
-				strTable += "<td border='0.5' border-style='dotted-narrow'>" + salesRep 	+ "</td>";
-				strTable += "<td border='0.5' border-style='dotted-narrow'>" + cliente	    + "</td>";
-				strTable += "<td border='0.5' border-style='dotted-narrow'>" + fecha 		+ "</td>";
-				strTable += "<td border='0.5' border-style='dotted-narrow'>" + pedido		+ "</td>";		
-				strTable += "</tr>";
-			}catch(errT2){
-				log.error('errT2 actividad',errT2);
-			}
+	    	if(dataActividad[keyActividad[x]][0]){
+	    		var venta = dataActividad[keyActividad[x]][0].idSO
+		    	log.debug('venta Actividad',venta)
+		    	try{
+					lineaRec++
+					var objSObyid = dataSO.objSObyid
+					var thisSO = objSObyid[venta]
+					var salesRep = thisSO.salesrep[0].text
+					var cliente = thisSO.entity[0].text
+					var fecha = thisSO.trandate
+					var pedido = thisSO.tranid
+					
+					cliente = cliente.replace(/&/gi," ")
+					strTable += "<tr>";
+					strTable += "<td border='0.5' border-style='dotted-narrow'>" + lineaRec 	+ "</td>";
+					strTable += "<td border='0.5' border-style='dotted-narrow'>" + salesRep 	+ "</td>";
+					strTable += "<td border='0.5' border-style='dotted-narrow'>" + cliente	    + "</td>";
+					strTable += "<td border='0.5' border-style='dotted-narrow'>" + fecha 		+ "</td>";
+					strTable += "<td border='0.5' border-style='dotted-narrow'>" + pedido		+ "</td>";		
+					strTable += "</tr>";
+				}catch(errT2){
+					log.error('errT2 actividad',errT2);
+				}
+	    	}else if(!dataActividad[keyActividad[x]][0]){
+	    		log.debug(' No tiene info')
+	    	}
+	    	
 	    	
 	    }
 	    var noActividad = data.noActividad
