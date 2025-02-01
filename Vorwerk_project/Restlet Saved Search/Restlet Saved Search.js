@@ -93,9 +93,9 @@ function(record,search,https,file,http,format,encode,email,runtime,Utils) {
             var periodSearch = search.create({
                 type: 'customrecord_periods',
                 filters: [
-                    ['custrecord_inicio', 'onorafter', start],
+                    ['custrecord_inicio', 'onorbefore', start],
                     'AND',
-                    ['custrecord_final', 'onorbefore', start]
+                    ['custrecord_final', 'onorafter', start]
                 ],
                 columns: [
                     'custrecord_inicio',
