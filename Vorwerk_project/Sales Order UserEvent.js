@@ -1041,9 +1041,8 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
         
         
     }
-    function commissionStatus(salesrep,recordid){
+    function commissionStatus(salesrep,recordid,type){
         try{
-
             log.debug('salesrep',salesrep)
             var presentador = record.load({//Cargar registro del sales rep
                 type: 'employee',
