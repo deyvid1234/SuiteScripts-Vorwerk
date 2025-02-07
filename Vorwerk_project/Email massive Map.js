@@ -84,7 +84,7 @@ function(email,record,render, file, search, https, runtime,format,Dictionary,Ema
             });
             var print_url_base = '';
             if(runtime.envType != 'PRODUCTION'){ 
-                print_url_base = 'https://3367613.extforms.netsuite.com/app/site/hosting/scriptlet.nl?script=1408&deploy=1&compid=3367613&h=d48ce6f5d7c69a79c66c';
+                print_url_base = 'https://3367613-sb1.extforms.netsuite.com/app/site/hosting/scriptlet.nl?script=1408&deploy=1&compid=3367613_SB1&ns-at=AAEJ7tMQ47oZy3qaVJ6UweMCUUN77CxHoN8ETeA5PLMH1Tsv0s4';
             }else{
                 print_url_base = 'https://3367613.extforms.netsuite.com/app/site/hosting/scriptlet.nl?script=1408&deploy=1&compid=3367613&ns-at=AAEJ7tMQyq7jwkS4stiuYtzuLkRmJPspJNtkQcWSrkNFaJUOmXM';
             }
