@@ -93,7 +93,7 @@ function(log,email,record,file,https,search,runtime,file) {
             email.send({
                 author: runtime.getCurrentUser().id,
                 recipients: employee.email,
-                cc: ['no-reply@thermomix.mx'],
+                cc: ['no-reply@thermomix.mx','desarrollo.netsuite@thermomix.mx'],
                 subject: 'Reporte de Compensación',
                 body: 'Reporte de Compensación : '+employee.name,
                 attachments: file,
@@ -116,7 +116,7 @@ function(log,email,record,file,https,search,runtime,file) {
             email.send({
                 author: '16581',
                 recipients: employee.email,
-                cc: ['compensaciones@thermomix.mx'],
+                cc: ['compensaciones@thermomix.mx','desarrollo.netsuite@thermomix.mx'],
                 subject: 'CFDI y Reporte de Compensación',
                 body: 'CFDI y Reporte de Compensación : '+employee.name,
                 attachments: file,
