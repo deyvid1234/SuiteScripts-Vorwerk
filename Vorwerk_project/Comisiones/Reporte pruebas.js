@@ -325,7 +325,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                             objEntrega = bonoEntrega(dataEmp,ventasEmp,cust_entrega)
                             //log.debug('objEntrega',objEntrega)
                             
-                            //objXmasDos = bonoXmasDos(dataEmp,reclutasEquipo,thisPeriodSO,ventasEmp,historicoSO,allPresentadoras,dHistorico,integrantesEquipo,reclutas,listaReclutas)
+                            objXmasDos = bonoXmasDos(dataEmp,reclutasEquipo,thisPeriodSO,ventasEmp,historicoSO,allPresentadoras,dHistorico,integrantesEquipo,reclutas,listaReclutas)
                             //log.debug('objXmasDos',objXmasDos)
                             objProductividad = bonoProductividad(dataEmp,ventasEmp,compConfigDetails)
                              //log.debug('objProductividad',objProductividad)
@@ -336,17 +336,17 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                             log.debug('objVentasEquipoNLE',objVentasEquipoNLE)*/
                             objGarantia = bonoGarantia(dataEmp,garantiaSO,compConfigDetails)
                             //log.debug('objGarantia',objGarantia)
-                            //objXmasdosNLE=bonoXmasdosNLE(listaNombramientos,dataEmp,thisPeriodSO,listaGrupos,allPresentadoras,listaEquipoRecluta,historicoSO,dHistorico,namePeriodo,cust_period,listaReclutas)
+                            objXmasdosNLE=bonoXmasdosNLE(listaNombramientos,dataEmp,thisPeriodSO,listaGrupos,allPresentadoras,listaEquipoRecluta,historicoSO,dHistorico,namePeriodo,cust_period,listaReclutas)
                             objJoya = bonoJoya(conf,ventasEmp,compConfigDetails)
                             objCook = bonoCk(dataEmp,ckSO)
                             objNuevoRecluta = bonoNuevoRecluta(empID,dataEmp,reclutas,thisPeriodSO,historicoSO,allPresentadoras,dHistorico,integrantesEquipo)
                             log.debug('objNuevoRecluta',objNuevoRecluta)
                             objActividad = bonoActividad(empID,dataEmp,integrantesEquipo,thisPeriodSO,historicoSO,allPresentadoras,dHistorico,inicioPeriodo,finPeriodo)
                             log.debug('objActividad',objActividad)
-                            var amounTrue = validateAmount(sublist,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objReclutamiento,objEntrega,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objJoya,objCook)
+                            var amounTrue = validateAmount(sublist,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objReclutamiento,objEntrega,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objXmasdosNLE,objJoya,objCook)
         
                             if(amounTrue){
-                                fillTable(sublist,urlDetalle,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objReclutamiento,objEntrega,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objJoya,objCook,objNuevoRecluta,objActividad,false)
+                                fillTable(sublist,urlDetalle,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objReclutamiento,objEntrega,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objXmasdosNLE,objJoya,objCook,objNuevoRecluta,objActividad,false)
                                 cont_line++
                             }
                         }
@@ -381,10 +381,10 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                             montoComisionCK = bonoComCK()
                             
                             */
-                            var amounTrue = validateAmount(sublist,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objReclutamiento,objEntrega,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objJoya,objCook)
+                            var amounTrue = validateAmount(sublist,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objReclutamiento,objEntrega,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objXmasdosNLE,objJoya,objCook)
         
                             if(amounTrue){
-                                fillTable(sublist,urlDetalle,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objReclutamiento,objEntrega,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objJoya,objCook,objNuevoRecluta,objActividad)
+                                fillTable(sublist,urlDetalle,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objReclutamiento,objEntrega,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objXmasdosNLE,objJoya,objCook,objNuevoRecluta,objActividad)
                                 cont_line++
                             }
                         }
@@ -400,10 +400,10 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                         
                             objCook = bonoCk(dataEmp,ckSO)
                             
-                            var amounTrue = validateAmount(sublist,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objReclutamiento,objEntrega,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objJoya,objCook)
+                            var amounTrue = validateAmount(sublist,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objReclutamiento,objEntrega,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objXmasdosNLE,objJoya,objCook)
         
                             if(amounTrue){
-                                fillTable(sublist,urlDetalle,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objReclutamiento,objEntrega,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objJoya,objCook,objNuevoRecluta,objActividad)
+                                fillTable(sublist,urlDetalle,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objReclutamiento,objEntrega,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objXmasdosNLE,objJoya,objCook,objNuevoRecluta,objActividad)
                                 cont_line++
                             }
                         }
@@ -493,7 +493,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
         return v;
 
     }
-    function fillTable(sublist,urlDetalle,dataEmp,ventasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,reclutamiento,entrega,productividad,ventaEquipo,ventasEquipoNLE,garantia,joya,cookKey,nuevoRecluta,actividad){
+    function fillTable(sublist,urlDetalle,dataEmp,ventasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,reclutamiento,entrega,productividad,ventaEquipo,ventasEquipoNLE,garantia,xMasdosNLE,joya,cookKey,nuevoRecluta,actividad){
         var linea = cont_line
         var subtotal=0
         
@@ -795,8 +795,8 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                  value : v
             });
         }
-        //x + 2 bono apagado
-        /*if(xMasdosNLE){
+        //x + 2 nle
+        if(xMasdosNLE){
           
             v = xMasdosNLE.data
             sublist.setSublistValue({
@@ -820,7 +820,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 value : v
             });
           
-        }*/
+        }
         if(nuevoRecluta){
         
             v = JSON.stringify(nuevoRecluta.data)
@@ -970,7 +970,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
 
                     var bono_actividad = 0
                     var salesIntegrante = {}
-                    var noIntegrantesActivos = 0 
+                    var noIntegrantesActivos = 1 
                     integrantesEquipo.forEach(function(i,index) {//Se recorren los integrantes del equipo
                         //log.debug('recluta',i)
                         var ventasIntegranteTP = thisPeriodSO[i];
@@ -1112,7 +1112,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
         }
 
     }
-    /*function bonoXmasdosNLE(listaNombramientos,dataEmp,thisPeriodSO,listaGrupos,allPresentadoras,listaEquipoRecluta,historicoSO,dHistorico,namePeriodo,cust_period,listaReclutas){
+    function bonoXmasdosNLE(listaNombramientos,dataEmp,thisPeriodSO,listaGrupos,allPresentadoras,listaEquipoRecluta,historicoSO,dHistorico,namePeriodo,cust_period,listaReclutas){
         try{
             var liderM=dataEmp.internalid//lider madre
             var montoTotal52= 0
@@ -1163,7 +1163,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
         }catch(e){
             log.error('error bono X+2 NLE',e)
         }
-    }*/
+    }
     function bonoGarantia(dataEmp,garantiaSO,compConfigDetails){
         try{
             if(garantiaSO.hasOwnProperty(dataEmp.internalid)){
@@ -2401,7 +2401,7 @@ una rcluta de algun miembro del equipo*/
                     type : serverWidget.FieldType.CURRENCY,
                     label : 'Bono NLE'
                 }).updateDisplayType({displayType : serverWidget.FieldDisplayType.READONLY});
-                arrayFields.push({idfield : thidField.id, namefield : thidField.label})
+                arrayFields.push({idfield : thidField.id, namefield : thidField.label})*/
             
                 thidField = sublist.addField({
                     id : 'custentity_xmasdos_nle',
@@ -2424,7 +2424,7 @@ una rcluta de algun miembro del equipo*/
                 }).updateDisplayType({displayType : serverWidget.FieldDisplayType.READONLY});
                 arrayFields.push({idfield : thidField.id, namefield : thidField.label})
                 //3+2 y 5+2 EQUIPO ESPECIAL - DEBEN PERTENECER AL EQUIPO Y APARTE DEBIERON SER RECLUTADAS POR LA LIDER DE EQUIPO 
-                thidField = sublist.addField({
+                /*thidField = sublist.addField({
                     id : 'custentity_odv_rec_del_periodo',
                     type : serverWidget.FieldType.TEXTAREA,
                     label : 'ODV del periodo mismo equipo'//2134324:56645653

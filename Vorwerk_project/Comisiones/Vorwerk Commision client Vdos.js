@@ -457,7 +457,7 @@ function(record,https,currentRecord,runtime,file,search,message) {
                         sublistId: "sublist",
                         fieldId: "custentity_nle_monto",
                         line: i
-                    });
+                    });*/
                     var xdos_nle = record.getSublistValue({
                         sublistId: "sublist",
                         fieldId: "custentity_xmasdos_nle",
@@ -472,7 +472,7 @@ function(record,https,currentRecord,runtime,file,search,message) {
                         sublistId: "sublist",
                         fieldId: "custentity_cincomasdos_nle_monto",
                         line: i
-                    });*/
+                    });
                     //crea el objeto para enviar al script map
                     object_fill.push({
                             idEmp                 :idEmp,
@@ -526,9 +526,9 @@ function(record,https,currentRecord,runtime,file,search,message) {
                             noActividad           :noActividad,
                             dataActividad         :dataActividad
                             //bono_nle              :bono_nle,
-                            //xdos_nle              :xdos_nle,
-                            //tresdos_nle           :tresdos_nle,
-                            //cincodos_nle          :cincodos_nle
+                            xdos_nle              :xdos_nle,
+                            tresdos_nle           :tresdos_nle,
+                            cincodos_nle          :cincodos_nle
                     })  
                 }
             }
