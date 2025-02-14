@@ -59,10 +59,22 @@ function(render,email,file,record,search,format,runtime) {
             
             //sb1510040
             //obtiene imagen de check false 
-
-            var checkfieldURL = getImageCheck('1636738');//sb1510039
+            var idImg 
+            var idImgTrue
+            if(runtime.envType  == "SANDBOX"){
+                idImg = '1636738';
+                idImgTrue = '1636741'
+            //id imagen vorwerk tm s green sandbox  
+            }else{
+                idImg = '3175160';
+                idImgTrue = '3175159'
+                
+            }
+            
+            var checkfieldURL = getImageCheck(idImg);//sb1510039
             //obtiene imagen check true
-            var checkfieldURL_true = getImageCheck('1636741');//1510241
+            
+            var checkfieldURL_true = getImageCheck(idImgTrue);//1510241
             //genera imagen de check false
            
             if(method == 'GET'){
@@ -128,6 +140,15 @@ function(render,email,file,record,search,format,runtime) {
     function getImageCheck(idImg){
         try{
             var host = "https://3367613-sb1.app.netsuite.com";
+             if(runtime.envType  == "SANDBOX"){
+                    host = "https://3367613-sb1.app.netsuite.com";
+                 
+                }else{
+                    host = "https://3367613.app.netsuite.com";
+                    
+                    
+                }
+            
             //obtiene imagen de chekc false
             var fileObj = file.load({
                 id: idImg//'1510039'
@@ -150,7 +171,7 @@ function(render,email,file,record,search,format,runtime) {
 
                 if(runtime.envType  == "SANDBOX"){
                     host = "https://3367613-sb1.app.netsuite.com";
-                    idImg = '2461144';
+                    idImg = '2576941';
                 //id imagen vorwerk tm s green sandbox  
                 }else{
                     host = "https://3367613.app.netsuite.com";
@@ -401,12 +422,13 @@ function(render,email,file,record,search,format,runtime) {
     function sendEmail(html,client){
         try{
             log.debug('client',client);
-            email.send({
+            var emailEnviado = email.send({
                 author: '344096',
-                recipients: [client],
+                recipients: ['griselrdz@gmail.com'],//[client],
                 subject: 'Garantia',
-                body: html
+                body: 'hola'//html
             }); 
+            log.debug('emailEnviado',emailEnviado)
         }catch(err){
             log.error("error send email",err)
         }
