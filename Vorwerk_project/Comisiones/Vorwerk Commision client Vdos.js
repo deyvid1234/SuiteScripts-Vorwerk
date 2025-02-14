@@ -524,7 +524,7 @@ function(record,https,currentRecord,runtime,file,search,message) {
                             dataNR                :dataNR,
                             montoActividad        :montoActividad,
                             noActividad           :noActividad,
-                            dataActividad         :dataActividad
+                            dataActividad         :dataActividad,
                             //bono_nle              :bono_nle,
                             xdos_nle              :xdos_nle,
                             tresdos_nle           :tresdos_nle,
