@@ -160,14 +160,15 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 label : 'Guardar',
                 functionName : 'saveData()'
             });
+            
+            */
+            //Fin campos Aux
+            //Botones
             form.addButton({
                 id : 'custpage_create_excel',
                 label : 'Crear Excel',
                 functionName : 'createExcel()'
             });
-            */
-            //Fin campos Aux
-            //Botones
             form.addSubmitButton({
                label: 'Consultar',
                container: 'custpage_filters'
@@ -296,7 +297,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 //var objSupercomision = false
                 var objVentasEquipoNLE= false
                 var objGarantia = false
-                //var objXmasdosNLE= false
+                var objXmasdosNLE= false
                 var objJoya = false 
                 var objCook = false
                 var objNuevoRecluta = false
