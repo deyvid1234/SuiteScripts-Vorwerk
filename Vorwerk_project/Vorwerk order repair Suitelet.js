@@ -274,7 +274,7 @@ function(render,email,file,record,search,format,runtime) {
     function createHTML(logodURL,emailBody,date,order){
         try{
             var space = '&nbsp;';
-            var t_space= ""
+            var t_space= "";
             for(var x = 0; x<100; x++){
                 t_space+=space;
             }
@@ -299,24 +299,24 @@ function(render,email,file,record,search,format,runtime) {
                 +'<macrolist>'
                 +'    <macro id="nlheader">'
                 +t_space+'<img class="IMAGELOGO" height="80" width="150" align="center" ' + logodURL +'>'
-                +'<p>ORDEN DE SERVICIO</p>'
+                +'<p style="text-decoration: none; color: rgb(0, 0, 0);">ORDEN DE SERVICIO</p>'
                 +'<table border="0" cellpadding="1" cellspacing="1" style="width: 1000px;">'
                 +'<tbody>'
                 +'<tr>'
-                +'<td rowspan="3" style="width: 750px;">Vorwerk M&eacute;xico, S. de R.L. de C.V.<br />'
+                +'<td rowspan="3" style="width: 750px;"><span style="text-decoration: none; color: rgb(0, 0, 0);">Vorwerk M&eacute;xico, S. de R.L. de C.V.<br />'
                 +'Vito Alessio Robles 38 Col. Florida, Del. &Aacute;lvaro Obreg&oacute;n<br />'
                 +'Cd. de M&eacute;xico, C.P.01030 Tel&eacute;fono: 800 200 1121<br />'
-                +'www.thermomix.mx</td>'
+                +'www.thermomix.mx</span></td>'
                 +'<td style="width: 171px;"> </td>'
                 +'<td style="width: 107px;"> </td>'
                 +'</tr>'
                 +'<tr>'
-                +'<td Colspan="1" style="width: 120px; padding-left: 80px; text-align: right;">Orden de Servicio</td>'
-                +'<td  colspan="2" class="linea" style="width: 107px; text-align: right;">'+order+'</td>'
+                +'<td Colspan="1" style="width: 120px; padding-left: 80px; text-align: right;"><span style="text-decoration: none; color: rgb(0, 0, 0);">Orden de Servicio</span></td>'
+                +'<td  colspan="2" class="linea" style="width: 107px; text-align: right;"><span style="text-decoration: none; color: rgb(0, 0, 0);">'+order+'</span></td>'
                 +'</tr>'
                 +'<tr>'
-                +'<td style="width: 120px; padding-left: 90px; text-align: right;">Fecha</td>'
-                +'<td  style="width: 107px; text-align: right;">'+date+'</td>'
+                +'<td style="width: 120px; padding-left: 90px; text-align: right;"><span style="text-decoration: none; color: rgb(0, 0, 0);">Fecha</span></td>'
+                +'<td  style="width: 107px; text-align: right;"><span style="text-decoration: none; color: rgb(0, 0, 0);">'+date+'</span></td>'
                 +'</tr>'
                 +'<tr>'
                 +'<td style="width: 120px;"></td>'
