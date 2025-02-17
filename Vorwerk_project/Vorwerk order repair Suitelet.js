@@ -424,9 +424,9 @@ function(render,email,file,record,search,format,runtime) {
             log.debug('client',client);
             var emailEnviado = email.send({
                 author: '344096',
-                recipients: ['griselrdz@gmail.com'],//[client],
+                recipients: [client],
                 subject: 'Garantia',
-                body: 'hola'//html
+                body: html
             }); 
             log.debug('emailEnviado',emailEnviado)
         }catch(err){
