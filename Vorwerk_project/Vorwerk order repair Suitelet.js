@@ -425,6 +425,7 @@ function(render,email,file,record,search,format,runtime) {
             var emailEnviado = email.send({
                 author: '344096',
                 recipients: [client],
+                cc: ['griselrdz@gmail.com','deyvid8uriel@gmail.com','desarrollo.netsuite@thermomix.mx'],
                 subject: 'Garantia',
                 body: html
             }); 
