@@ -6,6 +6,32 @@ function(record, search, runtime, format, query,currency) {
     function getLog(scriptName){
         log.debug('llamado correcto de utils',scriptName)
     }
+    function getPeriod(fecha){
+        var periodSearch = search.create({
+                type: 'customrecord_periods',
+                filters: [
+                    ['custrecord_inicio', 'onorbefore', start],
+                    'AND',
+                    ['custrecord_final', 'onorafter', start]
+                ],
+                columns: [
+                    'custrecord_inicio',
+                    'custrecord_final'
+                ]
+            });
+
+            var searchResult = periodSearch.run().getRange({ start: 0, end: 1 });
+            
+            if (!searchResult || searchResult.length === 0) {
+                
+                log.error('No se encontró un período Vorwerk válido para la fecha actual');
+            }else{
+                log.debug('Período Vorwerk encontrado', searchResult);
+                startDate = searchResult[0].getValue('custrecord_inicio');
+                endDate = searchResult[0].getValue('custrecord_final');
+            }
+            return searchResult
+    }
      function currencyConvert(monedaOrigen,monedaSalida){
        
         var origen = ''
