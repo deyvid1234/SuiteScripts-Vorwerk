@@ -80,7 +80,41 @@ function(record,search,http,https,encode,runtime,serverWidget) {
     	try{
     		var thisRecord = scriptContext.newRecord;
         	var oldrecord = scriptContext.oldRecord;
+        	var internalid = thisRecord.getValue('id')   
+        	try{
+        		//Asignar la fecha de entrega de CSF cuando se marca el check de entregó CSF
+	    		if(scriptContext.type == 'edit' || scriptContext.type == 'xedit'){
+	    			var entregoCSFNew = thisRecord.getValue('custentity_entrego_csf') 
+	    			var entregoCSFOld = oldrecord.getValue('custentity_entrego_csf') 
+	    			if(entregoCSFNew != entregoCSFOld && entregoCSFNew == true){
+	    				var busqueda = search.load({
+		                    id: 'customsearch_entrego_csf'
+		                });
+		                busqueda.filters.push(search.createFilter({
+		                    name: 'internalid',
+		                    operator: 'is',
+		                    values: internalid
+		                }));
+		                busqueda.run().each(function(r){
+		                    var todo = r.getAllValues();
+		                    log.debug('resultados busqueda csf',todo)
+		                    var fechaEntrega = todo["MAX(systemNotes.date)"].split(' ')
+		                    log.debug('fechaEntrega',fechaEntrega[0])
 
+		                    var submitFields = record.submitFields({
+		                        type: 'employee',
+		                        id: internalid,
+		                        values: {'custentity_fecha_entrega_csf':fechaEntrega[0]}
+		                    });
+		                    
+		                    return true;
+		                });
+	    			}
+	    			
+		    	}
+	    	}catch(e){
+	    		log.error('error set fecha de entreg csf',e)
+	    	}
         	try{
         		//Fuerza de ventas bajo demanda
 	    		if(scriptContext.type == 'edit' || scriptContext.type == 'xedit'){ 
