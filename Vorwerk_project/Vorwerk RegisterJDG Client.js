@@ -152,7 +152,78 @@ function(https, url,record,runtime,currentRecord,message,log,search) {
     function saveRecord(scriptContext) {
         return true;
     }
-    
+    function marcarPagado() {
+    try {
+        var object_fill = [];
+        var record = currentRecord.get();
+        var internalid = record.getValue('id');
+        var level = record.getValue('custrecord_nivel_jerarquia');
+        var comision_id = record.getValue('custrecord_periodo_comision');
+        var periodText = record.getText('custrecord_periodo_comision');
+        var levelText = record.getText('custrecord_nivel_jerarquia');
+        
+        var listLineCount = record.getLineCount({
+            sublistId: "custpage_sublist_detail"
+        });
+        
+        for (var i = 0; i < listLineCount; i++) {
+            var checkPagado = record.getSublistValue({
+                sublistId: "custpage_sublist_detail",
+                fieldId: "custpage_pagado",
+                line: i
+            });
+            
+            if(checkPagado == 'Pagado') {
+                var idReg = record.getSublistValue({
+                    sublistId: "custpage_sublist_detail",
+                    fieldId: "custpage_article_id",
+                    line: i
+                });
+                
+                object_fill.push({
+                    idReg: idReg,
+                    line: i
+                });
+            }
+        }
+        
+        marcarCheck(object_fill);
+        
+    } catch(err) {
+        console.error("Error en marcarPagado:", err);
+    }
+}
+
+function marcarCheck(object_fill) {
+    try {
+        if (!object_fill || object_fill.length === 0) {
+            console.log('No hay registros seleccionados para marcar');
+            return;
+        }
+        
+        var record = currentRecord.get();
+        
+        object_fill.forEach(function(obj) {
+            record.selectLine({
+                sublistId: 'custpage_sublist_detail',
+                line: obj.line
+            });
+            
+            record.setCurrentSublistValue({
+                sublistId: 'custpage_sublist_detail',
+                fieldId: 'custpage_select_field',
+                value: true
+            });
+            
+            record.commitLine({
+                sublistId: 'custpage_sublist_detail'
+            });
+        });
+        
+    } catch(e) {
+        console.error('Error en marcarCheck:', e);
+    }
+}
     function getSelectedData(){
         try{
             //extrae la informacion de la tabla
@@ -174,21 +245,24 @@ function(https, url,record,runtime,currentRecord,message,log,search) {
                      fieldId: "custpage_select_field",
                      line: i
                 });
+                
                 if(check == true){
                     var idReg = record.getSublistValue({
                         sublistId: "custpage_sublist_detail",
                         fieldId: "custpage_article_id",
                         line: i
-                   });
+                    });
                    var totalReg = record.getSublistValue({
                        sublistId: "custpage_sublist_detail",
                        fieldId: "custpage_total",
                        line: i
-                  })
+                    })
                     object_fill.push({idReg:idReg,level:level,comision_id:comision_id,totalReg:totalReg,periodText:periodText,levelText:levelText});
                     
                 
                 }
+                
+                
            }
             
             return object_fill;
@@ -196,7 +270,77 @@ function(https, url,record,runtime,currentRecord,message,log,search) {
             log.error("Error getSelectedData",err)
         }
     }
-    
+    function getSelectedDataNom(){
+        try{
+            //extrae la informacion de la tabla
+            var object_fill = [];
+            var record = currentRecord.get();
+            var level = record.getValue('custrecord_nivel_jerarquia');
+            var comision_id = record.getValue('custrecord_periodo_comision');
+            var periodText = record.getText('custrecord_periodo_comision');
+            var levelText = record.getText('custrecord_nivel_jerarquia');
+            console.log('record',record);
+            var listLineCount = record.getLineCount({
+              sublistId: "custpage_sublist_detail"
+            });
+            
+            
+            for (var i = 0; i < listLineCount; i++) {
+                var check = record.getSublistValue({
+                     sublistId: "custpage_sublist_detail",
+                     fieldId: "custpage_select_field",
+                     line: i
+                });
+                var checkPagado = record.getSublistValue({
+                     sublistId: "custpage_sublist_detail",
+                     fieldId: "custpage_pagado",
+                     line: i
+                });
+                if(checkPagado == 'Pagado'){
+                    if (confirm('Uno o más registros no estan pagados, ¿Desea Continuar?')) {
+                        if(check == true){
+                            var idReg = record.getSublistValue({
+                                sublistId: "custpage_sublist_detail",
+                                fieldId: "custpage_article_id",
+                                line: i
+                           });
+                           var totalReg = record.getSublistValue({
+                               sublistId: "custpage_sublist_detail",
+                               fieldId: "custpage_total",
+                               line: i
+                          })
+                            object_fill.push({idReg:idReg,level:level,comision_id:comision_id,totalReg:totalReg,periodText:periodText,levelText:levelText});
+                            
+                        
+                        }
+                    } else {
+                        return false;
+                    }
+                }else{
+                    if(check == true){
+                        var idReg = record.getSublistValue({
+                            sublistId: "custpage_sublist_detail",
+                            fieldId: "custpage_article_id",
+                            line: i
+                        });
+                       var totalReg = record.getSublistValue({
+                           sublistId: "custpage_sublist_detail",
+                           fieldId: "custpage_total",
+                           line: i
+                        })
+                        object_fill.push({idReg:idReg,level:level,comision_id:comision_id,totalReg:totalReg,periodText:periodText,levelText:levelText});
+                        
+                    
+                    }
+                }
+                
+           }
+            
+            return object_fill;
+        }catch(err){
+            log.error("Error getSelectedData",err)
+        }
+    }
     
     function txt(){
     	try{
@@ -318,15 +462,19 @@ function(https, url,record,runtime,currentRecord,message,log,search) {
             myMsg.show({
                 duration: 5000
             });
-            var obj = getSelectedData();
-            var url_aux = (runtime.envType != 'PRODUCTION') ? 'https://3367613-sb1.app.netsuite.com/app/site/hosting/scriptlet.nl?script=569&deploy=1' : 'https://3367613.app.netsuite.com/app/site/hosting/scriptlet.nl?script=569&deploy=1';
-            //envia la información por metodo put al map vorwerk commission map
-            var headers = {"Content-Type": "application/json"};
-            var res = https.put({
-                url: url_aux,
-                headers: headers,
-                body: JSON.stringify({obj:obj,type_req:"payrollProcess"})
-            }).body;
+            var obj = getSelectedDataNom();
+            if(obj != false){
+                var url_aux = (runtime.envType != 'PRODUCTION') ? 'https://3367613-sb1.app.netsuite.com/app/site/hosting/scriptlet.nl?script=569&deploy=1' : 'https://3367613.app.netsuite.com/app/site/hosting/scriptlet.nl?script=569&deploy=1';
+                //envia la información por metodo put al map vorwerk commission map
+                var headers = {"Content-Type": "application/json"};
+                /*var res = https.put({
+                    url: url_aux,
+                    headers: headers,
+                    body: JSON.stringify({obj:obj,type_req:"payrollProcess"})
+                }).body;*/
+                log.debug('fin nomina')
+            }
+            
         }
         catch(e){
           
@@ -765,6 +913,8 @@ function(https, url,record,runtime,currentRecord,message,log,search) {
 //        validateLine: validateLine,
 //        validateInsert: validateInsert,
 //        validateDelete: validateDelete,
+        marcarCheck: marcarCheck,
+        marcarPagado: marcarPagado,
         saveRecord: saveRecord,
         txt: txt,
         nomina:nomina,

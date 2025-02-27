@@ -165,6 +165,16 @@ function(serverWidget,search,record,runtime,redirect,url) {
                 type : serverWidget.FieldType.FLOAT,
                 label : 'TOTAL'
             });
+            var checkPagado= sublist.addField({
+                id : 'custpage_pagado',
+                type : serverWidget.FieldType.TEXT,
+                label : 'ESTATUS DE PAGO'
+            });
+            var fechaCSF= sublist.addField({
+                id : 'custpage_fecha_entrega_csf',
+                type : serverWidget.FieldType.TEXT,
+                label : 'FECHA DE ENTREGA CSF'
+            });
             var estatus_timbrado = sublist.addField({
                 id : 'custpage_estatus_timbrado',
                 type : serverWidget.FieldType.TEXT,
@@ -209,7 +219,12 @@ function(serverWidget,search,record,runtime,redirect,url) {
             });
 
             send.linkText = 'ENVIAR';
-            
+
+            var btn_marcarPagado = sublist.addButton({
+                id : 'custpage_marcar_pagado',
+                label : 'MARCAR SOLO LO PAGADO',
+                functionName: 'marcarPagado()'
+            });
             sublist.addMarkAllButtons();
            
             check.updateDisplayType({displayType: serverWidget.FieldDisplayType.ENTRY});
@@ -377,6 +392,22 @@ function(serverWidget,search,record,runtime,redirect,url) {
                         line:x,
                         value:info[x].total
                     });
+                    log.debug('info[x].pagado',info[x].pagado)
+                    if(info[x].pagado == 1){
+                        sublist.setSublistValue({
+                            id:'custpage_pagado',
+                            line:x,
+                            value:'Pagado'
+                        });
+
+                    }
+                    if (info[x].fechaEntregaCSF != ''){
+                        sublist.setSublistValue({
+                            id:'custpage_fecha_entrega_csf',
+                            line:x,
+                            value:info[x].fechaEntregaCSF
+                        });
+                    } 
                     if(info[x].estatusTimbrado != ""){
                         sublist.setSublistValue({
                         id:'custpage_estatus_timbrado',
@@ -559,6 +590,8 @@ function(serverWidget,search,record,runtime,redirect,url) {
                           'custrecord_c_jdg_mensaje_respuesta',
                           'custrecord_c_jdg_xml_sat',
                           'custrecord_c_jdg_pdg',
+                          'custrecord_pagado_le',
+                          'custrecord_fecha_entrega_csf_le',
                           //<!--Bonos manuales
                           'custrecord_c_jdg_bono1',
                           'custrecord_c_jdg_bono2',
@@ -624,6 +657,8 @@ function(serverWidget,search,record,runtime,redirect,url) {
                      message_response : r.getValue('custrecord_c_jdg_mensaje_respuesta'),   
                      xml_sat : url_file+'&idfile='+r.getValue('custrecord_c_jdg_xml_sat'),        
                      pdf : url_file+'&idfile='+r.getValue('custrecord_c_jdg_pdg'),
+                     pagado : r.getValue('custrecord_pagado_le'),
+                     fechaEntregaCSF : r.getValue('custrecord_fecha_entrega_csf_le'),
                      print : print_url_base+r.getValue('custrecord_c_jdg_empleado')+'&periodo='+period+'&comp='+r.getValue('internalid')+'&level='+level,
                      send : send_url_base+r.getValue('custrecord_c_jdg_empleado')+'&period='+period+'&comp='+r.getValue('internalid'),
                      ver : record_url_base+r.getValue('internalid'),
@@ -680,6 +715,8 @@ function(serverWidget,search,record,runtime,redirect,url) {
                           'custrecord_c_pre_mensaje_respuesta',
                           'custrecord_c_pre_xml_sat',
                           'custrecord_c_pre_pdf',
+                          'custrecord_pagado_pre',
+                          'custrecord_fecha_entrega_csf_pre',
                           //<!--Bono manual
                           'custrecord_c_pre_bono_uno',//este que?
                           'custrecord_c_pre_bono2',
@@ -745,6 +782,8 @@ function(serverWidget,search,record,runtime,redirect,url) {
                      message_response : r.getValue('custrecord_c_pre_mensaje_respuesta'),   
                      xml_sat : url_file+'&idfile='+r.getValue('custrecord_c_pre_xml_sat'),        
                      pdf : url_file+'&idfile='+r.getValue('custrecord_c_pre_pdf'),
+                     pagado : r.getValue('custrecord_pagado_pre'),
+                     fechaEntregaCSF : r.getValue('custrecord_fecha_entrega_csf_pre'),
                      print : print_url_base+r.getValue('custrecord_c_pre_empleado')+'&periodo='+period+'&comp='+r.getValue('internalid')+'&level='+level,
                      send : send_url_base+r.getValue('custrecord_c_pre_empleado')+'&period='+period+'&comp='+r.getValue('internalid'),
                      ver : record_url_base+r.getValue('internalid'),
@@ -800,6 +839,8 @@ function(serverWidget,search,record,runtime,redirect,url) {
                           'custrecord_c_gtm_mensaje_respuesta',
                           'custrecord_c_gtm_xml_sa',
                           'custrecord_c_gtm_pdf',
+                          'custrecord_pagado_gtm',
+                          'custrecord_fecha_entrega_csf_gtm',
                           //<!--Bono manual
                           'custrecord_c_gtm_bono1',
                           'custrecord_c_gtm_bono2',
@@ -879,6 +920,8 @@ function(serverWidget,search,record,runtime,redirect,url) {
                      message_response : r.getValue('custrecord_c_gtm_mensaje_respuesta'),   
                      xml_sat :url_file+'&idfile='+ r.getValue('custrecord_c_gtm_xml_sa'),        
                      pdf : url_file+'&idfile='+ r.getValue('custrecord_c_gtm_pdf'),
+                     pagado : r.getValue('custrecord_pagado_gtm'),
+                     fechaEntregaCSF : r.getValue('custrecord_fecha_entrega_csf_gtm'),
                      print : print_url_base+r.getValue('custrecord_c_gtm_empleado')+'&periodo='+period+'&comp='+r.getValue('internalid')+'&level='+level,
                      send : send_url_base+r.getValue('custrecord_c_gtm_empleado')+'&period='+period+'&comp='+r.getValue('internalid'),
                      ver : record_url_base+r.getValue('internalid'),
