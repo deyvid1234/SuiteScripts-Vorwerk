@@ -75,6 +75,10 @@
                             //+ '<Cell><Data ss:Type="String">NÚMERO DE ENTREGAS</Data></Cell>'
                             + '<Cell><Data ss:Type="String">ENTREGA</Data></Cell>'
                             + '<Cell><Data ss:Type="String">BONO DE PRODUCTIVIDAD</Data></Cell>'
+                            + '<Cell><Data ss:Type="String">BONO VENTA PROPIA TMSB</Data></Cell>'
+                            + '<Cell><Data ss:Type="String">VENTA PROPIA TMSB</Data></Cell>'
+                            + '<Cell><Data ss:Type="String">BONO PRODUCTIVIDAD TMSB</Data></Cell>'
+                            + '<Cell><Data ss:Type="String">PRODUCTIVIDAD TMSB</Data></Cell>'
                             + '<Cell><Data ss:Type="String">BONO EMERALD</Data></Cell>'
                             + '<Cell><Data ss:Type="String">ODV DE LAS RECLUTAS</Data></Cell>'
                             //+ '<Cell><Data ss:Type="String">TM PAGADAS REC</Data></Cell>'
@@ -159,6 +163,10 @@
                          var dataNR = typeof data[x].dataNR === 'undefined'?"0":data[x].dataNR;
                          var montoActividad = typeof data[x].montoActividad === 'undefined'?"0":data[x].montoActividad;
                          var noActividad = typeof data[x].noActividad === 'undefined'?"0":data[x].noActividad;
+                         var ventaPropiaTMSB = typeof data[x].ventaPropia_tmsb === 'undefined'?"0":data[x].ventaPropia_tmsb;
+                         var ventaPropiaTMSB_monto = typeof data[x].ventaPropia_monto_tmsb === 'undefined'?"0":data[x].ventaPropia_monto_tmsb;
+                         var productividadTMSB = typeof data[x].productividad_tmsb === 'undefined'?"0":data[x].productividad_tmsb;
+                         var productividadTMSB_monto = typeof data[x].productividad_monto_tmsb === 'undefined'?"0":data[x].productividad_monto_tmsb;
                          var dataActividad = typeof data[x].dataActividad === 'undefined'?"0":data[x].dataActividad;
                          xmlStr += '<Row>'
                            +'<Cell><Data ss:Type="String">'+data[x].nameEmp+'</Data></Cell>'
@@ -179,6 +187,10 @@
                                //+ '<Cell><Data ss:Type="String">'+num_entrega+'</Data></Cell>'
                                + '<Cell><Data ss:Type="String">'+entrega+'</Data></Cell>'
                                + '<Cell><Data ss:Type="String">'+bono_productividad+'</Data></Cell>'
+                               + '<Cell><Data ss:Type="String">'+ventaPropiaTMSB_monto+'</Data></Cell>'
+                               + '<Cell><Data ss:Type="String">'+ventaPropiaTMSB+'</Data></Cell>'
+                               + '<Cell><Data ss:Type="String">'+productividadTMSB_monto+'</Data></Cell>'
+                               + '<Cell><Data ss:Type="String">'+productividadTMSB+'</Data></Cell>'
                                + '<Cell><Data ss:Type="String">'+bono_emerald+'</Data></Cell>'
                                + '<Cell><Data ss:Type="String">'+odv_de_reclutas+'</Data></Cell>'
                                //+ '<Cell><Data ss:Type="String">'+tm_pagadas_rec+'</Data></Cell>'
