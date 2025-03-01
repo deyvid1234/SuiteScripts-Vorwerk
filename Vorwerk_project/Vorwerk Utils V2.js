@@ -6,31 +6,39 @@ function(record, search, runtime, format, query,currency) {
     function getLog(scriptName){
         log.debug('llamado correcto de utils',scriptName)
     }
-    function getPeriod(fecha){
+    function obtenerTodosPeriodos() {
+        var periodos = {};
         var periodSearch = search.create({
-                type: 'customrecord_periods',
-                filters: [
-                    ['custrecord_inicio', 'onorbefore', start],
-                    'AND',
-                    ['custrecord_final', 'onorafter', start]
-                ],
-                columns: [
-                    'custrecord_inicio',
-                    'custrecord_final'
-                ]
-            });
+            type: 'customrecord_periods',
+            columns: [
+                'custrecord_inicio',
+                'custrecord_final',
+                'internalid'
+            ]
+        });
 
-            var searchResult = periodSearch.run().getRange({ start: 0, end: 1 });
-            
-            if (!searchResult || searchResult.length === 0) {
-                
-                log.error('No se encontró un período Vorwerk válido para la fecha actual');
-            }else{
-                log.debug('Período Vorwerk encontrado', searchResult);
-                startDate = searchResult[0].getValue('custrecord_inicio');
-                endDate = searchResult[0].getValue('custrecord_final');
+        var searchResult = periodSearch.run().getRange({ start: 0, end: 1000 });
+        searchResult.forEach(function(result) {
+            var inicio = stringToDate(result.getValue('custrecord_inicio'));
+            var fin = stringToDate(result.getValue('custrecord_final'));
+            var id = result.id;
+            periodos[id] = {
+                inicio: inicio,
+                fin: fin
+            };
+        });
+        return periodos;
+    }
+
+    // Función para encontrar el período de una fecha
+    function encontrarPeriodo(fecha, periodos) {
+        fecha = stringToDate(fecha);
+        for (var idPeriodo in periodos) {
+            if (fecha >= periodos[idPeriodo].inicio && fecha <= periodos[idPeriodo].fin) {
+                return idPeriodo;
             }
-            return searchResult
+        }
+        return null;
     }
      function currencyConvert(monedaOrigen,monedaSalida){
        
@@ -463,6 +471,8 @@ function(record, search, runtime, format, query,currency) {
 
     return {
         getLog: getLog,
+        obtenerTodosPeriodos: obtenerTodosPeriodos,
+        encontrarPeriodo: encontrarPeriodo,
         currencyConvert:currencyConvert,
         getConf:getConf,
         dateToString:dateToString,

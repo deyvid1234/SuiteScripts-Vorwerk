@@ -357,6 +357,21 @@ function() {
 				2:'custrecord_c_gtm_bpm10',
 				3:'custrecord_c_jdg_bpm10'
 			},
+			ventaPropia_tmsb:{
+				1:'custrecord_monto_vp_tmsb',
+				2:'',
+				3:'custrecord_monto_vp_tmsb_le'
+			},
+			productividad_tmsb:{
+				1:'custrecord_monto_prod_',
+				2:'',
+				3:'custrecord_monto_prod_le'
+			},
+			odv_tmsb:{
+				1:'custrecord_odv_tmsb',
+				2:'',
+				3:'custrecord_odv_tmsb_le'
+			},
 		} 
 	}
     return {

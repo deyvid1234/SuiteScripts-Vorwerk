@@ -321,7 +321,19 @@ function(email,record, file, search, https, runtime,format,Dictionary) {
                     fieldId: config_fields.bp8_monto[config.type],
                     value: comissionInfo.cincodos_nle  
                 });*/
-
+                //campos para tmsb
+                registerEmp.setValue({
+                    fieldId: config_fields.ventaPropia_tmsb[config.type],
+                    value: comissionInfo.ventaPropia_monto_tmsb    
+                });
+                registerEmp.setValue({
+                    fieldId: config_fields.productividad_tmsb[config.type],
+                    value: comissionInfo.productividad_monto_tmsb    
+                });
+                registerEmp.setValue({
+                    fieldId: config_fields.odv_tmsb[config.type],
+                    value: comissionInfo.productividad_tmsb    
+                });
 
                 registerEmp.setValue({
                     fieldId: field_id[type_to_add][1],

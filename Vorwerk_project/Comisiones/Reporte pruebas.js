@@ -194,10 +194,13 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
 
             //Creacion de sublista y sus campos
             var sublist = addFieldsTabla(form,cust_type,cust_promo,cust_period,cust_entrega)
-
+            const listasPresentadora = searchDataPresentadoras(fechaPeriodoCalculado,cust_period)
+            const presentadorasTMSB = listasPresentadora.presentadorasTMSB
             //Busqueda de ordenes de venta 3 periodos antes a hoy
             startTime = new Date();
-            const salesOrdersData = searchSalesOrders(cust_period,inicioPeriodo,finPeriodo)
+            const salesOrdersData = searchSalesOrders(cust_period,inicioPeriodo,finPeriodo,presentadorasTMSB)
+            const tmsbSO= salesOrdersData.objTMSB
+            const tmPagadaGanada =salesOrdersData.objTmPagadaGanada
             const historicoSO = salesOrdersData.historicoSO
             const thisPeriodSO = salesOrdersData.thisPeriodSO
             const dHistorico=salesOrdersData.dHistorico
@@ -223,7 +226,8 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             //Busqueda datos Presentadores
             startTime = new Date();
 
-            const listasPresentadora = searchDataPresentadoras(fechaPeriodoCalculado,cust_period)
+            
+
             const allPresentadoras = listasPresentadora.allPresentadorData
             //log.debug('allPresentadoras', allPresentadoras)
             const listaGrupos= listasPresentadora.empGrupos
@@ -233,6 +237,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             const listaEquipoRecluta=listasPresentadora.equipoYRecluta
             //log.debug('listaEquipoRecluta', listaEquipoRecluta)
             const listaNombramientos=listasPresentadora.nombramiento
+            var todosPeriodos = Utils.obtenerTodosPeriodos();
             log.debug('listaNombramientos',listaNombramientos)
             newCheckTime = new Date();
             timeDiff = newCheckTime - startTime; //in ms
@@ -280,6 +285,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 //Datos EMP
                 var empType=allPresentadoras[i].employeetype
                 var empPromo=allPresentadoras[i].promocion
+                
                 var dataEmp = allPresentadoras[i]
                 var empConfiguracion = allPresentadoras[i].emp_conf
                 var empID = allPresentadoras[i].internalid
@@ -302,6 +308,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 var objCook = false
                 var objNuevoRecluta = false
                 var objActividad = false
+                var objProductividadTMSB = false
                 var urlDetalle = 'https://3367613.app.netsuite.com/app/site/hosting/scriptlet.nl?script=1358&deploy=2'+'&periodoI='+inicioPeriodo+'&periodoF='+finPeriodo+'&promo='+empPromo+'&tipo='+empType+'&pre='+empID
                 switch(tipoReporteGloobal){
                     case 1: //Reporte LE
@@ -344,17 +351,17 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                             log.debug('objNuevoRecluta',objNuevoRecluta)
                             objActividad = bonoActividad(empID,dataEmp,integrantesEquipo,thisPeriodSO,historicoSO,allPresentadoras,dHistorico,inicioPeriodo,finPeriodo)
                             log.debug('objActividad',objActividad)
-                            var amounTrue = validateAmount(sublist,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objReclutamiento,objEntrega,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objXmasdosNLE,objJoya,objCook)
+                            var amounTrue = validateAmount(sublist,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objReclutamiento,objEntrega,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objXmasdosNLE,objJoya,objCookobjNuevoRecluta,objActividad,objProductividadTMSB)
         
                             if(amounTrue){
-                                fillTable(sublist,urlDetalle,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objReclutamiento,objEntrega,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objXmasdosNLE,objJoya,objCook,objNuevoRecluta,objActividad,false)
+                                fillTable(sublist,urlDetalle,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objReclutamiento,objEntrega,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objXmasdosNLE,objJoya,objCook,objNuevoRecluta,objActividad,objProductividadTMSB,false)
                                 cont_line++
                             }
                         }
 
                     break;
                     case 2: //Reporte Presentadora
-                        if(empType == 1 && empPromo == 2 /*&& allPresentadoras[i].internalid == '4055754'*/){
+                        if(empType == 1 && empPromo == 2 /*&& allPresentadoras[i].internalid == '4430027'*/){
                             //Calcular reporte para la persona
                             var reclutas=listaReclutas[i]
                             var integrantesEquipo=listaGrupos[i]   
@@ -362,30 +369,36 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                             var ventasEmp =thisPeriodSO[i] 
                             var conf = Utils.getConf(empConfiguracion);
                             //log.debug('ventasEmp',ventasEmp)
-                            objVentasPropias = bonoVentaPropia(dataEmp,ventasEmp,compConfigDetails)
-                            //log.debug('objVentasPropias',objVentasPropias)
                             
-                            objReclutamiento = bonoReclutamiento(reclutas,historicoSO,thisPeriodSO,dataEmp,compConfigDetails,allPresentadoras,dHistorico)
-                            //log.debug('objReclutamiento',objReclutamiento)
-                            objEntrega = bonoEntrega(dataEmp,ventasEmp,cust_entrega)
-                            //log.debug('objEntrega',objEntrega)
+                                objProductividadTMSB = bonoProductividadTMSB(empID,dataEmp,tmsbSO,compConfigDetails,finPeriodo,inicioPeriodo,todosPeriodos,tmPagadaGanada)
                             
-                            objProductividad = bonoProductividad(dataEmp,ventasEmp,compConfigDetails)
-                            //log.debug('objProductividad',objProductividad)
-                            objReclutamiento = bonoReclutamiento(reclutas,historicoSO,thisPeriodSO,dataEmp,compConfigDetails,allPresentadoras,dHistorico)
-                            //log.debug('objReclutamiento',objReclutamiento)
-                            objGarantia = bonoGarantia(dataEmp,garantiaSO,compConfigDetails)
+                                objVentasPropias = bonoVentaPropia(dataEmp,ventasEmp,compConfigDetails)
+                                //log.debug('objVentasPropias',objVentasPropias)
+                                
+                                objReclutamiento = bonoReclutamiento(reclutas,historicoSO,thisPeriodSO,dataEmp,compConfigDetails,allPresentadoras,dHistorico)
+                                //log.debug('objReclutamiento',objReclutamiento)
+                                objEntrega = bonoEntrega(dataEmp,ventasEmp,cust_entrega)
+                                //log.debug('objEntrega',objEntrega)
+                                
+                                objProductividad = bonoProductividad(dataEmp,ventasEmp,compConfigDetails)
+                                //log.debug('objProductividad',objProductividad)
+                                objReclutamiento = bonoReclutamiento(reclutas,historicoSO,thisPeriodSO,dataEmp,compConfigDetails,allPresentadoras,dHistorico)
+                                //log.debug('objReclutamiento',objReclutamiento)
+                                objGarantia = bonoGarantia(dataEmp,garantiaSO,compConfigDetails)
+                                
+                                objJoya = bonoJoya(conf,ventasEmp,compConfigDetails)
+                                objCook = bonoCk(dataEmp,ckSO)
                             
-                            objJoya = bonoJoya(conf,ventasEmp,compConfigDetails)
-                            objCook = bonoCk(dataEmp,ckSO)
+                            
                             /*
                             montoComisionCK = bonoComCK()
                             
                             */
-                            var amounTrue = validateAmount(sublist,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objReclutamiento,objEntrega,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objXmasdosNLE,objJoya,objCook)
+
+                            var amounTrue = validateAmount(sublist,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objReclutamiento,objEntrega,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objXmasdosNLE,objJoya,objCook,objNuevoRecluta,objActividad,objProductividadTMSB)
         
                             if(amounTrue){
-                                fillTable(sublist,urlDetalle,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objReclutamiento,objEntrega,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objXmasdosNLE,objJoya,objCook,objNuevoRecluta,objActividad)
+                                fillTable(sublist,urlDetalle,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objReclutamiento,objEntrega,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objXmasdosNLE,objJoya,objCook,objNuevoRecluta,objActividad,objProductividadTMSB)
                                 cont_line++
                             }
                         }
@@ -401,10 +414,10 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                         
                             objCook = bonoCk(dataEmp,ckSO)
                             
-                            var amounTrue = validateAmount(sublist,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objReclutamiento,objEntrega,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objXmasdosNLE,objJoya,objCook)
+                            var amounTrue = validateAmount(sublist,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objReclutamiento,objEntrega,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objXmasdosNLE,objJoya,objCook,objNuevoRecluta,objActividad,objProductividadTMSB)
         
                             if(amounTrue){
-                                fillTable(sublist,urlDetalle,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objReclutamiento,objEntrega,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objXmasdosNLE,objJoya,objCook,objNuevoRecluta,objActividad)
+                                fillTable(sublist,urlDetalle,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objReclutamiento,objEntrega,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objXmasdosNLE,objJoya,objCook,objNuevoRecluta,objActividad,objProductividadTMSB)
                                 cont_line++
                             }
                         }
@@ -425,7 +438,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
         }   
     }//Fin sublista
 
-    function validateAmount(sublist,dataEmp,ventasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,supercomision,reclutamiento,entrega,objXmasDos,productividad,ventaEquipo,ventasEquipoNLE,garantia,joya,cookKey,xMasdosNLE){
+    function validateAmount(sublist,dataEmp,ventasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,supercomision,reclutamiento,entrega,objXmasDos,productividad,ventaEquipo,ventasEquipoNLE,garantia,joya,cookKey,xMasdosNLE,nuevoRecluta,actividad,productividadTMSB){
         var subtotal=0
         var v
         if(ventasPropias){  
@@ -488,13 +501,31 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
           v = xMasdosNLE.monto32>0?xMasdosNLE.monto32:0
           subtotal+=parseInt(v,10)
         }
+        if(nuevoRecluta){
+            v = nuevoRecluta.monto>0?nuevoRecluta.monto:0
+            subtotal+=parseInt(v,10)  
+        }
+        if(actividad){
+            v = actividad.monto>0?actividad.monto:0
+            subtotal+=parseInt(v,10)
+        }
+        if(productividadTMSB){
+            v = productividadTMSB.montoVP>0?productividadTMSB.montoVP:0
+            subtotal+=parseInt(v,10)
+            
+        }
+        if(productividadTMSB){
+            v = productividadTMSB.monto>0?productividadTMSB.monto:0
+            subtotal+=parseInt(v,10)
+        }
+
 
         v = subtotal>0?true:false
 
         return v;
 
     }
-    function fillTable(sublist,urlDetalle,dataEmp,ventasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,reclutamiento,entrega,productividad,ventaEquipo,ventasEquipoNLE,garantia,xMasdosNLE,joya,cookKey,nuevoRecluta,actividad){
+    function fillTable(sublist,urlDetalle,dataEmp,ventasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,reclutamiento,entrega,productividad,ventaEquipo,ventasEquipoNLE,garantia,xMasdosNLE,joya,cookKey,nuevoRecluta,actividad,productividadTMSB){
         var linea = cont_line
         var subtotal=0
         
@@ -843,7 +874,8 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 line : linea,
                  value : v
             });
-        }if(actividad){
+        }
+        if(actividad){
         
             v = JSON.stringify(actividad.data)
             sublist.setSublistValue({
@@ -865,6 +897,30 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                  value : v
             });
         }
+        
+        if(productividadTMSB){
+            v = JSON.stringify(productividadTMSB.data)
+            sublist.setSublistValue({
+                id : 'custentity_data_productividad_tmsb',
+                line : linea,
+                value : v!=''?v:''
+            });
+            v = productividadTMSB.monto>0?productividadTMSB.monto:0
+            subtotal+=parseInt(v,10)
+            sublist.setSublistValue({
+                id : 'custentity_monto_productividad_tmsb',
+                line : linea,
+                 value : v
+            });
+            
+            v = parseInt(productividadTMSB.montoVP)>0?parseInt(productividadTMSB.montoVP):0
+            subtotal+=parseInt(v,10)
+            sublist.setSublistValue({
+                id : 'custentity_monto_ventapropia_tmsb',
+                line : linea,
+                 value : v
+            });
+        }
         var v = subtotal>0?subtotal:0
         // log.debug('subtotal v',v)
         sublist.setSublistValue({
@@ -876,6 +932,111 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
         return fillTable;
         
     }
+    function bonoProductividadTMSB(empID,dataEmp,historicoSO,compConfigDetails,finPeriodo,inicioPeriodo,todosPeriodos,tmPagadaGanada){//validar tipo de reingreso en el llamado, pasar a la funcion
+        try{
+               
+            var reingreso = dataEmp.tipoReingreso
+            var empTipoIngreso
+            var finObjetivo2
+            if(reingreso == ''){
+                empTipoIngreso = dataEmp.tipoIngreso
+                finObjetivo2 = dataEmp.objetivo_2
+            } else{
+                empTipoIngreso = reingreso
+                
+                if(dataEmp.obj_2_reactivacion == ''){
+                    finObjetivo2 = finObjetivo2 = dataEmp.objetivo_2
+                }else{
+                    finObjetivo2 = dataEmp.obj_2_reactivacion
+                }
+            }
+            var tmsbCampo = dataEmp.statusTMSB
+            //log.debug('empID',empID)
+            //log.debug('finObjetivo2 antes',finObjetivo2)
+            finObjetivo2 = Utils.stringToDate(finObjetivo2)
+            //log.debug('finObjetivo2',finObjetivo2)
+            var inicioPeriodofecha = Utils.stringToDate(inicioPeriodo)
+            //log.debug('inicioPeriodofecha',inicioPeriodofecha)
+            var finPeriodofecha = Utils.stringToDate(finPeriodo)
+            //log.debug('finPeriodofecha',finPeriodofecha)
+            //log.debug('tmPagadaGanada',tmPagadaGanada[empID])
+            //log.debug('empID',empID)
+            
+            if(empTipoIngreso == 14 && tmsbCampo == '' && finObjetivo2 < finPeriodofecha && finObjetivo2 > inicioPeriodofecha && !tmPagadaGanada.hasOwnProperty(empID)){
+                var ventas = historicoSO[empID]
+                log.debug('ventas',ventas)
+                var data = []
+                var ventasPorPeriodo = {}
+                var numeroVentasPorPeriodo = {};
+                var montoTotalProductividad = 0; 
+                var detallesPorPeriodo = []; 
+                var ventasPorPeriodoVP = {}
+                for (i in ventas){
+                    var ventasData= Object.keys(ventas[i])
+                    var internalid = ventas[i][ventasData]['internalid']
+                    var fechaSO = ventas[i][ventasData]['trandate']
+                    var comStatus = ventas[i][ventasData]['comStatus']
+                    //log.debug('comStatus',comStatus)
+                    if (comStatus == 2){
+                        var periodoSO = Utils.encontrarPeriodo(fechaSO, todosPeriodos);                    
+
+                        //log.debug('periodoSO',periodoSO)
+                        
+                        data.push(internalid)
+
+                        if (!ventasPorPeriodo[periodoSO]) {
+                            ventasPorPeriodo[periodoSO] = [];
+                            numeroVentasPorPeriodo[periodoSO] = 0;
+                        }
+                        
+                        ventasPorPeriodo[periodoSO].push({
+                            internalid: internalid,
+                            fecha: fechaSO,
+                            periodo: periodoSO,
+                        });
+                        numeroVentasPorPeriodo[periodoSO]++;
+                    }
+                    
+                    
+                }
+                //log.debug('data',data)
+                var ventasNo = data.length
+                var montoVentasPre= compConfigDetails[1]['esquemaVentasPresentadora'][ventasNo]['compensacion']
+                var totalVentasPorPeriodo = {};
+                for (var periodo in ventasPorPeriodo) {
+                    totalVentasPorPeriodo[periodo] = ventasPorPeriodo[periodo].length;
+                }
+                //log.debug('Total de ventas por período ', totalVentasPorPeriodo);
+
+                for (e in numeroVentasPorPeriodo){
+                    var ventasEnPeriodo = numeroVentasPorPeriodo[e]; 
+                    //log.debug('Ventas en período '+ e, ventasEnPeriodo);
+                    var montoProductividadxPeriodo= compConfigDetails[1]['esquemaVentasPresentadora'][ventasEnPeriodo]['bonoProductividad']
+                    montoProductividadxPeriodo = parseInt(montoProductividadxPeriodo);
+                    //log.debug('montoProductividadxPeriodo',montoProductividadxPeriodo)
+                    if(montoProductividadxPeriodo > 0){
+                        montoTotalProductividad += parseInt(montoProductividadxPeriodo);
+                    }
+                }
+                log.debug('Monto total productividad', montoTotalProductividad);
+                log.debug(' data ventasPorPeriodo', ventasPorPeriodo);
+                log.debug(' montoVentasPre', montoVentasPre);
+                return {
+                    monto: montoTotalProductividad, 
+                    data: ventasPorPeriodo,
+                    montoVP: montoVentasPre
+                };
+
+            }
+            return false
+                
+
+        }catch(e){
+            log.error('Error bono productividad tmsb', e)
+            return false
+        }
+    }
+    
     function bonoNuevoRecluta(empID,dataEmp,reclutas,thisPeriodSO,historicoSO,allPresentadoras,dHistorico,integrantesEquipo){
         try{
             //log.debug('thisPeriodSO[empID]',thisPeriodSO[empID])
@@ -1834,6 +1995,9 @@ una rcluta de algun miembro del equipo*/
             const empSearchnombradopor = search.createColumn({ name: 'custentity_nombramiento'});
             const empSearchfechanombramiento = search.createColumn({ name: 'custentity_fecha_nombramiento'});
             const empSearchPeriodoPagoNLE = search.createColumn({ name: 'custentityperiodo_nle_pago'});
+            const empSearchTipoIngreso = search.createColumn({ name: 'custentity_tipo_ingreso'});
+            const empSearchTipoReingreso = search.createColumn({ name: 'custentity_vorwerk_reentry'});
+            const empSearchStatusTMSB = search.createColumn({ name: 'custentity_estatus_tm_sinbarreras'});
 
             const mySearch = search.create({
                 type: 'employee',
@@ -1862,7 +2026,9 @@ una rcluta de algun miembro del equipo*/
                     empSearchnombradopor,
                     empSearchfechanombramiento,
                     empSearchPeriodoPagoNLE,
-
+                    empSearchTipoIngreso,
+                    empSearchTipoReingreso,
+                    empSearchStatusTMSB
 
                 ],
             });
@@ -1871,7 +2037,7 @@ una rcluta de algun miembro del equipo*/
             var empGrupos = {} //Arreglo de lideres de equipo y sus integrantes arreglo[liderGrupo] = [integrante1,integrante2...]
             var empReclutas = {}//Arreglo de presentadores y sus reclutados arreglo[Reclutadora] = [reclutada1,reclutada2...]
             var nombradsPor={}//arreglo de presentadoras
-
+            var presentadorasTMSB = []//arreglo de presentadoras tipo de ingreso tm sin barreras
             var pagedResults = mySearch.runPaged();
             pagedResults.pageRanges.forEach(function (pageRange){
                 var currentPage = pagedResults.fetch({index: pageRange.index});
@@ -1901,7 +2067,9 @@ una rcluta de algun miembro del equipo*/
                     objEMP.nombramientoPor = r.getValue('custentity_nombramiento')
                     objEMP.fechaNombramiento = r.getValue('custentity_fecha_nombramiento')
                     objEMP.periodoPagoNLE = r.getValue('custentityperiodo_nle_pago')
-
+                    objEMP.tipoIngreso = r.getValue('custentity_tipo_ingreso')
+                    objEMP.tipoReingreso = r.getValue('custentity_vorwerk_reentry')
+                    objEMP.statusTMSB = r.getValue('custentity_estatus_tm_sinbarreras')
                     allPresentadorData[objEMP.internalid] = objEMP
 
                     if(empGrupos.hasOwnProperty(objEMP.supervisor)){
@@ -1938,6 +2106,10 @@ una rcluta de algun miembro del equipo*/
                             log.error('Error validando fecha de nombramiento', e);
                         }
                     }
+                    if(objEMP.tipoIngreso == 14 || objEMP.tipoReingreso == 14){
+                
+                        presentadorasTMSB.push(objEMP.internalid)
+                    }
 
                 });
                       
@@ -1968,18 +2140,112 @@ una rcluta de algun miembro del equipo*/
                }
             }
             
-            return {allPresentadorData:allPresentadorData,empGrupos:empGrupos,empReclutas:empReclutas,equipoYRecluta:equipoYRecluta,nombramiento:nombradsPor}
+            return {allPresentadorData:allPresentadorData,empGrupos:empGrupos,empReclutas:empReclutas,equipoYRecluta:equipoYRecluta,nombramiento:nombradsPor,presentadorasTMSB:presentadorasTMSB}
         }catch(e){
             log.error('Error en searchDataPresentadoras',e)
         }
     }
-    function searchSalesOrders(cust_period,inicioPeriodo,finPeriodo){
+    function searchSalesOrders(cust_period,inicioPeriodo,finPeriodo,presentadorasTMSB){
         try{
             const inicioPeriodoDate =  Utils.stringToDate(inicioPeriodo)
             const finPeriodoDate = Utils.stringToDate(finPeriodo)
+            var finMenosCinco = Utils.restarMeses(finPeriodo, 5);
             var dHistorico = Utils.restarMeses(inicioPeriodo, 3); //Fecha 3 meses antes del periodo calculado
             log.debug('dHistorico',dHistorico)
             
+
+            try{
+                var objTMSB = {};
+                var objTmPagadaGanada = {}
+                const salesOrderFilters = [
+                    ['item', 'anyof', '2671','1126','1757','2001','2170','2490','2571','2035','2638','2280'],
+                    'AND',
+                    ['salesrep.custentity_estructura_virtual', 'is', 'F'],
+                    'AND',
+                    ['type', 'anyof', 'SalesOrd'],
+                    'AND',
+                    ['formulatext: {salesrep}', 'isnotempty', ''],
+                    'AND',
+                    [
+                        [
+                            ['salesrep', 'anyof', presentadorasTMSB],
+                            'AND',
+                            ['custbody_tipo_venta', 'anyof', '2','1'],
+                        ],
+                        'OR',
+                        [
+                            ['custbody_presentadora_tm_paga', 'anyof', presentadorasTMSB],
+                            'AND',
+                            ['custbody_tipo_venta', 'is','19'],
+                        ],
+                    ]
+                    //O TIPO DE VENTA ES 19 Y EL CAMPO PRESENTADORA TM PAGADA ES EL ARREGLO
+                ];
+
+                const salesOrderColSalesRep = search.createColumn({ name: 'salesrep' });
+                const salesOrderColTranId = search.createColumn({ name: 'tranid' });
+                const salesOrderColInternalId = search.createColumn({ name: 'internalid' });
+                const salesOrderColTranDate = search.createColumn({ name: 'trandate' });
+                const salesOrderColEntity = search.createColumn({ name: 'entity' });
+                const salesOrderColTipoVenta = search.createColumn({ name: 'custbody_tipo_venta' });
+                const salesOrderColComStatus = search.createColumn({ name: 'custbody_vw_comission_status' });
+
+                const searchSalesTMSB = search.create({
+                    type: 'salesorder',
+                    filters: salesOrderFilters,
+                    columns: [
+                        salesOrderColSalesRep,
+                        salesOrderColTranId,
+                        salesOrderColInternalId,
+                        salesOrderColTranDate,
+                        salesOrderColEntity,
+                        salesOrderColTipoVenta,
+                        salesOrderColComStatus
+                        
+                       
+                    ],
+                });
+                searchSalesTMSB.filters.push(search.createFilter({
+                       name: 'trandate',
+                       operator: 'within',
+                       values: [Utils.dateToString(finMenosCinco),Utils.dateToString(finPeriodoDate)]
+                }));
+                var pagedResults = searchSalesTMSB.runPaged();
+                pagedResults.pageRanges.forEach(function (pageRange){
+                    var currentPage = pagedResults.fetch({index: pageRange.index});
+                    currentPage.data.forEach(function (r) {
+                        var objSOTMSB = new Object();
+                        objSOTMSB.salrep = r.getValue('salesrep')
+                        objSOTMSB.tranid = r.getValue('tranid')
+                        objSOTMSB.internalid = r.getValue('internalid')
+                        objSOTMSB.trandate = r.getValue('trandate')
+                        objSOTMSB.entity = r.getValue('entity')
+                        objSOTMSB.tipoVenta = r.getValue('custbody_tipo_venta')
+                        objSOTMSB.comStatus = r.getValue('custbody_vw_comission_status')
+                        var idSO = {}
+                        idSO[objSOTMSB.internalid] = objSOTMSB 
+                        
+                        // Inicializar arrays si no existen
+                        if (!(objSOTMSB.salrep in objTMSB)) {
+                            objTMSB[objSOTMSB.salrep] = [];
+                        }
+                        objTMSB[objSOTMSB.salrep].push(idSO);
+
+                        if (objSOTMSB.tipoVenta == 1 || objSOTMSB.tipoVenta == 19) {
+                            // Inicializar arrays si no existen
+                            if (!(objSOTMSB.salrep in objTmPagadaGanada)) {
+                                objTmPagadaGanada[objSOTMSB.salrep] = [];
+                            }
+                            objTmPagadaGanada[objSOTMSB.salrep].push(idSO);
+                        }
+                   });
+
+                });
+            }catch(e){
+                log.error('error busqueda ventas tmsb',e)
+            }
+
+
             try{
                 var objGarantiaRep = {};
                 var objCK = {};
@@ -2114,7 +2380,7 @@ una rcluta de algun miembro del equipo*/
                       
             });
             
-            return {historicoSO:historicoSO,thisPeriodSO:thisPeriodSO,dHistorico:dHistorico,objGarantiaRep:objGarantiaRep,objCK:objCK}
+            return {historicoSO:historicoSO,thisPeriodSO:thisPeriodSO,dHistorico:dHistorico,objGarantiaRep:objGarantiaRep,objCK:objCK,objTMSB:objTMSB,objTmPagadaGanada:objTmPagadaGanada}
         }catch(e){
             log.error('Error en searchSalesOrders',e)
         }
@@ -2274,6 +2540,25 @@ una rcluta de algun miembro del equipo*/
                 }).updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
                 arrayFields.push({idfield : thidField.id, namefield : thidField.label})
             
+                thidField = sublist.addField({
+                    id: 'custentity_monto_ventapropia_tmsb',
+                    type: serverWidget.FieldType.CURRENCY,
+                    label: 'Bono Venta Propia TMSB'
+                }).updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
+                arrayFields.push({idfield : thidField.id, namefield : thidField.label})
+                arrayFields.push({idfield : thidField.id, namefield : thidField.label})
+                thidField = sublist.addField({
+                    id: 'custentity_monto_productividad_tmsb',
+                    type: serverWidget.FieldType.CURRENCY,
+                    label: 'Bono Productividad TMSB'
+                }).updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
+                arrayFields.push({idfield : thidField.id, namefield : thidField.label})
+                thidField = sublist.addField({
+                    id: 'custentity_data_productividad_tmsb',
+                    type: serverWidget.FieldType.TEXTAREA,
+                    label: 'ODV TM SIN BARRERAS'
+                }).updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
+                arrayFields.push({idfield : thidField.id, namefield : thidField.label})
                 thidField = sublist.addField({
                     id: 'custentity_bono_garantia_ids',
                     type: serverWidget.FieldType.TEXT,

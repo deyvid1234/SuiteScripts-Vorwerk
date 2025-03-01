@@ -468,11 +468,6 @@ function(record,https,currentRecord,runtime,file,search,message) {
                         fieldId: "custentity_tresmasdos_nle_monto",
                         line: i
                     });
-                    var ventaPropia_tmsb = record.getSublistValue({
-                        sublistId: "sublist",
-                        fieldId: "custentity_data_ventapropia_tmsb",
-                        line: i
-                    });
                     var ventaPropia_monto_tmsb = record.getSublistValue({
                         sublistId: "sublist",
                         fieldId: "custentity_monto_ventapropia_tmsb",
@@ -549,7 +544,6 @@ function(record,https,currentRecord,runtime,file,search,message) {
                             xdos_nle              :xdos_nle,
                             tresdos_nle           :tresdos_nle,
                             cincodos_nle          :cincodos_nle,
-                            ventaPropia_tmsb      :ventaPropia_tmsb,
                             ventaPropia_monto_tmsb :ventaPropia_monto_tmsb,
                             productividad_tmsb    :productividad_tmsb,
                             productividad_monto_tmsb :productividad_monto_tmsb
