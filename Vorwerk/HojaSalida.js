@@ -42,7 +42,7 @@ function obtenerImagen(value,opc)
 		case 'T'  :
 		{
 			if(opc=='e1'){
-				var imagen = nlapiLoadFile(16);
+				var imagen = nlapiLoadFile(3200134);
 			  var url = imagen.getURL();
 			  var urls = url.split('&');
 			  var urlAux = '';
@@ -151,6 +151,7 @@ function HojaSalidaButton(type, form, request)
 // Etiqueta de Embarque: Generacion de PDF
 function HojaSalidaPDF(request, response)
 {
+try {
 	var hs 		= request.getParameter('custparam_hs');
 	var hsRec	= nlapiLoadRecord('itemfulfillment',hs);
 	var order	= hsRec.getFieldValue('createdfrom');
@@ -167,7 +168,7 @@ function HojaSalidaPDF(request, response)
 	 var internalIdimage
 
 	if (nlapiGetContext().getEnvironment() == "SANDBOX") {
-		internalIdimage = 2576941 //sandbox
+		internalIdimage = 2461144 //sandbox
 	}
 	else {
 		internalIdimage = 2576941 //prod
@@ -243,11 +244,14 @@ function HojaSalidaPDF(request, response)
 		pedido += "<tr>";
 		pedido += "<td colspan='3' align=\"center\" font-size=\"11\"><b>Cliente</b></td>";
 		pedido += "</tr>";
+		
 		var artped 	= so.getLineItemCount('item');
+		nlapiLogExecution('debug', 'artped', artped);
 		var artajus = hsRec.getLineItemCount('custpage_datos_otros');
+		nlapiLogExecution('debug', 'arta', artajus);
 		for(var i = 1;i<=artped;i++)
 		{
-
+			nlapiLogExecution('debug', 'i', i);
 			var arped		= nlapiEscapeXML(returnBlank(so.getLineItemText('item','item',i)));
 			var cantped		= nlapiEscapeXML(returnBlank(so.getLineItemValue('item','quantity',i)));
 			var mostrar		= returnFalse(so.getLineItemValue('item', 'custcol_mostrar_hoja_salida', i));
@@ -338,5 +342,9 @@ function HojaSalidaPDF(request, response)
 	var fileError = nlapiXMLToPDF(xml);
 	response.setContentType('PDF', 'Hoja de Salida.pdf', 'inline');
 	response.write(fileError.getValue());
+	} catch (e) {
+		nlapiLogExecution('ERROR', 'Error en HojaSalidaPDF', 'Detalles: ' + e.toString());
+		throw nlapiCreateError('ERROR_GENERAR_PDF', 'Ocurrió un error al generar la Hoja de Salida: ' + e.message, true);
+	}
 
 }
