@@ -1015,7 +1015,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                             }
                         }else if(ventasIntegranteTP){
                            
-                            //log.debug('noIntegrantesActivos dentro',noIntegrantesActivos)
+                           log.debug('noIntegrantesActivos dentro',noIntegrantesActivos)
                             var salesIntegranteTP =[]
                             
                             for(j in ventasIntegranteTP){//Se recorren las Ordenes de cada recluta del Presentador
@@ -1025,12 +1025,22 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                                 var id = ventasIntegranteTP[j][key]['internalid']
                                 var docNum = ventasIntegranteTP[j][key]['tranid']
                                 fechaSO = Utils.stringToDate(fechaSO)
-                                if(tipoVenta != 'TM Ganada' && fechaSO > fechaObjetivo){
-                                    var pedido = { idSO:id,docNum:docNum} 
-                                    salesIntegranteTP.push(pedido)
-                                    noIntegrantesActivos ++
+                                var todasVentasDespuesObjetivo = true
+                               if(fechaSO <= fechaObjetivo) {// Verifica si alguna venta es antes de la fecha objetivo
+                                    todasVentasDespuesObjetivo = false
                                     break
                                 }
+                                
+                                // Solo agrega ventas que no sean TM Ganada
+                                if(tipoVenta != 'TM Ganada'){
+                                    var pedido = { idSO:id,docNum:docNum} 
+                                    salesIntegranteTP.push(pedido)
+                                }
+                            }
+                            
+                            // Incrementa el contador solo si todas las ventas son después del objetivo
+                            if(todasVentasDespuesObjetivo && salesIntegranteTP.length > 0) {
+                                noIntegrantesActivos ++
                                 salesIntegrante[i] = salesIntegranteTP
                             }
                         }
