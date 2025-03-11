@@ -296,7 +296,8 @@ function marcarCheck(object_fill) {
                      fieldId: "custpage_pagado",
                      line: i
                 });
-                if(checkPagado == 'Pagado'){
+              log.debug('checkPagado',checkPagado)
+                if(checkPagado != 'Pagado'){
                     if (confirm('Uno o más registros no estan pagados, ¿Desea Continuar?')) {
                         if(check == true){
                             var idReg = record.getSublistValue({
@@ -343,8 +344,8 @@ function marcarCheck(object_fill) {
     }
     
     function txt(){
-    	try{
-    		  
+        try{
+              
             var obj = getSelectedData();
             var thisRecord = currentRecord.get();
             var url_aux = "",  arr_aux = [];
@@ -352,11 +353,11 @@ function marcarCheck(object_fill) {
             if(obj.length < 1){
                 alert('Seleccione al menos un registro que contenga como total una cantidad mayor a 0')
             }else{
-    	        for(var x in obj){
-    	        	arr_aux.push(obj[x].idReg)
-    	        }
-    	        var objIds = {recordType: thisRecord.type,recordId:thisRecord.id,ids:arr_aux.join()}
-    	        if(runtime.envType != 'PRODUCTION'){ 
+                for(var x in obj){
+                    arr_aux.push(obj[x].idReg)
+                }
+                var objIds = {recordType: thisRecord.type,recordId:thisRecord.id,ids:arr_aux.join()}
+                if(runtime.envType != 'PRODUCTION'){ 
                     url_aux = 'https://3367613-sb1.extforms.netsuite.com/app/site/hosting/scriptlet.nl?script=562&deploy=1&compid=3367613_SB1&h=28b3c54f72ae6b777dc9'
                 }else{
                     url_aux ='https://3367613.extforms.netsuite.com/app/site/hosting/scriptlet.nl?script=562&deploy=1&compid=3367613&h=458a9dc3b85d84c7c480';
@@ -381,12 +382,12 @@ function marcarCheck(object_fill) {
                 }
                
                 log.debug("response",response);
-    	        
-    	        
+                
+                
             }
-    	}catch(err){
-    		log.error("txt error",err)
-    	}
+        }catch(err){
+            log.error("txt error",err)
+        }
         
  
     }
@@ -448,13 +449,13 @@ function marcarCheck(object_fill) {
     }
     function nomina(){
         try{
-        	var url_aux = ""
+            var url_aux = ""
             if(runtime.envType != 'PRODUCTION'){ 
                 url_aux = "https://3367613-sb1.app.netsuite.com/app/common/scripting/mapreducescriptstatus.nl?daterange=TODAY&datefrom=3%2F9%2F2020&dateto=3%2F9%2F2020&scripttype=568&primarykey=&jobstatefilterselect=&sortcol=dateCreated&sortdir=DESC&csv=HTML&OfficeXML=F&pdf=&size=50&_csrf=XC8MEeA9RWlvYvXprkCo2j_ZOjHBgMRvpFEMUFaSSZZ59cK-6H3TYHyQdaFe8Ku-20spfhfzq2XnKEYS_hAn73PyT8bzHDA6iNmbtu3oXQjK8l81ygn_XqmK0hJv2OvytuG351pzcgLs-hhkI9gKU-lk5Cy6y5UXcvvTRb_1Cfs%3D&datemodi=WITHIN&date=TODAY&showall=F"
             }else{
                 url_aux ='https://3367613.app.netsuite.com/app/common/scripting/mapreducescriptstatus.nl?whence=';
             };   
-        	var myMsg = message.create({
+            var myMsg = message.create({
                 title: "Timbrado de nomina",
                 message: "Para ver el progreso del timbrado de click al siguiente enlace: <a href='"+url_aux+"'>Ver Progreso<a>",
                 type: message.Type.CONFIRMATION
@@ -467,11 +468,11 @@ function marcarCheck(object_fill) {
                 var url_aux = (runtime.envType != 'PRODUCTION') ? 'https://3367613-sb1.app.netsuite.com/app/site/hosting/scriptlet.nl?script=569&deploy=1' : 'https://3367613.app.netsuite.com/app/site/hosting/scriptlet.nl?script=569&deploy=1';
                 //envia la información por metodo put al map vorwerk commission map
                 var headers = {"Content-Type": "application/json"};
-                /*var res = https.put({
+                var res = https.put({
                     url: url_aux,
                     headers: headers,
                     body: JSON.stringify({obj:obj,type_req:"payrollProcess"})
-                }).body;*/
+                }).body;
                 log.debug('fin nomina')
             }
             
@@ -583,8 +584,8 @@ function marcarCheck(object_fill) {
     }
     
     function policycreate(period){
-    	
-    	var sumjdg_subt= 0;
+        
+        var sumjdg_subt= 0;
         var sumjdg_ret= 0;
         var sumjdg_total= 0;
         
@@ -592,29 +593,29 @@ function marcarCheck(object_fill) {
         var sumpre_ret= 0;
         var sumpre_total= 0;
         
-       	var sumgtm_subt= 0;
-    	var sumgtm_ret= 0;
-    	var sumgtm_total= 0;
-    		try{
-    			var periodos = {};
-    			var busqueda = search.create({
+        var sumgtm_subt= 0;
+        var sumgtm_ret= 0;
+        var sumgtm_total= 0;
+            try{
+                var periodos = {};
+                var busqueda = search.create({
                     type: 'customrecord_registro_compensaciones',
                     columns: ['custrecord_periodo_comision','internalid','custrecord_nivel_jerarquia'],
                     filters: [
                         ['custrecord_periodo_comision','anyof',period]
                     ]
                 });
-    			busqueda.run().each(function(r){
-    				periodos[r.getValue('custrecord_nivel_jerarquia')]={
-    					idperiodo:r.getValue('internalid')
-    				}
-    		             return true
-    			});
-    		}catch(err){
-    			log.debug('erroridperiodo',err);
-    		}
-    		try{
-    		var busqueda = search.create({
+                busqueda.run().each(function(r){
+                    periodos[r.getValue('custrecord_nivel_jerarquia')]={
+                        idperiodo:r.getValue('internalid')
+                    }
+                         return true
+                });
+            }catch(err){
+                log.debug('erroridperiodo',err);
+            }
+            try{
+            var busqueda = search.create({
                 type: 'customrecord_vw_conf_poliza',
                 filters: [
                     {
@@ -627,36 +628,36 @@ function marcarCheck(object_fill) {
                     ['custrecord_vw_encabezado_poliza','custrecord_vw_account']
                 
             });
-    		console.log(":)")
+            console.log(":)")
             var headers ={};
             busqueda.run().each(function(r){
                 
-            	headers[r.getText('custrecord_vw_encabezado_poliza')]={
-            		
-            		account:r.getValue('custrecord_vw_account'),
-            		
-            		
-            	}
+                headers[r.getText('custrecord_vw_encabezado_poliza')]={
+                    
+                    account:r.getValue('custrecord_vw_account'),
+                    
+                    
+                }
              
                          
-        	     
+                 
                 return true;
             });
             console.log(":)")
             log.debug('headers',headers);
             log.debug('periodo',periodos);
             for (var x in headers){
-            	console.log(x,headers[x])
+                console.log(x,headers[x])
             }
             
             
-    	}catch(err){
-    		log.error("error policycreate",err);
-    		console.log("err",err)
-    	}
-    	try{
-    		
-    		var busqueda = search.create({
+        }catch(err){
+            log.error("error policycreate",err);
+            console.log("err",err)
+        }
+        try{
+            
+            var busqueda = search.create({
                 type: 'customrecord_compensaciones_jdg',
                 filters: [
                     {
@@ -669,43 +670,43 @@ function marcarCheck(object_fill) {
                     ['custrecord_c_jdg_subtotal','custrecord_c_jdg_retencion','custrecord_c_jdg_total']
                 
             });
-    		console.log(":)")
+            console.log(":)")
             var compesationjdg =[];
             busqueda.run().each(function(r){
                 
-            	compesationjdg.push({
-            		subtotal:r.getValue('custrecord_c_jdg_subtotal')||0,
-            		retencion:r.getValue('custrecord_c_jdg_retencion')||0,
-            		total:r.getValue('custrecord_c_jdg_total')||0
-            	})
+                compesationjdg.push({
+                    subtotal:r.getValue('custrecord_c_jdg_subtotal')||0,
+                    retencion:r.getValue('custrecord_c_jdg_retencion')||0,
+                    total:r.getValue('custrecord_c_jdg_total')||0
+                })
              
                          
-        	     
+                 
                 return true;
             });
             
             
-        	for(var x in compesationjdg){
-        		sumjdg_subt+=parseFloat(compesationjdg[x].subtotal);
-        		sumjdg_ret+=parseFloat(compesationjdg[x].retencion);
-        		sumjdg_total+=parseFloat(compesationjdg[x].total);
-        		console.log('sumjdg_subt',sumjdg_subt);
-        	}
+            for(var x in compesationjdg){
+                sumjdg_subt+=parseFloat(compesationjdg[x].subtotal);
+                sumjdg_ret+=parseFloat(compesationjdg[x].retencion);
+                sumjdg_total+=parseFloat(compesationjdg[x].total);
+                console.log('sumjdg_subt',sumjdg_subt);
+            }
             
             console.log("sumjdg_subt"+sumjdg_subt)
             console.log("sumjdg_ret"+sumjdg_ret)
             console.log("sumjdg_total"+sumjdg_total)
             log.debug('compesationjdg',compesationjdg);
-    	}catch(err){
-    		log.error("error compesationjdg",err);
-    		console.log("error",err)
-    		
-    		
-    		
-    	}
-    	try{
-    		
-    		var busqueda = search.create({
+        }catch(err){
+            log.error("error compesationjdg",err);
+            console.log("error",err)
+            
+            
+            
+        }
+        try{
+            
+            var busqueda = search.create({
                 type: 'customrecord_comisiones_presentadora',
                 filters: [
                     {
@@ -718,36 +719,36 @@ function marcarCheck(object_fill) {
                     ['custrecord_c_pre_subtotal','custrecord_c_pre_retencion','custrecord_c_pre_total']
                 
             });
-    		console.log(":)")
+            console.log(":)")
             var compesationpre =[];
             busqueda.run().each(function(r){
                 
-            	compesationpre.push({
-            		subtotal:r.getValue('custrecord_c_pre_subtotal')||0,
-            		retencion:r.getValue('custrecord_c_pre_retencion')||0,
-            		total:r.getValue('custrecord_c_pre_total')||0
-            	})
+                compesationpre.push({
+                    subtotal:r.getValue('custrecord_c_pre_subtotal')||0,
+                    retencion:r.getValue('custrecord_c_pre_retencion')||0,
+                    total:r.getValue('custrecord_c_pre_total')||0
+                })
              
                          
-        	     
+                 
                 return true;
             });
            
-        	for(var x in compesationpre){
-        		sumpre_subt+=parseFloat(compesationpre[x].subtotal);
-        	    sumpre_ret+=parseFloat(compesationpre[x].retencion);
-        	    sumpre_total+=parseFloat(compesationpre[x].total);    
-        	}
+            for(var x in compesationpre){
+                sumpre_subt+=parseFloat(compesationpre[x].subtotal);
+                sumpre_ret+=parseFloat(compesationpre[x].retencion);
+                sumpre_total+=parseFloat(compesationpre[x].total);    
+            }
             
             console.log(":)")
             log.debug('compesationpre',compesationpre);
-    	}catch(err){
-    		log.error("error compesationpre",err);
-    		console.log("error",err)
-    	}
-    	try{
-    		
-    		var busqueda = search.create({
+        }catch(err){
+            log.error("error compesationpre",err);
+            console.log("error",err)
+        }
+        try{
+            
+            var busqueda = search.create({
                 type: 'customrecord_compensaciones_gtm',
                 filters: [
                     {
@@ -760,135 +761,135 @@ function marcarCheck(object_fill) {
                     ['custrecord_c_gtm_subtotal','custrecord_c_gtm_retencion','custrecord_c_gtm_total']
                 
             });
-    		console.log(":)")
+            console.log(":)")
             var compesationgtm =[];
             busqueda.run().each(function(r){
                 
-            	compesationgtm.push({
-            		subtotal:r.getValue('custrecord_c_gtm_subtotal')||0,
-            		retencion:r.getValue('custrecord_c_gtm_retencion')||0,
-            		total:r.getValue('custrecord_c_gtm_total')||0
-            		
-            	})
+                compesationgtm.push({
+                    subtotal:r.getValue('custrecord_c_gtm_subtotal')||0,
+                    retencion:r.getValue('custrecord_c_gtm_retencion')||0,
+                    total:r.getValue('custrecord_c_gtm_total')||0
+                    
+                })
              
                 return true;
-            	
+                
             });
  
-        	for(var x in compesationgtm){
-        	    sumgtm_subt+=parseFloat(compesationgtm[x].subtotal);
-        	    sumgtm_ret+=parseFloat(compesationgtm[x].retencion);
-        	    sumgtm_total+=parseFloat(compesationgtm[x].total);
-        	}
+            for(var x in compesationgtm){
+                sumgtm_subt+=parseFloat(compesationgtm[x].subtotal);
+                sumgtm_ret+=parseFloat(compesationgtm[x].retencion);
+                sumgtm_total+=parseFloat(compesationgtm[x].total);
+            }
             
             console.log(":)")
             log.debug('compesationgtm',compesationgtm);
-    	}catch(err){
-    		log.error("error compesationgtm",err);
-    		console.log("error",err)
-    	}
-    	
-    	try{
-    		var sumpre_tm = sumpre_subt + sumgtm_subt;
-    		var sumRete = sumgtm_ret + sumpre_ret + sumjdg_ret;
-    		var pagoTotal =  sumgtm_total + sumpre_total + sumjdg_total
-    		var jeRec = record.create({
-    			type: record.Type.JOURNAL_ENTRY,
-    			isDynamic: true
-    		});
-    		console.log('headers',headers);
-    		console.log('headers["Subtotal LE"].account',headers["Subtotal LE"].account);
-    		// Debit Subtotal LE
-    		jeRec.selectNewLine({
-    			sublistId: 'line'
-    		});
-    		jeRec.setCurrentSublistValue({
-    			sublistId: 'line',
-    			fieldId: 'account',
-    			value: headers["Subtotal LE"].account
-    		}); // Accounts Payable
-    		log.debug('1','1');
-    		log.debug('sumjdg_subt',sumjdg_subt);
-    		jeRec.setCurrentSublistValue({
-    			sublistId: 'line',
-    			fieldId: 'debit',
-    			value: sumjdg_subt
-    		});
-    		
-    		jeRec.commitLine({
-    			sublistId: 'line'
-    		});
-    		// Debit Sub Pre - TTM
-    		jeRec.selectNewLine({
-    			sublistId: 'line'
-    		});
-    		jeRec.setCurrentSublistValue({
-    			sublistId: 'line',
-    			fieldId: 'account',
-    			value: headers["Subt Pre - TTM"].account
-    		}); // Accounts Payable
-    		log.debug('2','2');
-    		jeRec.setCurrentSublistValue({
-    			sublistId: 'line',
-    			fieldId: 'debit',
-    			value: sumpre_tm
-    		});
-    		log.debug('sumpre_tm',sumpre_tm);
-    		jeRec.commitLine({
-    			sublistId: 'line'
-    		});
-    		
-    		// Credit sum Ret_isr
-    		jeRec.selectNewLine({
-    			sublistId: 'line'
-    		});
-    		jeRec.setCurrentSublistValue({
-    			sublistId: 'line',
-    			fieldId: 'account',
-    			value: headers["Suma de la RET. ISR"].account
-    		}); // Accounts Receivable
-    		jeRec.setCurrentSublistValue({
-    			sublistId: 'line',
-    			fieldId: 'credit',
-    			value: sumRete
-    		});
-    		log.debug('sumRete',sumRete);
-    		jeRec.commitLine({
-    			sublistId: 'line'
-    		});
-    		
-    		// Credit Total 
-    		jeRec.selectNewLine({
-    			sublistId: 'line'
-    		});
-    		jeRec.setCurrentSublistValue({
-    			sublistId: 'line',
-    			fieldId: 'account',
-    			value: headers["Total Pagado"].account
-    		}); // Accounts Receivable
-    		jeRec.setCurrentSublistValue({
-    			sublistId: 'line',
-    			fieldId: 'credit',
-    			value: pagoTotal
-    		});
-    		log.debug('pagoTotal',pagoTotal);
-    		jeRec.commitLine({
-    			sublistId: 'line'
-    		});
-    		var idRec =jeRec.save();
-    		
-    	}catch(err){
-    		log.debug('error subtotales ',err);
-    		alert("Hubo un error en el registro  "+err.message);
-    	}
-    	try{
-    		var url_aux = ""
+        }catch(err){
+            log.error("error compesationgtm",err);
+            console.log("error",err)
+        }
+        
+        try{
+            var sumpre_tm = sumpre_subt + sumgtm_subt;
+            var sumRete = sumgtm_ret + sumpre_ret + sumjdg_ret;
+            var pagoTotal =  sumgtm_total + sumpre_total + sumjdg_total
+            var jeRec = record.create({
+                type: record.Type.JOURNAL_ENTRY,
+                isDynamic: true
+            });
+            console.log('headers',headers);
+            console.log('headers["Subtotal LE"].account',headers["Subtotal LE"].account);
+            // Debit Subtotal LE
+            jeRec.selectNewLine({
+                sublistId: 'line'
+            });
+            jeRec.setCurrentSublistValue({
+                sublistId: 'line',
+                fieldId: 'account',
+                value: headers["Subtotal LE"].account
+            }); // Accounts Payable
+            log.debug('1','1');
+            log.debug('sumjdg_subt',sumjdg_subt);
+            jeRec.setCurrentSublistValue({
+                sublistId: 'line',
+                fieldId: 'debit',
+                value: sumjdg_subt
+            });
+            
+            jeRec.commitLine({
+                sublistId: 'line'
+            });
+            // Debit Sub Pre - TTM
+            jeRec.selectNewLine({
+                sublistId: 'line'
+            });
+            jeRec.setCurrentSublistValue({
+                sublistId: 'line',
+                fieldId: 'account',
+                value: headers["Subt Pre - TTM"].account
+            }); // Accounts Payable
+            log.debug('2','2');
+            jeRec.setCurrentSublistValue({
+                sublistId: 'line',
+                fieldId: 'debit',
+                value: sumpre_tm
+            });
+            log.debug('sumpre_tm',sumpre_tm);
+            jeRec.commitLine({
+                sublistId: 'line'
+            });
+            
+            // Credit sum Ret_isr
+            jeRec.selectNewLine({
+                sublistId: 'line'
+            });
+            jeRec.setCurrentSublistValue({
+                sublistId: 'line',
+                fieldId: 'account',
+                value: headers["Suma de la RET. ISR"].account
+            }); // Accounts Receivable
+            jeRec.setCurrentSublistValue({
+                sublistId: 'line',
+                fieldId: 'credit',
+                value: sumRete
+            });
+            log.debug('sumRete',sumRete);
+            jeRec.commitLine({
+                sublistId: 'line'
+            });
+            
+            // Credit Total 
+            jeRec.selectNewLine({
+                sublistId: 'line'
+            });
+            jeRec.setCurrentSublistValue({
+                sublistId: 'line',
+                fieldId: 'account',
+                value: headers["Total Pagado"].account
+            }); // Accounts Receivable
+            jeRec.setCurrentSublistValue({
+                sublistId: 'line',
+                fieldId: 'credit',
+                value: pagoTotal
+            });
+            log.debug('pagoTotal',pagoTotal);
+            jeRec.commitLine({
+                sublistId: 'line'
+            });
+            var idRec =jeRec.save();
+            
+        }catch(err){
+            log.debug('error subtotales ',err);
+            alert("Hubo un error en el registro  "+err.message);
+        }
+        try{
+            var url_aux = ""
                 if(runtime.envType != 'PRODUCTION'){ 
                     url_aux = "https://3367613-sb1.app.netsuite.com/app/accounting/transactions/journal.nl?id="+idRec;
                 }else{
                     url_aux ='https://3367613.app.netsuite.com/app/accounting/transactions/journal.nl?id='+idRec;
                 };   
-            	var myMsg = message.create({
+                var myMsg = message.create({
                     title: "Creacion de Poliza",
                     message: "Para ver el registro creado de click al siguiente enlace: <a href='"+url_aux+"'>Ver Progreso<a>",
                     type: message.Type.CONFIRMATION
@@ -896,10 +897,10 @@ function marcarCheck(object_fill) {
                 myMsg.show({
                     duration: 5000
                 });
-    	}catch(err){
-    		log.debug("errorMensajepoliza",err)
-    	}
-    	
+        }catch(err){
+            log.debug("errorMensajepoliza",err)
+        }
+        
 
     }
     
