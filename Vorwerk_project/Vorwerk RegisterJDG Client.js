@@ -284,7 +284,7 @@ function marcarCheck(object_fill) {
               sublistId: "custpage_sublist_detail"
             });
             
-            
+            var confirmacion = false;
             for (var i = 0; i < listLineCount; i++) {
                 var check = record.getSublistValue({
                      sublistId: "custpage_sublist_detail",
@@ -296,44 +296,43 @@ function marcarCheck(object_fill) {
                      fieldId: "custpage_pagado",
                      line: i
                 });
-              log.debug('checkPagado',checkPagado)
-                if(checkPagado != 'Pagado'){
-                    if (confirm('Uno o más registros no estan pagados, ¿Desea Continuar?')) {
-                        if(check == true){
-                            var idReg = record.getSublistValue({
-                                sublistId: "custpage_sublist_detail",
-                                fieldId: "custpage_article_id",
-                                line: i
-                           });
-                           var totalReg = record.getSublistValue({
-                               sublistId: "custpage_sublist_detail",
-                               fieldId: "custpage_total",
-                               line: i
-                          })
-                            object_fill.push({idReg:idReg,level:level,comision_id:comision_id,totalReg:totalReg,periodText:periodText,levelText:levelText});
-                            
-                        
-                        }
-                    } else {
-                        return false;
-                    }
-                }else{
-                    if(check == true){
+
+                if(check == true){
+                    if(checkPagado == 'Pagado' || confirmacion == true){
                         var idReg = record.getSublistValue({
                             sublistId: "custpage_sublist_detail",
                             fieldId: "custpage_article_id",
                             line: i
                         });
-                       var totalReg = record.getSublistValue({
-                           sublistId: "custpage_sublist_detail",
-                           fieldId: "custpage_total",
-                           line: i
+                        var totalReg = record.getSublistValue({
+                            sublistId: "custpage_sublist_detail",
+                            fieldId: "custpage_total",
+                            line: i
                         })
                         object_fill.push({idReg:idReg,level:level,comision_id:comision_id,totalReg:totalReg,periodText:periodText,levelText:levelText});
+                         
                         
-                    
+                    }else{
+                        if (confirm('Uno o más registros no estan pagados, ¿Desea Continuar?')) {
+                            confirmacion = true;
+                            var idReg = record.getSublistValue({
+                                sublistId: "custpage_sublist_detail",
+                                fieldId: "custpage_article_id",
+                                line: i
+                            });
+                            var totalReg = record.getSublistValue({
+                                sublistId: "custpage_sublist_detail",
+                                fieldId: "custpage_total",
+                                line: i
+                            })
+                            object_fill.push({idReg:idReg,level:level,comision_id:comision_id,totalReg:totalReg,periodText:periodText,levelText:levelText});
+                             
+                        } else {
+                            return false;
+                        }
                     }
                 }
+                   
                 
            }
             
