@@ -312,7 +312,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 var urlDetalle = 'https://3367613.app.netsuite.com/app/site/hosting/scriptlet.nl?script=1358&deploy=2'+'&periodoI='+inicioPeriodo+'&periodoF='+finPeriodo+'&promo='+empPromo+'&tipo='+empType+'&pre='+empID
                 switch(tipoReporteGloobal){
                     case 1: //Reporte LE
-                        if(empType == 3 && empPromo == 2 /*&& allPresentadoras[i].internalid == '3281037'*/){
+                        if(empType == 3 && empPromo == 2 /*&& allPresentadoras[i].internalid == '4025823'*/){
                             //Calcular reporte para la persona
                             var reclutas = listaReclutas[i]
                             var integrantesEquipo = listaGrupos[i]   
@@ -351,7 +351,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                             log.debug('objNuevoRecluta',objNuevoRecluta)
                             objActividad = bonoActividad(empID,dataEmp,integrantesEquipo,thisPeriodSO,historicoSO,allPresentadoras,dHistorico,inicioPeriodo,finPeriodo)
                             log.debug('objActividad',objActividad)
-                            var amounTrue = validateAmount(sublist,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objReclutamiento,objEntrega,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objXmasdosNLE,objJoya,objCookobjNuevoRecluta,objActividad,objProductividadTMSB)
+                            var amounTrue = validateAmount(sublist,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objReclutamiento,objEntrega,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objXmasdosNLE,objJoya,objCook,objNuevoRecluta,objActividad,objProductividadTMSB)
         
                             if(amounTrue){
                                 fillTable(sublist,urlDetalle,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objReclutamiento,objEntrega,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objXmasdosNLE,objJoya,objCook,objNuevoRecluta,objActividad,objProductividadTMSB,false)
@@ -361,7 +361,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
 
                     break;
                     case 2: //Reporte Presentadora
-                        if(empType == 1 && empPromo == 2 /*&& allPresentadoras[i].internalid == '4430027'*/){
+                        if(empType == 1 && empPromo == 2 /*&& allPresentadoras[i].internalid == '4565140'*/){
                             //Calcular reporte para la persona
                             var reclutas=listaReclutas[i]
                             var integrantesEquipo=listaGrupos[i]   
@@ -371,7 +371,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                             //log.debug('ventasEmp',ventasEmp)
                             
                                 objProductividadTMSB = bonoProductividadTMSB(empID,dataEmp,tmsbSO,compConfigDetails,finPeriodo,inicioPeriodo,todosPeriodos,tmPagadaGanada)
-                            
+                            log.debug('objProductividadTMSB',objProductividadTMSB)
                                 objVentasPropias = bonoVentaPropia(dataEmp,ventasEmp,compConfigDetails)
                                 //log.debug('objVentasPropias',objVentasPropias)
                                 
@@ -438,7 +438,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
         }   
     }//Fin sublista
 
-    function validateAmount(sublist,dataEmp,ventasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,supercomision,reclutamiento,entrega,objXmasDos,productividad,ventaEquipo,ventasEquipoNLE,garantia,joya,cookKey,xMasdosNLE,nuevoRecluta,actividad,productividadTMSB){
+    function validateAmount(sublist,dataEmp,ventasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,reclutamiento,entrega,productividad,ventaEquipo,ventasEquipoNLE,garantia,xMasdosNLE,joya,cookKey,nuevoRecluta,actividad,productividadTMSB){
         var subtotal=0
         var v
         if(ventasPropias){  
@@ -450,22 +450,22 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             subtotal+=parseInt(v,10)
         }
 
-        if(supercomision){
+        /*if(supercomision){
           v = supercomision.monto>0?supercomision.monto:0
           subtotal+=parseInt(v,10)
-        }
+        }*/
         
         if(reclutamiento){      
           v = reclutamiento.monto>0?reclutamiento.monto:0
           subtotal+=parseInt(v,10)
         }
-        if(objXmasDos){
+        /*if(objXmasDos){
           v = objXmasDos.monto32>0?objXmasDos.monto32:0
           subtotal+=parseInt(v,10)
           
           v = objXmasDos.monto52>0?objXmasDos.monto52:0
           subtotal+=parseInt(v,10)
-        }
+        }*/
         
         if(productividad){
           v = productividad.monto>0?productividad.monto:0
@@ -509,6 +509,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             v = actividad.monto>0?actividad.monto:0
             subtotal+=parseInt(v,10)
         }
+      log.debug('productividadTMSB validate',productividadTMSB)
         if(productividadTMSB){
             v = productividadTMSB.montoVP>0?productividadTMSB.montoVP:0
             subtotal+=parseInt(v,10)
@@ -521,7 +522,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
 
 
         v = subtotal>0?true:false
-
+log.debug('v validate',v)
         return v;
 
     }
@@ -962,7 +963,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             //log.debug('tmPagadaGanada',tmPagadaGanada[empID])
             //log.debug('empID',empID)
             
-            if(empTipoIngreso == 14 && tmsbCampo == '' && finObjetivo2 < finPeriodofecha && finObjetivo2 > inicioPeriodofecha && !tmPagadaGanada.hasOwnProperty(empID)){
+            if(empTipoIngreso == 14  && finObjetivo2 < finPeriodofecha && finObjetivo2 > inicioPeriodofecha && !tmPagadaGanada.hasOwnProperty(empID)){
                 var ventas = historicoSO[empID]
                 log.debug('ventas',ventas)
                 var data = []
@@ -1134,9 +1135,9 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                     var salesIntegrante = {}
                     var noIntegrantesActivos = 1 
                     integrantesEquipo.forEach(function(i,index) {//Se recorren los integrantes del equipo
-                        //log.debug('recluta',i)
+                        log.debug('recluta',i)
                         var ventasIntegranteTP = thisPeriodSO[i];
-                        //log.debug('ventasIntegranteTP',ventasIntegranteTP)
+                        log.debug('ventasIntegranteTP',ventasIntegranteTP)
                         var ventasIntegranteH = historicoSO[i];
                         log.debug('ventasIntegranteH signo ',!ventasIntegranteH) 
                         //Debe tener ventas en el periodo calculado
@@ -1160,7 +1161,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                         
                         if((ventasIntegranteTP && ventasIntegranteH) || (ventasIntegranteTP && fechaObjetivo < fechainicioPeriodo) ){   
                             noIntegrantesActivos ++
-                            //log.debug('noIntegrantesActivos dentro',noIntegrantesActivos)
+                            log.debug('noIntegrantesActivos primer if',noIntegrantesActivos)
                             var salesIntegranteTP =[]
                             
                             for(j in ventasIntegranteTP){//Se recorren las Ordenes de cada recluta del Presentador
@@ -1178,7 +1179,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                             }
                         }else if(ventasIntegranteTP){
                            
-                            //log.debug('noIntegrantesActivos dentro',noIntegrantesActivos)
+                            log.debug('noIntegrantesActivos dentro',noIntegrantesActivos)
                             var salesIntegranteTP =[]
                             
                             for(j in ventasIntegranteTP){//Se recorren las Ordenes de cada recluta del Presentador
@@ -1188,17 +1189,27 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                                 var id = ventasIntegranteTP[j][key]['internalid']
                                 var docNum = ventasIntegranteTP[j][key]['tranid']
                                 fechaSO = Utils.stringToDate(fechaSO)
-                                if(tipoVenta != 'TM Ganada' && fechaSO > fechaObjetivo){
-                                    var pedido = { idSO:id,docNum:docNum} 
-                                    salesIntegranteTP.push(pedido)
-                                    noIntegrantesActivos ++
+                                var todasVentasDespuesObjetivo = true
+                               if(fechaSO <= fechaObjetivo) {// Verifica si alguna venta es antes de la fecha objetivo
+                                    todasVentasDespuesObjetivo = false
                                     break
                                 }
+                                
+                                // Solo agrega ventas que no sean TM Ganada
+                                if(tipoVenta != 'TM Ganada'){
+                                    var pedido = { idSO:id,docNum:docNum} 
+                                    salesIntegranteTP.push(pedido)
+                                }
+                            }
+                            
+                            // Incrementa el contador solo si todas las ventas son después del objetivo
+                            if(todasVentasDespuesObjetivo && salesIntegranteTP.length > 0) {
+                                noIntegrantesActivos ++
                                 salesIntegrante[i] = salesIntegranteTP
                             }
                         }
                     });
-                    //log.debug('noIntegrantesActivos',noIntegrantesActivos)
+                    log.debug('noIntegrantesActivos',noIntegrantesActivos)
                     var monto 
                     if(noIntegrantesActivos > 2 && noIntegrantesActivos < 5){
                         monto = 2000
@@ -1208,8 +1219,8 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                         monto = 12000
                     }
                     bono_actividad = monto
-                    /*log.debug('bono_actividad',bono_actividad)
-                    log.debug('salesIntegrante',salesIntegrante)*/
+                    log.debug('bono_actividad',bono_actividad)
+                    log.debug('salesIntegrante',salesIntegrante)
                     if(bono_actividad > 0){
                         return  {monto:bono_actividad, noActivos:noIntegrantesActivos, data:salesIntegrante};
                     }else{
