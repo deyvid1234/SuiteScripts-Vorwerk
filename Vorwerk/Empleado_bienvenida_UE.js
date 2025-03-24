@@ -91,11 +91,11 @@ function Empleado_bienvenida_UE_BefortSubmit(type){
 				  var merger		= emailMerge.merge();
 				  var body			= merger.getBody();
 				  var subject		= merger.getSubject();
-				  body				= body.replace('custpantilla_display2',display2);
+				  /*body				= body.replace('custpantilla_display2',display2);
 				  body				= body.replace('custpantilla_display3',display3);
 				  body				= body.replace('custpantilla_fecha1',fecha1);
 				  body				= body.replace('custpantilla_fecha2',fecha2);
-				  body				= body.replace('custpantilla_fecha3',fecha3);
+				  body				= body.replace('custpantilla_fecha3',fecha3);*/
 				  nlapiSendEmail(remitente||20003, recordId, subject, body,null); 
 			  }
 		  }
