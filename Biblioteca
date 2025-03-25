@@ -4,6 +4,7 @@ Suitelet
  https://4570554.app.netsuite.com/app/site/hosting/scriptlet.nl?script=1896&deploy=1&compid=4570554
 LOGS
 https://4570554.app.netsuite.com/app/common/custom/custrecordentrylist.nl?rectype=1244
+https://4570554.app.netsuite.com/app/common/custom/custrecordentrylist.nl?rectype=1244&searchtype=Custom&searchid=60987&refresh=&whence=
 Settings
 https://4570554.app.netsuite.com/app/common/custom/custrecordentrylist.nl?rectype=1245
 
@@ -42,6 +43,7 @@ https://4570554.app.netsuite.com/app/setup/upload/csv/csvstatus.nl?whence=
 DD Sync Constraint Monitor Search
 
 https://4570554.app.netsuite.com/app/common/search/savedsearch.nl?id=41853 
+https://4570554.app.netsuite.com/app/common/search/search.nl?cu=T&e=T&id=41853
 
 Script Logs DD Today
 https://4570554.app.netsuite.com/app/common/search/search.nl?id=58418&e=T&cu=T&whence=
@@ -73,3 +75,8 @@ Busqueda sync local Velez
 12:45
 https://8041213.app.netsuite.com/app/common/search/searchresults.nl?searchid=685&saverun=T&whence=
 
+Marcotool local
+https://8041213.app.netsuite.com/app/common/custom/custrecordentrylist.nl?rectype=113
+
+logs marcotool local
+https://8041213.app.netsuite.com/app/common/custom/custrecordentrylist.nl?rectype=114&whence=

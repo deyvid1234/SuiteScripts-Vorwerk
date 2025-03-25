@@ -121,6 +121,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
             log.debug("runtime.executionContext",runtime.executionContext);
 
             var typeEvent = runtime.executionContext;
+            log.debug('typeEvent',typeEvent)
             if(typeEvent != runtime.ContextType.MAP_REDUCE  && typeEvent != runtime.ContextType.CSV_IMPORT ){
                 var type = scriptContext.type;
                 var rec = scriptContext.newRecord;
@@ -147,8 +148,9 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                 log.debug('type',type);
                 if(type == 'create' || type == 'edit'){
                     log.debug('se activo por el evento ')
-
-                    // actualizacion de commission status atravez de un suitelet
+                    // actualizacion de commission status 
+                    commissionStatus(salesrep)
+                    
                     try{
                         
                         if(type == 'edit'){
@@ -162,12 +164,11 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                                     log.debug('cambio de sales rep')
                                     setRecruiter(rec);//si hay cambio en el sales rep se actualiza el recruiter
                                 }
-                               var commissionStatusf = commissionStatus(salesrep,recordid,type) 
                                var numOdv = tmGanada(scriptContext);
                             }
 
                         } else if (type == 'create'){
-                            var commissionStatusf = commissionStatus(salesrep,recordid,type)
+                            
                             var numOdv = tmGanada(scriptContext);
                         }
                          
@@ -1041,165 +1042,126 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
         
         
     }
-    function commissionStatus(salesrep,recordid,type){
+    function commissionStatus(salesrep){
         try{
-            log.debug('salesrep',salesrep)
-            var presentador = record.load({//Cargar registro del sales rep
-                type: 'employee',
+            
+            var presentadorFields = search.lookupFields({
+                type: search.Type.EMPLOYEE,
                 id: salesrep,
-                isDynamic: false
+                columns: [
+                    'custentity123',                           // configuracion
+                    'custentity_promocion',                    // promocion
+                    'custentity72',                           // reactivacion
+                    'custentity_fin_objetivo_2_reactivacion',  // fecha fin objetivo reactivacion
+                    'custentity_fin_objetivo_2',               // fecha fin objetivo
+                    'hiredate',                                 // fecha contratacion
+                    'custentity_tipo_ingreso'             // tipo de ingreso
+                ]
             });
-            var configuracion = presentador.getValue('custentity123')
-            var promocion = presentador.getValue('custentity_promocion')
-            log.debug('configuracion',configuracion)
-            if(type == 'create' && promocion == 2){
-                var submitFields = record.submitFields({
-                    type: record.Type.SALES_ORDER,
-                    id: recordid,
-                    values: {'custbody_vw_comission_status':''}
-                });
-            } else if(type == 'edit' || (type == 'create' && promocion != 2)){
-                var fechaObj2
-                var hiredate 
-                var reactivacion = presentador.getValue('custentity72')
-                if(reactivacion != ''){
-                    fechaObj2 = presentador.getValue('custentity_fin_objetivo_2_reactivacion')
-                    hiredate = reactivacion
-                    
-                } else{    
-                    fechaObj2 = presentador.getValue('custentity_fin_objetivo_2')
-                    hiredate = presentador.getValue('hiredate')
 
+            //Determinacion de limite de ventas
+            const configuracion = presentadorFields.custentity123;
+            var limit = 6
+            for (i = 0; i < configuracion.length ; i++){
+                if(configuracion[i] == 11 || configuracion[i] == 12 || configuracion[i] == 13 || configuracion[i] == 14 || configuracion[i] == 15){//TM6R o TM4U
+                    limit = 4
                 }
-                log.debug('hiredate1',hiredate)
-                hiredate = Utils.dateToString(hiredate)
-                log.debug('hiredate2',hiredate)
-                log.debug('fechaObj21',fechaObj2)
-                //fechaObj2 = Utils.dateToString(fechaObj2)
-                //log.debug('fechaObj22',fechaObj2)
-                fechaObj2.setDate(fechaObj2.getDate() + 2);
-                log.debug('fechaObj23',fechaObj2)
+            }
 
+            const promocion = presentadorFields.custentity_promocion;
+            const reactivacion = presentadorFields.custentity72;
+            const tipoIngreso = presentadorFields.custentity_tipo_ingreso;
+            //Manejo de fechas
+            var fechaObj2;
+            var hiredate;
+            if (reactivacion) {
+                fechaObj2 = presentadorFields.custentity_fin_objetivo_2_reactivacion;
+                hiredate = reactivacion;
+            } else {
+                fechaObj2 = presentadorFields.custentity_fin_objetivo_2;
+                hiredate = presentadorFields.hiredate;
+            }
+            hiredate = Utils.dateToString(hiredate);
+            fechaObj2.setDate(fechaObj2.getDate() + 1); //Revisar por que se suma 2 dias
+            log.debug('Datos de presentador',presentadorFields )
+            
+            //Define fecha en que se convierte en TM propia
+            var busqueda = search.load({
+                id: 'customsearch_emp_promo_control'
+            });
+            busqueda.filters.push(search.createFilter({
+                name: 'internalid',
+                operator: 'is',
+                values: salesrep
+            }));
 
-                var busqueda = search.load({
-                    id: 'customsearch_emp_promo_control'
-                });
-                busqueda.filters.push(search.createFilter({
-                    name: 'internalid',
+            var date_transform_tm_propia = new Date();
+            date_transform_tm_propia.setDate(date_transform_tm_propia.getDate() + 3); //Suma un dia para nunca cumplir la validacion en caso de que el EMP aun no sea TM propia
+            
+            busqueda.run().each(function(r){
+                var todo = r.getAllValues();
+                aux_date_tm_propia = todo["GROUP(custentityaux_date_tm_propia)"]
+                if(aux_date_tm_propia){
+                    date_transform_tm_propia = Utils.stringToDate(aux_date_tm_propia)
+                }else{
+                    date_transform_tm_propia = todo["MAX(systemNotes.date)"]//Fecha en formato 4/10/2024 9:15 AM 
+                    date_transform_tm_propia = Utils.stringToDate(date_transform_tm_propia.split(' ')[0])
+                }
+                return true;
+            });
+            log.debug('date_transform_tm_propia',date_transform_tm_propia)
+            //Fin de validacion de fecha        
+
+            log.debug('Datos por variables','promocion '+promocion+' reactivacion '+reactivacion+' fechaObj2 '+fechaObj2+' hiredate '+hiredate +' limit '+limit +' date_transform_tm_propia '+date_transform_tm_propia )
+
+                
+            var cont = 1
+               
+            var soSearch = search.load({
+                id: 'customsearch_so_commission_status' //busqueda de so 
+            });
+            soSearch.filters.push(search.createFilter({
+                    name: 'salesrep',
                     operator: 'is',
                     values: salesrep
-                }));
-
-                var date_transform_tm_propia = new Date();
-                date_transform_tm_propia.setDate(date_transform_tm_propia.getDate() + 3); //Suma un dia para nunca cumplir la validacion en caso de que el EMP aun no sea TM propia
+            }));
+            soSearch.filters.push(search.createFilter({
+                    name: 'trandate',
+                    operator: 'onorafter',
+                    values: hiredate
+            }));
                 
-                busqueda.run().each(function(r){
-                    var todo = r.getAllValues();
+            soSearch.run().each(function(r){
+                var internalId = r.getValue('internalid')
+                var tipoVenta = r.getValue('custbody_tipo_venta')
+                var fechaSO = r.getValue('trandate')
+                fechaSO = Utils.stringToDate(fechaSO)
 
-                    
-                    aux_date_tm_propia = todo["GROUP(custentityaux_date_tm_propia)"]
-                    log.debug('aux_date_tm_propia',aux_date_tm_propia)
-                    
-                    if(aux_date_tm_propia){
-                        date_transform_tm_propia = Utils.stringToDate(aux_date_tm_propia)
-                    }else{
-                        date_transform_tm_propia = todo["MAX(systemNotes.date)"]//Fecha en formato 4/10/2024 9:15 AM 
-                        date_transform_tm_propia = Utils.stringToDate(date_transform_tm_propia.split(' ')[0])
-                        log.debug('date_transform_tm_propia',date_transform_tm_propia)
-                    }
-                    return true;
-                });
-
-
-
-
-
-
-                var limit = 6
-                for (i = 0; i < configuracion.length ; i++){
-                    //log.debug('configuracion[i].value',configuracion[i])
-                    if(configuracion[i] == 11 || configuracion[i] == 12 || configuracion[i] == 13 || configuracion[i] == 14){//TM6R o TM4U
-                        limit = 4
-                    }
+                if(tipoIngreso == 11 && promocion == 2){
+                    record.submitFields({
+                        type: record.Type.SALES_ORDER,
+                        id: internalId,
+                        values: {'custbody_vw_comission_status':''}
+                    });
+                }else if( (fechaSO > date_transform_tm_propia || fechaSO > fechaObj2 || cont > limit) && promocion == 2 ){
+                    record.submitFields({
+                        type: record.Type.SALES_ORDER,
+                        id: internalId,
+                        values: {'custbody_vw_comission_status':''}
+                    });
+                }else {
+                    record.submitFields({
+                        type: record.Type.SALES_ORDER,
+                        id: internalId,
+                        values: {'custbody_vw_comission_status':'2'}
+                    });
                 }
-                var cont = 1
-                var contVentas = 0
-                var arregloPrimerasVentas= []
-                var soSearch = search.load({
-                    id: 'customsearch_so_commission_status' //busqueda de so 
-                });
-                soSearch.filters.push(search.createFilter({
-                       name: 'salesrep',
-                       operator: 'is',
-                       values: salesrep
-                }));
-                soSearch.filters.push(search.createFilter({
-                       name: 'trandate',
-                       operator: 'onorafter',
-                       values: hiredate
-                }));
-                
-                soSearch.run().each(function(r){//validar
-                    contVentas ++
-                    var internalId = r.getValue('internalid')
-                    arregloPrimerasVentas.push(internalId)
-                    log.debug('internalId',internalId)
-                    var tipoVenta = r.getValue('custbody_tipo_venta')
-                    var fechaSO = r.getValue('trandate')
-                    fechaSO = Utils.stringToDate(fechaSO)
-                    log.debug('fechaSO',fechaSO)
-                    log.debug('contVentas',contVentas)
-                    log.debug('arregloPrimerasVentas',arregloPrimerasVentas)
-
-                    if (contVentas >= 10){
-                        if(arregloPrimerasVentas.hasOwnProperty(recordid)){
-                            log.debug('esta en el arreglo, ya paso por el for')
-                        }else{
-                            log.debug('vamos a actualizar el com status de ',recordid)
-                            var submitFields = record.submitFields({
-                                type: record.Type.SALES_ORDER,
-                                id: recordid,
-                                values: {'custbody_vw_comission_status':''}
-                            });
-                        }
-
-                        return false
-                    }
-                    if((tipoVenta == '2'|| tipoVenta == '19') && fechaSO <= fechaObj2 && cont <= limit && fechaSO <= date_transform_tm_propia ){
-                        //log.debug('internalId',internalId)
-                        log.debug('set com status no comisionable')
-                        var submitFields = record.submitFields({
-                            type: record.Type.SALES_ORDER,
-                            id: internalId,
-                            values: {'custbody_vw_comission_status':'2'}
-                        });
-                        cont ++
-            
-                    }else if (cont > limit|| fechaSO > fechaObj2 || promocion ==2){
-                        log.debug('si comisiona break')
-                        var submitFields = record.submitFields({
-                            type: record.Type.SALES_ORDER,
-                            id: internalId,
-                            values: {'custbody_vw_comission_status':''}
-                        });
-                        
-                    }else {
-                        log.debug('else')
-                        var submitFields = record.submitFields({
-                            type: record.Type.SALES_ORDER,
-                            id: internalId,
-                            values: {'custbody_vw_comission_status':'2'}
-                        });
-                        
-                    }
-                    
-                   
-                    return true
-                    
-                });
-            }
-            
-            
+                cont++
+                if (cont >= 7) {
+                    return false
+                }
+                return true
+            });  
 
         }catch (e){
             log.debug('error funcion comision status',e)

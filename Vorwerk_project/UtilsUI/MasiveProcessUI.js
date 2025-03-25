@@ -81,6 +81,27 @@ define(['N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
      */
     function onRequest(context) {
         try {
+            // Validar que sea administrador
+            const userRole = runtime.getCurrentUser().role;
+            if (userRole !== 3) {
+                const errorForm = serverWidget.createForm({
+                    title: 'Acceso Denegado'
+                });
+                
+                const errorField = errorForm.addField({
+                    id: 'custpage_error',
+                    type: serverWidget.FieldType.INLINEHTML,
+                    label: 'Error'
+                });
+                
+                errorField.defaultValue = `
+                    <p style="color: red;">Error: Este proceso solo puede ser ejecutado por usuarios con rol de Administrador.</p>
+                `;
+
+                context.response.writePage(errorForm);
+                return;
+            }
+
             if (context.request.method === 'GET') {
                 const form = createForm();
                 context.response.writePage(form);
@@ -93,51 +114,71 @@ define(['N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
                         searchId: searchId
                     });
 
-                    const form = serverWidget.createForm({
-                        title: 'Proceso Iniciado'
-                    });
-                    
-                    const messageField = form.addField({
-                        id: 'custpage_message',
-                        type: serverWidget.FieldType.INLINEHTML,
-                        label: 'Mensaje'
-                    });
-
                     // URL del centro de procesos según el ambiente
                     const baseUrl = runtime.envType === 'PRODUCTION' 
                         ? 'https://3367613.app.netsuite.com' 
                         : 'https://3367613-sb1.app.netsuite.com';
                     
                     const processUrl = `${baseUrl}/app/common/scripting/mapreducescriptstatus.nl?datemodi=WITHIN&date=TODAY&showall=F`;
-                    
-                    messageField.defaultValue = `
-                        <p>El proceso se ha iniciado correctamente.</p>
-                        <p>Script: Eliminar Fotos Employees Inactivos</p>
-                        <p>Deploy: CUSTOMDEPLOY_ELIMINA_ARCHIVOS_INACTIVOS</p>
-                        <p>ID del proceso: ${taskId}</p>
-                        <p>Para ver el progreso del proceso haga click aquí: <a href='${processUrl}' target="_blank">Ver Progreso</a></p>
+
+                    // Crear mensaje de confirmación
+                    const html = `
+                        <script>
+                            require(['N/ui/message'], function(message) {
+                                var myMsg = message.create({
+                                    title: 'Proceso Iniciado',
+                                    message: 'Script: Eliminar Fotos Employees Inactivos<br>' +
+                                            'Deploy: CUSTOMDEPLOY_ELIMINA_ARCHIVOS_INACTIVOS<br>' +
+                                            'ID del proceso: ${taskId}<br>' +
+                                            'Para ver el progreso del proceso haga click aquí: <a href="${processUrl}" target="_blank">Ver Progreso</a>',
+                                    type: message.Type.CONFIRMATION
+                                });
+                                myMsg.show({
+                                    duration: 10000
+                                });
+                            });
+                        </script>
                     `;
 
-                    context.response.writePage(form);
-                } catch (e) {
-                    const errorForm = serverWidget.createForm({
-                        title: 'Error al Iniciar Proceso'
+                    // Redirigir a la página principal con el mensaje
+                    const form = createForm();
+                    const messageField = form.addField({
+                        id: 'custpage_message',
+                        type: serverWidget.FieldType.INLINEHTML,
+                        label: 'Mensaje'
                     });
+                    messageField.defaultValue = html;
                     
-                    const errorField = errorForm.addField({
+                    context.response.writePage(form);
+
+                } catch (e) {
+                    // Mostrar error y volver al formulario principal
+                    const form = createForm();
+                    const errorField = form.addField({
                         id: 'custpage_error',
                         type: serverWidget.FieldType.INLINEHTML,
                         label: 'Error'
                     });
                     
                     errorField.defaultValue = `
-                        <p style="color: red;">Error: ${e.message}</p>
-                        <p>Script: Eliminar Fotos Employees Inactivos</p>
-                        <p>Deploy: CUSTOMDEPLOY_ELIMINA_ARCHIVOS_INACTIVOS</p>
-                        <p>Por favor, intente nuevamente más tarde.</p>
+                        <script>
+                            require(['N/ui/message'], function(message) {
+                                var errorMsg = message.create({
+                                    title: 'Error',
+                                    message: '${e.message}<br>' +
+                                            'Script: Eliminar Fotos Employees Inactivos<br>' +
+                                            'Deploy: CUSTOMDEPLOY_ELIMINA_ARCHIVOS_INACTIVOS<br>' +
+                                            'Por favor, intente nuevamente más tarde.',
+                                    type: message.Type.ERROR
+                                });
+                                errorMsg.show({
+                                    duration: 10000
+                                });
+                            });
+                        </script>
                     `;
-
-                    context.response.writePage(errorForm);
+                    
+                    context.response.writePage(form);
                 }
             }
         } catch (e) {
