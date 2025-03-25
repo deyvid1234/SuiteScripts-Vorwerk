@@ -119,7 +119,8 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
     function afterSubmit(scriptContext) {
         try{
             log.debug("runtime.executionContext",runtime.executionContext);
-
+            var rec = scriptContext.newRecord;
+            var salesrep = rec.getValue('salesrep')
             var typeEvent = runtime.executionContext;
             log.debug('typeEvent',typeEvent)
             // actualizacion de commission status 
@@ -131,7 +132,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
             
             if(typeEvent != runtime.ContextType.MAP_REDUCE  && typeEvent != runtime.ContextType.CSV_IMPORT ){
                 var type = scriptContext.type;
-                var rec = scriptContext.newRecord;
+                
                 var recordid = rec.id;
                 var entity = parseInt(rec.getValue('entity'),10);
                 var salesrep = rec.getValue('salesrep')
