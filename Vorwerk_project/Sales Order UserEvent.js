@@ -122,6 +122,13 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
 
             var typeEvent = runtime.executionContext;
             log.debug('typeEvent',typeEvent)
+            // actualizacion de commission status 
+            try{
+                commissionStatus(salesrep)
+            }catch(e){
+                log.debug('error actualizacion de commission status',e)
+            }
+            
             if(typeEvent != runtime.ContextType.MAP_REDUCE  && typeEvent != runtime.ContextType.CSV_IMPORT ){
                 var type = scriptContext.type;
                 var rec = scriptContext.newRecord;
@@ -148,8 +155,6 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                 log.debug('type',type);
                 if(type == 'create' || type == 'edit'){
                     log.debug('se activo por el evento ')
-                    // actualizacion de commission status 
-                    commissionStatus(salesrep)
                     
                     try{
                         
@@ -1063,14 +1068,14 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
             const configuracion = presentadorFields.custentity123;
             var limit = 6
             for (i = 0; i < configuracion.length ; i++){
-                if(configuracion[i] == 11 || configuracion[i] == 12 || configuracion[i] == 13 || configuracion[i] == 14 || configuracion[i] == 15){//TM6R o TM4U
+                if(configuracion[i].value == 11 || configuracion[i].value == 12 || configuracion[i].value == 13 || configuracion[i].value == 14 || configuracion[i].value == 15){//TM6R o TM4U
                     limit = 4
                 }
             }
 
-            const promocion = presentadorFields.custentity_promocion;
+            const promocion = presentadorFields.custentity_promocion[0].value;
             const reactivacion = presentadorFields.custentity72;
-            const tipoIngreso = presentadorFields.custentity_tipo_ingreso;
+            const tipoIngreso = presentadorFields.custentity_tipo_ingreso[0].value;
             //Manejo de fechas
             var fechaObj2;
             var hiredate;
@@ -1081,8 +1086,8 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                 fechaObj2 = presentadorFields.custentity_fin_objetivo_2;
                 hiredate = presentadorFields.hiredate;
             }
-            hiredate = Utils.dateToString(hiredate);
-            fechaObj2.setDate(fechaObj2.getDate() + 1); //Revisar por que se suma 2 dias
+            //hiredate = Utils.dateToString(hiredate);
+            fechaObj2 = Utils.stringToDate(fechaObj2);
             log.debug('Datos de presentador',presentadorFields )
             
             //Define fecha en que se convierte en TM propia
@@ -1112,7 +1117,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
             log.debug('date_transform_tm_propia',date_transform_tm_propia)
             //Fin de validacion de fecha        
 
-            log.debug('Datos por variables','promocion '+promocion+' reactivacion '+reactivacion+' fechaObj2 '+fechaObj2+' hiredate '+hiredate +' limit '+limit +' date_transform_tm_propia '+date_transform_tm_propia )
+            log.debug('Datos por variables','promocion '+promocion+' reactivacion '+reactivacion+' fechaObj2 '+fechaObj2+' hiredate '+hiredate +' limit '+limit +' date_transform_tm_propia '+date_transform_tm_propia +' tipoIngreso '+tipoIngreso)
 
                 
             var cont = 1
@@ -1138,18 +1143,21 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                 fechaSO = Utils.stringToDate(fechaSO)
 
                 if(tipoIngreso == 11 && promocion == 2){
+                    log.debug('caso 1')
                     record.submitFields({
                         type: record.Type.SALES_ORDER,
                         id: internalId,
                         values: {'custbody_vw_comission_status':''}
                     });
                 }else if( (fechaSO > date_transform_tm_propia || fechaSO > fechaObj2 || cont > limit) && promocion == 2 ){
+                    log.debug('caso 2')
                     record.submitFields({
                         type: record.Type.SALES_ORDER,
                         id: internalId,
                         values: {'custbody_vw_comission_status':''}
                     });
                 }else {
+                    log.debug('caso 3')
                     record.submitFields({
                         type: record.Type.SALES_ORDER,
                         id: internalId,
