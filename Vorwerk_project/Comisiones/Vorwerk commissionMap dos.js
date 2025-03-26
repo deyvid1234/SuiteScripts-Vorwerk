@@ -348,6 +348,13 @@ function(email,record, file, search, https, runtime,format,Dictionary) {
                 });
                 idComEmp = recEmp;
                 log.debug("registro de empleado creado",recEmp);
+                if(comissionInfo.ventaPropia_monto_tmsb > 0){
+                    record.submitFields({
+                        type: 'employee',
+                        id: comissionInfo.idEmp,
+                        values: {'custentity_estatus_tm_sinbarreras': '1'}
+                    });
+                }
             }catch(errRE){
                 log.error('error al crear registro por empleado',errRE)
             }
