@@ -1071,7 +1071,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
             for (i = 0; i < configuracion.length ; i++){
                 if(configuracion[i].value == 15){
                     limit = 3
-                }else if(configuracion[i].value == 11 || configuracion[i].value == 12 || configuracion[i].value == 13 || configuracion[i].value == 14 || configuracion[i].value == 15){//TM6R o TM4U
+                }else if(configuracion[i].value == 11 || configuracion[i].value == 12 || configuracion[i].value == 13 || configuracion[i].value == 14){//TM6R o TM4U
                     limit = 4
                 }
             }
@@ -1383,11 +1383,13 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                 var configuracion = salesRep.custentity123
                 var delegate = salesRep.custentity_promocion[0]['value'];
                 for (i = 0; i < configuracion.length ; i++){
-                    
-                    if(configuracion[i].value == 11 || configuracion[i].value == 12 || configuracion[i].value == 13 || configuracion[i].value == 14){//TM6R o TM4U
+                    if(configuracion[i].value == 15){
+                        odv_ganaTM = 3
+                    }else if(configuracion[i].value == 11 || configuracion[i].value == 12 || configuracion[i].value == 13 || configuracion[i].value == 14 ){//TM6R o TM4U
                         odv_ganaTM = 4
                     }
                 }
+                
                 
                 if(salesRep.custentity72 != ''){
                     dateReact = salesRep.custentity72//si la fecha esta vacia toma la fecha de reactivacion
