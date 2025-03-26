@@ -1069,7 +1069,9 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
             const configuracion = presentadorFields.custentity123;
             var limit = 6
             for (i = 0; i < configuracion.length ; i++){
-                if(configuracion[i].value == 11 || configuracion[i].value == 12 || configuracion[i].value == 13 || configuracion[i].value == 14 || configuracion[i].value == 15){//TM6R o TM4U
+                if(configuracion[i].value == 15){
+                    limit = 3
+                }else if(configuracion[i].value == 11 || configuracion[i].value == 12 || configuracion[i].value == 13 || configuracion[i].value == 14 || configuracion[i].value == 15){//TM6R o TM4U
                     limit = 4
                 }
             }
