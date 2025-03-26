@@ -200,7 +200,8 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             startTime = new Date();
             const salesOrdersData = searchSalesOrders(cust_period,inicioPeriodo,finPeriodo,presentadorasTMSB)
             const tmsbSO= salesOrdersData.objTMSB
-            const tmPagadaGanada =salesOrdersData.objTmPagadaGanada
+            const tmGanada =salesOrdersData.objTmGanada
+            const tmPagada =salesOrdersData.objTmPagada
             const historicoSO = salesOrdersData.historicoSO
             const thisPeriodSO = salesOrdersData.thisPeriodSO
             const dHistorico=salesOrdersData.dHistorico
@@ -361,7 +362,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
 
                     break;
                     case 2: //Reporte Presentadora
-                        if(empType == 1 && empPromo == 2 /*&& allPresentadoras[i].internalid == '4565140'*/){
+                        if(empType == 1 && empPromo == 2 /*&& allPresentadoras[i].internalid == '4581901'*/){
                             //Calcular reporte para la persona
                             var reclutas=listaReclutas[i]
                             var integrantesEquipo=listaGrupos[i]   
@@ -370,7 +371,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                             var conf = Utils.getConf(empConfiguracion);
                             //log.debug('ventasEmp',ventasEmp)
                             
-                                objProductividadTMSB = bonoProductividadTMSB(empID,dataEmp,tmsbSO,compConfigDetails,finPeriodo,inicioPeriodo,todosPeriodos,tmPagadaGanada)
+                                objProductividadTMSB = bonoProductividadTMSB(empID,dataEmp,tmsbSO,compConfigDetails,finPeriodo,inicioPeriodo,todosPeriodos,tmGanada,tmPagada)
                             log.debug('objProductividadTMSB',objProductividadTMSB)
                                 objVentasPropias = bonoVentaPropia(dataEmp,ventasEmp,compConfigDetails)
                                 //log.debug('objVentasPropias',objVentasPropias)
@@ -933,7 +934,7 @@ log.debug('v validate',v)
         return fillTable;
         
     }
-    function bonoProductividadTMSB(empID,dataEmp,historicoSO,compConfigDetails,finPeriodo,inicioPeriodo,todosPeriodos,tmPagadaGanada){//validar tipo de reingreso en el llamado, pasar a la funcion
+    function bonoProductividadTMSB(empID,dataEmp,historicoSO,compConfigDetails,finPeriodo,inicioPeriodo,todosPeriodos,tmGanada,tmPagada){//validar tipo de reingreso en el llamado, pasar a la funcion
         try{
                
             var reingreso = dataEmp.tipoReingreso
@@ -960,10 +961,11 @@ log.debug('v validate',v)
             //log.debug('inicioPeriodofecha',inicioPeriodofecha)
             var finPeriodofecha = Utils.stringToDate(finPeriodo)
             //log.debug('finPeriodofecha',finPeriodofecha)
-            //log.debug('tmPagadaGanada',tmPagadaGanada[empID])
+            log.debug('tmGanada',tmGanada)
+            log.debug('tmPagada',tmPagada)
             //log.debug('empID',empID)
             
-            if(empTipoIngreso == 14  && finObjetivo2 < finPeriodofecha && finObjetivo2 > inicioPeriodofecha && !tmPagadaGanada.hasOwnProperty(empID)){
+            if(empTipoIngreso == 14  && finObjetivo2 < finPeriodofecha && finObjetivo2 > inicioPeriodofecha && !tmGanada.hasOwnProperty(empID) && !tmPagada.hasOwnProperty(empID)){
                 var ventas = historicoSO[empID]
                 log.debug('ventas',ventas)
                 var data = []
@@ -2167,7 +2169,8 @@ una rcluta de algun miembro del equipo*/
 
             try{
                 var objTMSB = {};
-                var objTmPagadaGanada = {}
+                var objTmGanada = {}
+                var objTmPagada = {}
                 const salesOrderFilters = [
                     ['item', 'anyof', '2671','1126','1757','2001','2170','2490','2571','2035','2638','2280'],
                     'AND',
@@ -2200,7 +2203,7 @@ una rcluta de algun miembro del equipo*/
                 const salesOrderColEntity = search.createColumn({ name: 'entity' });
                 const salesOrderColTipoVenta = search.createColumn({ name: 'custbody_tipo_venta' });
                 const salesOrderColComStatus = search.createColumn({ name: 'custbody_vw_comission_status' });
-
+                const salesOrderColTmPagada = search.createColumn({ name: 'custbody_presentadora_tm_paga' });
                 const searchSalesTMSB = search.create({
                     type: 'salesorder',
                     filters: salesOrderFilters,
@@ -2211,7 +2214,8 @@ una rcluta de algun miembro del equipo*/
                         salesOrderColTranDate,
                         salesOrderColEntity,
                         salesOrderColTipoVenta,
-                        salesOrderColComStatus
+                        salesOrderColComStatus,
+                        salesOrderColTmPagada
                         
                        
                     ],
@@ -2233,6 +2237,7 @@ una rcluta de algun miembro del equipo*/
                         objSOTMSB.entity = r.getValue('entity')
                         objSOTMSB.tipoVenta = r.getValue('custbody_tipo_venta')
                         objSOTMSB.comStatus = r.getValue('custbody_vw_comission_status')
+                        objSOTMSB.tmPagada = r.getValue('custbody_presentadora_tm_paga')
                         var idSO = {}
                         idSO[objSOTMSB.internalid] = objSOTMSB 
                         
@@ -2242,12 +2247,18 @@ una rcluta de algun miembro del equipo*/
                         }
                         objTMSB[objSOTMSB.salrep].push(idSO);
 
-                        if (objSOTMSB.tipoVenta == 1 || objSOTMSB.tipoVenta == 19) {
+                        if (objSOTMSB.tipoVenta == 1 ) {
                             // Inicializar arrays si no existen
-                            if (!(objSOTMSB.salrep in objTmPagadaGanada)) {
-                                objTmPagadaGanada[objSOTMSB.salrep] = [];
+                            if (!(objSOTMSB.salrep in objTmGanada)) {
+                                objTmGanada[objSOTMSB.salrep] = [];
                             }
-                            objTmPagadaGanada[objSOTMSB.salrep].push(idSO);
+                            objTmGanada[objSOTMSB.salrep].push(idSO);
+                        } 
+                        if( objSOTMSB.tipoVenta == 19){
+                            if (!(objSOTMSB.tmPagada in objTmPagada)) {
+                                objTmPagada[objSOTMSB.tmPagada] = [];
+                            }
+                            objTmPagada[objSOTMSB.tmPagada].push(idSO);
                         }
                    });
 
@@ -2391,7 +2402,7 @@ una rcluta de algun miembro del equipo*/
                       
             });
             
-            return {historicoSO:historicoSO,thisPeriodSO:thisPeriodSO,dHistorico:dHistorico,objGarantiaRep:objGarantiaRep,objCK:objCK,objTMSB:objTMSB,objTmPagadaGanada:objTmPagadaGanada}
+            return {historicoSO:historicoSO,thisPeriodSO:thisPeriodSO,dHistorico:dHistorico,objGarantiaRep:objGarantiaRep,objCK:objCK,objTMSB:objTMSB,objTmGanada:objTmGanada,objTmPagada:objTmPagada}
         }catch(e){
             log.error('Error en searchSalesOrders',e)
         }
