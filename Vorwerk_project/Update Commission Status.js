@@ -107,9 +107,13 @@ function(search,record,format,Utils) {
                 var limit = 6
                 for (i = 0; i < configuracion.length ; i++){
                     //log.debug('configuracion[i].value',configuracion[i])
-                    if(configuracion[i] == 11 || configuracion[i] == 12 || configuracion[i] == 13 || configuracion[i] == 14){//TM6R o TM4U
+                    for (i = 0; i < configuracion.length ; i++){
+                if(configuracion[i].value == 15){
+                        limit = 3
+                    }else if(configuracion[i].value == 11 || configuracion[i].value == 12 || configuracion[i].value == 13 || configuracion[i].value == 14){//TM6R o TM4U
                         limit = 4
                     }
+                }
                 }
                 var cont = 1
                 var contVentas = 0
