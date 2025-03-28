@@ -488,6 +488,16 @@ function(record,https,currentRecord,runtime,file,search,message) {
                         fieldId: "custentity_cincomasdos_nle_monto",
                         line: i
                     });
+                    var rec_extendido = record.getSublistValue({
+                        sublistId: "sublist",
+                        fieldId: "custentity_bono_rec4a_venta",
+                        line: i
+                    });
+                    var rec_extendidoODV = record.getSublistValue({
+                        sublistId: "sublist",
+                        fieldId: "custentity_odv_rec4a_venta",
+                        line: i
+                    });
                     //crea el objeto para enviar al script map
                     object_fill.push({
                             idEmp                 :idEmp,
@@ -546,7 +556,9 @@ function(record,https,currentRecord,runtime,file,search,message) {
                             cincodos_nle          :cincodos_nle,
                             ventaPropia_monto_tmsb :ventaPropia_monto_tmsb,
                             productividad_tmsb    :productividad_tmsb,
-                            productividad_monto_tmsb :productividad_monto_tmsb
+                            productividad_monto_tmsb :productividad_monto_tmsb,
+                            rec_extendido         : rec_extendido,
+                            rec_extendidoODV      : rec_extendidoODV
 
 
                     })  

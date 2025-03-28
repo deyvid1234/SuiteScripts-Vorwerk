@@ -83,6 +83,8 @@
                             //+ '<Cell><Data ss:Type="String">TM PAGADAS REC</Data></Cell>'
                             //+ '<Cell><Data ss:Type="String">ODV COMISIONABLES REC</Data></Cell>'
                             + '<Cell><Data ss:Type="String">BONO RECLUTADORA</Data></Cell>'
+                            + '<Cell><Data ss:Type="String"> Bono Reclutamiento Especial 4a Venta</Data></Cell>'
+                            + '<Cell><Data ss:Type="String">ODV Reclutamiento Especial 4a Venta </Data></Cell>'
                             //+ '<Cell><Data ss:Type="String">BONO TALENTO</Data></Cell>'
                             + '<Cell><Data ss:Type="String"> NUMERO DE ODV DEL EQUIPO</Data></Cell>'
                             //+ '<Cell><Data ss:Type="String">TM PAGADAS EQUIPO</Data></Cell>'
@@ -167,6 +169,8 @@
                          var productividadTMSB = typeof data[x].productividad_tmsb === 'undefined'?"0":data[x].productividad_tmsb;
                          var productividadTMSB_monto = typeof data[x].productividad_monto_tmsb === 'undefined'?"0":data[x].productividad_monto_tmsb;
                          var dataActividad = typeof data[x].dataActividad === 'undefined'?"0":data[x].dataActividad;
+                         var dataExtendido = typeof data[x].rec_extendido === 'undefined'?"0":data[x].rec_extendido;
+                         var dataExtendidoODV = typeof data[x].rec_extendidoODV === 'undefined'?"0":data[x].rec_extendidoODV;
                          xmlStr += '<Row>'
                            +'<Cell><Data ss:Type="String">'+data[x].nameEmp+'</Data></Cell>'
                                + '<Cell><Data ss:Type="String">'+data[x].ingreso+'</Data></Cell>'
@@ -194,6 +198,8 @@
                                //+ '<Cell><Data ss:Type="String">'+tm_pagadas_rec+'</Data></Cell>'
                                //+ '<Cell><Data ss:Type="String">'+odv_rec_id+'</Data></Cell>'
                                + '<Cell><Data ss:Type="String">'+bono_reclutadora+'</Data></Cell>'
+                               + '<Cell><Data ss:Type="String">'+dataExtendido+'</Data></Cell>'
+                               + '<Cell><Data ss:Type="String">'+dataExtendidoODV+'</Data></Cell>'
                                //+ '<Cell><Data ss:Type="String">'+bono_talento+'</Data></Cell>'
                                + '<Cell><Data ss:Type="String">'+ventas_present_num+'</Data></Cell>'
                                //+ '<Cell><Data ss:Type="String">'+tm_pagadas_equipo+'</Data></Cell>'
