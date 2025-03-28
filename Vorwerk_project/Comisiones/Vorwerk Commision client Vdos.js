@@ -488,7 +488,7 @@ function(record,https,currentRecord,runtime,file,search,message) {
                         fieldId: "custentity_cincomasdos_nle_monto",
                         line: i
                     });
-                    var rec_extendido = record.getSublistValue({
+                    /*var rec_extendido = record.getSublistValue({
                         sublistId: "sublist",
                         fieldId: "custentity_bono_rec4a_venta",
                         line: i
@@ -497,7 +497,7 @@ function(record,https,currentRecord,runtime,file,search,message) {
                         sublistId: "sublist",
                         fieldId: "custentity_odv_rec4a_venta",
                         line: i
-                    });
+                    });*/
                     //crea el objeto para enviar al script map
                     object_fill.push({
                             idEmp                 :idEmp,
@@ -557,8 +557,8 @@ function(record,https,currentRecord,runtime,file,search,message) {
                             ventaPropia_monto_tmsb :ventaPropia_monto_tmsb,
                             productividad_tmsb    :productividad_tmsb,
                             productividad_monto_tmsb :productividad_monto_tmsb,
-                            rec_extendido         : rec_extendido,
-                            rec_extendidoODV      : rec_extendidoODV
+                            //rec_extendido         : rec_extendido,
+                            //rec_extendidoODV      : rec_extendidoODV
 
 
                     })  
