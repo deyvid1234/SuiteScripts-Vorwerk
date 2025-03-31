@@ -61,6 +61,8 @@ function onRequest(context){
 	    var c_record = search_crecord(params.comp,type_emp,promocion)
       
       	var dataSO = salesOrdersTP(params.periodo)   
+      	
+      	
 	    var CompConfigDetails = Utils.getObjCompConfigDetails()
 	    //log.debug('CompConfigDetails',CompConfigDetails)
 	    var xml= "";
@@ -74,7 +76,7 @@ function onRequest(context){
 	  				xml += "</macrolist>";
 	  			xml += "</head>";
 	  			xml += "<body font='helvetica' font-size='6' footer=\"paginas\" footer-height='2'>";
-	  				xml += createTable(c_record,CompConfigDetails,type_emp_text,period_name.name,type_emp,conf_emp,promocion,params.periodo,tmp_emp,dataSO);
+	  				xml += createTable(c_record,CompConfigDetails,type_emp_text,period_name.name,type_emp,conf_emp,promocion,params.periodo,tmp_emp,dataSO,params.periodo);
 	  			xml += "</body>\n";
 	  		xml += "</pdf>";
   		 
@@ -148,7 +150,7 @@ function salesOrdersTP(cust_period){
       	const finPeriodo = fechaPeriodoCalculado.custrecord_final // dd/mm/yyyy
   		const inicioPeriodoDate =  Util.stringToDate(inicioPeriodo)
       	const finPeriodoDate = Util.stringToDate(finPeriodo)
-      
+      	
       	var objSObyEmp = {};
       	var objSObyid = [];
       	const salesOrderSearchFilters = [
@@ -216,7 +218,165 @@ function salesOrdersTP(cust_period){
 	    log.error('error busqueda SO',e)
 	}
 }
+function table_v_propiaTMSB(data,tmp_emp,type_emp,promocion,dataSOtmsinBarreras,CompConfigDetails,cust_period){
+	try{
+		var employee = data.id_presentadora
+		const fechaPeriodoCalculado = search.lookupFields({ type: 'customrecord_periods', id: cust_period, columns: ['custrecord_inicio','custrecord_final','name']});
+      	const namePeriodo= fechaPeriodoCalculado.name //mm/yyyy
+      	const inicioPeriodo = fechaPeriodoCalculado.custrecord_inicio // dd/mm/yyyy
+      	const finPeriodo = fechaPeriodoCalculado.custrecord_final // dd/mm/yyyy
+  		const inicioPeriodoDate =  Util.stringToDate(inicioPeriodo)
+      	const finPeriodoDate = Util.stringToDate(finPeriodo)
+      	var finMenosCinco = Util.restarMeses(finPeriodo, 5);
+      	var fechaInicioSearch = finMenosCinco
+      	
+      	log.debug('fechaInicioSearch',fechaInicioSearch)
+      	log.debug('finPeriodoDate',finPeriodoDate)
+      	var objSObyEmp = {};
+      	var objSObyid = {}
+      	const salesOrderSearchFilters = [
+          	['item', 'anyof', '2638','2280','2001','2571','2170','1757','1126','2035','2402','2490','2671'],
+          	'AND',
+          	['salesrep', 'is', employee],
+          	'AND',
+          	['type', 'anyof', 'SalesOrd'],
+          	'AND',
+          	['custbody_tipo_venta', 'anyof', '2', '19', '1'],
+      	];
 
+      	const salesOrderSearchColSalesRep = search.createColumn({ name: 'salesrep' });
+      	const salesOrderSearchColTranId = search.createColumn({ name: 'tranid' });
+      	const salesOrderSearchColInternalId = search.createColumn({ name: 'internalid' });
+      	const salesOrderSearchColTranDate = search.createColumn({ name: 'trandate' });
+      	const salesOrderSearchColItem = search.createColumn({ name: 'item' });
+      	const salesOrderSearchColentity = search.createColumn({ name: 'entity' });
+      	const salesOrderSearchcustipo_venta = search.createColumn({ name: 'custbody_tipo_venta' });
+      	const salesOrderSearchColSalesRepLider = search.createColumn({ name: 'supervisor', join: 'salesrep' });
+      	const searchSalesGar = search.create({
+          	type: 'salesorder',
+          	filters: salesOrderSearchFilters,
+          	columns: [
+              	salesOrderSearchColSalesRep,
+              	salesOrderSearchColTranId,
+              	salesOrderSearchColInternalId,
+              	salesOrderSearchColTranDate,
+              	salesOrderSearchColItem,
+              	salesOrderSearchColentity,
+              	salesOrderSearchcustipo_venta,
+              	salesOrderSearchColSalesRepLider
+             
+          	],
+      	});
+      	searchSalesGar.filters.push(search.createFilter({
+            name: 'trandate',
+            operator: 'within',
+            values: [Util.dateToString(fechaInicioSearch),Util.dateToString(finPeriodoDate)]
+      	}));
+      	var pagedResults = searchSalesGar.runPaged();
+      	pagedResults.pageRanges.forEach(function (pageRange){
+         	var currentPage = pagedResults.fetch({index: pageRange.index});
+         	currentPage.data.forEach(function (r) {
+              	var dataSO = r.getAllValues()
+              	var salrep = r.getValue('salesrep')
+              	var internalID = r.getValue('internalid')
+                var liderSalesRep = r.getValue({ name: 'supervisor', join: 'salesrep' })
+
+              	if(salrep in objSObyEmp){
+               	 	objSObyEmp[salrep].push(dataSO);
+              	}else{
+                	objSObyEmp[salrep]= [dataSO]; 
+              	}
+              	objSObyid[internalID] = dataSO
+		    });
+
+      	});
+		var odv_p = JSON.parse(data.dataTMSB)
+		var odv_p_monto = data.montoVentaPropiaTMSB
+		var montoProd = data.montoProdTMSB
+		var totalCompensacionesTMSB =parseInt(odv_p_monto)+parseInt(montoProd)
+  		log.debug('odv_pvvvv',odv_p)
+		log.debug('odv_p_montovvvvv',odv_p_monto)
+		
+		
+		log.debug('objSObyid',objSObyid)
+		var strTable = ''
+			strTable += "<p font-family=\"Helvetica\" font-size=\"6\" align=\"center\"><b>VENTAS TM SIN BARRERAS</b></p>";
+			strTable += "<table width='670px'>";
+			strTable += "<tr>";
+			strTable += "<td border='0.5' width='10px'><b>#</b></td>";
+			strTable += "<td border='0.5' width='100px'><b>VENTA REALIZADA POR</b></td>";
+			strTable += "<td border='0.5' width='200px'><b>CLIENTE</b></td>";
+			strTable += "<td border='0.5' width='0px'><b>FECHA</b></td>";
+			strTable += "<td border='0.5' width='0px'><b>PEDIDO</b></td>";
+			strTable += "<td border='0.5' width='0px'><b>PERIODO</b></td>";
+			strTable += "<td border='0.5' width='40px'><b>MONTO</b></td>";
+			//strTable += "<td border='0.5' width='0px'><b>ENTREGA</b></td>";
+			strTable += "</tr>";
+			/*fin encabezado de tabla
+			cuerpo de tabla*/
+			var lineaRec = 0
+			for(var i in odv_p){
+				log.debug('for 1',odv_p[i])
+				for( var e in odv_p[i])	{
+					log.debug('for 2',odv_p[i][e].internalid)
+					log.debug('for 3',odv_p[i][e]['internalid'])
+					var thisSO = objSObyid[odv_p[i][e]['internalid']]
+					var periodo = odv_p[i][e]['periodo']
+					var periodoName = search.lookupFields({ type: 'customrecord_periods', id: periodo, columns: ['custrecord_inicio','custrecord_final','name']});
+      				var nameP= periodoName.name //mm/yyyy
+				    log.debug('namePeriodo',nameP)
+					var monto
+					if(type_emp == 1 && promocion == 1){
+						monto = "$0.00"
+					}else{
+						monto = "$2,500.00"
+					}
+
+					lineaRec++
+					var b_produc
+					if(promocion == 1){
+						b_produc = 0
+					}else{
+						b_produc = (CompConfigDetails['1']['esquemaVentasPresentadora'][lineaRec]['bonoProductividad'])-(CompConfigDetails['1']['esquemaVentasPresentadora'][lineaRec-1]['bonoProductividad'])
+
+					}
+					//& 
+					var cliente = thisSO.entity[0].text.replace(/&/gi," ")
+					
+					strTable += "<tr>";
+					strTable += "<td border='0.5' border-style='dotted-narrow'>" + lineaRec 	+ "</td>";	
+					strTable += "<td border='0.5' border-style='dotted-narrow'>" + thisSO.salesrep[0].text 	+ "</td>";
+					strTable += "<td border='0.5' border-style='dotted-narrow'>" + cliente	+ "</td>";
+					strTable += "<td border='0.5' border-style='dotted-narrow'>" + thisSO.trandate 		+ "</td>";
+					strTable += "<td border='0.5' border-style='dotted-narrow'>" + thisSO.tranid		+ "</td>";
+					strTable += "<td border='0.5' border-style='dotted-narrow' align='left'>" + nameP	+ "</td>";
+					strTable += "<td border='0.5' border-style='dotted-narrow' align='right'>" + monto + "</td>";
+					strTable += "</tr>";
+				}			
+				
+			}
+			
+			strTable += "<tr>";
+			strTable += "<td border='0.5' colspan= '6' border-style='none' align='right'><b>Monto Venta Propia</b></td>";
+			strTable += "<td border='0.5' border-style='dotted-narrow' align='right'><b>" + currencyFormat('$',(odv_p_monto)+'.00')	+ "</b></td>";
+			strTable += "</tr>";	
+			strTable += "<tr>";
+			strTable += "<td border='0.5' colspan= '6' border-style='none' align='right'><b>Monto Productividad</b></td>";
+			strTable += "<td border='0.5' border-style='dotted-narrow' align='right'><b>" + currencyFormat('$',(montoProd)+'.00')	+ "</b></td>";
+			strTable += "</tr>";
+			strTable += "<tr>";
+			strTable += "<td border='0.5' colspan= '6' border-style='none' align='right'><b>Total Compensaciones TM Sin Barreras</b></td>";
+			strTable += "<td border='0.5' border-style='dotted-narrow' align='right'><b>" + currencyFormat('$',(totalCompensacionesTMSB)+'.00')	+ "</b></td>";
+			strTable += "</tr>";		
+			strTable += "</table>";
+			/*cuerpo de tabla*/
+			return strTable
+			//fin tabla
+
+	}catch(e){
+		log.error('error table_v_propiaTMSB',e)
+	}
+}
 function table_v_propia(data,tmp_emp,type_emp,promocion,dataSO,CompConfigDetails){
 	try{
 		var odv_p = data.odv_entrega.split(',')
@@ -870,7 +1030,7 @@ function table_b_Manual(data){
 	}
 }
 	//creacion del body 
-function createTable(data,CompConfigDetails,type_emp_text,period_name,type_emp,conf_emp,promocion,idPeriod,tmp_emp,dataSO){
+function createTable(data,CompConfigDetails,type_emp_text,period_name,type_emp,conf_emp,promocion,idPeriod,tmp_emp,dataSO,cust_period){
 	try{
 		var strTable = createHeader(data.emleado,type_emp_text,period_name,tmp_emp); 
 
@@ -878,7 +1038,9 @@ function createTable(data,CompConfigDetails,type_emp_text,period_name,type_emp,c
 		if(data.odv_entrega /*&& data.venta_propia*/ ){
 			strTable += table_v_propia(data,tmp_emp,type_emp,promocion,dataSO,CompConfigDetails)
 		}
-			
+		if(data.montoVentaPropiaTMSB){
+			strTable += table_v_propiaTMSB(data,tmp_emp,type_emp,promocion,dataSO,CompConfigDetails,cust_period)
+		}
 		if (type_emp == 3 && data.comision_equipo > 0){
 			strTable += table_v_equipo(data,dataSO,CompConfigDetails)
 		}
@@ -984,7 +1146,7 @@ function createHeader(name_employee,type_emp_text,period_name,tmp_emp){
 
     		if(runtime.envType  == "SANDBOX"){
     			host = "https://3367613-sb1.app.netsuite.com";
-    			idImg = '2461144';
+    			idImg = '2576941';
           		//id imagen vorwerk tm s green sandbox  
         	}else{
           		host = "https://3367613.app.netsuite.com";
@@ -1222,6 +1384,9 @@ function search_crecord(id_jdg,type_emp,promocion){
         data.montoActividad =  r.getValue('custrecord_monto_actividad')
         data.noActividad =  r.getValue('custrecordno_pre_activos')
         data.dataActividad =  r.getValue('custrecord_detalle_actividad')
+        data.montoVentaPropiaTMSB =  r.getValue(config_fields.ventaPropia_tmsb[type_emp])
+        data.montoProdTMSB =  r.getValue(config_fields.productividad_tmsb[type_emp])
+        data.dataTMSB =  r.getValue(config_fields.odv_tmsb[type_emp])
         /*data.odv_tres_dos = r.getValue(config_fields.tres_dos[type_emp]);
         data.sc = r.getValue(config_fields.sc[type_emp]);
         
