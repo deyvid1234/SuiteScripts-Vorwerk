@@ -194,7 +194,7 @@ function(record, search, runtime, format, query,currency) {
     function getCompensationConfig(){
         var confCompensation = search.create({
             type: 'customrecord_conf_de_compensaciones',
-            columns: [{ name: 'internalid'},{ name: 'custrecord_cdc_ventas_minimas_txtm'}],
+            columns: [{ name: 'internalid'}],
             filters: [
                 {
                     name: 'isinactive',
@@ -205,7 +205,6 @@ function(record, search, runtime, format, query,currency) {
         });
         var objReturn = {};
         confCompensation.run().each(function(r){
-            var ventasMinimas = r.getValue('custrecord_cdc_ventas_minimas_txtm')
             objReturn[r.getValue('internalid')] = {
                 'esquemaVentasPresentadora' : {},
                 'esquemaVentasJefaGrupo' : {
@@ -213,8 +212,7 @@ function(record, search, runtime, format, query,currency) {
                     'grupo':{}
                 },
                 'esquemaVentasTrabajaXTM' : {},
-                'esquemaVentasReclutamiento' : {},
-                'ventasMinimas':ventasMinimas
+                'esquemaVentasReclutamiento' : {}
             };
             return true;
         });
