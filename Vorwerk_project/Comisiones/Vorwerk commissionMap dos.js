@@ -354,6 +354,7 @@ function(email,record, file, search, https, runtime,format,Dictionary) {
                         id: comissionInfo.idEmp,
                         values: {'custentity_estatus_tm_sinbarreras': '1'}
                     });
+                    log.debug("registro de empleado actualizado a compensacion tmsb pagadas",comissionInfo.idEmp);
                 }
             }catch(errRE){
                 log.error('error al crear registro por empleado',errRE)
