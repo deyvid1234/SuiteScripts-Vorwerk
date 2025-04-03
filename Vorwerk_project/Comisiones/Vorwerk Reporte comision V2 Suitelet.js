@@ -984,7 +984,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             log.debug('tmPagada',tmPagada)
             //log.debug('empID',empID)
             
-            if(empTipoIngreso == 14  && finObjetivo2 < finPeriodofecha && finObjetivo2 > inicioPeriodofecha && !tmGanada.hasOwnProperty(empID) && !tmPagada.hasOwnProperty(empID)){
+            if(empTipoIngreso == 14  && finObjetivo2 <= finPeriodofecha && finObjetivo2 >= inicioPeriodofecha && !tmGanada.hasOwnProperty(empID) && !tmPagada.hasOwnProperty(empID)){
                 var ventas = historicoSO[empID]
                 log.debug('ventas',ventas)
                 var data = []
