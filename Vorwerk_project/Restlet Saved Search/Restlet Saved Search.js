@@ -63,6 +63,9 @@ function(record,search,https,file,http,format,encode,email,runtime,Utils) {
                 case "search_Sales_Orders":
                     res = getSavedSearchResults(req_info);
                     break;
+                    case "search_Opporunity":
+                        res = getSavedSearchOpporunityResults(req_info);
+                    break;
                 default:
                     res = {
                         success: false,
@@ -125,7 +128,200 @@ function(record,search,https,file,http,format,encode,email,runtime,Utils) {
             throw e;
         }
     }
+    function getSavedSearchOpporunityResults(req_info){
+        try{
+            log.debug("entre getSavedSearchResults", req_info);
+            if (!req_info || !req_info.ssid || req_info.ssid !== "1163") {
+                throw new Error('Búsqueda no válida o no autorizada');
+            }
 
+            const transactionSearchFilters = [
+                ['type', 'anyof', 'Opprtnty'],
+                'AND',
+                [
+                    ['trandate', 'within', '1/1/2024', '31/12/2028'],
+                    'OR',
+                    ['lastmodifieddate', 'onorafter', '24/4/2021 12:00 am', '1/1/2024 12:00 am'],
+                ],
+                'AND',
+                ['mainline', 'is', 'T'],
+                'AND',
+                ['account', 'noneof', '277'],
+            ];
+
+            const transactionSearchColTranId = search.createColumn({ name: 'tranid' });
+            const transactionSearchColThermomixSerialNumber = search.createColumn({ name: 'custbody_numero_serie' });
+            const transactionSearchColCustomerNAME = search.createColumn({ name: 'email', join: 'customer' });
+            const transactionSearchColCustomerAltName = search.createColumn({ name: 'altname', join: 'customer' });
+            const transactionSearchColCustomerFirstName = search.createColumn({ name: 'firstname', join: 'customer' });
+            const transactionSearchColTMRECEIVED = search.createColumn({ name: 'custbody_fcha_recep_st' });
+            const transactionSearchColTMREVISION = search.createColumn({ name: 'custbody_rev' });
+            const transactionSearchColDATEOFENTRYQUARANTINE = search.createColumn({ name: 'custbody_fcha_ingreso_cuarentena' });
+            const transactionSearchColDATEOFEXITQUARANTINE = search.createColumn({ name: 'custbody_fcha_salida_cuarentena' });
+            const transactionSearchColQUOTEGENERATED = search.createColumn({ name: 'custbody_presup' });
+            const transactionSearchColORDERREPAREDPROGRESS = search.createColumn({ name: 'custbody39' });
+            const transactionSearchColREPARED = search.createColumn({ name: 'custbody_repar' });
+            const transactionSearchColSHIPPINGMETHOD = search.createColumn({ name: 'custbody_met_envio' });
+            const transactionSearchColTRACKINGNUMBER = search.createColumn({ name: 'custbody_num_guia_env' });
+            const transactionSearchColFOLLOWUPTHETRACKINGNUMBERSTATUS = search.createColumn({ name: 'custbody_url_one_aclogistics' });
+            const transactionSearchColDELIVERED = search.createColumn({ name: 'custbody_entrega' });
+            const transactionSearchColISYOURTHERMOMIXAPPLICABLETOTHEWARRANTY = search.createColumn({ name: 'custbody_garantia' });
+            const transactionSearchColEXTENDEDWARRANTY = search.createColumn({ name: 'custbody_garantia_extendida' });
+            const transactionSearchColSHIPPINGDATE = search.createColumn({ name: 'shipdate' });
+            const transactionSearchColREVIEWINGDATE = search.createColumn({ name: 'custbody_fcha_rev' });
+            const transactionSearchColREPAREDDATE = search.createColumn({ name: 'custbody_fcha_reparacion' });
+            const transactionSearchColDELIVERYDATE = search.createColumn({ name: 'custbody_entr' });
+
+            const transactionSearch = search.create({
+                type: 'transaction',
+                filters: transactionSearchFilters,
+                columns: [
+                    transactionSearchColTranId,
+                    transactionSearchColThermomixSerialNumber,
+                    transactionSearchColCustomerNAME,
+                    transactionSearchColCustomerAltName,
+                    transactionSearchColCustomerFirstName,
+                    transactionSearchColTMRECEIVED,
+                    transactionSearchColTMREVISION,
+                    transactionSearchColDATEOFENTRYQUARANTINE,
+                    transactionSearchColDATEOFEXITQUARANTINE,
+                    transactionSearchColQUOTEGENERATED,
+                    transactionSearchColORDERREPAREDPROGRESS,
+                    transactionSearchColREPARED,
+                    transactionSearchColSHIPPINGMETHOD,
+                    transactionSearchColTRACKINGNUMBER,
+                    transactionSearchColFOLLOWUPTHETRACKINGNUMBERSTATUS,
+                    transactionSearchColDELIVERED,
+                    transactionSearchColISYOURTHERMOMIXAPPLICABLETOTHEWARRANTY,
+                    transactionSearchColEXTENDEDWARRANTY,
+                    transactionSearchColSHIPPINGDATE,
+                    transactionSearchColREVIEWINGDATE,
+                    transactionSearchColREPAREDDATE,
+                    transactionSearchColDELIVERYDATE,
+                ],
+            });
+
+            const transactionSearchPagedData = transactionSearch.runPaged({ pageSize: 1000 });
+            var resultsArray = [];
+
+            
+
+            for (var i = 0; i < transactionSearchPagedData.pageRanges.length; i++) {
+                var transactionSearchPage = transactionSearchPagedData.fetch({ index: i });
+                transactionSearchPage.data.forEach(function(result) {
+                    const recordData = {
+                        tranId: {
+                            searchValue: result.getValue({ name: 'tranid' }),
+                            customLabel: "Pedido"
+                        },
+                        thermomixSerialNumber: {
+                            searchValue: result.getValue({ name: 'custbody_numero_serie' }),
+                            customLabel: "Número de Serie"
+                        },
+                        customerNAME: {
+                            searchValue: result.getValue({ name: 'email', join: 'customer' }),
+                            customLabel: "Email del Cliente"
+                        },
+                        customerAltName: {
+                            searchValue: result.getValue({ name: 'altname', join: 'customer' }),
+                            customLabel: "Nombre Alternativo del Cliente"
+                        },
+                        customerFirstName: {
+                            searchValue: result.getValue({ name: 'firstname', join: 'customer' }),
+                            customLabel: "Nombre del Cliente"
+                        },
+                        tmreceived: {
+                            searchValue: result.getValue({ name: 'custbody_fcha_recep_st' }),
+                            customLabel: "Fecha de Recepción"
+                        },
+                        tmrevision: {
+                            searchValue: result.getValue({ name: 'custbody_rev' }),
+                            customLabel: "Revisión"
+                        },
+                        dateofentryquarantine: {
+                            searchValue: result.getValue({ name: 'custbody_fcha_ingreso_cuarentena' }),
+                            customLabel: "Fecha de Ingreso a Cuarentena"
+                        },
+                        dateofexitquarantine: {
+                            searchValue: result.getValue({ name: 'custbody_fcha_salida_cuarentena' }),
+                            customLabel: "Fecha de Salida de Cuarentena"
+                        },
+                        quotegenerated: {
+                            searchValue: result.getValue({ name: 'custbody_presup' }),
+                            customLabel: "Presupuesto Generado"
+                        },
+                        orderreparedprogress: {
+                            searchValue: result.getValue({ name: 'custbody39' }),
+                            customLabel: "Progreso de Reparación"
+                        },
+                        repared: {
+                            searchValue: result.getValue({ name: 'custbody_repar' }),
+                            customLabel: "Reparado"
+                        },
+                        shippingmethod: {
+                            searchValue: result.getValue({ name: 'custbody_met_envio' }),
+                            customLabel: "Método de Envío"
+                        },
+                        trackingnumber: {
+                            searchValue: result.getValue({ name: 'custbody_num_guia_env' }),
+                            customLabel: "Número de Guía"
+                        },
+                        followupthetrackingnumberstatus: {
+                            searchValue: result.getValue({ name: 'custbody_url_one_aclogistics' }),
+                            customLabel: "Seguimiento de Guía"
+                        },
+                        delivered: {
+                            searchValue: result.getValue({ name: 'custbody_entrega' }),
+                            customLabel: "Entregado"
+                        },
+                        isyourthermomixapplicabletothewarranty: {
+                            searchValue: result.getValue({ name: 'custbody_garantia' }),
+                            customLabel: "Aplica Garantía"
+                        },
+                        extendedwarranty: {
+                            searchValue: result.getValue({ name: 'custbody_garantia_extendida' }),
+                            customLabel: "Garantía Extendida"
+                        },
+                        shippingdate: {
+                            searchValue: result.getValue({ name: 'shipdate' }),
+                            customLabel: "Fecha de Envío"
+                        },
+                        reviewingdate: {
+                            searchValue: result.getValue({ name: 'custbody_fcha_rev' }),
+                            customLabel: "Fecha de Revisión"
+                        },
+                        repareddate: {
+                            searchValue: result.getValue({ name: 'custbody_fcha_reparacion' }),
+                            customLabel: "Fecha de Reparación"
+                        },
+                        deliverydate: {
+                            searchValue: result.getValue({ name: 'custbody_entr' }),
+                            customLabel: "Fecha de Entrega"
+                        }
+                    };
+
+                    resultsArray.push(recordData);
+
+                    
+                });
+            }
+            return {
+                ok: true,
+                statusCode: 200,
+                data: {
+                    id: generateUUID(),
+                    ssid: req_info.ssid,
+                    status: "completed",
+                    message: "",
+                    results: resultsArray,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }catch(e){
+            log.error('error getSavedSearchGarantiaResults',e)
+        }
+    }    
     function getSavedSearchResults(req_info) {
         try {
             log.debug("entre getSavedSearchResults", req_info);
