@@ -134,6 +134,7 @@ function(record,search,https,file,http,format,encode,email,runtime,Utils) {
             if (!req_info || !req_info.ssid || req_info.ssid !== "1163") {
                 throw new Error('Búsqueda no válida o no autorizada');
             }
+            var noOrden = req_info.service_order
 
             const transactionSearchFilters = [
                 ['type', 'anyof', 'Opprtnty'],
@@ -141,12 +142,14 @@ function(record,search,https,file,http,format,encode,email,runtime,Utils) {
                 [
                     ['trandate', 'within', '1/1/2024', '31/12/2028'],
                     'OR',
-                    ['lastmodifieddate', 'onorafter', '24/4/2021 12:00 am', '1/1/2024 12:00 am'],
+                    ['lastmodifieddate', 'onorafter', '1/1/2024 12:00 am'],
                 ],
                 'AND',
                 ['mainline', 'is', 'T'],
                 'AND',
                 ['account', 'noneof', '277'],
+                'AND',
+                ['number', 'equalto', noOrden],
             ];
 
             const transactionSearchColTranId = search.createColumn({ name: 'tranid' });
@@ -210,47 +213,46 @@ function(record,search,https,file,http,format,encode,email,runtime,Utils) {
                 var transactionSearchPage = transactionSearchPagedData.fetch({ index: i });
                 transactionSearchPage.data.forEach(function(result) {
                     const recordData = {
-                        tranId: {
+                        service_Order: {
                             searchValue: result.getValue({ name: 'tranid' }),
                             customLabel: "Pedido"
                         },
-                        thermomixSerialNumber: {
+                        thermomix_Serial_Number: {
                             searchValue: result.getValue({ name: 'custbody_numero_serie' }),
                             customLabel: "Número de Serie"
                         },
-                        customerNAME: {
+                        customer_Email: {
                             searchValue: result.getValue({ name: 'email', join: 'customer' }),
                             customLabel: "Email del Cliente"
                         },
-                        customerAltName: {
+                        customer_AltName: {
                             searchValue: result.getValue({ name: 'altname', join: 'customer' }),
-                            customLabel: "Nombre Alternativo del Cliente"
-                        },
-                        customerFirstName: {
-                            searchValue: result.getValue({ name: 'firstname', join: 'customer' }),
                             customLabel: "Nombre del Cliente"
                         },
-                        tmreceived: {
+                        customer_FirstName: {
+                            searchValue: result.getValue({ name: 'firstname', join: 'customer' })
+                        },
+                        tm_received: {
                             searchValue: result.getValue({ name: 'custbody_fcha_recep_st' }),
                             customLabel: "Fecha de Recepción"
                         },
-                        tmrevision: {
+                        tm_revision: {
                             searchValue: result.getValue({ name: 'custbody_rev' }),
                             customLabel: "Revisión"
                         },
-                        dateofentryquarantine: {
+                        date_entryQuarantine: {
                             searchValue: result.getValue({ name: 'custbody_fcha_ingreso_cuarentena' }),
                             customLabel: "Fecha de Ingreso a Cuarentena"
                         },
-                        dateofexitquarantine: {
+                        date_exitQuarantine: {
                             searchValue: result.getValue({ name: 'custbody_fcha_salida_cuarentena' }),
                             customLabel: "Fecha de Salida de Cuarentena"
                         },
-                        quotegenerated: {
+                        quote_generated: {
                             searchValue: result.getValue({ name: 'custbody_presup' }),
                             customLabel: "Presupuesto Generado"
                         },
-                        orderreparedprogress: {
+                        order_repared_progress: {
                             searchValue: result.getValue({ name: 'custbody39' }),
                             customLabel: "Progreso de Reparación"
                         },
@@ -258,15 +260,15 @@ function(record,search,https,file,http,format,encode,email,runtime,Utils) {
                             searchValue: result.getValue({ name: 'custbody_repar' }),
                             customLabel: "Reparado"
                         },
-                        shippingmethod: {
+                        shipping_method: {
                             searchValue: result.getValue({ name: 'custbody_met_envio' }),
                             customLabel: "Método de Envío"
                         },
-                        trackingnumber: {
+                        tracking_number: {
                             searchValue: result.getValue({ name: 'custbody_num_guia_env' }),
                             customLabel: "Número de Guía"
                         },
-                        followupthetrackingnumberstatus: {
+                        tracking_number_status: {
                             searchValue: result.getValue({ name: 'custbody_url_one_aclogistics' }),
                             customLabel: "Seguimiento de Guía"
                         },
@@ -274,27 +276,27 @@ function(record,search,https,file,http,format,encode,email,runtime,Utils) {
                             searchValue: result.getValue({ name: 'custbody_entrega' }),
                             customLabel: "Entregado"
                         },
-                        isyourthermomixapplicabletothewarranty: {
+                        is_applicable_warranty: {
                             searchValue: result.getValue({ name: 'custbody_garantia' }),
                             customLabel: "Aplica Garantía"
                         },
-                        extendedwarranty: {
+                        extended_warranty: {
                             searchValue: result.getValue({ name: 'custbody_garantia_extendida' }),
                             customLabel: "Garantía Extendida"
                         },
-                        shippingdate: {
+                        shipping_date: {
                             searchValue: result.getValue({ name: 'shipdate' }),
                             customLabel: "Fecha de Envío"
                         },
-                        reviewingdate: {
+                        reviewing_date: {
                             searchValue: result.getValue({ name: 'custbody_fcha_rev' }),
                             customLabel: "Fecha de Revisión"
                         },
-                        repareddate: {
+                        repared_date: {
                             searchValue: result.getValue({ name: 'custbody_fcha_reparacion' }),
                             customLabel: "Fecha de Reparación"
                         },
-                        deliverydate: {
+                        delivery_date: {
                             searchValue: result.getValue({ name: 'custbody_entr' }),
                             customLabel: "Fecha de Entrega"
                         }
@@ -305,19 +307,38 @@ function(record,search,https,file,http,format,encode,email,runtime,Utils) {
                     
                 });
             }
-            return {
-                ok: true,
-                statusCode: 200,
-                data: {
-                    id: generateUUID(),
-                    ssid: req_info.ssid,
-                    status: "completed",
-                    message: "",
-                    results: resultsArray,
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString()
-                }
-            };
+            if(resultsArray.length >0){
+                return {
+                    ok: true,
+                    statusCode: 200,
+                    data: {
+                        id: generateUUID(),
+                        ssid: req_info.ssid,
+                        status: "completed",
+                        message: "",
+                        results: resultsArray,
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    }
+                };
+            } else{
+                return {
+                    
+                    ok: false,
+                    statusCode: 200,
+                    data: {
+                        id: '',
+                        ssid: req_info.ssid,
+                        status: "Proceso interrumpido",
+                        message: "El número de Orden de Servicio es incorrecto o no existe",
+                        results: resultsArray,
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    }
+                };
+                   
+            }
+            
         }catch(e){
             log.error('error getSavedSearchGarantiaResults',e)
         }
