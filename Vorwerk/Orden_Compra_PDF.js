@@ -52,6 +52,7 @@ function Orden_Compra_PDF(request, response) {
         var filtersTransaction = new Array();
         filtersTransaction.push(new nlobjSearchFilter('internalid', null, 'is', recordId));
         var searchTransaction = returnBlank(nlapiSearchRecord('purchaseorder', 'customsearch_orden_compra_data', filtersTransaction, null));
+        nlapiLogExecution('debug', 'searchTransaction', searchTransaction);
         var Prov_calle = nlapiEscapeXML(returnBlank(searchTransaction[0].getValue('address1', 'vendor')));
         var Prov_colonia = nlapiEscapeXML(returnBlank(searchTransaction[0].getValue('address2', 'vendor')));
         var Prov_ciudad = nlapiEscapeXML(returnBlank(searchTransaction[0].getValue('city', 'vendor')));
@@ -76,16 +77,24 @@ function Orden_Compra_PDF(request, response) {
         var fecha_entrega = nlapiEscapeXML(returnBlank(searchTransaction[0].getValue('custbody_fcha_ent_compromiso')));
         // var iva = returnNumber(Math.abs(searchTransaction[0].getValue('taxtotal'))); // Changed from the transaction record value
         var iva = returnNumber(Math.abs(transaccion.getFieldValue('taxtotal')));
-
+        nlapiLogExecution('debug', 'iva', iva);
         var cond_pago = nlapiEscapeXML(returnBlank(searchTransaction[0].getText('terms', 'vendor')));
         var moneda = nlapiEscapeXML(returnBlank(searchTransaction[0].getText('currency')));
         var exchange_rate = nlapiEscapeXML(returnBlank(searchTransaction[0].getValue('exchangerate')));
 
-        //nlapiLogExecution('debug', 'exchange_rate', exchange_rate);
-        if (moneda != companyInfoCurrency)
+        nlapiLogExecution('debug', 'exchange_rate', exchange_rate);
+        nlapiLogExecution('debug', 'moneda', moneda);
+        nlapiLogExecution('debug', 'companyInfoCurrency', companyInfoCurrency);
+        nlapiLogExecution('debug', 'searchTransaction', searchTransaction);
+        if (moneda != companyInfoCurrency){
+            nlapiLogExecution('debug', 'total if', total);
             var total = returnNumber(searchTransaction[0].getValue('fxamount'));
-        else if (moneda == companyInfoCurrency)
-            var total = returnNumber(searchTransaction[0].getValue('total'));
+        }else if (moneda == companyInfoCurrency){
+            //var total = returnNumber(searchTransaction[0].getValue('total'));
+            var total = returnNumber(Math.abs(transaccion.getFieldValue('total')));
+            nlapiLogExecution('debug', 'total else', total);
+
+        }
 
         var subtotal = total - iva;
         var simbolo = '';
@@ -306,7 +315,7 @@ function Orden_Compra_PDF(request, response) {
             for (i = 1; i <= numberLines; i++) {
                 var cuenta =  nlapiEscapeXML(returnBlank(transaccion.getLineItemValue('expense', 'account_display', i)))
                 var monto = transaccion.getLineItemValue('expense', 'amount', i);
-                var categoria = transaccion.getLineItemValue('expense', 'category_display', i);
+                var categoria = nlapiEscapeXML(returnBlank(transaccion.getLineItemValue('expense', 'category_display', i)))
                 //var location = transaccion.getLineItemValue('expense', 'location_display', i);
                 var memo = transaccion.getLineItemValue('expense', 'memo', i);
                 if(memo == null){
