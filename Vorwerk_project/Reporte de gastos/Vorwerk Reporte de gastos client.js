@@ -1,9 +1,40 @@
 /**
- * @NApiVersion 2.x
+ * @NApiVersion 2.1
  * @NScriptType ClientScript
  */
 define(['N/url', 'N/currentRecord'],
 function(url, currentRecord) {
+    function pageInit(scriptContext) {
+        
+        return true;
+    }
+
+    /**
+     * Function to be executed when field is changed.
+     *
+     * @param {Object} scriptContext
+     * @param {Record} scriptContext.currentRecord - Current form record
+     * @param {string} scriptContext.sublistId - Sublist name
+     * @param {string} scriptContext.fieldId - Field name
+     * @param {number} scriptContext.lineNum - Line number. Will be undefined if not a sublist or matrix field
+     * @param {number} scriptContext.columnNum - Line number. Will be undefined if not a matrix field
+     *
+     * @since 2015.2
+     */
+    function fieldChanged(scriptContext) {
+        return true;
+    }
+
+    /**
+     * Function to be executed when field is slaved.
+     *
+     * @param {Object} scriptContext
+     * @param {Record} scriptContext.currentRecord - Current form record
+     * @param {string} scriptContext.sublistId - Sublist name
+     * @param {string} scriptContext.fieldId - Field name
+     *
+     * @since 2015.2
+     */
     
     function generateCode() {
         var email = currentRecord.getValue('custpage_employee_email');
@@ -41,6 +72,8 @@ function(url, currentRecord) {
     }
 
     return {
+        pageInit: pageInit,
+        fieldChanged: fieldChanged,
         generateCode: generateCode
     };
 });
