@@ -317,7 +317,7 @@ function Orden_Compra_PDF(request, response) {
                 var monto = transaccion.getLineItemValue('expense', 'amount', i);
                 var categoria = nlapiEscapeXML(returnBlank(transaccion.getLineItemValue('expense', 'category_display', i)))
                 //var location = transaccion.getLineItemValue('expense', 'location_display', i);
-                var memo = transaccion.getLineItemValue('expense', 'memo', i);
+                var memo = nlapiEscapeXML(returnBlank(transaccion.getLineItemValue('expense', 'memo', i)));
                 if(memo == null){
                     memo = ''
                 }
