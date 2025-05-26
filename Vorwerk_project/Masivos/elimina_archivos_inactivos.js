@@ -18,7 +18,6 @@ define(['N/search', 'N/record', 'N/file', 'N/format', 'N/runtime'],
         const searchId = scriptObj.getParameter({
             name: 'custscript_searchid'
         });
-
         if (!searchId) {
             throw new Error('El parámetro custscript_searchid es requerido');
         }
@@ -29,44 +28,78 @@ define(['N/search', 'N/record', 'N/file', 'N/format', 'N/runtime'],
     }
 
     function map(context) {
-        try {
+        log.debug('context',context)
+            const scriptObj = runtime.getCurrentScript();
+            const cuenta = scriptObj.getParameter({
+                name: 'custscript_cuenta'
+            });
             const searchResult = JSON.parse(context.value);
-            const employeeId = searchResult.values['GROUP(internalid)'].value;
             
-            // Recopilar IDs de archivos a eliminar
-            const filesToDelete = [];
-            PHOTO_FIELDS.forEach(fieldId => {
-                const fieldValue = searchResult.values[`GROUP(${fieldId})`];
-                if (fieldValue && fieldValue.value) {  // Verificamos que exista y tenga value
-                    filesToDelete.push({
-                        fileId: fieldValue.value,  // Usamos .value para obtener el ID del archivo
-                        fieldId: fieldId
+            if (searchResult.recordType == 'salesorder'){// transform de SO a invoice
+                log.debug('cuenta',cuenta)
+                var setCuenta
+                if(cuenta){
+                    setCuenta = cuenta
+                }else{
+                    setCuenta = 123
+                }
+                var idSO = searchResult.values['internalid'].value
+                log.debug('idSO',idSO)
+                var fecha = new Date
+                log.debug('fecha',fecha)
+                var transformInv = record.transform({
+                    fromType: 'salesorder',
+                    fromId: idSO,
+                    toType: 'invoice'
+                });
+                transformInv.setValue({
+                    fieldId: 'account',
+                    value: setCuenta
+                });
+                
+                var id_invoice = transformInv.save()
+                log.debug('id_invoice',id_invoice)
+            }else{//eliminar archivos
+                try {
+
+                    const employeeId = searchResult.values['GROUP(internalid)'].value;
+                    
+                    // Recopilar IDs de archivos a eliminar
+                    const filesToDelete = [];
+                    PHOTO_FIELDS.forEach(fieldId => {
+                        const fieldValue = searchResult.values[`GROUP(${fieldId})`];
+                        if (fieldValue && fieldValue.value) {  // Verificamos que exista y tenga value
+                            filesToDelete.push({
+                                fileId: fieldValue.value,  // Usamos .value para obtener el ID del archivo
+                                fieldId: fieldId
+                            });
+                        }
+                    });
+
+                    // Log para verificar los IDs de archivos
+                    log.debug('Files to delete', filesToDelete);
+
+                    // Emitir para el reduce
+                    if (filesToDelete.length > 0) {
+                        context.write({
+                            key: employeeId,
+                            value: {
+                                employeeId: employeeId,
+                                files: filesToDelete,
+                                email: searchResult.values['GROUP(email)'],
+                                lastModified: searchResult.values['MAX(date.systemNotes)']
+                            }
+                        });
+                    }
+
+                } catch (e) {
+                    log.error({
+                        title: 'Map Error for employee ' + context.key,
+                        details: e.toString() + '\nResult: ' + JSON.stringify(context.value)
                     });
                 }
-            });
-
-            // Log para verificar los IDs de archivos
-            log.debug('Files to delete', filesToDelete);
-
-            // Emitir para el reduce
-            if (filesToDelete.length > 0) {
-                context.write({
-                    key: employeeId,
-                    value: {
-                        employeeId: employeeId,
-                        files: filesToDelete,
-                        email: searchResult.values['GROUP(email)'],
-                        lastModified: searchResult.values['MAX(date.systemNotes)']
-                    }
-                });
             }
-
-        } catch (e) {
-            log.error({
-                title: 'Map Error for employee ' + context.key,
-                details: e.toString() + '\nResult: ' + JSON.stringify(context.value)
-            });
-        }
+        
     }
 
     function reduce(context) {
