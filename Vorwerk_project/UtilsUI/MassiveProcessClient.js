@@ -14,6 +14,12 @@ define(['N/currentRecord', 'N/ui/dialog'],
             message: 'Este proceso elimina archivos directos de FILE CABINET los cuales no pueden ser recuperados, ¿Seguro que desea continuar?'
         });
     }
+    function validateProcessInvoice(currentRec) {
+        return dialog.confirm({
+            title: 'Advertencia',
+            message: 'Este proceso creará facturas a partir de una Orden de venta, ¿Seguro que desea continuar?'
+        });
+    }
 
     /**
      * Función para validar la búsqueda guardada
@@ -30,10 +36,13 @@ define(['N/currentRecord', 'N/ui/dialog'],
      */
     function fieldChanged(context) {
         var currentRec = context.currentRecord;
+        
         var searchField = currentRec.getField({
             fieldId: 'custpage_searchid'
         });
-
+        var accountField = currentRec.getField({
+            fieldId: 'custpage_account'
+        });
         if (context.fieldId === 'custpage_process') {
             var process = currentRec.getValue({
                 fieldId: 'custpage_process'
@@ -51,7 +60,22 @@ define(['N/currentRecord', 'N/ui/dialog'],
                         });
                     }
                 });
-            } else {
+            } else if ( process === '3') {
+                validateProcessInvoice(currentRec).then(function(result) {
+                    if (result) {
+                        searchField.isDisabled = false;
+                        searchField.isMandatory = true;
+                        console.log('currentRec',currentRec)
+                        accountField.isDisabled = false;
+                        accountField.isMandatory = true;
+                    } else {
+                        currentRec.setValue({
+                            fieldId: 'custpage_process',
+                            value: ''
+                        });
+                    }
+                });
+            }else {
                 searchField.isDisabled = true;
                 searchField.isMandatory = false;
                 currentRec.setValue({
@@ -86,7 +110,7 @@ define(['N/currentRecord', 'N/ui/dialog'],
             fieldId: 'custpage_process'
         });
 
-        if (process === '1') {
+        if (process === '1'||process === '3') {
             return validateSearch(currentRec);
         }
         return true;
