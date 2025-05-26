@@ -1,4 +1,4 @@
-/**
+      /**
  * @NApiVersion 2.x
  * @NScriptType UserEventScript
  * @NModuleScope SameAccount
@@ -123,6 +123,12 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
             var salesrep = rec.getValue('salesrep')
             var typeEvent = runtime.executionContext;
             log.debug('typeEvent',typeEvent)
+            // actualizacion campos de serializado
+            try{
+                itemtype(scriptContext)
+            }catch(e){
+                log.debug('error campos serializado',e)
+            }
             // actualizacion de commission status 
             try{
                 commissionStatus(salesrep)
@@ -1048,6 +1054,58 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
         
         
     }
+    function itemtype(scriptContext){
+        try{
+            log.debug('nueva funcion ')
+            var type = scriptContext.type;
+            var rec = scriptContext.newRecord;
+            if(type == 'create' || type == 'edit'){
+                var recordid = rec.id;
+                var salesorder = record.load({//Cargar registro 
+                    type: 'salesorder',
+                    id: recordid,
+                    isDynamic: false
+                });
+                var nonInventory = 0
+                var inventory = 0
+                var numLines = salesorder.getLineCount({//cuenta las lineas de mi sublista 
+                    sublistId : 'item'
+                });
+             
+                
+                for(var e =0; e<numLines; e++){ 
+                    var item_type = salesorder.getSublistValue({
+                         sublistId: 'item',
+                         fieldId: 'itemtype',
+                         line: e
+                    })
+                    log.debug('item_type',item_type)
+                    if(item_type == 'NonInvtPart'){
+                        nonInventory++
+                    } else{
+                        inventory++
+                    }
+                    if(inventory > 0 && nonInventory <= 0){
+                        salesorder.setValue('custbody_inv_type','1')
+                    }else if (nonInventory > 0 && inventory <= 0) {
+                        salesorder.setValue('custbody_inv_type','2')
+                    }else if (nonInventory > 0 && inventory > 0) {
+                        salesorder.setValue('custbody_inv_type','3')
+                    }
+                }
+                
+                    salesorder.save({
+                        enableSourcing: false,
+                        ignoreMandatoryFields: true
+                    });
+
+            }
+                
+        }catch(e){
+            log.error('error is serial',e)
+        }
+    }
+    
     function commissionStatus(salesrep){
         try{
             
