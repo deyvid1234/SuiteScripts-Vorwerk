@@ -14,14 +14,14 @@ define(['N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
         });
 
         // Agregar el script del cliente usando su ID
-        form.clientScriptFileId = 3209218;
+        form.clientScriptFileId = 2965003;//3209218;   prod
         
         // Campo de selección de proceso usando la lista existente
         const processField = form.addField({
             id: 'custpage_process',
             type: serverWidget.FieldType.SELECT,
             label: 'Seleccionar Proceso',
-            source: 'customlist_massiveprocessui_list'
+            source: 'customlist_massiveprocessui_'//customlist_massiveprocessui_    prod
         });
         processField.isMandatory = true;
 
@@ -34,7 +34,15 @@ define(['N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
         searchField.updateDisplayType({
             displayType: serverWidget.FieldDisplayType.DISABLED
         });
-
+        const accountField = form.addField({
+            id: 'custpage_account',
+            type: serverWidget.FieldType.SELECT,
+            label: 'Cuenta',
+            source: 'account'
+        });
+        accountField.updateDisplayType({
+            displayType: serverWidget.FieldDisplayType.DISABLED
+        });
         // Botón de procesar
         form.addSubmitButton({
             label: 'Procesar'
@@ -49,6 +57,8 @@ define(['N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
     function executeProcess(process, params) {
         if (process === '1') { // ID 1 de customlist_massiveprocessui_list
             return executeDeleteFiles(params);
+        }else if (process === '3'){
+            return executeCreateInvoice(params);
         }
         throw new Error('Proceso no válido');
     }
@@ -64,6 +74,30 @@ define(['N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
                 deploymentId: 'customdeploy_elimina_archivos_inactivos',
                 params: {
                     custscript_searchid: params.searchId
+                }
+            });
+            
+            return mrTask.submit();
+        } catch (e) {
+            if (e.name === 'NO_DEPLOYMENTS_AVAILABLE') {
+                throw new Error('El proceso está ocupado en este momento. Por favor, intente más tarde o contacte al administrador para verificar el estado de los procesos en ejecución.');
+            }
+            throw e;
+        }
+    }
+    /**
+     * Ejecuta el proceso de creación de invoice
+     */
+    function executeCreateInvoice(params) {
+        try {
+            const mrTask = task.create({
+                taskType: task.TaskType.MAP_REDUCE,
+                scriptId: 'customscript_eliminar_archivos',
+                deploymentId: 'customdeploy1',
+                params: {
+                    custscript_searchid: params.searchId,
+                    custscript_cuenta: params.cuenta
+
                 }
             });
             
@@ -108,10 +142,11 @@ define(['N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
             } else {
                 const process = context.request.parameters.custpage_process;
                 const searchId = context.request.parameters.custpage_searchid;
-                
+                const cuenta = context.request.parameters.custpage_account;
                 try {
                     const taskId = executeProcess(process, {
-                        searchId: searchId
+                        searchId: searchId,
+                        cuenta: cuenta
                     });
 
                     // URL del centro de procesos según el ambiente
