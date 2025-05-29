@@ -1949,7 +1949,7 @@ una rcluta de algun miembro del equipo*/
                         fechaObjetivo = Utils.stringToDate(fechaObjetivo)
                         
                         
-                        if(dcontratacion > dHistorico && ventasReclutaTP){//Si su contratacion/Reactivacion es anterios a 3 meses se asume que ya se pagó su reclutamiento
+                        if(dcontratacion >= dHistorico && ventasReclutaTP){//Si su contratacion/Reactivacion es anterios a 3 meses se asume que ya se pagó su reclutamiento
                             
                             var salesReclutaTP =[]
                             var noComisiona = 6
