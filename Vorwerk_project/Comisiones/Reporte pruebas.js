@@ -312,7 +312,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 var urlDetalle = 'https://3367613.app.netsuite.com/app/site/hosting/scriptlet.nl?script=1358&deploy=2'+'&periodoI='+inicioPeriodo+'&periodoF='+finPeriodo+'&promo='+empPromo+'&tipo='+empType+'&pre='+empID
                 switch(tipoReporteGloobal){
                     case 1: //Reporte LE
-                        if(empType == 3 && empPromo == 2 && allPresentadoras[i].internalid == '2470114'){
+                        if(empType == 3 && empPromo == 2 && allPresentadoras[i].internalid == '12531'){
                             //Calcular reporte para la persona
                             var reclutas = listaReclutas[i]
                             var integrantesEquipo = listaGrupos[i]   
@@ -322,7 +322,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                             //log.debug('ventasEmp',ventasEmp)
                             
                             objVentasPropias = bonoVentaPropia(dataEmp,ventasEmp,compConfigDetails)
-                            //log.debug('objVentasPropias'+empID,objVentasPropias)
+                            log.debug('objVentasPropias'+empID,objVentasPropias)
                             
                             //objSupercomision = bonoSupercomision(integrantesEquipo,historicoSO,thisPeriodSO,allPresentadoras,dHistorico)
                             //log.debug('objSupercomision',objSupercomision)
@@ -348,9 +348,9 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                             objJoya = bonoJoya(conf,ventasEmp,compConfigDetails)
                             objCook = bonoCk(dataEmp,ckSO)
                             objNuevoRecluta = bonoNuevoRecluta(empID,dataEmp,reclutas,thisPeriodSO,historicoSO,allPresentadoras,dHistorico,integrantesEquipo)
-                            log.debug('objNuevoRecluta',objNuevoRecluta)
+                            //log.debug('objNuevoRecluta',objNuevoRecluta)
                             objActividad = bonoActividad(empID,dataEmp,integrantesEquipo,thisPeriodSO,historicoSO,allPresentadoras,dHistorico,inicioPeriodo,finPeriodo)
-                            log.debug('objActividad',objActividad)
+                            //log.debug('objActividad',objActividad)
                             var amounTrue = validateAmount(sublist,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objReclutamiento,objEntrega,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objXmasdosNLE,objJoya,objCook,objNuevoRecluta,objActividad,objProductividadTMSB)
         
                             if(amounTrue){
@@ -361,7 +361,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
 
                     break;
                     case 2: //Reporte Presentadora
-                        if(empType == 1 && empPromo == 2 /*&& allPresentadoras[i].internalid == '4430027'*/){
+                        if(empType == 1 && empPromo == 2 && allPresentadoras[i].internalid == '4388820'){
                             //Calcular reporte para la persona
                             var reclutas=listaReclutas[i]
                             var integrantesEquipo=listaGrupos[i]   
@@ -373,7 +373,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                                 objProductividadTMSB = bonoProductividadTMSB(empID,dataEmp,tmsbSO,compConfigDetails,finPeriodo,inicioPeriodo,todosPeriodos,tmPagadaGanada)
                             
                                 objVentasPropias = bonoVentaPropia(dataEmp,ventasEmp,compConfigDetails)
-                                //log.debug('objVentasPropias',objVentasPropias)
+                                log.debug('objVentasPropias',objVentasPropias)
                                 
                                 objReclutamiento = bonoReclutamiento(reclutas,historicoSO,thisPeriodSO,dataEmp,compConfigDetails,allPresentadoras,dHistorico)
                                 //log.debug('objReclutamiento',objReclutamiento)
@@ -617,7 +617,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             });
             //ID ODV
             if(ventasPropias.data.length > 0){
-                v = ventasPropias.data.join(',')
+                v = JSON.stringify(ventasPropias.data)
             }else{
                 v = ''
             }
@@ -964,7 +964,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             
             if(empTipoIngreso == 14 && tmsbCampo == '' && finObjetivo2 < finPeriodofecha && finObjetivo2 > inicioPeriodofecha && !tmPagadaGanada.hasOwnProperty(empID)){
                 var ventas = historicoSO[empID]
-                log.debug('ventas',ventas)
+                //log.debug('ventas',ventas)
                 var data = []
                 var ventasPorPeriodo = {}
                 var numeroVentasPorPeriodo = {};
@@ -1018,9 +1018,9 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                         montoTotalProductividad += parseInt(montoProductividadxPeriodo);
                     }
                 }
-                log.debug('Monto total productividad', montoTotalProductividad);
+                /*log.debug('Monto total productividad', montoTotalProductividad);
                 log.debug(' data ventasPorPeriodo', ventasPorPeriodo);
-                log.debug(' montoVentasPre', montoVentasPre);
+                log.debug(' montoVentasPre', montoVentasPre);*/
                 return {
                     monto: montoTotalProductividad, 
                     data: ventasPorPeriodo,
@@ -1513,25 +1513,93 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
     }
     function bonoProductividad(dataEmp,ventasEmp,compConfigDetails){
         try{
-            var config=dataEmp.emp_conf
+            
+            var ventasNo = 0
             var ventas = ventasEmp
-            //log.debug('ventas',ventas)
+            log.debug('ventas',ventas)
             var data = []
-            for (i in ventas){
-                var ventasData= Object.keys(ventas[i])
-                //thisPeriodSO['id presentador'][indice]['id pedido']['etiqueta']
-                var comisionables = ventas[i][ventasData]['custbody_vw_comission_status']
-                var tipoVenta = ventas[i][ventasData]['custbody_tipo_venta']
-                //log.debug('tipoVenta',tipoVenta)
-                //log.debug('comisionables',comisionables)
-                if(comisionables != 'No Comisionable' && tipoVenta != 'TM Ganada'){
-                    data.push(ventasData)
-                }
-                
+            var epTm7 = dataEmp.epTm7
+            log.debug('epTm7',epTm7)
+            var epTm7_inicio = dataEmp.epTm7_inicio
+            var fechatm7_ganada = dataEmp.fechatm7_ganada
+            var soid_Ganadora = dataEmp.so_ganotm7
+            var fecha_termino
+            if(fechatm7_ganada == ''){
+                fecha_termino = dataEmp.epTm7_fin
+            }  else{
+                fecha_termino = fechatm7_ganada
             }
-            var ventasNo = data.length
-            //log.debug('ventasNo',ventasNo)
-            var montoProductividad= compConfigDetails[1]['esquemaVentasPresentadora'][ventasNo]['bonoProductividad']
+            var tm 
+            if(epTm7 == true && epTm7_inicio) {
+                epTm7_inicio = Utils.stringToDate(epTm7_inicio)
+                log.debug('epTm7_inicio',epTm7_inicio)
+                fecha_termino = Utils.stringToDate(fecha_termino)
+                log.debug('fecha_termino',fecha_termino)
+                for (i in ventas){
+                    var ventasData= Object.keys(ventas[i])
+                    //thisPeriodSO['id presentador'][indice]['id pedido']['etiqueta']
+                    var comisionables = ventas[i][ventasData]['custbody_vw_comission_status']
+                    var tipoVenta = ventas[i][ventasData]['custbody_tipo_venta']
+                    var fechaSO = ventas[i][ventasData]['trandate']
+                    var id = ventas[i][ventasData]['internalid']
+                    var tm
+                    fechaSO = Utils.stringToDate(fechaSO)
+                    log.debug('fechaSO',fechaSO)
+                    //log.debug('comisionables',comisionables)
+                     if(comisionables != 'No Comisionable' && tipoVenta != 'TM Ganada' && (fechaSO < epTm7_inicio || fechaSO > fecha_termino )){
+                            log.debug('si comisiona esta venta 1',id)
+                            tm = 'tm6'
+                            var pedido = { idSO:id,programa:tm} 
+                            data.push(pedido)
+                            ventasNo ++
+                        }else if(comisionables != 'No Comisionable' && tipoVenta != 'TM Ganada' && fechaSO >= epTm7_inicio &&  fechaSO < fecha_termino){
+                            log.debug('no comisiona esta venta 2',id)
+                            tm = 'EP_tm7'
+                            var pedido = { idSO:id,programa:tm} 
+                            data.push(pedido)
+                        }else if(fechaSO = fecha_termino && soid_Ganadora){
+                            if(id > soid_Ganadora){
+                                log.debug('si comisiona esta venta 3',id)
+                                tm = 'tm6'
+                                var pedido = { idSO:id,programa:tm} 
+                                data.push(pedido)
+                                ventasNo ++
+                            }else{
+                                log.debug('no comisiona esta venta 4',id)
+                                tm = 'EP_tm7'
+                                var pedido = { idSO:id,programa:tm} 
+                                data.push(pedido)
+                            }
+                        }else {
+                            log.debug('no comisiona esta venta 5',id)
+                            tm = 'EP_tm7'
+                            var pedido = { idSO:id,programa:tm} 
+                            data.push(pedido)
+                        }
+
+                }
+            } else{
+                for (i in ventas){
+                    var ventasData= Object.keys(ventas[i])
+                    //thisPeriodSO['id presentador'][indice]['id pedido']['etiqueta']
+                    var comisionables = ventas[i][ventasData]['custbody_vw_comission_status']
+                    var tipoVenta = ventas[i][ventasData]['custbody_tipo_venta']
+                    //log.debug('comisionables',comisionables)
+                    if(comisionables != 'No Comisionable' && tipoVenta != 'TM Ganada'){
+                        tm = 'tm6'
+                        var pedido = { idSO:id,programa:tm} 
+                        data.push(pedido)
+                        ventasNo ++
+                    }
+
+                } 
+            }
+                
+                
+                //compConfigDetails[tipo de cofiguracion][etiqueta del esquema][No de ventas][etiqueta de la compensacion monto]
+                var montoProductividad= compConfigDetails[1]['esquemaVentasPresentadora'][ventasNo]['bonoProductividad']
+    
+            
             //log.debug('montoProductividad', montoProductividad)
             return {monto:montoProductividad, data:data} 
         }catch(e){
@@ -1935,21 +2003,90 @@ una rcluta de algun miembro del equipo*/
     function bonoVentaPropia(dataEmp,empSOThisPeriod,compConfigDetails){
         try{
             if(empSOThisPeriod){
+                var ventasNo = 0
                 var ventas = empSOThisPeriod
-                //log.debug('ventas',ventas)
+                log.debug('ventas',ventas)
                 var data = []
-                for (i in ventas){
-                    var ventasData= Object.keys(ventas[i])
-                    //thisPeriodSO['id presentador'][indice]['id pedido']['etiqueta']
-                    var comisionables = ventas[i][ventasData]['custbody_vw_comission_status']
-                    var tipoVenta = ventas[i][ventasData]['custbody_tipo_venta']
-                    //log.debug('comisionables',comisionables)
-                    if(comisionables != 'No Comisionable' && tipoVenta != 'TM Ganada'){
-                        data.push(ventas[i][ventasData]['internalid'])
-                    }
+                var epTm7 = dataEmp.epTm7
+                log.debug('epTm7',epTm7)
 
+                var epTm7_inicio = dataEmp.epTm7_inicio
+                var fechatm7_ganada = dataEmp.fechatm7_ganada
+                var soid_Ganadora = dataEmp.so_ganotm7
+               
+                var fecha_termino
+                if(fechatm7_ganada == ''){
+                    fecha_termino = dataEmp.epTm7_fin
+                }  else{
+                    fecha_termino = fechatm7_ganada
                 }
-                var ventasNo = data.length
+                var tm 
+                if(epTm7  && epTm7_inicio) {
+                    epTm7_inicio = Utils.stringToDate(epTm7_inicio)
+                    log.debug('epTm7_inicio',epTm7_inicio)
+                    fecha_termino = Utils.stringToDate(fecha_termino)
+                    log.debug('fecha_termino',fecha_termino)
+                    for (i in ventas){
+                        var ventasData= Object.keys(ventas[i])
+                        //thisPeriodSO['id presentador'][indice]['id pedido']['etiqueta']
+                        var comisionables = ventas[i][ventasData]['custbody_vw_comission_status']
+                        var tipoVenta = ventas[i][ventasData]['custbody_tipo_venta']
+                        var fechaSO = ventas[i][ventasData]['trandate']
+                        var id = ventas[i][ventasData]['internalid']
+                        var tm
+                        fechaSO = Utils.stringToDate(fechaSO)
+                        log.debug('fechaSO',fechaSO)
+                        //log.debug('comisionables',comisionables)
+                        if(comisionables != 'No Comisionable' && tipoVenta != 'TM Ganada' && (fechaSO < epTm7_inicio || fechaSO > fecha_termino )){
+                            log.debug('si comisiona esta venta 1',id)
+                            tm = 'tm6'
+                            var pedido = { idSO:id,programa:tm} 
+                            data.push(pedido)
+                            ventasNo ++
+                        }else if(comisionables != 'No Comisionable' && tipoVenta != 'TM Ganada' && fechaSO >= epTm7_inicio &&  fechaSO < fecha_termino){
+                            log.debug('no comisiona esta venta 2',id)
+                            tm = 'EP_tm7'
+                            var pedido = { idSO:id,programa:tm} 
+                            data.push(pedido)
+                        }else if(fechaSO = fecha_termino && soid_Ganadora){
+                            if(id > soid_Ganadora){
+                                log.debug('si comisiona esta venta 3',id)
+                                tm = 'tm6'
+                                var pedido = { idSO:id,programa:tm} 
+                                data.push(pedido)
+                                ventasNo ++
+                            }else{
+                                log.debug('no comisiona esta venta 4',id)
+                                tm = 'EP_tm7'
+                                var pedido = { idSO:id,programa:tm} 
+                                data.push(pedido)
+                            }
+                        }else {
+                            log.debug('no comisiona esta venta 5',id)
+                            tm = 'EP_tm7'
+                            var pedido = { idSO:id,programa:tm} 
+                            data.push(pedido)
+                        }
+
+                    }
+                } else{
+                    for (i in ventas){
+                        var ventasData= Object.keys(ventas[i])
+                        //thisPeriodSO['id presentador'][indice]['id pedido']['etiqueta']
+                        var comisionables = ventas[i][ventasData]['custbody_vw_comission_status']
+                        var tipoVenta = ventas[i][ventasData]['custbody_tipo_venta']
+                        //log.debug('comisionables',comisionables)
+                        if(comisionables != 'No Comisionable' && tipoVenta != 'TM Ganada'){
+                            tm = 'tm6'
+                            var pedido = { idSO:id,programa:tm} 
+                            data.push(pedido)
+                            ventasNo ++
+                        }
+
+                    } 
+                }
+                
+                
                 //compConfigDetails[tipo de cofiguracion][etiqueta del esquema][No de ventas][etiqueta de la compensacion monto]
                 var montoVentasPre= compConfigDetails[1]['esquemaVentasPresentadora'][ventasNo]['compensacion']
     /*
@@ -2016,6 +2153,11 @@ una rcluta de algun miembro del equipo*/
             const empSearchTipoIngreso = search.createColumn({ name: 'custentity_tipo_ingreso'});
             const empSearchTipoReingreso = search.createColumn({ name: 'custentity_vorwerk_reentry'});
             const empSearchStatusTMSB = search.createColumn({ name: 'custentity_estatus_tm_sinbarreras'});
+            const empSearchEptm7 = search.createColumn({ name: 'custentity_checkbox_eptm7'});
+            const empSearchEptm7_inicio = search.createColumn({ name: 'custentity_fcha_inicio_eptm7'});
+            const empSearchEptm7_fin = search.createColumn({ name: 'custentity_fcha_fin_eptm7'});
+            const empSearchfecha_tm7_ganada = search.createColumn({ name: 'custentity_fechatm7_ganada'});
+            const empSearch_so_ganotm7 = search.createColumn({ name: 'custentity_so_ganotm7'});
 
             const mySearch = search.create({
                 type: 'employee',
@@ -2046,7 +2188,13 @@ una rcluta de algun miembro del equipo*/
                     empSearchPeriodoPagoNLE,
                     empSearchTipoIngreso,
                     empSearchTipoReingreso,
-                    empSearchStatusTMSB
+                    empSearchStatusTMSB,
+                    empSearchEptm7,
+                    empSearchEptm7_inicio,
+                    empSearchEptm7_fin,
+                    empSearchfecha_tm7_ganada,
+                    empSearch_so_ganotm7
+
 
                 ],
             });
@@ -2088,6 +2236,11 @@ una rcluta de algun miembro del equipo*/
                     objEMP.tipoIngreso = r.getValue('custentity_tipo_ingreso')
                     objEMP.tipoReingreso = r.getValue('custentity_vorwerk_reentry')
                     objEMP.statusTMSB = r.getValue('custentity_estatus_tm_sinbarreras')
+                    objEMP.epTm7 = r.getValue('custentity_checkbox_eptm7')
+                    objEMP.epTm7_inicio = r.getValue('custentity_fcha_inicio_eptm7')
+                    objEMP.epTm7_fin = r.getValue('custentity_fcha_fin_eptm7')
+                    objEMP.fechatm7_ganada = r.getValue('custentity_fechatm7_ganada')
+                    objEMP.so_ganotm7 = r.getValue('custentity_so_ganotm7')
                     allPresentadorData[objEMP.internalid] = objEMP
 
                     if(empGrupos.hasOwnProperty(objEMP.supervisor)){

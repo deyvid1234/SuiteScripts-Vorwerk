@@ -379,10 +379,10 @@ function table_v_propiaTMSB(data,tmp_emp,type_emp,promocion,dataSOtmsinBarreras,
 }
 function table_v_propia(data,tmp_emp,type_emp,promocion,dataSO,CompConfigDetails){
 	try{
-		var odv_p = data.odv_entrega.split(',')
+		var odv_p = JSON.parse(data.odv_entrega);
 		var odv_p_monto = data.venta_propia
-  		//log.debug('odv_p',odv_p)
-		//log.debug('dataSO',dataSO)
+
+		log.debug('odv_p',odv_p)
 
 		var objSObyid = dataSO.objSObyid
 			
@@ -395,6 +395,7 @@ function table_v_propia(data,tmp_emp,type_emp,promocion,dataSO,CompConfigDetails
 			strTable += "<td border='0.5' width='200px'><b>CLIENTE</b></td>";
 			strTable += "<td border='0.5' width='0px'><b>FECHA</b></td>";
 			strTable += "<td border='0.5' width='0px'><b>PEDIDO</b></td>";
+			strTable += "<td border='0.5' width='0px'><b>PROGRAMA</b></td>";
 			strTable += "<td border='0.5' width='40px'><b>MONTO</b></td>";
 			strTable += "<td border='0.5' width='0px'><b>PRODUCTIVIDAD</b></td>";
 			//strTable += "<td border='0.5' width='0px'><b>ENTREGA</b></td>";
@@ -402,24 +403,30 @@ function table_v_propia(data,tmp_emp,type_emp,promocion,dataSO,CompConfigDetails
 			/*fin encabezado de tabla
 			cuerpo de tabla*/
 			var lineaRec = 0
-			for(var i in odv_p){				
-				var thisSO = objSObyid[odv_p[i]]
+			for(var i = 0; i < odv_p.length; i++){	
+				
+				var odv_id = odv_p[i].idSO
+				log.debug('odv_id',odv_id) 			
+				var thisSO = objSObyid[odv_id]
 				//log.debug('test extraccion',thisSO.salesrep[0].text)
+				var programa = odv_p[i].programa
+				log.debug('programa',programa)
 				var monto
-				if(type_emp == 1 && promocion == 1){
+				if((type_emp == 1 && promocion == 1) ||  programa == 'EP_tm7'){
 					monto = "$0.00"
 				}else{
 					monto = "$2,500.00"
 				}
-
+				log.debug('programa2',programa)
 				lineaRec++
 				var b_produc
-				if(promocion == 1){
+				if(promocion == 1 || programa == 'EP_tm7'){
 					b_produc = 0
 				}else{
 					b_produc = (CompConfigDetails['1']['esquemaVentasPresentadora'][lineaRec]['bonoProductividad'])-(CompConfigDetails['1']['esquemaVentasPresentadora'][lineaRec-1]['bonoProductividad'])
 
 				}
+				log.debug('programa3',programa)
 				//& 
 				var cliente = thisSO.entity[0].text.replace(/&/gi," ")
 				
@@ -429,36 +436,39 @@ function table_v_propia(data,tmp_emp,type_emp,promocion,dataSO,CompConfigDetails
 				strTable += "<td border='0.5' border-style='dotted-narrow'>" + cliente	+ "</td>";
 				strTable += "<td border='0.5' border-style='dotted-narrow'>" + thisSO.trandate 		+ "</td>";
 				strTable += "<td border='0.5' border-style='dotted-narrow'>" + thisSO.tranid		+ "</td>";
+				strTable += "<td border='0.5' border-style='dotted-narrow'>" + programa		+ "</td>";
 				strTable += "<td border='0.5' border-style='dotted-narrow' align='right'>" + monto	+ "</td>";
 				strTable += "<td border='0.5' border-style='dotted-narrow' align='right'>" + currencyFormat('$',(b_produc)+'.00')+ "</td>";
 				strTable += "</tr>";
+				log.debug('programa4',programa)
 			}
-			
+			log.debug('programa5',programa)
 			strTable += "<tr>";
-			strTable += "<td border='0.5' colspan= '5' border-style='none' align='right'><b>Subtotal</b></td>";
+			strTable += "<td border='0.5' colspan= '6' border-style='none' align='right'><b>Subtotal</b></td>";
 			strTable += "<td border='0.5' border-style='dotted-narrow' align='right'><b>" + currencyFormat('$',(data.venta_propia)+'.00')	+ "</b></td>";
 			strTable += "<td border='0.5' border-style='dotted-narrow' align='right'><b>" + currencyFormat('$',(data.productividad)+'.00')	+ "</b></td>";
 			//strTable += "<td border='0.5' border-style='dotted-narrow' align='right'><b>" + currencyFormat('$',(data.entrega_monto)+'.00')	+ "</b></td>";
 			strTable += "</tr>";			
 			strTable += "</table>";
+			log.debug('programa6',programa)
 			/*cuerpo de tabla*/
 			return strTable
 			//fin tabla
 		}catch(errT1){
-			return "";	
+			//return "";	
 			log.error('errT1',errT1);
 		}
   }
 
   function table_v_equipo(data,dataSO,CompConfigDetails){
   	try{
-  		log.debug('entramos')
+  		//log.debug('entramos')
   		var strTable = ''
   		//Ventas Equipo
 	  	var equipoMonto = data.comision_equipo
-	  	log.debug('equipoMonto',equipoMonto)
+	  	//log.debug('equipoMonto',equipoMonto)
 	    var dataEquipo = data.equipo
-	    log.debug('dataEquipo',dataEquipo)
+	    //log.debug('dataEquipo',dataEquipo)
 	    var ventaPropia = []
 	    if(data.odvNle != ''){//si hay data en el campo odv NLE
 	    	var dataNle = JSON.parse(data.odvNle)
@@ -470,28 +480,28 @@ function table_v_propia(data,tmp_emp,type_emp,promocion,dataSO,CompConfigDetails
 		    		ventaPropia.push(ventaPropiaN[n])
 		    	}
 		    	
-		    	log.debug('ventaPropiaN',ventaPropiaN)
+		    	//log.debug('ventaPropiaN',ventaPropiaN)
 		    	
 		    	var ventasEquipo = dataNle[keyNle[x]].dataEquipo
-		    	log.debug('ventasEquipo',ventasEquipo)
+		    	//log.debug('ventasEquipo',ventasEquipo)
 		    	for (y in ventasEquipo){
 		    		var odv = ventasEquipo[y]
-		    		log.debug('odv',odv)
+		    		//log.debug('odv',odv)
 		    		for(e in odv){
 		    			ventaPropia.push(parseInt(odv[e]))
 		    		}
 		    		
 		    	}
-		    	log.debug('ventaPropia en for',ventaPropia)
+		    	//log.debug('ventaPropia en for',ventaPropia)
 		    }
 
-		    log.debug('ventaPropia final',ventaPropia)
-		    log.debug('dataNle',keyNle )
+		   // log.debug('ventaPropia final',ventaPropia)
+		    //log.debug('dataNle',keyNle )
 	    }
 	    
 	    var ids = []
     	var arregloVentas= JSON.parse(dataEquipo)
-    	log.debug('arregloVentas',arregloVentas)
+    	//log.debug('arregloVentas',arregloVentas)
     	if(dataEquipo != ""){
     	    for (i in arregloVentas){
     	        for(e in arregloVentas[i]){
@@ -518,7 +528,7 @@ function table_v_propia(data,tmp_emp,type_emp,promocion,dataSO,CompConfigDetails
 				var objSObyid = dataSO.objSObyid
 				var thisSO = objSObyid[ids[i]]
 				var lider = data.lider
-				log.debug('lider',lider)
+				//log.debug('lider',lider)
 				var salesRep = thisSO.salesrep[0].text
 				var cliente = thisSO.entity[0].text
 				var fecha = thisSO.trandate
@@ -554,7 +564,7 @@ function table_v_propia(data,tmp_emp,type_emp,promocion,dataSO,CompConfigDetails
 						var lider = thisSO.salesrep[0].text
 					}
 
-					log.debug('lider',lider)
+					//log.debug('lider',lider)
 					var salesRep = thisSO.salesrep[0].text
 					var cliente = thisSO.entity[0].text
 					var fecha = thisSO.trandate

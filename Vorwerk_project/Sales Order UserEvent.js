@@ -126,6 +126,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
             // actualizacion campos de serializado
             try{
                 itemtype(scriptContext)
+                earningProgram(salesrep)
             }catch(e){
                 log.debug('error campos serializado',e)
             }
@@ -1105,7 +1106,141 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
             log.error('error is serial',e)
         }
     }
-    
+    function earningProgram(salesrep){
+        try{
+            log.debug('entre earningProgram')
+            var presentadorFields = search.lookupFields({
+                type: search.Type.EMPLOYEE,
+                id: salesrep,
+                columns: [
+                    'custentity_checkbox_eptm7',           // es earning program?
+                    'custentity_fcha_inicio_eptm7',        // fecha de inicio
+                    'custentity_fcha_fin_eptm7',           // fecha limite
+                    'custentity_estatus_eptm7',            // status
+                    'custentity_so_ganotm7',               // orden con la que gano tm7
+                    'custentity_fechatm7_ganada'           // fecha en que gano tm7
+
+                ]
+            });
+
+            //Determinacion de limite de ventas
+            const epTm7 = presentadorFields.custentity_checkbox_eptm7;
+            log.debug()
+            const status = presentadorFields.custentity_estatus_eptm7;
+
+            // es eptm7? y validar status no debe ser ganado, finalizado o pagado
+            if(epTm7 && status != 3 && status != 5 && status != 6 ){
+                var limit 
+            
+                if(status != 4){
+                    limit = 3
+                }else {//si el status es extendido las ventas son 4 en periodo de tres meses
+                    limit = 4
+                }
+                const fecha_inicio = presentadorFields.custentity_fcha_inicio_eptm7;
+                const fecha_ganotm7 = presentadorFields.custentity_fechatm7_ganada;
+                
+                //Manejo de fechas
+                var fechaTermino;
+                
+                if (fecha_ganotm7) {
+                    fechaTermino = fecha_ganotm7;
+                    log.error('No deberia suceder')
+                } else {
+                    fechaTermino = presentadorFields.custentity_fcha_fin_eptm7;
+                }
+                
+                //fechaTermino = Utils.stringToDate(fechaTermino);
+                log.debug('Datos de presentador',presentadorFields )
+                
+                    
+                var cont = 1
+                var newStatus
+                var setfechafin = false
+                var soGanadora 
+                var fechaSO 
+                var soSearch = search.load({
+                    id: 'customsearch_so_commission_status' //busqueda de so 
+                });
+                soSearch.filters.push(search.createFilter({
+                        name: 'salesrep',
+                        operator: 'is',
+                        values: salesrep
+                }));
+                soSearch.filters.push(search.createFilter({
+                        name: 'trandate',
+                        operator: 'within',//revisar
+                        values: [fecha_inicio,fechaTermino]    // fecha en que inicio el presentador en el earning program
+                }));
+                    
+                soSearch.run().each(function(r){
+                    var internalId = r.getValue('internalid')
+                    var tipoVenta = r.getValue('custbody_tipo_venta')
+                    fechaSO = r.getValue('trandate')
+                   log.debug('limit ',limit)
+                    switch(cont){
+                    case 1:
+                    log.debug('case1 ',fechaSO)
+                        newStatus = 2
+                        break;
+                    case 2:
+                    log.debug('case2 ',fechaSO) 
+                        newStatus = 2
+                        break;
+                    case 3: 
+                    log.debug('case3 ',fechaSO)
+                        if(limit == 3){
+                            newStatus = 3
+                            setfechafin = true 
+                            soGanadora = internalId
+                        }
+                        
+                        break;
+                    case 4: 
+                    log.debug('case4 ',fechaSO)
+                        if(limit == 4){
+                            newStatus = 3
+                            setfechafin = true 
+                            soGanadora = internalId
+                        }
+                        break;
+                    
+                    default: 
+                        newStatus = ''
+                        log.error('error switch')
+                        break;
+                    
+                   }
+                   log.debug('newStatus ',newStatus)
+                    log.debug('fechaSO ',fechaSO)
+                    log.debug('soGanadora ',soGanadora)
+                    log.debug('setfechafin ',setfechafin)
+                    cont++
+                   if(cont > 4){
+                     return false;
+                   }
+                    return true
+                });  
+                if(setfechafin){
+                    //submitfield de la fecha en que gano (poner fecha de la orden ganadora) y del nuevo status y el internal id de la SO con que gano
+                    log.debug('entra submit',salesrep)
+                    log.debug('newStatus sub',newStatus)
+                    log.debug('fechaSO sub',fechaSO)
+                    log.debug('soGanadora sub',soGanadora)
+                    record.submitFields({
+                        type: 'employee',
+                        id: salesrep,
+                        values: {'custentity_estatus_eptm7': newStatus,'custentity_fechatm7_ganada':fechaSO,'custentity_so_ganotm7':soGanadora}
+                    });
+                }
+            }
+            
+
+        }catch (e){
+            log.debug('error funcion earning program',e)
+        }
+
+    }
     function commissionStatus(salesrep){
         try{
             
@@ -1479,7 +1614,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                        })   
                     });
                 });
-                log.debug('numOrders',numOrders);
+                //log.debug('numOrders',numOrders);
                 if(numOrders.length >  6 || delegate == 2){
                     return false;
                 }
