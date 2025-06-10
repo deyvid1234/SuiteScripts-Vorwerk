@@ -379,7 +379,20 @@ function table_v_propiaTMSB(data,tmp_emp,type_emp,promocion,dataSOtmsinBarreras,
 }
 function table_v_propia(data,tmp_emp,type_emp,promocion,dataSO,CompConfigDetails){
 	try{
-		var odv_p = JSON.parse(data.odv_entrega);
+		var odv_p;
+		// Intentar parsear como JSON primero
+		try {
+			odv_p = JSON.parse(data.odv_entrega);
+		} catch(e) {
+			// Si falla, asumimos que es el formato antiguo (lista de IDs separados por comas)
+			var ids = data.odv_entrega.split(',');
+			odv_p = ids.map(function(id) {
+				return {
+					idSO: parseInt(id.trim()),
+					programa: 'tm6' // Valor por defecto para el formato antiguo
+				};
+			});
+		}
 		var odv_p_monto = data.venta_propia
 
 		log.debug('odv_p',odv_p)
