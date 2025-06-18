@@ -53,14 +53,14 @@ function Orden_Compra_PDF(request, response) {
         filtersTransaction.push(new nlobjSearchFilter('internalid', null, 'is', recordId));
         var searchTransaction = returnBlank(nlapiSearchRecord('purchaseorder', 'customsearch_orden_compra_data', filtersTransaction, null));
         nlapiLogExecution('debug', 'searchTransaction', searchTransaction);
-        var Prov_calle = nlapiEscapeXML(returnBlank(searchTransaction[0].getValue('address1', 'vendor')));
-        var Prov_colonia = nlapiEscapeXML(returnBlank(searchTransaction[0].getValue('address2', 'vendor')));
-        var Prov_ciudad = nlapiEscapeXML(returnBlank(searchTransaction[0].getValue('city', 'vendor')));
-        var Prov_estado = nlapiEscapeXML(returnBlank(searchTransaction[0].getValue('state', 'vendor')));
-        var Prov_pais = nlapiEscapeXML(returnBlank(searchTransaction[0].getText('country', 'vendor')));
-        var Prov_cp = nlapiEscapeXML(returnBlank(searchTransaction[0].getValue('zip', 'vendor')));
-        var Prov_contacto = nlapiEscapeXML(returnBlank(searchTransaction[0].getValue('contact', 'vendor')));
-        var Prov_telefono = nlapiEscapeXML(returnBlank(searchTransaction[0].getValue('phone', 'vendor')));
+        var Prov_calle = nlapiEscapeXML(returnBlank(transaccion.getFieldValue('address1')));
+        var Prov_colonia = nlapiEscapeXML(returnBlank(transaccion.getFieldValue('address2')));
+        var Prov_ciudad = nlapiEscapeXML(returnBlank(transaccion.getFieldValue('city')));
+        var Prov_estado = nlapiEscapeXML(returnBlank(transaccion.getFieldValue('state')));
+        var Prov_pais = nlapiEscapeXML(returnBlank(transaccion.getFieldText('country')));
+        var Prov_cp = nlapiEscapeXML(returnBlank(transaccion.getFieldValue('zip')));
+        var Prov_contacto = nlapiEscapeXML(returnBlank(transaccion.getFieldValue('contact')));
+        var Prov_telefono = nlapiEscapeXML(returnBlank(transaccion.getFieldValue('phone')));
         //var Comp_direccion            = nlapiEscapeXML(returnBlank(companyAddress));
         var empleado = transaccion.getFieldValue('employee');
         var Comp_contacto = nlapiEscapeXML(returnBlank(transaccion.getFieldText('employee')));
@@ -70,17 +70,17 @@ function Orden_Compra_PDF(request, response) {
         } catch (e) {
             Comp_telefono = '';
         }
-        var no_orden = nlapiEscapeXML(returnBlank(searchTransaction[0].getValue('tranid')));
-        var vendor_name = nlapiEscapeXML(returnBlank(searchTransaction[0]).getText('entity'))
-        var no_cotizacion = nlapiEscapeXML(returnBlank(searchTransaction[0].getValue('custbody_cotizacion')));
-        var fecha_pedido = nlapiEscapeXML(returnBlank(searchTransaction[0].getValue('trandate')));
-        var fecha_entrega = nlapiEscapeXML(returnBlank(searchTransaction[0].getValue('custbody_fcha_ent_compromiso')));
+        var no_orden = nlapiEscapeXML(returnBlank(transaccion.getFieldValue('tranid')));
+        var vendor_name = nlapiEscapeXML(returnBlank(transaccion.getFieldText('entity')));
+        var no_cotizacion = nlapiEscapeXML(returnBlank(transaccion.getFieldValue('custbody_cotizacion')));
+        var fecha_pedido = nlapiEscapeXML(returnBlank(transaccion.getFieldValue('trandate')));
+        var fecha_entrega = nlapiEscapeXML(returnBlank(transaccion.getFieldValue('custbody_fcha_ent_compromiso')));
         // var iva = returnNumber(Math.abs(searchTransaction[0].getValue('taxtotal'))); // Changed from the transaction record value
         var iva = returnNumber(Math.abs(transaccion.getFieldValue('taxtotal')));
         nlapiLogExecution('debug', 'iva', iva);
-        var cond_pago = nlapiEscapeXML(returnBlank(searchTransaction[0].getText('terms', 'vendor')));
-        var moneda = nlapiEscapeXML(returnBlank(searchTransaction[0].getText('currency')));
-        var exchange_rate = nlapiEscapeXML(returnBlank(searchTransaction[0].getValue('exchangerate')));
+        var cond_pago = nlapiEscapeXML(returnBlank(transaccion.getFieldText('terms')));
+        var moneda = nlapiEscapeXML(returnBlank(transaccion.getFieldText('currency')));
+        var exchange_rate = nlapiEscapeXML(returnBlank(transaccion.getFieldValue('exchangerate')));
 
         nlapiLogExecution('debug', 'exchange_rate', exchange_rate);
         nlapiLogExecution('debug', 'moneda', moneda);
@@ -88,7 +88,7 @@ function Orden_Compra_PDF(request, response) {
         nlapiLogExecution('debug', 'searchTransaction', searchTransaction);
         if (moneda != companyInfoCurrency){
             nlapiLogExecution('debug', 'total if', total);
-            var total = returnNumber(searchTransaction[0].getValue('fxamount'));
+            var total = returnNumber(transaccion.getFieldValue('fxamount'));
         }else if (moneda == companyInfoCurrency){
             //var total = returnNumber(searchTransaction[0].getValue('total'));
             var total = returnNumber(Math.abs(transaccion.getFieldValue('total')));
@@ -104,7 +104,7 @@ function Orden_Compra_PDF(request, response) {
         if (moneda == "Euro") {
             simbolo = "€";
         }
-        var incoterm = nlapiEscapeXML(returnBlank(searchTransaction[0].getValue('incoterm')));
+        var incoterm = nlapiEscapeXML(returnBlank(transaccion.getFieldValue('incoterm')));
         var envio = 0;
 
         var renglon = Prov_calle + ", ";
@@ -245,7 +245,7 @@ function Orden_Compra_PDF(request, response) {
         strName += "</tr>";
         
         nlapiLogExecution('DEBUG', 'lines item', numberLinesItem);
-        if(searchTransaction.length>0 && numberLinesItem != 0){  
+        if(numberLinesItem != 0){  
             strName += "<tr>";
             strName += "<td align='center' colspan='10'><b>Articulos</b></td>";
             strName += "</tr>";
@@ -261,16 +261,16 @@ function Orden_Compra_PDF(request, response) {
             strName += "<td width='15%' border='0.5'><b>Precio Tot.</b></td>";
             strName += "</tr>";
             strName += "</thead>"; 
-            for (var x = 1; x < searchTransaction.length; x++) {
-                var articulo = nlapiEscapeXML(returnBlank(searchTransaction[x].getText('item')));
-                var descripcion = nlapiEscapeXML(returnBlank(searchTransaction[x].getValue('displayname', 'item')));
-                var unidades = returnBlank(searchTransaction[x].getValue('unit'));
-                var cantidad = returnNumber(searchTransaction[x].getValue('quantity'));
+            for (var x = 1; x <= numberLinesItem; x++) {
+                var articulo = nlapiEscapeXML(returnBlank(transaccion.getLineItemText('item', 'item', x)));
+                var descripcion = nlapiEscapeXML(returnBlank(transaccion.getLineItemValue('item', 'displayname', x)));
+                var unidades = returnBlank(transaccion.getLineItemText('item', 'units', x));
+                var cantidad = returnNumber(transaccion.getLineItemValue('item', 'quantity', x));
                 
                 if (cantidad * 1 < 0)
                     cantidad = cantidad * -1
-                var precio_uni = returnNumber(searchTransaction[x].getValue('rate')) / exchange_rate;
-                var precio_tot = returnNumber(searchTransaction[x].getValue('fxamount'));
+                var precio_uni = returnNumber(transaccion.getLineItemValue('item', 'rate', x)) / exchange_rate;
+                var precio_tot = returnNumber(transaccion.getLineItemValue('item', 'amount', x));
                 if (precio_tot * 1 < 0)
                     precio_tot = precio_tot * -1
                 if(unidades!=''){
