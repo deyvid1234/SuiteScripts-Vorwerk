@@ -125,7 +125,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
             log.debug('typeEvent',typeEvent)
             // actualizacion campos de serializado
             try{
-                itemtype(scriptContext)
+                //itemtype(scriptContext)
                 earningProgram(salesrep)
             }catch(e){
                 log.debug('error campos serializado',e)
