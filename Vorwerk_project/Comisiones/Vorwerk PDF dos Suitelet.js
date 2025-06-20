@@ -389,7 +389,7 @@ function table_v_propia(data,tmp_emp,type_emp,promocion,dataSO,CompConfigDetails
 			odv_p = ids.map(function(id) {
 				return {
 					idSO: parseInt(id.trim()),
-					programa: 'tm6' // Valor por defecto para el formato antiguo
+					programa: 'Tm' // Valor por defecto para el formato antiguo
 				};
 			});
 		}
@@ -416,6 +416,7 @@ function table_v_propia(data,tmp_emp,type_emp,promocion,dataSO,CompConfigDetails
 			/*fin encabezado de tabla
 			cuerpo de tabla*/
 			var lineaRec = 0
+			var ventasprod = 0
 			for(var i = 0; i < odv_p.length; i++){	
 				
 				var odv_id = odv_p[i].idSO
@@ -429,6 +430,7 @@ function table_v_propia(data,tmp_emp,type_emp,promocion,dataSO,CompConfigDetails
 					monto = "$0.00"
 				}else{
 					monto = "$2,500.00"
+					ventasprod ++
 				}
 				log.debug('programa2',programa)
 				lineaRec++
@@ -436,7 +438,7 @@ function table_v_propia(data,tmp_emp,type_emp,promocion,dataSO,CompConfigDetails
 				if(promocion == 1 || programa == 'EP_tm7'){
 					b_produc = 0
 				}else{
-					b_produc = (CompConfigDetails['1']['esquemaVentasPresentadora'][lineaRec]['bonoProductividad'])-(CompConfigDetails['1']['esquemaVentasPresentadora'][lineaRec-1]['bonoProductividad'])
+					b_produc = (CompConfigDetails['1']['esquemaVentasPresentadora'][ventasprod]['bonoProductividad'])-(CompConfigDetails['1']['esquemaVentasPresentadora'][lineaRec-1]['bonoProductividad'])
 
 				}
 				log.debug('programa3',programa)
