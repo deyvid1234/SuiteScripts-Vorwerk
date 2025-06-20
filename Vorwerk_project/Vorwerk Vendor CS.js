@@ -3,8 +3,12 @@
  * @NScriptType ClientScript
  * @NModuleScope SameAccount
  */
-define(['N/currentRecord', 'N/record', 'N/ui/dialog'],
-    function(currentRecord, record, dialog) {
+define(['N/currentRecord', 'N/record', 'N/ui/dialog', 'N/url'],
+    function(currentRecord, record, dialog, url) {
+
+        function pageInit(scriptContext) {
+            // Entry point validation.
+        }
 
         function approveVendor() {
             var rec = currentRecord.get();
@@ -57,6 +61,7 @@ define(['N/currentRecord', 'N/record', 'N/ui/dialog'],
         }
 
         return {
+            pageInit: pageInit,
             approveVendor: approveVendor,
             rejectVendor: rejectVendor
         };
