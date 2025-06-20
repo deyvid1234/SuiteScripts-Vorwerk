@@ -123,12 +123,12 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
             var salesrep = rec.getValue('salesrep')
             var typeEvent = runtime.executionContext;
             log.debug('typeEvent',typeEvent)
-            // actualizacion campos de serializado
+            // earning program tm7
             try{
                 //itemtype(scriptContext)
                 earningProgram(salesrep)
             }catch(e){
-                log.debug('error campos serializado',e)
+                log.debug('error earning program tm7',e)
             }
             // actualizacion de commission status 
             try{
