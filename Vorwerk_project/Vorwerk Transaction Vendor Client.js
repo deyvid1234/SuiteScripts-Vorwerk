@@ -104,7 +104,7 @@ define(['N/ui/dialog', 'N/record', 'N/search'], function(dialog, record, search)
             if (estatusProv === '2') {
                 dialog.alert({
                     title: 'Proveedor no disponible',
-                    message: 'El proveedor seleccionado tiene estatus 2 y no puede ser utilizado en transacciones.\nPor favor, selecciona otro proveedor.'
+                    message: 'El proveedor seleccionado tiene estatus Proveedor pendiente de aprobación y no puede ser utilizado en transacciones. Por favor, contacta a CxP.'
                 });
 
                 // Activar bandera para evitar bucle
@@ -143,7 +143,7 @@ define(['N/ui/dialog', 'N/record', 'N/search'], function(dialog, record, search)
             if (estatusProv === '2') {
                 dialog.alert({
                     title: 'Proveedor no disponible',
-                    message: 'El proveedor seleccionado en la línea ' + (line + 1) + ' tiene estatus 2 y no puede ser utilizado.\nPor favor, selecciona otro proveedor.'
+                    message: 'El proveedor seleccionado en la línea ' + (line + 1) + ' tiene estatus Proveedor pendiente de aprobación y no puede ser utilizado en transacciones. Por favor, contacta a CxP.'
                 });
 
                 // Activar bandera para evitar bucle
@@ -190,7 +190,7 @@ define(['N/ui/dialog', 'N/record', 'N/search'], function(dialog, record, search)
                 if (estatusProv === '2') {
                     dialog.alert({
                         title: 'Proveedor no disponible',
-                        message: 'El proveedor "' + vendorName + '" en la línea ' + (line + 1) + ' tiene estatus 2 y no puede ser utilizado.\nPor favor, selecciona otro proveedor.'
+                        message: 'El proveedor "' + vendorName + '" en la línea ' + (line + 1) + ' tiene estatus Proveedor pendiente de aprobación y no puede ser utilizado en transacciones. Por favor, contacta a CxP.'
                     });
 
                     // Activar bandera para evitar bucle

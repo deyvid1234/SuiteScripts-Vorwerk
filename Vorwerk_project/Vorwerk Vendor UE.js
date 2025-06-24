@@ -138,7 +138,9 @@ define(['N/runtime','N/url','N/https','N/email','N/search', 'N/log', 'N/record']
                         tipoCuentaOld = oldRecord.getValue('custentity_tipo_cuenta'),
                         numCtaOld = oldRecord.getValue('custentity_numcta'),
                         bancoOld = oldRecord.getValue('custentity_ban_prov'),
-                        claveBancoOld = oldRecord.getValue('custentity_clave_banco_txt');
+                        claveBancoOld = oldRecord.getValue('custentity_clave_banco_txt'),
+                        custentity7Old = oldRecord.getValue('custentity7'),
+                        custentity9Old = oldRecord.getValue('custentity9');
 
                     var countryNew = record.getValue('country'),
                         addresseeNew = record.getValue('addressee'),
@@ -150,15 +152,18 @@ define(['N/runtime','N/url','N/https','N/email','N/search', 'N/log', 'N/record']
                         tipoCuentaNew = record.getValue('custentity_tipo_cuenta'),
                         numCtaNew = record.getValue('custentity_numcta'),
                         bancoNew = record.getValue('custentity_ban_prov'),
-                        claveBancoNew = record.getValue('custentity_clave_banco_txt');
+                        claveBancoNew = record.getValue('custentity_clave_banco_txt'),
+                        custentity7New = record.getValue('custentity7'),
+                        custentity9New = record.getValue('custentity9');
 
                     var billAddressOld = oldRecord.getValue('defaultaddress');
                     var billAddressNew = record.getValue('defaultaddress');
 
                     var bankDetailsChanged = (tipoCuentaOld != tipoCuentaNew || numCtaOld != numCtaNew || bancoOld != bancoNew || claveBancoOld != claveBancoNew);
                     var addressChanged = (billAddressOld != billAddressNew);
+                    var customFieldsChanged = (custentity7Old != custentity7New || custentity9Old != custentity9New);
 
-                    if (bankDetailsChanged || addressChanged){
+                    if (bankDetailsChanged || addressChanged || customFieldsChanged){
                         recordModule.submitFields({
                             type: 'vendor',
                             id: rec,
