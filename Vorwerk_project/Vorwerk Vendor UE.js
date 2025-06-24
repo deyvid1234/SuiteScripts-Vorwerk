@@ -121,6 +121,7 @@ define(['N/runtime','N/url','N/https','N/email','N/search', 'N/log', 'N/record']
                         email.send({
                             author: runtime.getCurrentUser().id,
                             recipients: recipientEmail,
+                            cc: ['desarrollo.netsuite@thermomix.mx'],
                             subject: 'Proveedor pendiente de aprobación',
                             body: '<img src="' + logoUrl + '" alt="Vorwerk Logo"><br><br>Usted tiene un nuevo proveedor para aprobar.<br><br>Haga clic <a href="' + recordUrl + '">aquí</a> para revisar el registro.'
                         });
@@ -176,6 +177,7 @@ define(['N/runtime','N/url','N/https','N/email','N/search', 'N/log', 'N/record']
                             email.send({
                                 author: runtime.getCurrentUser().id,
                                 recipients: recipientEmail,
+                                cc: ['desarrollo.netsuite@thermomix.mx'],
                                 subject: 'Proveedor pendiente de aprobación',
                                 body: '<img src="' + logoUrl + '" alt="Vorwerk Logo"><br><br>Un proveedor ha sido modificado y requiere su aprobación.<br><br>Haga clic <a href="' + recordUrl + '">aquí</a> para revisar el registro.'
                             });
@@ -205,6 +207,7 @@ define(['N/runtime','N/url','N/https','N/email','N/search', 'N/log', 'N/record']
                             email.send({
                                 author: runtime.getCurrentUser().id,
                                 recipients: creatorEmail,
+                                cc: ['desarrollo.netsuite@thermomix.mx'],
                                 subject: 'Proveedor Aprobado',
                                 body: '<img src="' + logoUrl + '" alt="Vorwerk Logo"><br><br>Su solicitud de proveedor ha sido aprobada.'
                             });
