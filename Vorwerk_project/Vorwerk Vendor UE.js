@@ -101,6 +101,13 @@ define(['N/runtime','N/url','N/https','N/email','N/search', 'N/log', 'N/record']
                 var oldRecord = scriptContext.oldRecord;
                 var type = scriptContext.type
                 var rec = record.getValue('id')
+                var logoUrl = 'https://3367613.app.netsuite.com/core/media/media.nl?id=142592&c=3367613&h=Kf3ZX3KIRSgbOA_MYAW2Cr9n4gZ0Ae--DjrfM6N2isf8kA5g';
+                var recordUrl = url.resolveRecord({
+                    recordType: 'vendor',
+                    recordId: rec,
+                    isEditMode: false
+                });
+
                 if(type == 'create'){
                     recordModule.submitFields({
                         type: 'vendor',
@@ -115,7 +122,7 @@ define(['N/runtime','N/url','N/https','N/email','N/search', 'N/log', 'N/record']
                             author: runtime.getCurrentUser().id,
                             recipients: recipientEmail,
                             subject: 'Proveedor pendiente de aprobación',
-                            body: 'Usted tiene un nuevo proveedor para aprobar'
+                            body: '<img src="' + logoUrl + '" alt="Vorwerk Logo"><br><br>Usted tiene un nuevo proveedor para aprobar.<br><br>Haga clic <a href="' + recordUrl + '">aquí</a> para revisar el registro.'
                         });
                         log.debug('email enviado a ',recipientEmail )
                     });
@@ -165,7 +172,7 @@ define(['N/runtime','N/url','N/https','N/email','N/search', 'N/log', 'N/record']
                                 author: runtime.getCurrentUser().id,
                                 recipients: recipientEmail,
                                 subject: 'Proveedor pendiente de aprobación',
-                                body: 'Usted tiene un nuevo proveedor para aprobar'
+                                body: '<img src="' + logoUrl + '" alt="Vorwerk Logo"><br><br>Un proveedor ha sido modificado y requiere su aprobación.<br><br>Haga clic <a href="' + recordUrl + '">aquí</a> para revisar el registro.'
                             });
                             log.debug('email enviado a ',recipientEmail )
                         });
@@ -194,7 +201,7 @@ define(['N/runtime','N/url','N/https','N/email','N/search', 'N/log', 'N/record']
                                 author: runtime.getCurrentUser().id,
                                 recipients: creatorEmail,
                                 subject: 'Proveedor Aprobado',
-                                body: 'Su solicitud de proveedor ha sido aprobada.'
+                                body: '<img src="' + logoUrl + '" alt="Vorwerk Logo"><br><br>Su solicitud de proveedor ha sido aprobada.'
                             });
                         }
                         
