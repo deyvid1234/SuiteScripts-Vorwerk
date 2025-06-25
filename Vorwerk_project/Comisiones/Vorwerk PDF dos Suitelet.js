@@ -383,8 +383,13 @@ function table_v_propia(data,tmp_emp,type_emp,promocion,dataSO,CompConfigDetails
 		// Intentar parsear como JSON primero
 		try {
 			odv_p = JSON.parse(data.odv_entrega);
+			// Validar si el resultado es un array y tiene la estructura esperada
+			if (!Array.isArray(odv_p) || !odv_p.length || !odv_p[0].hasOwnProperty('idSO')) {
+				// Si no es un array válido o no tiene la estructura esperada, tratar como formato antiguo
+				throw new Error('Formato no válido');
+			}
 		} catch(e) {
-			// Si falla, asumimos que es el formato antiguo (lista de IDs separados por comas)
+			// Si falla el parse o no tiene la estructura correcta, asumimos que es el formato antiguo
 			var ids = data.odv_entrega.split(',');
 			odv_p = ids.map(function(id) {
 				return {
