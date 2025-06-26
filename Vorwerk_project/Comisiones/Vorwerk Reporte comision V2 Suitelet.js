@@ -622,7 +622,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             });
             //ID ODV
             if(ventasPropias.data.length > 0){
-                v = ventasPropias.data.join(',')
+                v = JSON.stringify(ventasPropias.data)
             }else{
                 v = ''
             }
