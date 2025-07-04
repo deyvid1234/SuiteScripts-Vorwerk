@@ -1,4 +1,4 @@
-      /**
+/**
  * @NApiVersion 2.x
  * @NScriptType UserEventScript
  * @NModuleScope SameAccount
@@ -1108,7 +1108,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
     }
     function earningProgram(salesrep){
         try{
-            log.debug('entre earningProgram')
+            log.debug('[' + salesrep + '] INICIO earningProgram')
             var presentadorFields = search.lookupFields({
                 type: search.Type.EMPLOYEE,
                 id: salesrep,
@@ -1118,47 +1118,75 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                     'custentity_fcha_fin_eptm7',           // fecha limite
                     'custentity_estatus_eptm7',            // status
                     'custentity_so_ganotm7',               // orden con la que gano tm7
-                    'custentity_fechatm7_ganada'           // fecha en que gano tm7
-
+                    'custentity_fechatm7_ganada',          // fecha en que gano tm7
+                    'custentity_ovs_ep7'                   // arreglo de órdenes de venta procesadas
                 ]
             });
 
             //Determinacion de limite de ventas
             const epTm7 = presentadorFields.custentity_checkbox_eptm7;
-            log.debug()
-            const status = presentadorFields.custentity_estatus_eptm7;
-
-            // es eptm7? y validar status no debe ser ganado, finalizado o pagado
-            if(epTm7 && status != 3 && status != 5 && status != 6 ){
-                var limit 
+            log.debug('[' + salesrep + '] epTm7', epTm7)
             
-                if(status != 4){
-                    limit = 3
-                }else {//si el status es extendido las ventas son 4 en periodo de tres meses
-                    limit = 4
-                }
+            // es eptm7?
+            if(epTm7){
+                var limit = 3
+                var newStatus
+                // Determinar el límite basado en la diferencia de días entre fechas
                 const fecha_inicio = presentadorFields.custentity_fcha_inicio_eptm7;
+                const fecha_fin = presentadorFields.custentity_fcha_fin_eptm7;
+                
+                if (fecha_inicio && fecha_fin) {
+                    // Convertir fechas usando el formato de NetSuite
+                    var fechaInicio = Utils.stringToDate(fecha_inicio);
+                    var fechaFin = Utils.stringToDate(fecha_fin);
+                    
+                    // Calcular diferencia en días
+                    var diferenciaTiempo = fechaFin.getTime() - fechaInicio.getTime();
+                    var diferenciaDias = Math.ceil(diferenciaTiempo / (1000 * 3600 * 24));
+                    
+                    // Logs agrupados para debugging de fechas
+                    log.debug('[' + salesrep + '] === CALCULO DE LIMITE ===');
+                    log.debug('[' + salesrep + '] fecha_inicio', fecha_inicio);
+                    log.debug('[' + salesrep + '] fecha_fin', fecha_fin);
+                    log.debug('[' + salesrep + '] fechaInicio (Date)', fechaInicio);
+                    log.debug('[' + salesrep + '] fechaFin (Date)', fechaFin);
+                    log.debug('[' + salesrep + '] diferenciaDias', diferenciaDias);
+                    
+                    // Si hay más de 31 días, el límite es 4, sino es 3
+                    if (diferenciaDias > 40) {
+                        limit = 4;
+                        newStatus = 4
+                        log.debug('[' + salesrep + '] *** LIMITE ESTABLECIDO EN 4 (más de 31 días) ***');
+                    } else {
+                        limit = 3;
+                        newStatus = 1
+                        log.debug('[' + salesrep + '] *** LIMITE ESTABLECIDO EN 3 (31 días o menos) ***');
+                    }
+                } else {
+                    log.debug('[' + salesrep + '] *** LIMITE ESTABLECIDO EN 3 (fechas no disponibles) ***');
+                }
+                
                 const fecha_ganotm7 = presentadorFields.custentity_fechatm7_ganada;
                 
                 //Manejo de fechas
                 var fechaTermino;
                 
-                if (fecha_ganotm7) {
-                    fechaTermino = fecha_ganotm7;
-                    log.error('No deberia suceder')
-                } else {
-                    fechaTermino = presentadorFields.custentity_fcha_fin_eptm7;
-                }
+              
+                fechaTermino = presentadorFields.custentity_fcha_fin_eptm7;
+                log.debug('[' + salesrep + '] fechaTermino',fechaTermino  )
+  
                 
-                //fechaTermino = Utils.stringToDate(fechaTermino);
-                log.debug('Datos de presentador',presentadorFields )
+                //fechaTermino_format_search = Utils.stringToDate(fechaTermino);
+                log.debug('[' + salesrep + '] Datos de presentador',presentadorFields )
                 
                     
                 var cont = 1
-                var newStatus
+                
                 var setfechafin = false
-                var soGanadora 
+                var soGanadora = ''
                 var fechaSO 
+                var ordenesProcesadas = [] // Arreglo para almacenar las órdenes procesadas
+                
                 var soSearch = search.load({
                     id: 'customsearch_so_commission_status' //busqueda de so 
                 });
@@ -1172,72 +1200,107 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                         operator: 'within',//revisar
                         values: [fecha_inicio,fechaTermino]    // fecha en que inicio el presentador en el earning program
                 }));
+                
+                log.debug('[' + salesrep + '] === PROCESANDO ORDENES ===');
+                log.debug('[' + salesrep + '] limit configurado', limit);
                     
                 soSearch.run().each(function(r){
                     var internalId = r.getValue('internalid')
                     var tipoVenta = r.getValue('custbody_tipo_venta')
                     fechaSO = r.getValue('trandate')
-                   log.debug('limit ',limit)
+                    
+                    // Solo agregar la orden al arreglo si no hemos excedido el límite
+                    if (cont <= limit) {
+                        ordenesProcesadas.push(internalId);
+                    }
+                    
+                   log.debug('[' + salesrep + '] Procesando orden ' + cont + ' de ' + limit + ' - ID: ' + internalId + ' - Tipo: ' + tipoVenta)
                     switch(cont){
                     case 1:
-                    log.debug('case1 ',fechaSO)
+                    log.debug('[' + salesrep + '] case1 ',fechaSO)
                         newStatus = 2
                         break;
                     case 2:
-                    log.debug('case2 ',fechaSO) 
+                    log.debug('[' + salesrep + '] case2 ',fechaSO) 
                         newStatus = 2
                         break;
                     case 3: 
-                    log.debug('case3 ',fechaSO)
+                    log.debug('[' + salesrep + '] case3 ',fechaSO)
                         if(limit == 3){
                             newStatus = 3
                             setfechafin = true 
                             soGanadora = internalId
+                            log.debug('[' + salesrep + '] *** TM7 GANADA EN ORDEN 3 ***');
                         }
                         
                         break;
                     case 4: 
-                    log.debug('case4 ',fechaSO)
+                    log.debug('[' + salesrep + '] case4 ',fechaSO)
                         if(limit == 4){
                             newStatus = 3
                             setfechafin = true 
                             soGanadora = internalId
+                            log.debug('[' + salesrep + '] *** TM7 GANADA EN ORDEN 4 ***');
                         }
                         break;
                     
                     default: 
                         newStatus = ''
-                        log.error('error switch')
+                        log.error('[' + salesrep + '] ERROR switch - contador fuera de rango')
                         break;
                     
                    }
-                   log.debug('newStatus ',newStatus)
-                    log.debug('fechaSO ',fechaSO)
-                    log.debug('soGanadora ',soGanadora)
-                    log.debug('setfechafin ',setfechafin)
+                   log.debug('[' + salesrep + '] newStatus ',newStatus)
+                    log.debug('[' + salesrep + '] fechaSO ',fechaSO)
+                    log.debug('[' + salesrep + '] soGanadora ',soGanadora)
+                    log.debug('[' + salesrep + '] setfechafin ',setfechafin)
                     cont++
-                   if(cont > 4){
+                   
+                   // Terminar la búsqueda si alcanzamos el límite
+                   if(cont > limit){
+                     log.debug('[' + salesrep + '] *** LIMITE ALCANZADO - TERMINANDO BUSQUEDA ***');
                      return false;
                    }
+                
+                   
                     return true
                 });  
-                if(setfechafin){
-                    //submitfield de la fecha en que gano (poner fecha de la orden ganadora) y del nuevo status y el internal id de la SO con que gano
-                    log.debug('entra submit',salesrep)
-                    log.debug('newStatus sub',newStatus)
-                    log.debug('fechaSO sub',fechaSO)
-                    log.debug('soGanadora sub',soGanadora)
-                    record.submitFields({
-                        type: 'employee',
-                        id: salesrep,
-                        values: {'custentity_estatus_eptm7': newStatus,'custentity_fechatm7_ganada':fechaSO,'custentity_so_ganotm7':soGanadora}
-                    });
+                
+                // Preparar valores para actualizar el empleado
+                var valoresActualizacion = {
+                    'custentity_ovs_ep7': ordenesProcesadas.join(',') // Convertir arreglo a string separado por comas
+                };
+                
+                if(!setfechafin){
+                    fechaSO = fechaTermino
                 }
+                
+                log.debug('[' + salesrep + '] === ACTUALIZANDO EMPLEADO ===');
+                log.debug('[' + salesrep + '] newStatus sub',newStatus)
+                log.debug('[' + salesrep + '] fechaSO sub',fechaSO)
+                log.debug('[' + salesrep + '] soGanadora sub',soGanadora)
+                log.debug('[' + salesrep + '] ordenesProcesadas', ordenesProcesadas)
+                    
+                // Agregar los campos adicionales cuando gana
+                valoresActualizacion['custentity_estatus_eptm7'] = newStatus;
+                valoresActualizacion['custentity_fechatm7_ganada'] = fechaSO;
+                valoresActualizacion['custentity_so_ganotm7'] = soGanadora;
+                
+                // Actualizar el empleado con todos los valores
+                record.submitFields({
+                    type: 'employee',
+                    id: salesrep,
+                    values: valoresActualizacion
+                });
+                
+                log.debug('[' + salesrep + '] *** EMPLEADO ACTUALIZADO EXITOSAMENTE ***');
+            } else {
+                log.debug('[' + salesrep + '] No es EP TM7 - saltando proceso');
             }
             
 
         }catch (e){
-            log.debug('error funcion earning program',e)
+            log.error('[' + salesrep + '] ERROR funcion earning program',e)
         }
 
     }
