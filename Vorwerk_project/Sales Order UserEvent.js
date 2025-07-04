@@ -123,18 +123,18 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
             var salesrep = rec.getValue('salesrep')
             var typeEvent = runtime.executionContext;
             log.debug('typeEvent',typeEvent)
+            // actualizacion de commission status 
+            try{
+                commissionStatus(salesrep)
+            }catch(e){
+                log.debug('error actualizacion de commission status',e)
+            }
             // earning program tm7
             try{
                 //itemtype(scriptContext)
                 earningProgram(salesrep)
             }catch(e){
                 log.debug('error earning program tm7',e)
-            }
-            // actualizacion de commission status 
-            try{
-                commissionStatus(salesrep)
-            }catch(e){
-                log.debug('error actualizacion de commission status',e)
             }
             
             if(typeEvent != runtime.ContextType.MAP_REDUCE  && typeEvent != runtime.ContextType.CSV_IMPORT ){
@@ -1188,7 +1188,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                 var ordenesProcesadas = [] // Arreglo para almacenar las órdenes procesadas
                 
                 var soSearch = search.load({
-                    id: 'customsearch_so_commission_status' //busqueda de so 
+                    id: 'customsearch_so_commission_status_2' //busqueda de so 
                 });
                 soSearch.filters.push(search.createFilter({
                         name: 'salesrep',
@@ -1207,13 +1207,12 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                 soSearch.run().each(function(r){
                     var internalId = r.getValue('internalid')
                     var tipoVenta = r.getValue('custbody_tipo_venta')
-                    var comStatus = r.getValue('custbody_vw_comission_status')
                     fechaSO = r.getValue('trandate')
                     
                     // Solo agregar la orden al arreglo si no hemos excedido el límite
-                    if (cont <= limit && comStatus != 2) {
+                    if (cont <= limit) {
                         ordenesProcesadas.push(internalId);
-                        cont++
+                       
                     }
                     
                    log.debug('[' + salesrep + '] Procesando orden ' + cont + ' de ' + limit + ' - ID: ' + internalId + ' - Tipo: ' + tipoVenta)
@@ -1256,7 +1255,7 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                     log.debug('[' + salesrep + '] fechaSO ',fechaSO)
                     log.debug('[' + salesrep + '] soGanadora ',soGanadora)
                     log.debug('[' + salesrep + '] setfechafin ',setfechafin)
-                    
+                    cont++
                    
                    // Terminar la búsqueda si alcanzamos el límite
                    if(cont > limit){
