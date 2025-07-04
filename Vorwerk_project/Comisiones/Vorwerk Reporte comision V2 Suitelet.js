@@ -312,7 +312,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 var urlDetalle = 'https://3367613.app.netsuite.com/app/site/hosting/scriptlet.nl?script=1358&deploy=2'+'&periodoI='+inicioPeriodo+'&periodoF='+finPeriodo+'&promo='+empPromo+'&tipo='+empType+'&pre='+empID
                 switch(tipoReporteGloobal){
                     case 1: //Reporte LE
-                        if(empType == 3 && empPromo == 2 /*&& allPresentadoras[i].internalid == '4025823'*/){
+                        if(empType == 3 && empPromo == 2 /*&& allPresentadoras[i].internalid == '4007706'*/){
                             //Calcular reporte para la persona
                             var reclutas = listaReclutas[i]
                             var integrantesEquipo = listaGrupos[i]   
@@ -363,7 +363,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
 
                     break;
                     case 2: //Reporte Presentadora
-                        if(empType == 1 && empPromo == 2 /*&& allPresentadoras[i].internalid == '4377188'*/){
+                        if(empType == 1 && empPromo == 2 /*&& allPresentadoras[i].internalid == '12255'*/){
                             //Calcular reporte para la persona
                             var reclutas=listaReclutas[i]
                             var integrantesEquipo=listaGrupos[i]   
@@ -524,9 +524,11 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             subtotal+=parseInt(v,10)
         }
 
-
-        v = subtotal>0?true:false
-
+        if( subtotal > 0 || (ventasPropias && ventasPropias.data && ventasPropias.data.length > 0) ){
+            v = true
+        }else{
+            v = false
+        }
         return v;
 
     }
@@ -614,14 +616,14 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 value : v
             });
             //Numero de Ventas TM o Ventas CK
-            v = ventasPropias.data.length
+            v = ventasPropias.data && ventasPropias.data.length ? ventasPropias.data.length : 0
             sublist.setSublistValue({
                 id : 'custentity_odv_jdg',
                 line : linea,
                 value : v!=0?v:0
             });
             //ID ODV
-            if(ventasPropias.data.length > 0){
+            if(ventasPropias.data && ventasPropias.data.length > 0){
                 v = JSON.stringify(ventasPropias.data)
             }else{
                 v = ''
@@ -1663,36 +1665,33 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                     fechaSO = Utils.stringToDate(fechaSO)
                     log.debug('fechaSO',fechaSO)
                     //log.debug('comisionables',comisionables)
-                     if(comisionables != 'No Comisionable' && tipoVenta != 'TM Ganada' && (fechaSO < epTm7_inicio || fechaSO > fecha_termino )){
-                            log.debug('si comisiona esta venta 1',id)
+
+                    if(comisionables != 'No Comisionable' && tipoVenta != 'TM Ganada'){
+                        // Validar si el ID existe en el campo custentity_ovs_ep7
+                        var ordenesEP7 = dataEmp.ovs_ep7;
+                        var idExisteEnEP7 = false;
+                        
+                        if (ordenesEP7 && typeof ordenesEP7 === 'string' && ordenesEP7.trim() !== '') {
+                            var ordenesArray = ordenesEP7.split(',');
+                            idExisteEnEP7 = ordenesArray.indexOf(id.toString()) !== -1;
+                        }
+                        
+                        log.debug('idExisteEnEP7', idExisteEnEP7 + ' para ID: ' + id);
+                        log.debug('ordenesEP7', ordenesEP7);
+
+                        if (idExisteEnEP7) {
+                            log.debug('no comisiona esta venta 2 - ID existe en EP7',id)
+                            tm = 'EP_tm7'
+                            var pedido = { idSO:id,programa:tm} 
+                            data.push(pedido)
+                        } else {
+                            log.debug('si comisiona esta venta 2 - ID NO existe en EP7',id)
                             tm = 'tm6'
                             var pedido = { idSO:id,programa:tm} 
                             data.push(pedido)
                             ventasNo ++
-                        }else if(comisionables != 'No Comisionable' && tipoVenta != 'TM Ganada' && fechaSO >= epTm7_inicio &&  fechaSO < fecha_termino){
-                            log.debug('no comisiona esta venta 2',id)
-                            tm = 'EP_tm7'
-                            var pedido = { idSO:id,programa:tm} 
-                            data.push(pedido)
-                        }else if(fechaSO = fecha_termino && soid_Ganadora){
-                            if(id > soid_Ganadora){
-                                log.debug('si comisiona esta venta 3',id)
-                                tm = 'tm6'
-                                var pedido = { idSO:id,programa:tm} 
-                                data.push(pedido)
-                                ventasNo ++
-                            }else{
-                                log.debug('no comisiona esta venta 4',id)
-                                tm = 'EP_tm7'
-                                var pedido = { idSO:id,programa:tm} 
-                                data.push(pedido)
-                            }
-                        }else {
-                            log.debug('no comisiona esta venta 5',id)
-                            tm = 'EP_tm7'
-                            var pedido = { idSO:id,programa:tm} 
-                            data.push(pedido)
                         }
+                    }
 
                 }
             } else{
@@ -2145,37 +2144,33 @@ una rcluta de algun miembro del equipo*/
                         fechaSO = Utils.stringToDate(fechaSO)
                         log.debug('fechaSO',fechaSO)
                         //log.debug('comisionables',comisionables)
-                        if(comisionables != 'No Comisionable' && tipoVenta != 'TM Ganada' && (fechaSO < epTm7_inicio || fechaSO > fecha_termino )){
-                            log.debug('si comisiona esta venta 1',id)
-                            tm = 'tm6'
-                            var pedido = { idSO:id,programa:tm} 
-                            data.push(pedido)
-                            ventasNo ++
-                        }else if(comisionables != 'No Comisionable' && tipoVenta != 'TM Ganada' && fechaSO >= epTm7_inicio &&  fechaSO < fecha_termino){
-                            log.debug('no comisiona esta venta 2',id)
-                            tm = 'EP_tm7'
-                            var pedido = { idSO:id,programa:tm} 
-                            data.push(pedido)
-                        }else if(fechaSO = fecha_termino && soid_Ganadora){
-                            if(id > soid_Ganadora){
-                                log.debug('si comisiona esta venta 3',id)
+                        if(comisionables != 'No Comisionable' && tipoVenta != 'TM Ganada'){
+                            // Validar si el ID existe en el campo custentity_ovs_ep7
+                            var ordenesEP7 = dataEmp.ovs_ep7;
+                            var idExisteEnEP7 = false;
+                            
+                            if (ordenesEP7 && typeof ordenesEP7 === 'string' && ordenesEP7.trim() !== '') {
+                                var ordenesArray = ordenesEP7.split(',');
+                                idExisteEnEP7 = ordenesArray.indexOf(id.toString()) !== -1;
+                            }
+                            
+                            log.debug('idExisteEnEP7', idExisteEnEP7 + ' para ID: ' + id);
+                            log.debug('ordenesEP7', ordenesEP7);
+    
+                            if (idExisteEnEP7) {
+                                log.debug('no comisiona esta venta 2 - ID existe en EP7',id)
+                                tm = 'EP_tm7'
+                                var pedido = { idSO:id,programa:tm} 
+                                data.push(pedido)
+                            } else {
+                                log.debug('si comisiona esta venta 1 - ID NO existe en EP7',id)
                                 tm = 'tm6'
                                 var pedido = { idSO:id,programa:tm} 
                                 data.push(pedido)
                                 ventasNo ++
-                            }else{
-                                log.debug('no comisiona esta venta 4',id)
-                                tm = 'EP_tm7'
-                                var pedido = { idSO:id,programa:tm} 
-                                data.push(pedido)
                             }
-                        }else {
-                            log.debug('no comisiona esta venta 5',id)
-                            tm = 'EP_tm7'
-                            var pedido = { idSO:id,programa:tm} 
-                            data.push(pedido)
                         }
-
+                        
                     }
                 } else{
                     for (i in ventas){
@@ -2266,6 +2261,7 @@ una rcluta de algun miembro del equipo*/
             const empSearchEptm7_fin = search.createColumn({ name: 'custentity_fcha_fin_eptm7'});
             const empSearchfecha_tm7_ganada = search.createColumn({ name: 'custentity_fechatm7_ganada'});
             const empSearch_so_ganotm7 = search.createColumn({ name: 'custentity_so_ganotm7'});
+            const empSearch_ovs_ep7 = search.createColumn({ name: 'custentity_ovs_ep7'});
 
             const mySearch = search.create({
                 type: 'employee',
@@ -2301,7 +2297,8 @@ una rcluta de algun miembro del equipo*/
                     empSearchEptm7_inicio,
                     empSearchEptm7_fin,
                     empSearchfecha_tm7_ganada,
-                    empSearch_so_ganotm7
+                    empSearch_so_ganotm7,
+                    empSearch_ovs_ep7
 
 
                 ],
@@ -2349,6 +2346,7 @@ una rcluta de algun miembro del equipo*/
                     objEMP.epTm7_fin = r.getValue('custentity_fcha_fin_eptm7')
                     objEMP.fechatm7_ganada = r.getValue('custentity_fechatm7_ganada')
                     objEMP.so_ganotm7 = r.getValue('custentity_so_ganotm7')
+                    objEMP.ovs_ep7 = r.getValue('custentity_ovs_ep7')
                     allPresentadorData[objEMP.internalid] = objEMP
 
                     if(empGrupos.hasOwnProperty(objEMP.supervisor)){
