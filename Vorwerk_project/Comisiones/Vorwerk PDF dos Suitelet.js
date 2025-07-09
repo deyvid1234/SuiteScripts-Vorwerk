@@ -437,16 +437,19 @@ function table_v_propia(data,tmp_emp,type_emp,promocion,dataSO,CompConfigDetails
 					monto = "$2,500.00"
 					ventasprod ++
 				}
-				log.debug('programa2',programa)
+				
 				lineaRec++
 				var b_produc
+				log.debug('promocion',promocion)
+				log.debug('ventasprod',ventasprod)
 				if(promocion == 1 || programa == 'EP_tm7'){
 					b_produc = 0
 				}else{
-					b_produc = (CompConfigDetails['1']['esquemaVentasPresentadora'][ventasprod]['bonoProductividad'])-(CompConfigDetails['1']['esquemaVentasPresentadora'][lineaRec-1]['bonoProductividad'])
+					b_produc = (CompConfigDetails['1']['esquemaVentasPresentadora'][ventasprod]['bonoProductividad'])-(CompConfigDetails['1']['esquemaVentasPresentadora'][ventasprod-1]['bonoProductividad'])
 
 				}
-				log.debug('programa3',programa)
+				log.debug('b_produc',b_produc)
+				
 				//& 
 				var cliente = thisSO.entity[0].text.replace(/&/gi," ")
 				
@@ -460,9 +463,9 @@ function table_v_propia(data,tmp_emp,type_emp,promocion,dataSO,CompConfigDetails
 				strTable += "<td border='0.5' border-style='dotted-narrow' align='right'>" + monto	+ "</td>";
 				strTable += "<td border='0.5' border-style='dotted-narrow' align='right'>" + currencyFormat('$',(b_produc)+'.00')+ "</td>";
 				strTable += "</tr>";
-				log.debug('programa4',programa)
+				
 			}
-			log.debug('programa5',programa)
+			
 			strTable += "<tr>";
 			strTable += "<td border='0.5' colspan= '6' border-style='none' align='right'><b>Subtotal</b></td>";
 			strTable += "<td border='0.5' border-style='dotted-narrow' align='right'><b>" + currencyFormat('$',(data.venta_propia)+'.00')	+ "</b></td>";
@@ -470,7 +473,7 @@ function table_v_propia(data,tmp_emp,type_emp,promocion,dataSO,CompConfigDetails
 			//strTable += "<td border='0.5' border-style='dotted-narrow' align='right'><b>" + currencyFormat('$',(data.entrega_monto)+'.00')	+ "</b></td>";
 			strTable += "</tr>";			
 			strTable += "</table>";
-			log.debug('programa6',programa)
+			
 			/*cuerpo de tabla*/
 			return strTable
 			//fin tabla
@@ -1151,7 +1154,7 @@ function createTable(data,CompConfigDetails,type_emp_text,period_name,type_emp,c
         strTable += "</tr>";
         strTable += "<tr>";
         strTable += "<td border='0.5' border-style='none' align='right'><b>TOTAL A DEPOSITAR</b></td>";
-        strTable += "<td border='0.5' border-style='dotted-narrow' align='right'><b>"+ currencyFormat('$',(data.total-(data.retencion >0? data.retencion:0))+'.00') +"</b></td>";
+        strTable += "<td border='0.5' border-style='dotted-narrow' align='right'><b>"+ currencyFormat('$',((data.total-(data.retencion >0? data.retencion:0)).toFixed(2))) +"</b></td>";
         strTable += "</tr>";
         strTable += "</table>";
         //fin resumen
