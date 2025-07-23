@@ -86,17 +86,12 @@ function Orden_Compra_PDF(request, response) {
         nlapiLogExecution('debug', 'moneda', moneda);
         nlapiLogExecution('debug', 'companyInfoCurrency', companyInfoCurrency);
         nlapiLogExecution('debug', 'searchTransaction', searchTransaction);
-        if (moneda != companyInfoCurrency){
-            nlapiLogExecution('debug', 'total if', total);
-            var total = returnNumber(transaccion.getFieldValue('fxamount'));
-        }else if (moneda == companyInfoCurrency){
-            //var total = returnNumber(searchTransaction[0].getValue('total'));
-            var total = returnNumber(Math.abs(transaccion.getFieldValue('total')));
-            nlapiLogExecution('debug', 'total else', total);
 
-        }
-
+        var total = returnNumber(Math.abs(transaccion.getFieldValue('total')));
         var subtotal = total - iva;
+        
+        nlapiLogExecution('debug', 'total if', total);
+
         var simbolo = '';
         if (moneda == 'Pesos') {
             simbolo = "$";
@@ -325,7 +320,7 @@ function Orden_Compra_PDF(request, response) {
                 strName += "<td width='50%' border='0.5' align='left'>" + memo + "</td>";
                 strName += "<td width='20%' border='0.5' align='left'>" + cuenta + "</td>";
                 strName += "<td width='15%' border='0.5' align='left'>" + categoria + "</td>";
-                strName += "<td width='15%' border='0.5' align='right'>" + monto + "</td>";
+                strName += "<td width='15%' border='0.5' align='right'>" + monto + ' ('+moneda+')' + "</td>";
                 strName += "</tr>";
                     
             }
