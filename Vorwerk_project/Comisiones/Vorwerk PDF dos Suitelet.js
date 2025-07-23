@@ -834,6 +834,7 @@ function table_v_propia(data,tmp_emp,type_emp,promocion,dataSO,CompConfigDetails
 					var objSObyid = dataSO.objSObyid
 					var thisSO = objSObyid[idSO]
 					var salesRep = thisSO.salesrep[0].value
+					var salesRepTabla = thisSO.salesrep[0].text
 					var cliente = thisSO.entity[0].text
 					var fecha = thisSO.trandate
 					var pedido = thisSO.tranid
@@ -915,7 +916,7 @@ function table_v_propia(data,tmp_emp,type_emp,promocion,dataSO,CompConfigDetails
 								strTable += "<tr>";
 								strTable += "<td border='0.5' border-style='dotted-narrow'>" + lineaRec 	+ "</td>";
 								strTable += "<td border='0.5' border-style='dotted-narrow'>" + conf_equipo 	+ "</td>";
-								strTable += "<td border='0.5' border-style='dotted-narrow'>" + salesRep 	+ "</td>";
+								strTable += "<td border='0.5' border-style='dotted-narrow'>" + salesRepTabla 	+ "</td>";
 								strTable += "<td border='0.5' border-style='dotted-narrow'>" +  cliente	    + "</td>";
 								strTable += "<td border='0.5' border-style='dotted-narrow'>" + fecha 		+ "</td>";
 								strTable += "<td border='0.5' border-style='dotted-narrow'>" + pedido		+ "</td>";
