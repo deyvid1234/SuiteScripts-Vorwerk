@@ -205,16 +205,29 @@ define([
                     'entity',
                     'trandate',
                     'total',
+                    'taxtotal',
                     'currency'
                 ]
             });
             billSearch.run().each(function (result) {
+                var total = parseFloat(result.getValue('total')) || 0;
+                var taxtotal = parseFloat(result.getValue('taxtotal')) || 0;
+                log.debug('total', total);
+                log.debug('taxtotal', taxtotal);
+                log.debug('taxtotal raw value', result.getValue('taxtotal'));
+                // El subtotal siempre es total - taxtotal
+                // Si taxtotal es negativo (crédito), esto efectivamente suma el valor absoluto
+                // Si taxtotal es positivo (impuestos), esto resta el valor
+                var subtotal = total - taxtotal;
+                log.debug('subtotal calculated', subtotal);
+                
                 bills[result.getValue('internalid')] = {
                     internalid: result.getValue('internalid'),
                     tranid: result.getValue('tranid'),
                     entity: result.getText('entity'),
                     trandate: result.getValue('trandate'),
-                    total: parseFloat(result.getValue('total')) || 0,
+                    total: total,
+                    subtotal: subtotal,
                     currency: result.getText('currency') || ''
                 };
                 return true;
@@ -460,12 +473,15 @@ define([
 
             // Calcular el total gastado solo con las Bill
             var totalGastado = 0;
+            var totalSinImpuestos = 0;
             Object.keys(bills).forEach(function(billId) {
                 var bill = bills[billId];
                 log.debug('bill', bill);
                 // Convertir el total a pesos usando la tasa de cambio
                 var totalEnPesos = bill.total
                 totalGastado += totalEnPesos;
+                // Sumar el subtotal (sin impuestos)
+                totalSinImpuestos += bill.subtotal;
             });
 
             // Mostrar datos de la campaña en subtab Detalle
@@ -477,6 +493,11 @@ define([
             form.addField({ id: 'custpage_nombrecampania', type: serverWidget.FieldType.TEXT, label: 'Campaña Seleccionada', container: 'custpage_subtab_detalle' })
                 .updateDisplayType({ displayType: serverWidget.FieldDisplayType.INLINE })
                 .defaultValue = idCampania;
+
+            // Campo para Total Gastado (sin impuestos)
+            form.addField({ id: 'custpage_totalsinimpuestos', type: serverWidget.FieldType.CURRENCY, label: 'Total Gastado (sin impuestos)', container: 'custpage_subtab_detalle' })
+                .updateDisplayType({ displayType: serverWidget.FieldDisplayType.INLINE })
+                .defaultValue = totalSinImpuestos;
 
             var color = (totalGastado <= presupuesto) ? 'green' : 'red';
             var totalGastadoHtml = '<div style="text-align:center; margin-bottom:10px;">'
@@ -688,6 +709,7 @@ define([
                     grupos: grupos,
                     salesOrders: salesOrders,
                     totalGastado: totalGastado,
+                    totalSinImpuestos: totalSinImpuestos,
                     presupuesto: presupuesto,
                     encargado: encargado,
                     fechaInicio: fechaInicio,
@@ -705,6 +727,7 @@ define([
                     grupos: grupos,
                     salesOrders: salesOrders,
                     totalGastado: totalGastado,
+                    totalSinImpuestos: totalSinImpuestos,
                     presupuesto: presupuesto,
                     encargado: encargado,
                     fechaInicio: fechaInicio,
@@ -803,6 +826,7 @@ define([
     function exportarExcel(params) {
         var grupos = params.grupos;
         var response = params.response;
+        var totalSinImpuestos = params.totalSinImpuestos || 0;
 
         if (grupos.length === 0) {
             throw new Error('No hay datos para exportar a Excel');
@@ -833,6 +857,7 @@ define([
         });
         // Total gastado
         csv += '\nTOTAL GASTADO (Convertido a Pesos),' + totalGastado.toFixed(2) + '\n';
+        csv += 'TOTAL GASTADO (sin impuestos),' + totalSinImpuestos.toFixed(2) + '\n';
         csv += 'Nota: Solo suma los Bill. Convertido usando tasas de cambio de cada Bill\n';
 
         if (!csv.trim()) {
@@ -851,6 +876,7 @@ define([
         var grupos = params.grupos;
         var salesOrders = params.salesOrders;
         var totalGastado = params.totalGastado;
+        var totalSinImpuestos = params.totalSinImpuestos || 0;
         var presupuesto = params.presupuesto;
         var encargado = params.encargado;
         var fechaInicio = params.fechaInicio;
@@ -891,7 +917,7 @@ define([
             + '</tr><tr>'
             + '<td style="border:none;"><b>Fecha Fin:</b> ' + fechaFin + '</td>'
             + '<td style="border:none;"><b>Aprobador/Revisor:</b> ' + aprobador + '</td>'
-            + '<td style="border:none;"></td>'
+            + '<td style="border:none;"><b>Total Gastado (sin impuestos):</b> ' + addCommas(totalSinImpuestos.toFixed(2)) + '</td>'
             + '</tr></table>';
 
         // --- Sección Resumen por Bill ---
