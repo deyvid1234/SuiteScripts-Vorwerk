@@ -2654,7 +2654,7 @@ una rcluta de algun miembro del equipo*/
                             log.debug('thisPeriodSO[objSO.salesrep]',thisPeriodSO[objSO.salesrep])
                             
                         }*/
-                    }else if(dateSO < inicioPeriodoDate){
+                    }else if(dateSO < inicioPeriodoDate && objSO.custbody_tipo_venta != 'TM Ganada'){
                         //log.debug('Esta fecha es Historicio',dateSO)
                         if(historicoSO.hasOwnProperty(objSO.salesrep)){
                             historicoSO[objSO.salesrep].push(idSO)
