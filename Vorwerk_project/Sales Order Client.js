@@ -130,11 +130,25 @@ function(record,search,https,runtime,currentRecord,dialog) {
                 sublistId: 'item',
                 fieldId: 'quantityavailable'
             });
-                
-            console.log('Item ID obtenido:', itemId);
-            console.log('Cantidad disponible:', quantityavailable);
             
-            if (quantityavailable < 1 && editaso_facturada == true) {
+            // Cargar información del item usando lookupFields
+            try{
+                var inventoryitem= record.load({
+                    type: 'inventoryitem',
+                    id: itemId,
+                    isDynamic: false,
+                });
+                var type = inventoryitem.getValue('baserecordtype')
+            }catch(e){
+                var inventoryitem= record.load({
+                    type: 'noninventoryitem',
+                    id: itemId,
+                    isDynamic: false,
+                });
+                var type = inventoryitem.getValue('baserecordtype')
+            }
+                        
+            if (quantityavailable < 1 && editaso_facturada == true && type != 'noninventoryitem') {
                 dialog.alert({
                     title: 'Alerta',
                     message: 'No hay stock disponible para este item'
