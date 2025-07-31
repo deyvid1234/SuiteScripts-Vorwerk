@@ -53,6 +53,26 @@ function(record, search, email, render, file,runtime, encode, https, format, xml
             }
             var compensationData = objCompensation['data'];
             log.debug('objCompensation',objCompensation);
+            var initDate
+            var finishDate
+            var paymentDate
+            var fecha_custom = compensationData['fecha_custom'];
+            log.debug('fecha_custom',fecha_custom);
+            if(fecha_custom ){
+                var fechasAlt= getCurrentVorwerkPeriod(fecha_custom)
+                log.debug('fechasAlt',fechasAlt);
+                initDate = fechasAlt['initDate']
+                finishDate = fechasAlt['finishDate']
+                paymentDate = fecha_custom
+            }else{
+                var objCalendar = getObjCalendar(periodoComision);
+                if(objCalendar.error){
+                    throw objCalendar.message;
+                }
+                initDate= objCalendar['data']['initDate'],
+                finishDate= objCalendar['data']['finishDate'],
+                paymentDate= objCalendar['data']['paymentDate'],
+            }
             //Busqueda de sales order pertenecientes al registro principal
 //            var objSalesOrder = getCommissionDetail(compensationData['internalid'],equivalenceData['idRecordDetail']);
 //            if(objSalesOrder.error){
@@ -66,10 +86,7 @@ function(record, search, email, render, file,runtime, encode, https, format, xml
                 throw objReceptor.message;
             }
             //Objeto calendario que determina las fechas de timbrado -> validar el inicio de periodo
-            var objCalendar = getObjCalendar(periodoComision);
-            if(objCalendar.error){
-                throw objCalendar.message;
-            }
+            
 
             var subtotalCompensation = compensationData['subtotal'],
                 isrCompensation = compensationData['isrTaxTotal'],
@@ -100,9 +117,9 @@ function(record, search, email, render, file,runtime, encode, https, format, xml
                     discount: '0.0',
                 },
                 calendar: {
-                    initDate: objCalendar['data']['initDate'],
-                    finishDate: objCalendar['data']['finishDate'],
-                    paymentDate: objCalendar['data']['paymentDate'],
+                    initDate: initDate,
+                    finishDate: finishDate,
+                    paymentDate: paymentDate,
                 }
             };
             //Creación del XML sin envío y antes de base64
@@ -129,7 +146,7 @@ function(record, search, email, render, file,runtime, encode, https, format, xml
 
                 objUpdate[equivalenceData['xmlText']] = objXMLTemplate['data'];
                 //Proceso de envío a través de post, se genera el xml completo y retorna la respuesta del servicio
-                var xmlProcessed = sendProcess(objData,base64XML);
+                //var xmlProcessed = sendProcess(objData,base64XML);
                 if(xmlProcessed.error){
                     sendErrorNotification('errorService',{errorDetails: xmlProcessed.message, regName: compensationData['name']});
                     throw xmlProcessed.message;//error producto de la función
@@ -495,7 +512,8 @@ function(record, search, email, render, file,runtime, encode, https, format, xml
                 employeeId: loadedRecord.getValue(recordEquivalence['employeeField']),
                 subtotal: parseFloat(loadedRecord.getValue(recordEquivalence['subtotalField'])).toFixed(2),
                 isrTaxTotal: parseFloat(loadedRecord.getValue(recordEquivalence['isrTaxField'])).toFixed(2),
-                total: parseFloat(loadedRecord.getValue(recordEquivalence['totalField'])).toFixed(2)
+                total: parseFloat(loadedRecord.getValue(recordEquivalence['totalField'])).toFixed(2),
+                fecha_custom: loadedRecord.getValue(recordEquivalence['fechaCustom']),
             };
             return createObjReturn(objReturn,'loadCompensationRecord OK',false)
         }
@@ -536,7 +554,8 @@ function(record, search, email, render, file,runtime, encode, https, format, xml
                     responseMessage: 'custrecord_c_jdg_mensaje_respuesta',
                     responseDetails: 'custrecord_c_jdg_response_details',
                     idRecordDetail: 'custrecord_sub__compensaciones_jdg',
-                    estatusTimbrado: 'custrecord_estatus_timbrado'
+                    estatusTimbrado: 'custrecord_estatus_timbrado',
+                    fechaCustom: 'custrecord_fecha_custom',
 
                 },
                 'customrecord_comisiones_presentadora': {
@@ -1065,7 +1084,51 @@ function(record, search, email, render, file,runtime, encode, https, format, xml
         }
     }
 
+function getCurrentVorwerkPeriod(dateCustom) {
+        try {
+            var today = dateCustom
+            log.debug("today", today);
+            //var todaySplit = Utils.dateToString(today).split('/')
+            //log.debug("todaySplit", todaySplit);
+            //var start = (todaySplit[0]+'/'+todaySplit[1]+'/'+todaySplit[2])
 
+            //log.debug('start',start)
+            // Búsqueda del período actual
+            var periodSearch = search.create({
+                type: 'customrecord_periods',
+                filters: [
+                    ['custrecord_inicio', 'onorbefore', today],
+                    'AND',
+                    ['custrecord_final', 'onorafter', today]
+                ],
+                columns: [
+                    'custrecord_inicio',
+                    'custrecord_final'
+                ]
+            });
+
+            var searchResult = periodSearch.run().getRange({ start: 0, end: 1 });
+            
+            if (!searchResult || searchResult.length === 0) {
+                
+                log.error('No se encontró un período Vorwerk válido para la fecha actual');
+                startDate = '30/03/2024';
+                endDate = '26/02/2024';
+            }else{
+                log.debug('Período Vorwerk encontrado', searchResult);
+                startDate = searchResult[0].getValue('custrecord_inicio');
+                endDate = searchResult[0].getValue('custrecord_final');
+            }
+
+            return {
+                startDate: startDate,
+                endDate: endDate
+            };
+        } catch (e) {
+            log.error('Error en getCurrentVorwerkPeriod', e);
+            throw e;
+        }
+    }
     return {
         onRequest: onRequest,
         XMLProcess: XMLProcess
