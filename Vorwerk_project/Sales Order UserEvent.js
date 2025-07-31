@@ -3,9 +3,9 @@
  * @NScriptType UserEventScript
  * @NModuleScope SameAccount
  */
-define(['N/runtime','N/config','N/record','N/render','N/runtime','N/email','N/search','N/format','N/http','N/https', "N/ui/serverWidget",'SuiteScripts/Vorwerk_project/Vorwerk Utils V2.js'],
+define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N/runtime','N/email','N/search','N/format','N/http','N/https', "N/ui/serverWidget",'SuiteScripts/Vorwerk_project/Vorwerk Utils V2.js'],
 
-function(runtime,config,record,render,runtime,email,search,format,http,https,serverWidget,Utils) {
+function(message,error,runtime,config,record,render,runtime,email,search,format,http,https,serverWidget,Utils) {
     var date = new Date();
     var fdate = format.parse({
         value: date,
@@ -22,8 +22,110 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
      * @Since 2015.2
      */
     function beforeLoad(scriptContext) {        
-        try{
+        
+            var rec = scriptContext.newRecord;
+            var currentRecord = scriptContext.newRecord;
+            var form = scriptContext.form;
+            var type = scriptContext.type;
+            log.debug('type',type)
+            if(type == 'edit' || type == 'view'){ //bloqueo de edicion de SO facturados para employees con el check
+                var status = rec.getValue('status') 
+                log.debug('status',status)
+                var userObj = runtime.getCurrentUser();
+                var idUser = userObj.id
+                var userPermisos = search.lookupFields({
+                    type: 'employee',
+                    id: idUser,
+                    columns: ['custentity_editaso_facturada']
+                });
+                var editaso_facturada = userPermisos.custentity_editaso_facturada
+                log.debug('editaso_facturada',editaso_facturada)
+                if(editaso_facturada == true && status == 'Billed' && type == 'view'){
+
+                    log.debug('editaso_facturada',editaso_facturada)
+                    form.removeButton('edit');   
+                } else if(editaso_facturada == true && status == 'Billed' && type == 'edit'){
+                    throw error.create({
+                        name: 'Permiso de edicion denegado',
+                        message: 'No se puede editar este pedido pues ya cuenta con una factura.',
+                        notifyOff: false
+                    });
+                }
+            }
+            if(type == 'view'){//opcion para remover el boton del fulfill
+                
+                var recordid = rec.getValue('id')  
+                log.debug('recordid',recordid)
+                var tipoVenta =rec.getValue('custbody_tipo_venta') 
+                log.debug('tipoVenta',tipoVenta)
+
+
+                // Buscar pagos relacionados con esta orden de venta
+            var pagos = [];
+            var totalPagadoSublist = 0;
             
+            try {
+                var paymentSearch = search.create({
+                    type: 'customerpayment',
+                    filters: [
+                        ['custbody_mp_orden_venta_relacionada', 'is', recordid],
+                        'AND',
+                        ['mainline', 'is', true]
+                    ],
+                    columns: [
+                        'internalid',
+                        'amount',
+                        'memo',
+                        'trandate'
+                    ]
+                });
+                
+                paymentSearch.run().each(function(result) {
+                    var paymentId = result.getValue('internalid');
+                    var amount = result.getValue('amount');
+                    var memo = result.getValue('memo');
+                    var trandate = result.getValue('trandate');
+                    
+                    pagos.push({
+                        id: paymentId,
+                        importe: amount,
+                        memo: memo,
+                        fecha: trandate
+                    });
+                    
+                    totalPagadoSublist += parseFloat(amount) || 0;
+                    
+                    return true; // continuar con la siguiente línea
+                });
+                
+                log.debug('Pagos encontrados:', pagos);
+                log.debug('Total pagado (búsqueda):', totalPagadoSublist);
+                
+            } catch (e) {
+                log.error('Error al buscar pagos:', e.message);
+            }
+
+                // Solo procesar si el tipo de venta es eshop vorwerk o ventas tm y no hay contrato digital credit
+                if(tipoVenta === '18' || tipoVenta === '2') {
+                    
+                       
+                    var total = rec.getValue('total') 
+                    log.debug('total',total)
+                    var vorwerkContratos = rec.getValue('custbody_vorwerk_contratos') 
+                    log.debug('vorwerkContratos',vorwerkContratos)
+                    log.debug('totalPagadoSublist',totalPagadoSublist)
+                    log.debug('Condición cumplida:', (totalPagadoSublist < total && !vorwerkContratos))
+                    
+                    
+                    if(totalPagadoSublist < total && !vorwerkContratos ){
+                      
+                        form.removeButton('process');                        
+                    } 
+                } else {
+                    log.debug('Tipo de venta no es 18 ni 2:', tipoVenta)
+                }
+            } 
+        try{
             //log.debug("start","Add Buton");
             const myUser = runtime.getCurrentUser();
             const roleID = myUser.role;
@@ -123,6 +225,13 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
             var salesrep = rec.getValue('salesrep')
             var typeEvent = runtime.executionContext;
             log.debug('typeEvent',typeEvent)
+            //validar cancelacion
+            try{
+                cancelacion(scriptContext)
+                
+            }catch(e){
+                log.debug('error actualizacion de commission status',e)
+            }
             // actualizacion de commission status 
             try{
                 commissionStatus(salesrep)
@@ -1104,6 +1213,86 @@ function(runtime,config,record,render,runtime,email,search,format,http,https,ser
                 
         }catch(e){
             log.error('error is serial',e)
+        }
+    }
+    function cancelacion(scriptContext){
+        try{
+            log.debug('cancelacion ')
+            var rec = scriptContext.newRecord;
+            var type = scriptContext.type;
+            
+            if( type == 'edit'){
+                var recordid = rec.id;
+                var salesorder = search.lookupFields({
+                    type: 'salesorder',
+                    id: recordid,
+                    columns: ['custbody_tipo_venta']
+                });
+                var salesOrderRecord = record.load({
+                    type: record.Type.SALES_ORDER,
+                    id: recordid,
+                    isDynamic: true
+                });
+                var numLinesRecords = salesOrderRecord.getLineCount({
+                    sublistId: 'links'
+                });
+                log.debug('numLinesRecords',numLinesRecords)
+                var tipoVenta = salesorder.custbody_tipo_venta[0].value
+                log.debug('tipoVenta',tipoVenta)
+                if(tipoVenta == 16 && numLinesRecords == 0){
+                    // Cargar el registro completo y actualizarlo
+                    var salesOrderRecord = record.load({
+                        type: record.Type.SALES_ORDER,
+                        id: recordid,
+                        isDynamic: true
+                    });
+                    
+                    // Obtener el número de líneas en la sublista item
+                    var numLines = salesOrderRecord.getLineCount({
+                        sublistId: 'item'
+                    });
+                    
+                    log.debug('numLines to close', numLines);
+                    
+                    // Cerrar cada línea individualmente
+                    for(var i = 0; i < numLines; i++){
+                        salesOrderRecord.selectLine({
+                            sublistId: 'item',
+                            line: i
+                        });
+                        
+                        // Marcar la línea como cerrada
+                        salesOrderRecord.setCurrentSublistValue({
+                            sublistId: 'item',
+                            fieldId: 'isclosed',
+                            value: true
+                        });
+                        
+                        salesOrderRecord.commitLine({
+                            sublistId: 'item'
+                        });
+                        
+                        log.debug('Line ' + i + ' closed');
+                    }
+                    
+                    // Cambiar el status de la orden
+                    salesOrderRecord.setValue({
+                        fieldId: 'status',
+                        value: 'Closed'
+                    });
+                    
+                    salesOrderRecord.save({
+                        enableSourcing: false,
+                        ignoreMandatoryFields: true
+                    });
+                    
+                    log.debug('after submitcancelacion')
+                }
+
+            }
+                
+        }catch(e){
+            log.error('error cancelacion',e)
         }
     }
     function earningProgram(salesrep){
