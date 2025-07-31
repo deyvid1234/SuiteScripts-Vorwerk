@@ -34,6 +34,7 @@ function(record,search,https,runtime,currentRecord,dialog) {
      * @since 2015.2
      */
     function fieldChanged(scriptContext) {
+        // La validación de stock se ha movido a validateLine para mejor control
         return true;
     }
 
@@ -107,7 +108,42 @@ function(record,search,https,runtime,currentRecord,dialog) {
      * @since 2015.2
      */
     function validateLine(scriptContext) {
-
+        // Validar stock cuando se confirma una línea de item
+        if (scriptContext.sublistId === 'item') {
+            var userObj = runtime.getCurrentUser();
+            console.log('userObj', userObj);
+            var idUser = userObj.id;
+            var userPermisos = search.lookupFields({
+                type: 'employee',
+                id: idUser,
+                columns: ['custentity_editaso_facturada']
+            });
+            var editaso_facturada = userPermisos.custentity_editaso_facturada;
+            console.log('editaso_facturada', editaso_facturada);
+            
+            var currentRecord = scriptContext.currentRecord;
+            var itemId = currentRecord.getCurrentSublistValue({
+                sublistId: 'item',
+                fieldId: 'item'
+            });
+            var quantityavailable = currentRecord.getCurrentSublistValue({
+                sublistId: 'item',
+                fieldId: 'quantityavailable'
+            });
+                
+            console.log('Item ID obtenido:', itemId);
+            console.log('Cantidad disponible:', quantityavailable);
+            
+            if (quantityavailable < 1 && editaso_facturada == true) {
+                dialog.alert({
+                    title: 'Alerta',
+                    message: 'No hay stock disponible para este item'
+                });
+                return false; // No permite guardar la línea
+            }
+        }
+        
+        return true; // Permite guardar la línea
     }
 
     /**
@@ -617,7 +653,7 @@ function(record,search,https,runtime,currentRecord,dialog) {
 //        sublistChanged: sublistChanged,
 //        lineInit: lineInit,
 //        validateField: validateField,
-//        validateLine: validateLine,
+        validateLine: validateLine,
 //        validateInsert: validateInsert,
 //        validateDelete: validateDelete,
         saveRecord: saveRecord,
