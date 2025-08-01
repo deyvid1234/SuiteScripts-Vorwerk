@@ -3,9 +3,9 @@
  * @NScriptType Suitelet
  * @NModuleScope SameAccount
  */
-define(['N/record', 'N/search','N/email','N/render','N/file','N/runtime','N/encode', 'N/https','N/format','N/xml'],
+define(['N/record', 'N/search','N/email','N/render','N/file','N/runtime','N/encode', 'N/https','N/format','N/xml','SuiteScripts/Vorwerk_project/Vorwerk Utils V2.js'],
 
-function(record, search, email, render, file,runtime, encode, https, format, xml) {
+function(record, search, email, render, file,runtime, encode, https, format, xml,Utils) {
 
     function onRequest(context){
         try{
@@ -56,23 +56,17 @@ function(record, search, email, render, file,runtime, encode, https, format, xml
             var initDate
             var finishDate
             var paymentDate
-            var fecha_custom = compensationData['fecha_custom'];
-            log.debug('fecha_custom',fecha_custom);
-            if(fecha_custom ){
-                var fechasAlt= getCurrentVorwerkPeriod(fecha_custom)
-                log.debug('fechasAlt',fechasAlt);
-                initDate = fechasAlt['initDate']
-                finishDate = fechasAlt['finishDate']
-                paymentDate = fecha_custom
-            }else{
-                var objCalendar = getObjCalendar(periodoComision);
-                if(objCalendar.error){
-                    throw objCalendar.message;
-                }
-                initDate= objCalendar['data']['initDate'],
-                finishDate= objCalendar['data']['finishDate'],
-                paymentDate= objCalendar['data']['paymentDate'],
+           
+            var objCalendar = getObjCalendar(periodoComision);
+            if(objCalendar.error){
+                throw objCalendar.message;
             }
+            initDate= objCalendar['data']['initDate'];
+            finishDate= objCalendar['data']['finishDate'];
+            paymentDate= objCalendar['data']['paymentDate'];
+            
+            log.debug('initDate',initDate);
+            log.debug('finishDate',finishDate);
             //Busqueda de sales order pertenecientes al registro principal
 //            var objSalesOrder = getCommissionDetail(compensationData['internalid'],equivalenceData['idRecordDetail']);
 //            if(objSalesOrder.error){
@@ -146,7 +140,7 @@ function(record, search, email, render, file,runtime, encode, https, format, xml
 
                 objUpdate[equivalenceData['xmlText']] = objXMLTemplate['data'];
                 //Proceso de envío a través de post, se genera el xml completo y retorna la respuesta del servicio
-                //var xmlProcessed = sendProcess(objData,base64XML);
+                var xmlProcessed = sendProcess(objData,base64XML);
                 if(xmlProcessed.error){
                     sendErrorNotification('errorService',{errorDetails: xmlProcessed.message, regName: compensationData['name']});
                     throw xmlProcessed.message;//error producto de la función
@@ -539,7 +533,8 @@ function(record, search, email, render, file,runtime, encode, https, format, xml
                     responseMessage: 'custrecord_c_gtm_mensaje_respuesta',
                     responseDetails: 'custrecord_c_gtm_response_details',
                     idRecordDetail: 'custrecord_sub_compensaciones_tm',
-                    estatusTimbrado: 'custrecord_estatus_timbrado_gtm'
+                    estatusTimbrado: 'custrecord_estatus_timbrado_gtm',
+
                 },
                 'customrecord_compensaciones_jdg': {
                     employeeField: 'custrecord_c_jdg_empleado',
@@ -1088,18 +1083,18 @@ function getCurrentVorwerkPeriod(dateCustom) {
         try {
             var today = dateCustom
             log.debug("today", today);
-            //var todaySplit = Utils.dateToString(today).split('/')
-            //log.debug("todaySplit", todaySplit);
-            //var start = (todaySplit[0]+'/'+todaySplit[1]+'/'+todaySplit[2])
+            var todaySplit = Utils.dateToString(today).split('/')
+            log.debug("todaySplit", todaySplit);
+            var start = (todaySplit[0]+'/'+todaySplit[1]+'/'+todaySplit[2])
 
-            //log.debug('start',start)
+            log.debug('start',start)
             // Búsqueda del período actual
             var periodSearch = search.create({
                 type: 'customrecord_periods',
                 filters: [
-                    ['custrecord_inicio', 'onorbefore', today],
+                    ['custrecord_inicio', 'onorbefore', start],
                     'AND',
-                    ['custrecord_final', 'onorafter', today]
+                    ['custrecord_final', 'onorafter', start]
                 ],
                 columns: [
                     'custrecord_inicio',
