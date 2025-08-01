@@ -59,6 +59,10 @@ function(search, format, runtime, email, record) {
                     search.createColumn({
                         name: 'custentity_cumpleanios_dev',
                         label: 'Fecha de Nacimiento'
+                    }),
+                    search.createColumn({
+                        name: 'hiredate',
+                        label: 'Fecha de Contratacion'
                     })
                 ]
             });
@@ -68,6 +72,7 @@ function(search, format, runtime, email, record) {
             // Ejecutar la búsqueda y procesar cada empleado
             var searchResult = employeeSearch.run();
             var employeeCount = 0;
+            var anniversaryCount = 0;
             var totalProcessed = 0;
             
             searchResult.each(function(result) {
@@ -78,7 +83,8 @@ function(search, format, runtime, email, record) {
                 var employeeName = (firstName + ' ' + lastName).trim() || 'Empleado ID: ' + employeeId;
                 var employeeEmail = result.getValue('email');
                 var birthDate = result.getValue('custentity_cumpleanios_dev');
-                
+                var hiredate = result.getValue('hiredate');
+                log.debug('hiredate', hiredate);
                 log.debug('birthDate', birthDate);
                 
                 // Verificar si el empleado cumple años hoy
@@ -107,16 +113,46 @@ function(search, format, runtime, email, record) {
                             birthDay: birthDay
                         });
                         
-                        // Aquí puedes agregar la lógica para enviar emails o realizar otras acciones
-                        // Por ejemplo: sendBirthdayEmail(employeeId, employeeName, employeeEmail);
+                        // Enviar email de cumpleaños
                         sendBirthdayEmail(employeeId, employeeName, employeeEmail);
+                    }
+                }
+                
+                // Verificar si el empleado cumple años de contratación hoy
+                if (hiredate) {
+                    // Usar N/format para parsear correctamente la fecha de contratación
+                    var hiredateObj = format.parse({
+                        value: hiredate,
+                        type: format.Type.DATE
+                    });
+                    
+                    log.debug('Fecha de contratación obj', 'Fecha: ' + hiredateObj);
+                    var hireMonth = hiredateObj.getMonth() + 1; // getMonth() retorna 0-11
+                    var hireDay = hiredateObj.getDate();
+                    log.debug('Fecha de contratación', 'Mes: ' + hireMonth + ', Día: ' + hireDay);
+                    
+                    log.debug('Comparación aniversario', 'Empleado: ' + hireMonth + '/' + hireDay + ' vs Hoy: ' + currentMonth + '/' + currentDay);
+                    
+                    if (hireMonth === currentMonth && hireDay === currentDay) {
+                        anniversaryCount++;
+                        log.debug('Empleado que cumple años de contratación hoy', {
+                            id: employeeId,
+                            name: employeeName,
+                            email: employeeEmail,
+                            hiredate: hiredate,
+                            hireMonth: hireMonth,
+                            hireDay: hireDay
+                        });
+                        
+                        // Enviar email de aniversario
+                        sendAnniversaryEmail(employeeId, employeeName, employeeEmail, hiredate);
                     }
                 }
                 
                 return true;
             });
             
-            log.debug('Procesamiento completado', 'Total procesados: ' + totalProcessed + ', Empleados que cumplen años hoy: ' + employeeCount);
+            log.debug('Procesamiento completado', 'Total procesados: ' + totalProcessed + ', Empleados que cumplen años hoy: ' + employeeCount + ', Empleados con aniversario hoy: ' + anniversaryCount);
             
         } catch (error) {
             log.error('Error en script programado de cumpleaños', error);
@@ -174,6 +210,109 @@ function(search, format, runtime, email, record) {
                 employeeEmail: employeeEmail,
                 error: error
             });
+        }
+    }
+
+    /**
+     * Envía un email de feliz aniversario al empleado
+     * @param {number} employeeId - ID del empleado
+     * @param {string} employeeName - Nombre del empleado
+     * @param {string} employeeEmail - Email del empleado
+     */
+    function sendAnniversaryEmail(employeeId, employeeName, employeeEmail, hiredate) {
+        try {
+            if (!employeeEmail) {
+                log.warning('Email no disponible para aniversario', {
+                    employeeId: employeeId,
+                    employeeName: employeeName
+                });
+                return;
+            }
+
+            // Cargar el template de email desde NetSuite
+            var emailTemplate = record.load({
+                type: record.Type.EMAIL_TEMPLATE,
+                id: 277
+            });
+            
+            // Obtener el asunto y cuerpo del template
+            var emailSubject = emailTemplate.getValue('subject');
+            var emailBody = emailTemplate.getValue('content');
+            
+            // Calcular años de aniversario
+            var today = new Date();
+            
+            if (hiredate) {
+                // Parsear la fecha de contratación que ya viene como string
+                var hiredateObj = format.parse({
+                    value: hiredate,
+                    type: format.Type.DATE
+                });
+                
+                var yearsOfService = calculateYearsOfService(hiredateObj, today);
+                log.debug('Años de servicio calculados', {
+                    employeeId: employeeId,
+                    employeeName: employeeName,
+                    hiredate: hiredate,
+                    yearsOfService: yearsOfService
+                });
+                
+                // Reemplazar placeholders en el template
+                emailBody = emailBody.replace(/@name/g, employeeName);
+                emailBody = emailBody.replace(/@aniosMeses/g, yearsOfService + ' años');
+            } 
+            
+            // Enviar el email
+            var emailId = email.send({
+                author: '344096', // Remitente: usuario actual del sistema
+                recipients: employeeEmail,
+                subject: emailSubject,
+                body: emailBody,
+                isHtml: true
+            });
+            
+            log.debug('Email de aniversario enviado exitosamente', {
+                employeeId: employeeId,
+                employeeName: employeeName,
+                employeeEmail: employeeEmail,
+                emailId: emailId,
+                yearsOfService: yearsOfService
+            });
+            
+        } catch (error) {
+            log.error('Error enviando email de aniversario', {
+                employeeId: employeeId,
+                employeeName: employeeName,
+                employeeEmail: employeeEmail,
+                error: error
+            });
+        }
+    }
+
+    /**
+     * Calcula los años de servicio entre dos fechas
+     * @param {Date} hireDate - Fecha de contratación
+     * @param {Date} currentDate - Fecha actual
+     * @return {number} - Años de servicio
+     */
+    function calculateYearsOfService(hireDate, currentDate) {
+        try {
+            var years = currentDate.getFullYear() - hireDate.getFullYear();
+            var monthDiff = currentDate.getMonth() - hireDate.getMonth();
+            
+            // Si el mes actual es menor que el mes de contratación, o si es el mismo mes pero el día es menor
+            if (monthDiff < 0 || (monthDiff === 0 && currentDate.getDate() < hireDate.getDate())) {
+                years--;
+            }
+            
+            return Math.max(0, years); // Retorna al menos 0 años
+        } catch (error) {
+            log.error('Error calculando años de servicio', {
+                hireDate: hireDate,
+                currentDate: currentDate,
+                error: error
+            });
+            return 0;
         }
     }
 
