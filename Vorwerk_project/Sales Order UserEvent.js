@@ -23,6 +23,8 @@ function(message,error,runtime,config,record,render,runtime,email,search,format,
      */
     function beforeLoad(scriptContext) {        
         
+
+
             var rec = scriptContext.newRecord;
             var currentRecord = scriptContext.newRecord;
             var form = scriptContext.form;
@@ -41,7 +43,12 @@ function(message,error,runtime,config,record,render,runtime,email,search,format,
                 var editaso_facturada = userPermisos.custentity_editaso_facturada
                 log.debug('editaso_facturada',editaso_facturada)
                 if(editaso_facturada == true && status == 'Billed' && type == 'view'){
-
+                    var msgAuto = message.create({
+                        title: "Permiso de edicion denegado",
+                        message: "No se puede editar este pedido pues ya cuenta con una factura.",
+                        type: message.Type.WARNING
+                    });
+                    scriptContext.form.addPageInitMessage({ message: msgAuto });
                     log.debug('editaso_facturada',editaso_facturada)
                     form.removeButton('edit');   
                 } else if(editaso_facturada == true && status == 'Billed' && type == 'edit'){
@@ -118,7 +125,12 @@ function(message,error,runtime,config,record,render,runtime,email,search,format,
                     
                     
                     if(totalPagadoSublist < total && !vorwerkContratos ){
-                      
+                        var msgAuto = message.create({
+                            title: "Cumplimiento no permitido",
+                            message: "Pedido sin pago, favor de revisar",
+                            type: message.Type.WARNING
+                        });
+                        scriptContext.form.addPageInitMessage({ message: msgAuto });
                         form.removeButton('process');                        
                     } 
                 } else {
