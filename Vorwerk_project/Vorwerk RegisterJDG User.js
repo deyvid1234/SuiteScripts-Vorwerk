@@ -175,6 +175,11 @@ function(serverWidget,search,record,runtime,redirect,url) {
                 type : serverWidget.FieldType.TEXT,
                 label : 'FECHA DE ENTREGA CSF'
             });
+            var fechaCSF= sublist.addField({
+                id : 'custpage_fecha_timbrado_custom',
+                type : serverWidget.FieldType.TEXT,
+                label : 'FECHA EDITABLE PARA TIMBRAR'
+            });
             var estatus_timbrado = sublist.addField({
                 id : 'custpage_estatus_timbrado',
                 type : serverWidget.FieldType.TEXT,
@@ -408,6 +413,13 @@ function(serverWidget,search,record,runtime,redirect,url) {
                             value:info[x].fechaEntregaCSF
                         });
                     } 
+                    if (info[x].fechaCustom != ''){
+                        sublist.setSublistValue({
+                            id:'custpage_fecha_timbrado_custom',
+                            line:x,
+                            value:info[x].fechaCustom
+                        });
+                    }
                     if(info[x].estatusTimbrado != ""){
                         sublist.setSublistValue({
                         id:'custpage_estatus_timbrado',
@@ -592,6 +604,7 @@ function(serverWidget,search,record,runtime,redirect,url) {
                           'custrecord_c_jdg_pdg',
                           'custrecord_pagado_le',
                           'custrecord_fecha_entrega_csf_le',
+                          'custrecord_fecha_custom',
                           //<!--Bonos manuales
                           'custrecord_c_jdg_bono1',
                           'custrecord_c_jdg_bono2',
@@ -659,6 +672,7 @@ function(serverWidget,search,record,runtime,redirect,url) {
                      pdf : url_file+'&idfile='+r.getValue('custrecord_c_jdg_pdg'),
                      pagado : r.getValue('custrecord_pagado_le'),
                      fechaEntregaCSF : r.getValue('custrecord_fecha_entrega_csf_le'),
+                     fechaCustom : r.getValue('custrecord_fecha_custom'),
                      print : print_url_base+r.getValue('custrecord_c_jdg_empleado')+'&periodo='+period+'&comp='+r.getValue('internalid')+'&level='+level,
                      send : send_url_base+r.getValue('custrecord_c_jdg_empleado')+'&period='+period+'&comp='+r.getValue('internalid'),
                      ver : record_url_base+r.getValue('internalid'),
