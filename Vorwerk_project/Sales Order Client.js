@@ -132,21 +132,33 @@ function(record,search,https,runtime,currentRecord,dialog) {
             });
             
             // Cargar información del item usando lookupFields
+            var type = '';
             try{
-                var inventoryitem= record.load({
+                var inventoryitem = record.load({
                     type: 'inventoryitem',
                     id: itemId,
                     isDynamic: false,
                 });
-                var type = inventoryitem.getValue('baserecordtype')
+                type = inventoryitem.getValue('baserecordtype');
+                console.log('Item cargado como inventoryitem, type:', type);
             }catch(e){
-                var inventoryitem= record.load({
-                    type: 'noninventoryitem',
-                    id: itemId,
-                    isDynamic: false,
-                });
-                var type = inventoryitem.getValue('baserecordtype')
+                try{
+                    var inventoryitem = record.load({
+                        type: 'noninventoryitem',
+                        id: itemId,
+                        isDynamic: false,
+                    });
+                    type = inventoryitem.getValue('baserecordtype');
+                    console.log('Item cargado como noninventoryitem, type:', type);
+                }catch(e2){
+                    console.log('Error cargando item:', e2);
+                    type = 'unknown';
+                }
             }
+            
+            console.log('Item ID obtenido:', itemId);
+            console.log('Cantidad disponible:', quantityavailable);
+            console.log('Tipo de item:', type);
                         
             if (quantityavailable < 1 && editaso_facturada == true && type != 'noninventoryitem') {
                 dialog.alert({
