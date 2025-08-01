@@ -279,6 +279,7 @@ function marcarCheck(object_fill) {
             var comision_id = record.getValue('custrecord_periodo_comision');
             var periodText = record.getText('custrecord_periodo_comision');
             var levelText = record.getText('custrecord_nivel_jerarquia');
+            var fechatimbradomasivo = record.getValue('custrecord_fechatimbrado_alt');
             console.log('record',record);
             var listLineCount = record.getLineCount({
               sublistId: "custpage_sublist_detail"
@@ -309,7 +310,7 @@ function marcarCheck(object_fill) {
                             fieldId: "custpage_total",
                             line: i
                         })
-                        object_fill.push({idReg:idReg,level:level,comision_id:comision_id,totalReg:totalReg,periodText:periodText,levelText:levelText});
+                        object_fill.push({idReg:idReg,level:level,comision_id:comision_id,totalReg:totalReg,periodText:periodText,levelText:levelText,fechatimbradomasivo:fechatimbradomasivo});
                          
                         
                     }else{
@@ -325,7 +326,7 @@ function marcarCheck(object_fill) {
                                 fieldId: "custpage_total",
                                 line: i
                             })
-                            object_fill.push({idReg:idReg,level:level,comision_id:comision_id,totalReg:totalReg,periodText:periodText,levelText:levelText});
+                            object_fill.push({idReg:idReg,level:level,comision_id:comision_id,totalReg:totalReg,periodText:periodText,levelText:levelText,fechatimbradomasivo:fechatimbradomasivo});
                              
                         } else {
                             return false;

@@ -36,6 +36,8 @@ function(email,record, file, search, https, runtime,format,payroll) {
         	var registeInfo = JSON.parse(context.value);
         	log.debug('registeInfo',registeInfo);
             var periodoComision=registeInfo.periodText
+            var fechatimbradomasivo=registeInfo.fechatimbradomasivo
+            log.debug('fechatimbradomasivo',fechatimbradomasivo)
         	var type_rec= parseInt(registeInfo.level);
         	switch(type_rec){
     	        case 1://presentadora
@@ -50,7 +52,7 @@ function(email,record, file, search, https, runtime,format,payroll) {
     	    }
             log.debug('This is type_to_add',type_to_add);
 
-            payroll.XMLProcess(type_to_add,registeInfo.idReg,periodoComision)
+            payroll.XMLProcess(type_to_add,registeInfo.idReg,periodoComision,fechatimbradomasivo)
         	/*var objRecord = record.load({
                 type: type_to_add,
                 id: registeInfo.idReg,
