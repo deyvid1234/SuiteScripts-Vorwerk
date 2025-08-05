@@ -1,3 +1,4 @@
+// version para pruebas con fechas alternativas para timbrado file payroll xml
 /**
  * @NApiVersion 2.x
  * @NScriptType Suitelet
@@ -31,7 +32,7 @@ function(record, search, email, render, file,runtime, encode, https, format, xml
         }
     }
 
-    function XMLProcess(recordType,recordId,periodoComision,context){
+    function XMLProcess(recordType,recordId,periodoComision,fechatimbradomasivo,context){
         try{
             //Objeto que contienen los campos a actualizar en el record
             var objUpdate = {};
@@ -51,20 +52,39 @@ function(record, search, email, render, file,runtime, encode, https, format, xml
             if(objCompensation.error){
                 throw objCompensation.message;
             }
+
             var compensationData = objCompensation['data'];
             log.debug('objCompensation',objCompensation);
             var initDate
             var finishDate
             var paymentDate
-           
-            var objCalendar = getObjCalendar(periodoComision);
-            if(objCalendar.error){
-                throw objCalendar.message;
+            var fecha_custom = compensationData['fecha_custom'];
+            log.debug('fecha_custom',fecha_custom);
+            log.debug('fechatimbradomasivo',fechatimbradomasivo)
+            if(fecha_custom ){
+                var fechasAlt= getCurrentVorwerkPeriod(fecha_custom)
+                log.debug('fechasAlt',fechasAlt);
+                initDate = fechasAlt['startDate']
+                finishDate = fechasAlt['endDate']
+
+                paymentDate = fecha_custom
+            }else if(fechatimbradomasivo){
+                
+                var newDateSplit = fechatimbradomasivo.split("-")
+                var dateFinal = new Date(newDateSplit[2], newDateSplit[1] - 1, newDateSplit[0])
+                var fechasAltmasivo= getCurrentVorwerkPeriod(dateFinal)
+                log.debug('fechasAltmasivo',fechasAltmasivo);
+                initDate = fechasAltmasivo['startDate']
+                finishDate = fechasAltmasivo['endDate']
+            }else{
+                var objCalendar = getObjCalendar(periodoComision);
+                if(objCalendar.error){
+                    throw objCalendar.message;
+                }
+                initDate= objCalendar['data']['initDate'];
+                finishDate= objCalendar['data']['finishDate'];
+                paymentDate= objCalendar['data']['paymentDate'];
             }
-            initDate= objCalendar['data']['initDate'];
-            finishDate= objCalendar['data']['finishDate'];
-            paymentDate= objCalendar['data']['paymentDate'];
-            
             log.debug('initDate',initDate);
             log.debug('finishDate',finishDate);
             //Busqueda de sales order pertenecientes al registro principal
