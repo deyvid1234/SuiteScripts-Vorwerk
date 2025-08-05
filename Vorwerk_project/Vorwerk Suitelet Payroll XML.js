@@ -61,21 +61,45 @@ function(record, search, email, render, file,runtime, encode, https, format, xml
             var fecha_custom = compensationData['fecha_custom'];
             log.debug('fecha_custom',fecha_custom);
             log.debug('fechatimbradomasivo',fechatimbradomasivo)
-            if(fecha_custom ){
+            
+            if(fecha_custom ){ //fecha_custom es la fecha dentro del registro de compensacion 
+            try {
                 var fechasAlt= getCurrentVorwerkPeriod(fecha_custom)
                 log.debug('fechasAlt',fechasAlt);
                 initDate = fechasAlt['startDate']
                 finishDate = fechasAlt['endDate']
-
-                paymentDate = fecha_custom
-            }else if(fechatimbradomasivo){
+                paymentDate = fechasAlt['paymentDate']
+                log.debug('Fechas calculadas 1', {
+                    initDate: initDate,
+                    finishDate: finishDate,
+                    paymentDate: paymentDate
+                });
+            } catch (error) {
+                log.error('Error al calcular las fechas 1', error);
+            }
                 
-                var newDateSplit = fechatimbradomasivo.split("-")
-                var dateFinal = new Date(newDateSplit[2], newDateSplit[1] - 1, newDateSplit[0])
-                var fechasAltmasivo= getCurrentVorwerkPeriod(dateFinal)
-                log.debug('fechasAltmasivo',fechasAltmasivo);
-                initDate = fechasAltmasivo['startDate']
-                finishDate = fechasAltmasivo['endDate']
+            }else if(fechatimbradomasivo){ //fechatimbradomasivo es la fecha de timbrado masivo
+                try {
+                    var newDateSplit = fechatimbradomasivo.split("-")
+                    log.debug('newDateSplit',newDateSplit);
+                    // Extraer solo la parte de la fecha sin la hora
+                    var datePart = newDateSplit[2].split('T')[0];
+                    var dateFinal = new Date(newDateSplit[0], newDateSplit[1] - 1, datePart)
+                    log.debug('dateFinal',dateFinal);
+                    var fechasAltmasivo= getCurrentVorwerkPeriod(dateFinal)
+                    log.debug('fechasAltmasivo',fechasAltmasivo);
+                    initDate = fechasAltmasivo['startDate']
+                    finishDate = fechasAltmasivo['endDate']
+                    paymentDate = fechasAltmasivo['paymentDate']
+                    log.debug('Fechas calculadas 2', {
+                        initDate: initDate,
+                        finishDate: finishDate,
+                        paymentDate: paymentDate
+                    });
+                } catch (error) {
+                    log.error('Error al calcular las fechas 2', error);
+                }   
+                
             }else{
                 var objCalendar = getObjCalendar(periodoComision);
                 if(objCalendar.error){
@@ -84,6 +108,11 @@ function(record, search, email, render, file,runtime, encode, https, format, xml
                 initDate= objCalendar['data']['initDate'];
                 finishDate= objCalendar['data']['finishDate'];
                 paymentDate= objCalendar['data']['paymentDate'];
+                log.debug('Fechas calculadas 3', {
+                    initDate: initDate,
+                    finishDate: finishDate,
+                    paymentDate: paymentDate
+                });
             }
             log.debug('initDate',initDate);
             log.debug('finishDate',finishDate);
@@ -160,7 +189,7 @@ function(record, search, email, render, file,runtime, encode, https, format, xml
 
                 objUpdate[equivalenceData['xmlText']] = objXMLTemplate['data'];
                 //Proceso de envío a través de post, se genera el xml completo y retorna la respuesta del servicio
-                var xmlProcessed = sendProcess(objData,base64XML);
+                //var xmlProcessed = sendProcess(objData,base64XML);
                 if(xmlProcessed.error){
                     sendErrorNotification('errorService',{errorDetails: xmlProcessed.message, regName: compensationData['name']});
                     throw xmlProcessed.message;//error producto de la función
@@ -1106,7 +1135,11 @@ function getCurrentVorwerkPeriod(dateCustom) {
             var todaySplit = Utils.dateToString(today).split('/')
             log.debug("todaySplit", todaySplit);
             var start = (todaySplit[0]+'/'+todaySplit[1]+'/'+todaySplit[2])
-
+            // Formatear paymentDate con ceros a la izquierda
+            var day = (todaySplit[0].length < 2) ? '0' + todaySplit[0] : todaySplit[0];
+            var month = (todaySplit[1].length < 2) ? '0' + todaySplit[1] : todaySplit[1];
+            var year = todaySplit[2];
+            var paymentDate = year + '-' + month + '-' + day;
             log.debug('start',start)
             // Búsqueda del período actual
             var periodSearch = search.create({
@@ -1127,17 +1160,33 @@ function getCurrentVorwerkPeriod(dateCustom) {
             if (!searchResult || searchResult.length === 0) {
                 
                 log.error('No se encontró un período Vorwerk válido para la fecha actual');
-                startDate = '30/03/2024';
-                endDate = '26/02/2024';
+                return false;
             }else{
                 log.debug('Período Vorwerk encontrado', searchResult);
-                startDate = searchResult[0].getValue('custrecord_inicio');
-                endDate = searchResult[0].getValue('custrecord_final');
+                var startDateRaw = searchResult[0].getValue('custrecord_inicio');
+                var endDateRaw = searchResult[0].getValue('custrecord_final');
+                
+                // Convertir fechas al formato YYYY-MM-DD con ceros a la izquierda
+                var startDateParts = startDateRaw.split('/');
+                var endDateParts = endDateRaw.split('/');
+                
+                // Formatear con ceros a la izquierda
+                var startDay = (startDateParts[0].length < 2) ? '0' + startDateParts[0] : startDateParts[0];
+                var startMonth = (startDateParts[1].length < 2) ? '0' + startDateParts[1] : startDateParts[1];
+                var startYear = startDateParts[2];
+                
+                var endDay = (endDateParts[0].length < 2) ? '0' + endDateParts[0] : endDateParts[0];
+                var endMonth = (endDateParts[1].length < 2) ? '0' + endDateParts[1] : endDateParts[1];
+                var endYear = endDateParts[2];
+                
+                var startDate = startYear + '-' + startMonth + '-' + startDay;
+                var endDate = endYear + '-' + endMonth + '-' + endDay;
             }
 
             return {
                 startDate: startDate,
-                endDate: endDate
+                endDate: endDate, 
+                paymentDate: paymentDate
             };
         } catch (e) {
             log.error('Error en getCurrentVorwerkPeriod', e);
