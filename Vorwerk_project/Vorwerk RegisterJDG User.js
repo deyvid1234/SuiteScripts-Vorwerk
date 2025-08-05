@@ -175,7 +175,7 @@ function(serverWidget,search,record,runtime,redirect,url) {
                 type : serverWidget.FieldType.TEXT,
                 label : 'FECHA DE ENTREGA CSF'
             });
-            var fechaCSF= sublist.addField({
+            var fechatim_custom= sublist.addField({
                 id : 'custpage_fecha_timbrado_custom',
                 type : serverWidget.FieldType.TEXT,
                 label : 'FECHA EDITABLE PARA TIMBRAR'
@@ -731,6 +731,7 @@ function(serverWidget,search,record,runtime,redirect,url) {
                           'custrecord_c_pre_pdf',
                           'custrecord_pagado_pre',
                           'custrecord_fecha_entrega_csf_pre',
+                          'custrecord_fecha_custom_pre',
                           //<!--Bono manual
                           'custrecord_c_pre_bono_uno',//este que?
                           'custrecord_c_pre_bono2',
@@ -798,6 +799,7 @@ function(serverWidget,search,record,runtime,redirect,url) {
                      pdf : url_file+'&idfile='+r.getValue('custrecord_c_pre_pdf'),
                      pagado : r.getValue('custrecord_pagado_pre'),
                      fechaEntregaCSF : r.getValue('custrecord_fecha_entrega_csf_pre'),
+                     fechaCustom : r.getValue('custrecord_fecha_custom_pre'),
                      print : print_url_base+r.getValue('custrecord_c_pre_empleado')+'&periodo='+period+'&comp='+r.getValue('internalid')+'&level='+level,
                      send : send_url_base+r.getValue('custrecord_c_pre_empleado')+'&period='+period+'&comp='+r.getValue('internalid'),
                      ver : record_url_base+r.getValue('internalid'),
