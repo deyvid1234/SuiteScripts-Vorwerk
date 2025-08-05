@@ -857,6 +857,7 @@ function(serverWidget,search,record,runtime,redirect,url) {
                           'custrecord_c_gtm_pdf',
                           'custrecord_pagado_gtm',
                           'custrecord_fecha_entrega_csf_gtm',
+                          'custrecord_fecha_custom_gtm',
                           //<!--Bono manual
                           'custrecord_c_gtm_bono1',
                           'custrecord_c_gtm_bono2',
@@ -938,6 +939,7 @@ function(serverWidget,search,record,runtime,redirect,url) {
                      pdf : url_file+'&idfile='+ r.getValue('custrecord_c_gtm_pdf'),
                      pagado : r.getValue('custrecord_pagado_gtm'),
                      fechaEntregaCSF : r.getValue('custrecord_fecha_entrega_csf_gtm'),
+                     fechaCustom : r.getValue('custrecord_fecha_custom_gtm'),
                      print : print_url_base+r.getValue('custrecord_c_gtm_empleado')+'&periodo='+period+'&comp='+r.getValue('internalid')+'&level='+level,
                      send : send_url_base+r.getValue('custrecord_c_gtm_empleado')+'&period='+period+'&comp='+r.getValue('internalid'),
                      ver : record_url_base+r.getValue('internalid'),
