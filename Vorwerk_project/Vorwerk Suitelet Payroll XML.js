@@ -541,7 +541,7 @@ function(record, search, email, render, file,runtime, encode, https, format, xml
                 id: recordId,
                 isDynamic: true,
             });
-
+           
             var thereIsXML = loadedRecord.getValue(recordEquivalence['xmlField']),
                 thereIsPDF = loadedRecord.getValue(recordEquivalence['pdfField']);
 
@@ -583,6 +583,7 @@ function(record, search, email, render, file,runtime, encode, https, format, xml
                     responseDetails: 'custrecord_c_gtm_response_details',
                     idRecordDetail: 'custrecord_sub_compensaciones_tm',
                     estatusTimbrado: 'custrecord_estatus_timbrado_gtm',
+                    fechaCustom: 'custrecord_fecha_custom_gtm',
 
                 },
                 'customrecord_compensaciones_jdg': {
@@ -615,7 +616,8 @@ function(record, search, email, render, file,runtime, encode, https, format, xml
                     responseMessage: 'custrecord_c_pre_mensaje_respuesta',
                     responseDetails: 'custrecord_c_pre_response_details',
                     idRecordDetail: 'custrecord_sub_compensaciones_pre',
-                    estatusTimbrado: 'custrecord_estatus_timbrado_pre'
+                    estatusTimbrado: 'custrecord_estatus_timbrado_pre',
+                    fechaCustom: 'custrecord_fecha_custom_pre',
                 }
             }
             return createObjReturn(objEquivalence[recordType],'getRecordEquivalence OK',false);
