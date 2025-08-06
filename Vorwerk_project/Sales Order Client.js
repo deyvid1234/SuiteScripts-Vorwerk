@@ -151,8 +151,14 @@ function(record,search,https,runtime,currentRecord,dialog) {
                     type = inventoryitem.getValue('baserecordtype');
                     console.log('Item cargado como noninventoryitem, type:', type);
                 }catch(e2){
-                    console.log('Error cargando item:', e2);
-                    type = 'unknown';
+                    var inventoryitem = record.load({
+                        type: 'serviceitem',
+                        id: itemId,
+                        isDynamic: false,
+                    });
+                    type = inventoryitem.getValue('baserecordtype');
+                    console.log('Item cargado como serviceitem, type:', type);
+                    type = 'serviceitem';
                 }
             }
             
