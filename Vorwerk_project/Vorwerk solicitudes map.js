@@ -18,12 +18,12 @@ function(search,record,format,Utils) {
      * @since 2015.1
      */
     function getInputData() {
-    	var solicitudesSearch = search.load({
+        var solicitudesSearch = search.load({
             id: 'customsearch_solicitudes_recurrentes' 
         });
-    	
-    	return solicitudesSearch;
-    	
+        
+        return solicitudesSearch;
+        
     }
 
     /**
@@ -33,17 +33,22 @@ function(search,record,format,Utils) {
      * @since 2015.1
      */
     function map(context) {
-    	try{
-    		var registeInfo = JSON.parse(context.value);
-        	log.debug('registeInfo',registeInfo)
-        	var aprovalStatus = registeInfo.values.approvalstatus.value
-     	    log.debug('aprovalStatus',aprovalStatus)
+        try{
+            var registeInfo = JSON.parse(context.value);
+            log.debug('registeInfo',registeInfo)
+            var aprovalStatus = registeInfo.values.approvalstatus.value
+            log.debug('aprovalStatus',aprovalStatus)
             var idRequisitionPrincipal =  registeInfo.id
             log.debug('idRequisitionPrincipal',idRequisitionPrincipal)
             var estimatedtotal =  registeInfo.values.estimatedtotal
             var solicitante = registeInfo.values.entity.value
+            var campaña = registeInfo.values.custbody_camp.value
+            log.debug('campaña',campaña)
             var today = new Date
+          log.debug('today fecha',today)
             today = Utils.dateToString(today)
+            log.debug('today string',today) 
+            //today = '5/8/2025'
             if(aprovalStatus == '2'){
                 var metodoRepeticion = registeInfo.values.custbody_metodo_repeticion.value
                 
@@ -77,7 +82,7 @@ function(search,record,format,Utils) {
                             if(fechaFormato == today){
                                 log.debug('hacer copia y transform')
 
-                               var idCopy = makeCopy(solicitante,idRequisitionPrincipal)
+                               var idCopy = makeCopy(solicitante,idRequisitionPrincipal,campaña)
                                 log.debug('idCopy periodos mes',idCopy)
 
                                 var idPO = transformPO(solicitante,idCopy,estimatedtotal)
@@ -104,7 +109,7 @@ function(search,record,format,Utils) {
                             if(fechaFormato == today){
                                 log.debug('hacer copia y transformsem')
 
-                               var idCopy = makeCopy(solicitante,idRequisitionPrincipal)
+                               var idCopy = makeCopy(solicitante,idRequisitionPrincipal,campaña)
                                 log.debug('idCopy periodos semana',idCopy)
 
                                 var idPO = transformPO(solicitante,idCopy,estimatedtotal)
@@ -157,7 +162,7 @@ function(search,record,format,Utils) {
                             if(fechaFormato == today){
                                 log.debug('hacer copia y transform')
 
-                                var idCopy = makeCopy(solicitante,idRequisitionPrincipal)
+                                var idCopy = makeCopy(solicitante,idRequisitionPrincipal,campaña)
                                 log.debug('idCopy',idCopy)
 
                                 var idPO = transformPO(solicitante,idCopy,estimatedtotal)
@@ -198,7 +203,7 @@ function(search,record,format,Utils) {
                         if(fechaFormato == today){
                             log.debug('hacer copia y transform')
 
-                            var idCopy = makeCopy(solicitante,idRequisitionPrincipal)
+                            var idCopy = makeCopy(solicitante,idRequisitionPrincipal,campaña)
                             log.debug('idCopy periodos dias',idCopy)
 
                             var idPO = transformPO(solicitante,idCopy,estimatedtotal)
@@ -219,12 +224,12 @@ function(search,record,format,Utils) {
                     //odv transform a purchase order, campo con el custom record
                     //guardar en el registro custom fechas, solicitus plantilla, sublista 
                 
-            }	
-        	
-	       
-    	}catch(err){
-    		log.error("err map",err);
-    	}
+            }   
+            
+           
+        }catch(err){
+            log.error("err map",err);
+        }
         function transformPO(solicitante,idCopy,estimatedtotal){
             try{
                 var transformToSO = record.transform({
@@ -247,14 +252,24 @@ function(search,record,format,Utils) {
                 log.error('error al transformar la requisicion a po',e)
             }
         } 
-        function makeCopy(solicitante,idRequisition){
+        function makeCopy(solicitante,idRequisition,campaña){
             try{
+                var idCampaña 
+                if(campaña){
+                    idCampaña = campaña
+                }else{
+                    idCampaña = 4
+                }
+                log.debug('idCampaña',idCampaña)
+                log.debug('entrando funcion makecopy',solicitante )
+                log.debug('req id',idRequisition )
                 var requisitionCopy = record.copy({
                     type: 'purchaserequisition',
                     id: idRequisition,
                     isDynamic: true,
                     
                 });
+                log.debug('requisitionCopy',requisitionCopy)
                 requisitionCopy.setValue({
                     fieldId: 'custbody_createdfrom_plantilla',
                     value: true
@@ -266,6 +281,10 @@ function(search,record,format,Utils) {
                 requisitionCopy.setValue({
                     fieldId: 'approvalstatus',
                     value: 2
+                });
+                requisitionCopy.setValue({
+                    fieldId: 'custbody_camp',
+                    value: idCampaña
                 });
                 requisitionCopy.setValue({
                     fieldId: 'custbody_dias',
@@ -343,7 +362,12 @@ function(search,record,format,Utils) {
                     fieldId: 'custbody_total_solicitud_recurrente',
                     value: ''
                 });
-                var id_copy = requisitionCopy.save();
+                log.debug('requisitionCopy fin ',requisitionCopy)
+                var id_copy = requisitionCopy.save({
+                    enableSourcing: true,
+                    ignoreMandatoryFields: true
+                  });
+                
                 log.debug('id_copy',id_copy)
                 return id_copy;
 
@@ -351,9 +375,9 @@ function(search,record,format,Utils) {
                 log.error('error al hacer la copia de la requisicion',e)
             }
         }
-    	
+        
 
-    	
+        
     }
 
     /**
@@ -363,7 +387,7 @@ function(search,record,format,Utils) {
      * @since 2015.1
      */
     function reduce(context) {
-    	log.debug("reduce",context);
+        log.debug("reduce",context);
     }
 
 
@@ -374,7 +398,7 @@ function(search,record,format,Utils) {
      * @since 2015.1
      */
     function summarize(summary) {
-    	log.debug("summary",summary);
+        log.debug("summary",summary);
     }
 
     return {
