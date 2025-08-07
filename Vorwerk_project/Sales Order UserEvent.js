@@ -66,55 +66,52 @@ function(message,error,runtime,config,record,render,runtime,email,search,format,
                 var tipoVenta =rec.getValue('custbody_tipo_venta') 
                 log.debug('tipoVenta',tipoVenta)
 
-
-                // Buscar pagos relacionados con esta orden de venta
-            var pagos = [];
-            var totalPagadoSublist = 0;
-            
-            try {
-                var paymentSearch = search.create({
-                    type: 'customerpayment',
-                    filters: [
-                        ['custbody_mp_orden_venta_relacionada', 'is', recordid],
-                        'AND',
-                        ['mainline', 'is', true]
-                    ],
-                    columns: [
-                        'internalid',
-                        'amount',
-                        'memo',
-                        'trandate'
-                    ]
-                });
-                
-                paymentSearch.run().each(function(result) {
-                    var paymentId = result.getValue('internalid');
-                    var amount = result.getValue('amount');
-                    var memo = result.getValue('memo');
-                    var trandate = result.getValue('trandate');
-                    
-                    pagos.push({
-                        id: paymentId,
-                        importe: amount,
-                        memo: memo,
-                        fecha: trandate
-                    });
-                    
-                    totalPagadoSublist += parseFloat(amount) || 0;
-                    
-                    return true; // continuar con la siguiente línea
-                });
-                
-                log.debug('Pagos encontrados:', pagos);
-                log.debug('Total pagado (búsqueda):', totalPagadoSublist);
-                
-            } catch (e) {
-                log.error('Error al buscar pagos:', e.message);
-            }
-
                 // Solo procesar si el tipo de venta es eshop vorwerk o ventas tm y no hay contrato digital credit
                 if(tipoVenta === '18' || tipoVenta === '2') {
+                      // Buscar pagos relacionados con esta orden de venta
+                    var pagos = [];
+                    var totalPagadoSublist = 0;
                     
+                    try {
+                        var paymentSearch = search.create({
+                            type: 'customerpayment',
+                            filters: [
+                                ['custbody_mp_orden_venta_relacionada', 'is', recordid],
+                                'AND',
+                                ['mainline', 'is', true]
+                            ],
+                            columns: [
+                                'internalid',
+                                'amount',
+                                'memo',
+                                'trandate'
+                            ]
+                        });
+                        
+                        paymentSearch.run().each(function(result) {
+                            var paymentId = result.getValue('internalid');
+                            var amount = result.getValue('amount');
+                            var memo = result.getValue('memo');
+                            var trandate = result.getValue('trandate');
+                            
+                            pagos.push({
+                                id: paymentId,
+                                importe: amount,
+                                memo: memo,
+                                fecha: trandate
+                            });
+                            
+                            totalPagadoSublist += parseFloat(amount) || 0;
+                            
+                            return true; // continuar con la siguiente línea
+                        });
+                        
+                        log.debug('Pagos encontrados:', pagos);
+                        log.debug('Total pagado (búsqueda):', totalPagadoSublist);
+                        
+                    } catch (e) {
+                        log.error('Error al buscar pagos:', e.message);
+                    }
                        
                     var total = rec.getValue('total') 
                     log.debug('total',total)
@@ -237,6 +234,7 @@ function(message,error,runtime,config,record,render,runtime,email,search,format,
             var salesrep = rec.getValue('salesrep')
             var typeEvent = runtime.executionContext;
             log.debug('typeEvent',typeEvent)
+           
             //validar cancelacion
             try{
                 cancelacion(scriptContext)
@@ -1227,6 +1225,7 @@ function(message,error,runtime,config,record,render,runtime,email,search,format,
             log.error('error is serial',e)
         }
     }
+   
     function cancelacion(scriptContext){
         try{
             log.debug('cancelacion ')
