@@ -202,7 +202,15 @@ define(['N/ui/serverWidget', 'N/search', 'N/format', 'N/record', 'N/log', 'N/run
             searchResultIndex += batchSize;
             batchCount++;
 
-        } while (searchResult.length > 0); // Cambiado de === batchSize a > 0
+            // Log de progreso cada 5 lotes
+            if (batchCount % 5 === 0) {
+                log.debug('Progreso de procesamiento en lotes', {
+                    batchCount: batchCount,
+                    totalProcessed: allResults.length
+                });
+            }
+
+        } while (searchResult.length > 0);
 
         log.debug('Procesamiento en lotes completado', {
             totalBatches: batchCount,
@@ -230,22 +238,18 @@ define(['N/ui/serverWidget', 'N/search', 'N/format', 'N/record', 'N/log', 'N/run
             type: format.Type.DATE
         });
 
-        var maxResultsPerPage = 10000; // Aumentado significativamente para mostrar todos los resultados
+        var maxResultsPerPage = 10000; // Para mostrar todos los resultados
 
         log.debug('Búsqueda iniciada', {
             startDate: startDate,
             endDate: endDate,
             formattedStartDate: formattedStartDate,
             formattedEndDate: formattedEndDate,
-            filterType: filterType,
-            startDateType: typeof startDate,
-            endDateType: typeof endDate,
-            formattedStartDateType: typeof formattedStartDate,
-            formattedEndDateType: typeof formattedEndDate
+            filterType: filterType
         });
 
         // Optimización: Usar lotes pequeños pero procesar todos los registros
-        var batchSize = 100; // Aumentado de 50 a 100 para mayor eficiencia
+        var batchSize = 100; // Mantener en 100 para mayor eficiencia
 
         var searchObj = search.create({
             type: search.Type.SALES_ORDER,
@@ -289,115 +293,30 @@ define(['N/ui/serverWidget', 'N/search', 'N/format', 'N/record', 'N/log', 'N/run
             filterType: filterType,
             batchSize: batchSize,
             startDate: formattedStartDate,
-            endDate: formattedEndDate,
-            searchFilter: 'trandate within ' + formattedStartDate + ' to ' + formattedEndDate
+            endDate: formattedEndDate
         });
 
-        // Verificar si se encontraron suficientes resultados
-        if (totalFound === 0) {
-            log.debug('ADVERTENCIA: No se encontraron Sales Orders en el rango de fechas', {
-                startDate: formattedStartDate,
-                endDate: formattedEndDate,
-                searchFilter: 'trandate within ' + formattedStartDate + ' to ' + formattedEndDate
+        // Verificar la distribución de hasPayments en los primeros registros
+        var hasPaymentsCount = 0;
+        var noPaymentsCount = 0;
+        for (var k = 0; k < Math.min(10, totalFound); k++) {
+            var testResult = allSearchResults[k];
+            var testHasPayments = testResult.getValue({
+                name: 'formulanumeric',
+                summary: search.Summary.NONE
             });
-        } else if (totalFound < 50) {
-            log.debug('INFO: Se encontraron pocos resultados, verificando si es correcto', {
-                totalFound: totalFound,
-                startDate: formattedStartDate,
-                endDate: formattedEndDate,
-                expectedRange: 'Rango de búsqueda: ' + formattedStartDate + ' a ' + formattedEndDate
-            });
-        }
-
-        // Test: Buscar algunos registros sin filtro de fecha para comparar
-        if (totalFound < 10) {
-            // Buscar algunos registros recientes sin filtro de fecha para comparar
-            var testSearch = search.create({
-                type: search.Type.SALES_ORDER,
-                filters: [
-                    ['mainline', 'is', 'T']
-                ],
-                columns: [
-                    search.createColumn({
-                        name: 'tranid',
-                        label: 'Número de Documento'
-                    }),
-                    search.createColumn({
-                        name: 'trandate',
-                        label: 'Fecha',
-                        sort: search.Sort.DESC
-                    })
-                ]
-            });
-            
-            var testResults = testSearch.run().getRange({
-                start: 0,
-                end: 9
-            });
-            
-            var testDates = [];
-            for (var t = 0; t < testResults.length; t++) {
-                var testDate = testResults[t].getValue({ name: 'trandate', summary: search.Summary.NONE });
-                var testOrder = testResults[t].getValue({ name: 'tranid', summary: search.Summary.NONE });
-                testDates.push({
-                    order: testOrder,
-                    date: testDate
-                });
+            if (testHasPayments == 1) {
+                hasPaymentsCount++;
+            } else {
+                noPaymentsCount++;
             }
         }
-
-        // Diagnóstico: Buscar específicamente pedidos de junio para verificar
-        var juneSearch = search.create({
-            type: search.Type.SALES_ORDER,
-            filters: [
-                ['trandate', 'within', ['1/6/2025', '30/6/2025']],
-                'AND',
-                ['mainline', 'is', 'T']
-            ],
-            columns: [
-                search.createColumn({
-                    name: 'tranid',
-                    label: 'Número de Documento'
-                }),
-                search.createColumn({
-                    name: 'trandate',
-                    label: 'Fecha',
-                    sort: search.Sort.DESC
-                })
-            ]
-        });
         
-        var juneResults = juneSearch.run().getRange({
-            start: 0,
-            end: 19
+        log.debug('Distribución de hasPayments en primeros 10 registros', {
+            hasPayments: hasPaymentsCount,
+            noPayments: noPaymentsCount,
+            total: Math.min(10, totalFound)
         });
-        
-        var juneDates = [];
-        for (var j = 0; j < juneResults.length; j++) {
-            var juneDate = juneResults[j].getValue({ name: 'trandate', summary: search.Summary.NONE });
-            var juneOrder = juneResults[j].getValue({ name: 'tranid', summary: search.Summary.NONE });
-            juneDates.push({
-                order: juneOrder,
-                date: juneDate
-            });
-        }
-
-        // Log de las fechas encontradas para debugging
-        if (allSearchResults.length > 0) {
-            var firstDate = allSearchResults[0].getValue({ name: 'trandate', summary: search.Summary.NONE });
-            var lastDate = allSearchResults[allSearchResults.length - 1].getValue({ name: 'trandate', summary: search.Summary.NONE });
-            
-            // Log de las primeras 5 fechas para debugging
-            var sampleDates = [];
-            for (var s = 0; s < Math.min(5, allSearchResults.length); s++) {
-                var sampleDate = allSearchResults[s].getValue({ name: 'trandate', summary: search.Summary.NONE });
-                var sampleOrder = allSearchResults[s].getValue({ name: 'tranid', summary: search.Summary.NONE });
-                sampleDates.push({
-                    order: sampleOrder,
-                    date: sampleDate
-                });
-            }
-        }
 
         // Calcular índices de paginación
         var startIndex = 0; // Siempre empezar desde el primer registro
@@ -423,25 +342,54 @@ define(['N/ui/serverWidget', 'N/search', 'N/format', 'N/record', 'N/log', 'N/run
                 summary: search.Summary.NONE
             }));
 
-            // Cargar información de pagos para todos los registros
-            var paymentInfo;
-            
-            // Solo cargar pagos si es necesario según el filtro
-            if (filterType === 'all_orders' || 
-                (filterType === 'with_payments' && hasPayments == 1) ||
-                (filterType === 'without_payments' && hasPayments == 0)) {
-                
-                paymentInfo = getPaymentInformationOptimized(salesOrderId, soTotal);
-            } else {
-                paymentInfo = {
-                    count: hasPayments == 1 ? 1 : 0,
-                    total: 0,
-                    balance: soTotal,
-                    payments: []
-                };
+            // Log de debug para los primeros 5 registros
+            if (i < 5) {
+                log.debug('Debug registro ' + i, {
+                    salesOrderId: salesOrderId,
+                    hasPayments: hasPayments,
+                    filterType: filterType,
+                    soTotal: soTotal
+                });
             }
 
-            // Contar para estadísticas basándose en los pagos reales
+            // Cargar información de pagos solo si es necesario
+            var paymentInfo;
+            
+            // Para "Pedidos sin pago", usar la información de la búsqueda inicial
+            if (filterType === 'without_payments') {
+                // Si hasPayments es 0, significa que no tiene pagos según la búsqueda inicial
+                if (hasPayments == 0) {
+                    paymentInfo = {
+                        count: 0,
+                        total: 0,
+                        balance: soTotal,
+                        payments: []
+                    };
+                } else {
+                    // Si hasPayments es 1, verificar con búsqueda detallada
+                    paymentInfo = getPaymentInformationOptimized(salesOrderId, soTotal);
+                }
+            } else if (filterType === 'with_payments') {
+                // Para "Pedidos con pagos", verificar con búsqueda detallada
+                paymentInfo = getPaymentInformationOptimized(salesOrderId, soTotal);
+            } else {
+                // Para "Todos los pedidos", verificar con búsqueda detallada
+                paymentInfo = getPaymentInformationOptimized(salesOrderId, soTotal);
+            }
+            
+            // Log de debug para los primeros 5 registros
+            if (i < 5) {
+                log.debug('Debug paymentInfo registro ' + i, {
+                    salesOrderId: salesOrderId,
+                    hasPayments: hasPayments,
+                    paymentCount: paymentInfo.count,
+                    paymentTotal: paymentInfo.total,
+                    balance: paymentInfo.balance,
+                    filterType: filterType
+                });
+            }
+
+            // Contar para estadísticas
             if (paymentInfo.count > 0) {
                 withPayments++;
             } else {
@@ -450,13 +398,13 @@ define(['N/ui/serverWidget', 'N/search', 'N/format', 'N/record', 'N/log', 'N/run
 
             // Aplicar filtros según el tipo seleccionado
             if (filterType === 'with_payments' && paymentInfo.count === 0) {
-                continue; // Saltar este resultado
+                continue;
             }
             if (filterType === 'without_payments' && paymentInfo.count > 0) {
-                continue; // Saltar este resultado
+                continue;
             }
 
-            // Agregar a resultados (todos los que pasen el filtro)
+            // Agregar a resultados
             var trandateValue = result.getValue({
                 name: 'trandate',
                 summary: search.Summary.NONE
@@ -488,16 +436,22 @@ define(['N/ui/serverWidget', 'N/search', 'N/format', 'N/record', 'N/log', 'N/run
                     processed: processedCount,
                     total: totalFound,
                     percentage: Math.round((processedCount / totalFound) * 100),
-                    resultsReturned: filteredResults.length
+                    resultsReturned: filteredResults.length,
+                    withPayments: withPayments,
+                    withoutPayments: withoutPayments
                 });
             }
         }
 
-        // Log de las fechas en los resultados finales
-        if (filteredResults.length > 0) {
-            var firstResultDate = filteredResults[0].date;
-            var lastResultDate = filteredResults[filteredResults.length - 1].date;
-        }
+        // Log final de estadísticas
+        log.debug('Procesamiento completado', {
+            totalFound: totalFound,
+            processed: processedCount,
+            filteredResults: filteredResults.length,
+            withPayments: withPayments,
+            withoutPayments: withoutPayments,
+            filterType: filterType
+        });
 
         // Agregar información de paginación al resultado
         return {
@@ -511,7 +465,8 @@ define(['N/ui/serverWidget', 'N/search', 'N/format', 'N/record', 'N/log', 'N/run
                 endIndex: totalFound,
                 startDate: formattedStartDate,
                 endDate: formattedEndDate,
-                note: 'Todos los resultados en una sola página'
+                note: 'Todos los resultados en una sola página',
+                filterType: filterType // Agregar el filtro al objeto de paginación
             },
             statistics: {
                 withPayments: withPayments,
@@ -530,6 +485,7 @@ define(['N/ui/serverWidget', 'N/search', 'N/format', 'N/record', 'N/log', 'N/run
     function getPaymentInformationOptimized(salesOrderId, soTotal) {
         try {
             // Búsqueda optimizada de pagos aplicados a este Sales Order
+            // Usar búsqueda estándar de pagos aplicados en lugar de campo personalizado
             var paymentSearch = search.create({
                 type: 'customerpayment',
                 filters: [
@@ -558,7 +514,7 @@ define(['N/ui/serverWidget', 'N/search', 'N/format', 'N/record', 'N/log', 'N/run
             });
 
             // Procesar búsqueda de pagos en lotes más pequeños
-            var paymentResults = processSearchInBatches(paymentSearch, 100); // Aumentado de 50 a 100
+            var paymentResults = processSearchInBatches(paymentSearch, 10);
             
             var paymentCount = paymentResults.length;
             var paymentTotal = 0;
@@ -585,7 +541,7 @@ define(['N/ui/serverWidget', 'N/search', 'N/format', 'N/record', 'N/log', 'N/run
                 });
 
                 payments.push({
-                    id: paymentId, // Agregar el ID del pago
+                    id: paymentId,
                     number: paymentNumber,
                     date: paymentDate,
                     amount: amount,
@@ -830,13 +786,44 @@ define(['N/ui/serverWidget', 'N/search', 'N/format', 'N/record', 'N/log', 'N/run
             '.payment-selection-info { background-color: #e7f3ff; border: 1px solid #b3d9ff; color: #0056b3; padding: 8px; border-radius: 3px; margin: 5px 0; font-size: 12px; }' +
             '</style>';
 
-        // Información de debug con estadísticas completas
+        // Información de debug con estadísticas específicas al filtro
+        var filterType = pagination ? pagination.filterType : 'all_orders';
+        var filterDescription = '';
+        var filteredCount = results.length;
+        
+        switch(filterType) {
+            case 'with_payments':
+                filterDescription = 'Pedidos con pagos';
+                break;
+            case 'without_payments':
+                filterDescription = 'Pedidos sin pagos';
+                break;
+            case 'all_orders':
+                filterDescription = 'Todos los pedidos';
+                break;
+            default:
+                filterDescription = 'Todos los pedidos';
+        }
+        
         html += '<div class="debug-info">' +
             '<strong>Resumen:</strong><br>' +
-            '• Total de Sales Orders encontrados: ' + (statistics ? statistics.processed : results.length) + '<br>' +
-            '• Sales Orders con pagos: ' + (statistics ? statistics.withPayments : results.filter(function(r) { return r.paymentCount > 0; }).length) + '<br>' +
-            '• Sales Orders sin pagos: ' + (statistics ? statistics.withoutPayments : results.filter(function(r) { return r.paymentCount === 0; }).length) + '<br>' +
-            '• Rango de fechas: Desde ' + (pagination ? pagination.startDate : 'N/A') + ' hasta ' + (pagination ? pagination.endDate : 'N/A') + '<br>' +
+            '• Filtro aplicado: ' + filterDescription + '<br>' +
+            '• Sales Orders mostrados: ' + filteredCount + '<br>';
+        
+        // Mostrar estadísticas específicas según el filtro
+        if (filterType === 'with_payments') {
+            html += '• Sales Orders con pagos: ' + filteredCount + '<br>';
+        } else if (filterType === 'without_payments') {
+            html += '• Sales Orders sin pagos: ' + filteredCount + '<br>';
+        } else {
+            // Para "Todos los pedidos", mostrar ambas estadísticas
+            var withPaymentsCount = results.filter(function(r) { return r.paymentCount > 0; }).length;
+            var withoutPaymentsCount = results.filter(function(r) { return r.paymentCount === 0; }).length;
+            html += '• Sales Orders con pagos: ' + withPaymentsCount + '<br>' +
+                   '• Sales Orders sin pagos: ' + withoutPaymentsCount + '<br>';
+        }
+        
+        html += '• Rango de fechas: Desde ' + (pagination ? pagination.startDate : 'N/A') + ' hasta ' + (pagination ? pagination.endDate : 'N/A') + '<br>' +
             '</div>';
 
         // Controles de selección
@@ -862,8 +849,6 @@ define(['N/ui/serverWidget', 'N/search', 'N/format', 'N/record', 'N/log', 'N/run
             'Sales Orders seleccionados: <span id="so-count-display">0</span> | Pagos seleccionados: <span id="payment-count-display">0</span>' +
             '</div>' +
             '<div class="action-buttons">' +
-            //'<button class="btn btn-primary" onclick="processSelectedTransactions()">Procesar Sales Orders</button>' +
-            //'<button class="btn btn-warning" onclick="processSelectedPayments()">Procesar Pagos</button>' +
             '<button class="btn btn-secondary" onclick="clearAllSelections()">Limpiar Selección</button>' +
             '<button class="btn btn-success" onclick="exportSelectedData()">Exportar Seleccionados</button>' +
             '</div>' +
@@ -999,6 +984,7 @@ define(['N/ui/serverWidget', 'N/search', 'N/format', 'N/record', 'N/log', 'N/run
             '}' +
             'function toggleNoPaymentsSelection() {' +
                 'var selectWithoutPayments = document.getElementById("select-without-payments");' +
+                'var selectWithPayments = document.getElementById("select-with-payments");' +
                 'var checkboxes = document.querySelectorAll("input[type=\'checkbox\']:not(#select-all):not(#select-with-payments):not(#select-without-payments):not(#select-all-payments):not([id^=\'payment-checkbox-\'])");' +
                 'checkboxes.forEach(function(checkbox) {' +
                     'var paymentCount = parseInt(checkbox.getAttribute("data-payment-count"));' +
@@ -1044,24 +1030,6 @@ define(['N/ui/serverWidget', 'N/search', 'N/format', 'N/record', 'N/log', 'N/run
                     'checkbox.checked = false;' +
                 '});' +
                 'updateSelectionCount();' +
-            '}' +
-            'function processSelectedTransactions() {' +
-                'var selectedTransactions = getSelectedTransactions();' +
-                'if (selectedTransactions.length === 0) {' +
-                    'alert("Por favor seleccione al menos un Sales Order para procesar.");' +
-                    'return;' +
-                '}' +
-                'console.log("Sales Orders seleccionados para procesar:", selectedTransactions);' +
-                'alert("Se procesarán " + selectedTransactions.length + " Sales Orders seleccionados.\\n\\nEsta funcionalidad está preparada para futuros flujos de procesamiento.\\n\\nSales Orders: " + selectedTransactions.map(t => t.number).join(", "));' +
-            '}' +
-            'function processSelectedPayments() {' +
-                'var selectedPayments = getSelectedPayments();' +
-                'if (selectedPayments.length === 0) {' +
-                    'alert("Por favor seleccione al menos un pago para procesar.");' +
-                    'return;' +
-                '}' +
-                'console.log("Pagos seleccionados para procesar:", selectedPayments);' +
-                'alert("Se procesarán " + selectedPayments.length + " pagos seleccionados.\\n\\nEsta funcionalidad está preparada para futuros flujos de procesamiento.\\n\\nPagos: " + selectedPayments.map(p => p.number).join(", "));' +
             '}' +
             'function exportSelectedData() {' +
                 'var selectedTransactions = getSelectedTransactions();' +
