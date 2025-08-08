@@ -3,9 +3,9 @@
  * @NScriptType UserEventScript
  * @NModuleScope SameAccount
  */
-define(['N/record','N/search','N/http','N/https','N/encode','N/runtime','N/ui/serverWidget'],
+define(['N/record','N/search','N/http','N/https','N/encode','N/runtime','N/ui/serverWidget','N/format'],
 
-function(record,search,http,https,encode,runtime,serverWidget) {
+function(record,search,http,https,encode,runtime,serverWidget,format) {
    
     /**
      * Function definition to be triggered before record is loaded.
@@ -77,7 +77,11 @@ function(record,search,http,https,encode,runtime,serverWidget) {
      * @Since 2015.2
      */
     function afterSubmit(scriptContext) {
+		if(scriptContext.type == 'create' || scriptContext.type == 'edit'){
+			updateBirthday(scriptContext)
+		}
     	try{
+			
     		var thisRecord = scriptContext.newRecord;
         	var oldrecord = scriptContext.oldRecord;
         	var internalid = thisRecord.getValue('id')   
@@ -755,7 +759,245 @@ function(record,search,http,https,encode,runtime,serverWidget) {
     		log.error('getEmployeeData',err)
     	}
     }
-    
+	function extractBirthdayFromCurpOrRfc(curp, rfc) {
+        try {
+            var dateString = '';
+            
+            // Intentar extraer del CURP primero (posiciones 4-9: AAMMDD)
+            if (curp && curp.length >= 10) {
+                var curpYear = curp.substring(4, 6);
+                var curpMonth = curp.substring(6, 8);
+                var curpDay = curp.substring(8, 10);
+                
+                // Validar que sean numeros
+                if (!isNaN(curpYear) && !isNaN(curpMonth) && !isNaN(curpDay)) {
+                    // Determinar el siglo (si es menor a 50, es 20xx, si es mayor o igual a 50, es 19xx)
+                    var fullYear = parseInt(curpYear) < 50 ? '20' + curpYear : '19' + curpYear;
+                    // Formato D/M/YYYY (sin ceros a la izquierda)
+                    dateString = parseInt(curpDay, 10) + '/' + parseInt(curpMonth, 10) + '/' + fullYear;
+                    
+                    log.debug('Fecha extraida del CURP', {
+                        curp: curp,
+                        curpYear: curpYear,
+                        curpMonth: curpMonth,
+                        curpDay: curpDay,
+                        fullYear: fullYear,
+                        dateString: dateString
+                    });
+                } else {
+                    log.debug('CURP contiene caracteres no numericos en posiciones de fecha', {
+                        curp: curp,
+                        curpYear: curpYear,
+                        curpMonth: curpMonth,
+                        curpDay: curpDay
+                    });
+                }
+            }
+            
+            // Si no se pudo extraer del CURP, intentar con RFC (posiciones 4-9: AAMMDD)
+            if (!dateString && rfc && rfc.length >= 10) {
+                var rfcYear = rfc.substring(4, 6);
+                var rfcMonth = rfc.substring(6, 8);
+                var rfcDay = rfc.substring(8, 10);
+                
+                // Validar que sean numeros
+                if (!isNaN(rfcYear) && !isNaN(rfcMonth) && !isNaN(rfcDay)) {
+                    // Determinar el siglo (si es menor a 50, es 20xx, si es mayor o igual a 50, es 19xx)
+                    var fullYear = parseInt(rfcYear) < 50 ? '20' + rfcYear : '19' + rfcYear;
+                    // Formato D/M/YYYY (sin ceros a la izquierda)
+                    dateString = parseInt(rfcDay, 10) + '/' + parseInt(rfcMonth, 10) + '/' + fullYear;
+                    
+                    log.debug('Fecha extraida del RFC', {
+                        rfc: rfc,
+                        rfcYear: rfcYear,
+                        rfcMonth: rfcMonth,
+                        rfcDay: rfcDay,
+                        fullYear: fullYear,
+                        dateString: dateString
+                    });
+                } else {
+                    log.debug('RFC contiene caracteres no numericos en posiciones de fecha', {
+                        rfc: rfc,
+                        rfcYear: rfcYear,
+                        rfcMonth: rfcMonth,
+                        rfcDay: rfcDay
+                    });
+                }
+            }
+            
+            // Validar que se obtuvo una fecha
+            if (dateString) {
+                // Validar que el mes esté entre 1-12 y el día entre 1-31
+                var parts = dateString.split('/');
+                var day = parseInt(parts[0], 10);
+                var month = parseInt(parts[1], 10);
+                var year = parseInt(parts[2], 10);
+                
+                log.debug('Validando fecha extraida', {
+                    dateString: dateString,
+                    parts: parts,
+                    day: day,
+                    month: month,
+                    year: year,
+                    isDayValid: !isNaN(day),
+                    isMonthValid: !isNaN(month),
+                    isYearValid: !isNaN(year)
+                });
+                
+                if (!isNaN(day) && !isNaN(month) && !isNaN(year) && 
+                    month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+                    log.debug('Fecha de cumpleanos valida extraida', {
+                        dateString: dateString,
+                        day: day,
+                        month: month,
+                        year: year
+                    });
+                    return dateString;
+                } else {
+                    log.debug('Fecha extraida con mes/dia invalido', {
+                        dateString: dateString,
+                        day: day,
+                        month: month,
+                        year: year,
+                        isDayValid: !isNaN(day),
+                        isMonthValid: !isNaN(month),
+                        isYearValid: !isNaN(year)
+                    });
+                    // Reset dateString para que no se considere como extraida exitosamente
+                    dateString = '';
+                }
+            }
+            
+            // Solo mostrar este log si no se pudo extraer ninguna fecha
+            if (!dateString) {
+                log.debug('No se pudo extraer fecha de cumpleanos', {
+                    curp: curp,
+                    rfc: rfc
+                });
+            }
+            
+            return null;
+            
+        } catch (error) {
+            log.error('Error extrayendo fecha de cumpleanos', {
+                curp: curp,
+                rfc: rfc,
+                error: error
+            });
+            return null;
+        }
+    }
+    function updateEmployeeBirthdayField(employeeId, birthdayDateString, hiredate) {
+        try {
+            log.debug('Actualizando campo de cumpleanos', {
+                employeeId: employeeId,
+                birthdayDateString: birthdayDateString,
+                hiredate: hiredate
+            });
+            
+            // Convertir el string de fecha a objeto Date usando N/format
+            var birthdayDate = format.parse({
+                value: birthdayDateString,
+                type: format.Type.DATE
+            });
+            
+            log.debug('Fecha convertida', {
+                originalString: birthdayDateString,
+                convertedDate: birthdayDate
+            });
+            
+            // Extraer el mes de la fecha de cumpleaños
+            var birthMonth = birthdayDate.getMonth() + 1; // getMonth() retorna 0-11, sumamos 1 para obtener 1-12
+            
+            log.debug('Mes de cumpleaños extraído', {
+                birthMonth: birthMonth
+            });
+            
+            // Preparar los valores a actualizar
+            var updateValues = {
+                'custentity_cumpleanios_dev': birthdayDate,
+                'custentity_mes_cumpleanios': parseInt(birthMonth)
+            };
+            
+            // Si hay fecha de contratación, extraer el mes y agregarlo a los valores
+            if (hiredate) {
+                var hireDateObj = format.parse({
+                    value: hiredate,
+                    type: format.Type.DATE
+                });
+                
+                var hireMonth = hireDateObj.getMonth() + 1; // getMonth() retorna 0-11, sumamos 1 para obtener 1-12
+                
+                log.debug('Mes de contratación extraído', {
+                    hiredate: hiredate,
+                    hireDateObj: hireDateObj,
+                    hireMonth: hireMonth
+                });
+                
+                updateValues['custentitymes_hiredate'] = parseInt(hireMonth);
+            }
+            
+            // Actualizar los campos usando submitFields
+            var recordId = record.submitFields({
+                type: record.Type.EMPLOYEE,
+                id: employeeId,
+                values: updateValues
+            });
+            
+            log.debug('Campos de cumpleanos y contratación actualizados exitosamente', {
+                employeeId: employeeId,
+                newBirthdayValue: birthdayDate,
+                newMonthValue: birthMonth,
+                newHireMonthValue: hiredate ? updateValues['custentitymes_hiredate'] : 'No disponible',
+                recordId: recordId
+            });
+            
+        } catch (error) {
+            log.error('Error actualizando campos de cumpleanos y contratación', {
+                employeeId: employeeId,
+                birthdayDateString: birthdayDateString,
+                hiredate: hiredate,
+                error: error
+            });
+        }
+    }
+    function updateBirthday(scriptContext){
+        try{
+			log.debug('updateBirthday')
+            var rec = scriptContext.newRecord;
+            var emp = rec.getValue('id')
+            var typeEvent = runtime.executionContext;
+            
+                
+                var employee = search.lookupFields({
+                    type: 'employee',
+                    id: emp,
+                    columns: ['custentity_cumpleanios_dev','custentity_mes_cumpleanios','custentitymes_hiredate','custentity_curp','custentity_ce_rfc','hiredate']
+                });
+				log.debug('employee',employee)
+                var birthday = employee.custentity_cumpleanios_dev
+                var birthdayMonth = employee.custentity_mes_cumpleanios
+                var meshiredate = employee.custentitymes_hiredate
+                var curp = employee.custentity_curp
+                var rfc = employee.custentity_ce_rfc
+                var hiredate = employee.hiredate
+                log.debug('birthday',birthday)
+                log.debug('birthdayMonth',birthdayMonth)
+                log.debug('meshiredate',meshiredate)
+                if(birthday == '' || birthdayMonth == '' || meshiredate == ''){
+                    var birthdayDateString = extractBirthdayFromCurpOrRfc(curp, rfc);
+                    if (birthdayDateString) {
+                        updateEmployeeBirthdayField(emp, birthdayDateString, hiredate);
+                    }
+                }else{
+                    log.debug('hay cumpleaños o contratacion')
+                }
+            
+                
+        }catch(e){
+            log.error('error updateBirthday',e)
+        }
+    }
     
     
     
