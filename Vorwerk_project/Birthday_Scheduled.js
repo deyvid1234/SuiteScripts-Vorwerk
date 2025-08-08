@@ -17,7 +17,7 @@ define(['N/search', 'N/format', 'N/runtime', 'N/record'],
          */
         function execute(context) {
             try {
-                log.debug('execute', 'Iniciando busqueda de empleados que cumplen anos hoy');
+                log.debug('execute');
                 
                 // Obtener la fecha actual
                 var today = new Date();
@@ -44,6 +44,7 @@ define(['N/search', 'N/format', 'N/runtime', 'N/record'],
                     var employeeEmail = result.getValue('email');
                     var curp = result.getValue('custentity_curp');
                     var rfc = result.getValue('custentity_rfc');
+                    var hiredate = result.getValue('hiredate');
                     
                     // Extraer fecha de cumpleanos del CURP o RFC
                     var birthdayDateString = extractBirthdayFromCurpOrRfc(curp, rfc);
@@ -56,12 +57,13 @@ define(['N/search', 'N/format', 'N/runtime', 'N/record'],
                         email: employeeEmail,
                         curp: curp,
                         rfc: rfc,
+                        hiredate: hiredate,
                         birthdayDateString: birthdayDateString
                     });
                     
                     // Actualizar el campo custentity_cumpleanios_dev con la fecha calculada
                     if (birthdayDateString) {
-                        updateEmployeeBirthdayField(employeeId, birthdayDateString, employeeName);
+                        updateEmployeeBirthdayField(employeeId, birthdayDateString, employeeName, hiredate);
                     }
                     
                     return true;
@@ -214,13 +216,15 @@ define(['N/search', 'N/format', 'N/runtime', 'N/record'],
          * @param {number} employeeId - ID del empleado
          * @param {string} birthdayDateString - Fecha de cumpleanos en formato D/M/YYYY
          * @param {string} employeeName - Nombre del empleado
+         * @param {string} hiredate - Fecha de contratación del empleado
          */
-        function updateEmployeeBirthdayField(employeeId, birthdayDateString, employeeName) {
+        function updateEmployeeBirthdayField(employeeId, birthdayDateString, employeeName, hiredate) {
             try {
                 log.debug('Actualizando campo de cumpleanos', {
                     employeeId: employeeId,
                     employeeName: employeeName,
-                    birthdayDateString: birthdayDateString
+                    birthdayDateString: birthdayDateString,
+                    hiredate: hiredate
                 });
                 
                 // Convertir el string de fecha a objeto Date usando N/format
@@ -234,27 +238,61 @@ define(['N/search', 'N/format', 'N/runtime', 'N/record'],
                     convertedDate: birthdayDate
                 });
                 
-                // Actualizar solo el campo especifico usando submitFields
+                // Extraer el mes de la fecha de cumpleaños
+                var birthMonth = birthdayDate.getMonth() + 1; // getMonth() retorna 0-11, sumamos 1 para obtener 1-12
+                
+                log.debug('Mes de cumpleaños extraído', {
+                    birthMonth: birthMonth,
+                    employeeName: employeeName
+                });
+                
+                // Preparar los valores a actualizar
+                var updateValues = {
+                    'custentity_cumpleanios_dev': birthdayDate,
+                    'custentity_mes_cumpleanios': parseInt(birthMonth)
+                };
+                
+                // Si hay fecha de contratación, extraer el mes y agregarlo a los valores
+                if (hiredate) {
+                    var hireDateObj = format.parse({
+                        value: hiredate,
+                        type: format.Type.DATE
+                    });
+                    
+                    var hireMonth = hireDateObj.getMonth() + 1; // getMonth() retorna 0-11, sumamos 1 para obtener 1-12
+                    
+                    log.debug('Mes de contratación extraído', {
+                        hiredate: hiredate,
+                        hireDateObj: hireDateObj,
+                        hireMonth: hireMonth,
+                        employeeName: employeeName
+                    });
+                    
+                    updateValues['custentitymes_hiredate'] = parseInt(hireMonth);
+                }
+                
+                // Actualizar los campos usando submitFields
                 var recordId = record.submitFields({
                     type: record.Type.EMPLOYEE,
                     id: employeeId,
-                    values: {
-                        'custentity_cumpleanios_dev': birthdayDate
-                    }
+                    values: updateValues
                 });
                 
-                log.debug('Campo de cumpleanos actualizado exitosamente', {
+                log.debug('Campos de cumpleanos y contratación actualizados exitosamente', {
                     employeeId: employeeId,
                     employeeName: employeeName,
-                    newValue: birthdayDate,
+                    newBirthdayValue: birthdayDate,
+                    newMonthValue: birthMonth,
+                    newHireMonthValue: hiredate ? updateValues['custentitymes_hiredate'] : 'No disponible',
                     recordId: recordId
                 });
                 
             } catch (error) {
-                log.error('Error actualizando campo de cumpleanos', {
+                log.error('Error actualizando campos de cumpleanos y contratación', {
                     employeeId: employeeId,
                     employeeName: employeeName,
                     birthdayDateString: birthdayDateString,
+                    hiredate: hiredate,
                     error: error
                 });
             }

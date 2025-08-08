@@ -37,7 +37,9 @@ function(search, format, runtime, email, record) {
             var employeeSearch = search.create({
                 type: search.Type.EMPLOYEE,
                 filters: [
-                    ['custentity_cumpleanios_dev', 'isnotempty', '']
+                    ['custentitymes_hiredate', 'is', currentMonth],
+                    'OR',  
+                    ['custentity_mes_cumpleanios', 'is', currentMonth]
                 ],
                 columns: [
                     search.createColumn({
@@ -63,7 +65,15 @@ function(search, format, runtime, email, record) {
                     search.createColumn({
                         name: 'hiredate',
                         label: 'Fecha de Contratacion'
-                    })
+                    }),
+                    search.createColumn({
+                        name: 'custentity_mes_cumpleanios',
+                        label: 'Mes de Cumpleaños'
+                    }),
+                    search.createColumn({
+                        name: 'custentitymes_hiredate',
+                        label: 'Mes de Contratacion'
+                    }),
                 ]
             });
             
@@ -83,10 +93,13 @@ function(search, format, runtime, email, record) {
                 var employeeName = (firstName + ' ' + lastName).trim() || 'Empleado ID: ' + employeeId;
                 var employeeEmail = result.getValue('email');
                 var birthDate = result.getValue('custentity_cumpleanios_dev');
+                var birthMonth = result.getValue('custentity_mes_cumpleanios');
                 var hiredate = result.getValue('hiredate');
+                var hireMonth = result.getValue('custentitymes_hiredate');
                 log.debug('hiredate', hiredate);
                 log.debug('birthDate', birthDate);
-                
+                log.debug('birthMonth', birthMonth);
+                log.debug('hireMonth', hireMonth);
                 // Verificar si el empleado cumple años hoy
                 if (birthDate) {
                     // Usar N/format para parsear correctamente la fecha en formato DD/MM/YYYY
