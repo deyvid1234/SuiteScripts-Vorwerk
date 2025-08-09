@@ -218,7 +218,7 @@ define([
                 // El subtotal siempre es total - taxtotal
                 // Si taxtotal es negativo (crédito), esto efectivamente suma el valor absoluto
                 // Si taxtotal es positivo (impuestos), esto resta el valor
-                var subtotal = total - taxtotal;
+                var subtotal = total + taxtotal;
                 log.debug('subtotal calculated', subtotal);
                 
                 bills[result.getValue('internalid')] = {
@@ -907,9 +907,9 @@ define([
             + '</style></head>';
         html += '<body>';
         html += '<p align="center"><img width="100%" height="100%" src="' + getImage() + '" style="max-width:440px; height:auto; margin-bottom:8px;" alt="Logo" /></p>';
-        html += '<p align="center" font-family="Helvetica" font-size="12"><b>REPORTE DE CAMPANIA</b></p>';
+        html += '<p align="center" font-family="Helvetica" font-size="12"><b>REPORTE DE CAMPAÑA</b></p>';
         html += '<p align="center" font-family="Helvetica" font-size="12"><b>' + nombreCampania + '</b></p>';
-        html += '<p font-family="Helvetica" font-size="10" align="center"><b>DETALLE DE LA CAMPANIA</b></p>';
+        html += '<p font-family="Helvetica" font-size="10" align="center"><b>DETALLE DE LA CAMPAÑA</b></p>';
         html += '<table border="0" style="margin-bottom:18px; font-size:12pt; width:100%; border:none;"><tr>'
             + '<td style="border:none;"><b>Presupuesto:</b> ' + addCommas(presupuesto.toFixed(2)) + '</td>'
             + '<td style="border:none;"><b>Encargado:</b> ' + encargado + '</td>'
@@ -917,7 +917,6 @@ define([
             + '</tr><tr>'
             + '<td style="border:none;"><b>Fecha Fin:</b> ' + fechaFin + '</td>'
             + '<td style="border:none;"><b>Aprobador/Revisor:</b> ' + aprobador + '</td>'
-            + '<td style="border:none;"><b>Total Gastado (sin impuestos):</b> ' + addCommas(totalSinImpuestos.toFixed(2)) + '</td>'
             + '</tr></table>';
 
         // --- Sección Resumen por Bill ---
@@ -1007,13 +1006,13 @@ define([
                     + '<td style="border:none;"><b>Total Bill:</b> ' + addCommas((bill.total || 0).toString()) + '</td>'
                     + '</tr></table>';
                 html += '<table width="670px"><tr>';
-                html += '<td border="0.5" width="150px" align="left"><b>Cuenta</b></td>';
-                html += '<td border="0.5" width="200px" align="left"><b>Descripción</b></td>';
-                html += '<td border="0.5" width="80px" align="left"><b>Monto</b></td>';
-                html += '<td border="0.5" width="80px" align="left"><b>Total</b></td>';
-                html += '<td border="0.5" width="70px" align="left"><b>Monto Tax</b></td>';
-                html += '<td border="0.5" width="90px" align="left"><b>TaxCode</b></td>';
-                html += '<td border="0.5" width="70px" align="left"><b>Total Bill</b></td>';
+                html += '<td border="0.5" width="140px" align="left"><b>Cuenta</b></td>';
+                html += '<td border="0.5" width="185px" align="left"><b>Descripción</b></td>';
+                html += '<td border="0.5" width="85px" align="left"><b>Monto</b></td>';
+                html += '<td border="0.5" width="85px" align="left"><b>Total</b></td>';
+                html += '<td border="0.5" width="75px" align="left"><b>Monto Tax</b></td>';
+                html += '<td border="0.5" width="95px" align="left"><b>TaxCode</b></td>';
+                html += '<td border="0.5" width="75px" align="left"><b>Total Bill</b></td>';
                 html += '<td border="0.5" width="80px" align="left"><b>Moneda</b></td>';
                 html += '<td border="0.5" width="90px" align="left"><b>Total Bill (Pesos)</b></td>';
                 html += '</tr>';
@@ -1048,8 +1047,8 @@ define([
             html += '<p font-family="Helvetica" font-size="8" align="center"><b>Grupo: ' + grupo.idDinamico + '</b></p>';
             html += '<table width="670px"><tr>';
             html += '<td border="0.5" width="100px" align="left"><b>Tipo</b></td>';
-            html += '<td border="0.5" width="120px" align="left"><b>Transacción</b></td>';
-            html += '<td border="0.5" width="150px" align="left"><b>Entidad</b></td>';
+            html += '<td border="0.5" width="110px" align="left"><b>Transacción</b></td>';
+            html += '<td border="0.5" width="160px" align="left"><b>Entidad</b></td>';
             html += '<td border="0.5" width="80px" align="left"><b>Fecha</b></td>';
             html += '<td border="0.5" width="80px" align="left"><b>GL Impact</b></td>';
             html += '<td border="0.5" width="80px" align="left"><b>Total</b></td>';
@@ -1100,6 +1099,26 @@ define([
             });
             html += '</table><br/>';
         }
+
+        // --- Tabla de Resumen al final ---
+       
+        html += '<table width="670px"><tr>';
+        html += '<td width="370px" style="border:none;"></td>';
+        html += '<td border="0.5" width="200px" align="left"><b>Resumen de Gastos</b></td>';
+        html += '<td border="0.5" width="100px" align="right"><b>Monto</b></td>';
+        html += '</tr>';
+        html += '<tr>';
+        html += '<td width="370px" style="border:none;"></td>';
+        html += '<td border="0.5" border-style="dotted-narrow" align="left">Total Gastado (sin impuestos)</td>';
+        html += '<td border="0.5" border-style="dotted-narrow" align="right">' + addCommas(totalSinImpuestos.toFixed(2)) + '</td>';
+        html += '</tr>';
+        html += '<tr>';
+        html += '<td width="370px" style="border:none;"></td>';
+        html += '<td border="0.5" border-style="dotted-narrow" align="left">Total Gastado (con impuestos)</td>';
+        html += '<td border="0.5" border-style="dotted-narrow" align="right">' + addCommas(totalGastado.toFixed(2)) + '</td>';
+        html += '</tr>';
+        html += '</table><br/>';
+
         html += '</body></pdf>';
         if (!html.trim()) {
             throw new Error('No hay datos para exportar a PDF');
