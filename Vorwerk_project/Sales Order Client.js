@@ -116,7 +116,7 @@ function(record,search,https,runtime,currentRecord,dialog) {
             var userPermisos = search.lookupFields({
                 type: 'employee',
                 id: idUser,
-                columns: ['custentity_editaso_facturada']
+                columns: ['custentity_sin_permiso_sku']
             });
             var editaso_facturada = userPermisos.custentity_editaso_facturada;
             console.log('editaso_facturada', editaso_facturada);

@@ -38,11 +38,11 @@ function(message,error,runtime,config,record,render,runtime,email,search,format,
                 var userPermisos = search.lookupFields({
                     type: 'employee',
                     id: idUser,
-                    columns: ['custentity_editaso_facturada']
+                    columns: ['custentity_sin_permiso_sofacturada']
                 });
                 var editaso_facturada = userPermisos.custentity_editaso_facturada
                 log.debug('editaso_facturada',editaso_facturada)
-                if(editaso_facturada == true && status == 'Billed' && type == 'view'){
+                if(editaso_facturada == true && (status == 'Billed' || status == 'Facturada') && type == 'view'){
                     var msgAuto = message.create({
                         title: "Permiso de edicion denegado",
                         message: "No se puede editar este pedido pues ya cuenta con una factura.",
