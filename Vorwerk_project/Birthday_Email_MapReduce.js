@@ -187,7 +187,36 @@ function(search, format, runtime, email, record) {
                 });
                 return;
             }
-
+            // buscar un cupon disponible para el empleado
+            var couponSearch = search.create({
+                type: 'customrecord_cupones',
+                filters: [
+                    ['custrecord_status_cupon', 'is', '1']
+                ],
+                columns: [
+                    search.createColumn({
+                        name: 'internalid',
+                        label: 'ID Interno'
+                    }),
+                    search.createColumn({
+                        name: 'custrecord_codigo',
+                        label: 'Código del Cupón'
+                    })
+                ]
+            });
+            
+            // Obtener el primer cupón disponible
+            var couponCode = '';
+            var couponId = '';
+            var couponResult = couponSearch.run().getRange({ start: 0, end: 1 });
+            if (couponResult && couponResult.length > 0) {
+                couponCode = couponResult[0].getValue('custrecord_codigo') || '';
+                couponId = couponResult[0].getValue('internalid') || '';
+                log.debug('Código de cupón obtenido', 'Código: ' + couponCode + ', ID: ' + couponId);
+            } else {
+                log.warning('No se encontraron cupones disponibles', 'Empleado: ' + employeeName);
+            }
+            
             // Cargar el template de email desde NetSuite
             var emailTemplate = record.load({
                 type: record.Type.EMAIL_TEMPLATE,
@@ -197,8 +226,8 @@ function(search, format, runtime, email, record) {
             // Obtener el asunto y cuerpo del template
             var emailSubject = emailTemplate.getValue('subject');
             var emailBody = emailTemplate.getValue('content');
-            emailBody = emailBody.replace(/@name/g,employeeName) 
-            
+            emailBody = emailBody.replace(/@name/g, employeeName);
+            emailBody = emailBody.replace(/@codigoCupon/g, couponCode);
             
             // Enviar el email
             var emailId = email.send({
@@ -208,6 +237,25 @@ function(search, format, runtime, email, record) {
                 body: emailBody,
                 isHtml: true
             });
+            
+            // Actualizar el estado del cupón a 2 (usado) después de enviar el email
+            if (couponId) {
+                try {
+                    record.submitFields({
+                        type: 'customrecord_cupones',
+                        id: couponId,
+                        values: {
+                            'custrecord_status_cupon': '2'
+                        }
+                    });
+                    log.debug('Estado del cupón actualizado', 'Cupón ID: ' + couponId + ' marcado como usado (estado: 2)');
+                } catch (updateError) {
+                    log.error('Error actualizando estado del cupón', {
+                        couponId: couponId,
+                        error: updateError
+                    });
+                }
+            }
             
             log.debug('Email de cumpleaños enviado exitosamente', {
                 employeeId: employeeId,
