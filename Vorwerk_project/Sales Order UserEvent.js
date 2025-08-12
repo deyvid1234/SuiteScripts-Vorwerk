@@ -22,8 +22,6 @@ function(message,error,runtime,config,record,render,runtime,email,search,format,
      * @Since 2015.2
      */
     function beforeLoad(scriptContext) {        
-        
-
 
             var rec = scriptContext.newRecord;
             var currentRecord = scriptContext.newRecord;
@@ -123,7 +121,7 @@ function(message,error,runtime,config,record,render,runtime,email,search,format,
                     
                     if(totalPagadoSublist < total && !vorwerkContratos ){
                         var msgAuto = message.create({
-                            title: "Cumplimiento no permitido",
+                            title: "Ejecución no permitida",
                             message: "Pedido sin pago, favor de revisar",
                             type: message.Type.WARNING
                         });
