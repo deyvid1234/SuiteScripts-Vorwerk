@@ -38,7 +38,7 @@ function(message,error,runtime,config,record,render,runtime,email,search,format,
                     id: idUser,
                     columns: ['custentity_sin_permiso_sofacturada']
                 });
-                var editaso_facturada = userPermisos.custentity_editaso_facturada
+                var editaso_facturada = userPermisos.custentity_sin_permiso_sofacturada
                 log.debug('editaso_facturada',editaso_facturada)
                 if(editaso_facturada == true && (status == 'Billed' || status == 'Facturada') && type == 'view'){
                     var msgAuto = message.create({
@@ -213,6 +213,7 @@ function(message,error,runtime,config,record,render,runtime,email,search,format,
      * @Since 2015.2
      */
     function beforeSubmit(scriptContext) {
+        
         return true;
     }
 
