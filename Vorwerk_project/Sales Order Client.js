@@ -118,7 +118,7 @@ function(record,search,https,runtime,currentRecord,dialog) {
                 id: idUser,
                 columns: ['custentity_sin_permiso_sku']
             });
-            var editaso_facturada = userPermisos.custentity_editaso_facturada;
+            var editaso_facturada = userPermisos.custentity_sin_permiso_sku;
             console.log('editaso_facturada', editaso_facturada);
             
             var currentRecord = scriptContext.currentRecord;
@@ -130,49 +130,35 @@ function(record,search,https,runtime,currentRecord,dialog) {
                 sublistId: 'item',
                 fieldId: 'quantityavailable'
             });
+             console.log('Item ID obtenido:', itemId);
+            console.log('Cantidad disponible:', quantityavailable);
+            // Validar que quantityavailable sea válido (no nulo, no vacío y numérico)
+            console.log('Validando quantityavailable:', quantityavailable);
+            console.log('Tipo de quantityavailable:', typeof quantityavailable);
+            console.log('¿Es válido?', quantityavailable !== null && quantityavailable !== '' && !isNaN(quantityavailable));
             
-            // Cargar información del item usando lookupFields
-            var type = '';
-            try{
-                var inventoryitem = record.load({
-                    type: 'inventoryitem',
-                    id: itemId,
-                    isDynamic: false,
-                });
-                type = inventoryitem.getValue('baserecordtype');
-                console.log('Item cargado como inventoryitem, type:', type);
-            }catch(e){
-                try{
-                    var inventoryitem = record.load({
-                        type: 'noninventoryitem',
-                        id: itemId,
-                        isDynamic: false,
+            if (quantityavailable !== null && quantityavailable !== '' && !isNaN(quantityavailable)) {
+                // Solo ejecutar la validación si quantityavailable es un valor válido y numérico
+                console.log('quantityavailable es válido, verificando si es < 1:', quantityavailable < 1);
+                console.log('editaso_facturada es:', editaso_facturada);
+                
+                if (quantityavailable < 1 && editaso_facturada == true) {
+                    console.log('Mostrando alerta - stock insuficiente');
+                    dialog.alert({
+                        title: 'Alerta',
+                        message: 'No hay stock disponible para este item'
                     });
-                    type = inventoryitem.getValue('baserecordtype');
-                    console.log('Item cargado como noninventoryitem, type:', type);
-                }catch(e2){
-                    var inventoryitem = record.load({
-                        type: 'serviceitem',
-                        id: itemId,
-                        isDynamic: false,
-                    });
-                    type = inventoryitem.getValue('baserecordtype');
-                    console.log('Item cargado como serviceitem, type:', type);
-                    type = 'serviceitem';
+                    return false; // No permite guardar la línea
                 }
             }
             
+           
+            
             console.log('Item ID obtenido:', itemId);
             console.log('Cantidad disponible:', quantityavailable);
-            console.log('Tipo de item:', type);
+            
                         
-            if (quantityavailable < 1 && editaso_facturada == true && type == 'inventoryitem') {
-                dialog.alert({
-                    title: 'Alerta',
-                    message: 'No hay stock disponible para este item'
-                });
-                return false; // No permite guardar la línea
-            }
+            
         }
         
         return true; // Permite guardar la línea
