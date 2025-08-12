@@ -166,7 +166,7 @@ function(record,search,https,runtime,currentRecord,dialog) {
             console.log('Cantidad disponible:', quantityavailable);
             console.log('Tipo de item:', type);
                         
-            if (quantityavailable < 1 && editaso_facturada == true && type != 'noninventoryitem') {
+            if (quantityavailable < 1 && editaso_facturada == true && type == 'inventoryitem') {
                 dialog.alert({
                     title: 'Alerta',
                     message: 'No hay stock disponible para este item'
