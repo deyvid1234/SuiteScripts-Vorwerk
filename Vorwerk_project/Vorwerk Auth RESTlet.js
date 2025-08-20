@@ -22,7 +22,7 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
         try{
             log.debug("entre",requestParams);
             
-            return "login was done via server script";
+            return "login was done via server script eShop";
         }catch(err){
             log.error("error to get",err);
         }
