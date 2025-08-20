@@ -420,10 +420,16 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
             });
             var id_image ="", id_image_ide_anv= "", id_img_ide_rev="",id_img_domicilio="", id_img_banco="";
             if(type_user == "employee"){
+                
               obj_user.setValue('customform',-10);
               obj_user.setValue('issalesrep',true);
               log.debug('custentity_fecha_preregistro',formatdate)
               obj_user.setValue('custentity_fecha_preregistro',formatdate);
+              log.debug('csf',req_info["url_csf"])
+                if(req_info["url_csf"]){
+                    log.debug('hay url csf nuevo if')
+                    obj_user.setValue('custentity_url_csf',req_info["url_csf"]);
+                }
               //imagen de usuario
               id_image = saveItemImage(req_info["custentity_foto"],30745,req_info["custentity_ce_rfc"]+"_presentador");
               req_info["custentity_foto"] = id_image;
@@ -1144,6 +1150,11 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                   obj_user.setValue('customform',-10);
                   log.debug('custentity_fecha_preregistro',formatdate)
                   obj_user.setValue('custentity_fecha_preregistro',formatdate);
+                  log.debug('csf',req_info["url_csf"])
+                    if(req_info["url_csf"]){
+                        log.debug('hay url csf nuevo if update')
+                        obj_user.setValue('custentity_url_csf',req_info["url_csf"]);
+                    }
                   if("custentity_foto" in req_info){
                         id_image = saveItemImage(req_info["custentity_foto"],30745,req_info["custentity_ce_rfc"]+"_presentador");
                         req_info["custentity_foto"] = id_image;
