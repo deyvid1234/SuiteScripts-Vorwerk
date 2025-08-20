@@ -55,8 +55,14 @@ function(record, search, email, render, file,runtime, encode, https, format, xml
 
             var compensationData = objCompensation['data'];
             log.debug('objCompensation',objCompensation);
-            var initDate
-            var finishDate
+
+            var objCalendar = getObjCalendar(periodoComision);
+                if(objCalendar.error){
+                    throw objCalendar.message;
+                }
+            var initDate= objCalendar['data']['initDate'];
+            var finishDate= objCalendar['data']['finishDate'];
+            
             var paymentDate
             var fecha_custom = compensationData['fecha_custom'];
             log.debug('fecha_custom',fecha_custom);
@@ -66,8 +72,6 @@ function(record, search, email, render, file,runtime, encode, https, format, xml
             try {
                 var fechasAlt= getCurrentVorwerkPeriod(fecha_custom)
                 log.debug('fechasAlt',fechasAlt);
-                initDate = fechasAlt['startDate']
-                finishDate = fechasAlt['endDate']
                 paymentDate = fechasAlt['paymentDate']
                 log.debug('Fechas calculadas 1', {
                     initDate: initDate,
@@ -88,8 +92,7 @@ function(record, search, email, render, file,runtime, encode, https, format, xml
                     log.debug('dateFinal',dateFinal);
                     var fechasAltmasivo= getCurrentVorwerkPeriod(dateFinal)
                     log.debug('fechasAltmasivo',fechasAltmasivo);
-                    initDate = fechasAltmasivo['startDate']
-                    finishDate = fechasAltmasivo['endDate']
+                    
                     paymentDate = fechasAltmasivo['paymentDate']
                     log.debug('Fechas calculadas 2', {
                         initDate: initDate,
@@ -101,12 +104,7 @@ function(record, search, email, render, file,runtime, encode, https, format, xml
                 }   
                 
             }else{
-                var objCalendar = getObjCalendar(periodoComision);
-                if(objCalendar.error){
-                    throw objCalendar.message;
-                }
-                initDate= objCalendar['data']['initDate'];
-                finishDate= objCalendar['data']['finishDate'];
+                                
                 paymentDate= objCalendar['data']['paymentDate'];
                 log.debug('Fechas calculadas 3', {
                     initDate: initDate,
