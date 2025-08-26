@@ -108,61 +108,77 @@ function(record,search,https,runtime,currentRecord,dialog) {
      * @since 2015.2
      */
     function validateLine(scriptContext) {
-        // Validar stock cuando se confirma una línea de item
-        if (scriptContext.sublistId === 'item') {
-            var userObj = runtime.getCurrentUser();
-            console.log('userObj', userObj);
-            var idUser = userObj.id;
-            var userPermisos = search.lookupFields({
-                type: 'employee',
-                id: idUser,
-                columns: ['custentity_sin_permiso_sku']
-            });
-            var editaso_facturada = userPermisos.custentity_sin_permiso_sku;
-            console.log('editaso_facturada', editaso_facturada);
-            
-            var currentRecord = scriptContext.currentRecord;
-            var itemId = currentRecord.getCurrentSublistValue({
-                sublistId: 'item',
-                fieldId: 'item'
-            });
-            var quantityavailable = currentRecord.getCurrentSublistValue({
-                sublistId: 'item',
-                fieldId: 'quantityavailable'
-            });
-             console.log('Item ID obtenido:', itemId);
-            console.log('Cantidad disponible:', quantityavailable);
-            // Validar que quantityavailable sea válido (no nulo, no vacío y numérico)
-            console.log('Validando quantityavailable:', quantityavailable);
-            console.log('Tipo de quantityavailable:', typeof quantityavailable);
-            console.log('¿Es válido?', quantityavailable !== null && quantityavailable !== '' && !isNaN(quantityavailable));
-            
-            if (quantityavailable !== null && quantityavailable !== '' && !isNaN(quantityavailable)) {
-                // Solo ejecutar la validación si quantityavailable es un valor válido y numérico
-                console.log('quantityavailable es válido, verificando si es < 1:', quantityavailable < 1);
-                console.log('editaso_facturada es:', editaso_facturada);
+            // Validar stock cuando se confirma una línea de item
+            if (scriptContext.sublistId === 'item') {
+                var context = runtime.executionContext;
+                console.log('context', context);
+                var record = scriptContext.currentRecord;
+                console.log('record', record);
+                var tipoVenta = record.getValue('custbody_tipo_venta');
+                console.log('tipoVenta', tipoVenta);
+                var userObj = runtime.getCurrentUser();
+                console.log('userObj', userObj);
+                var idUser = userObj.id;
+                var userPermisos = search.lookupFields({
+                    type: 'employee',
+                    id: idUser,
+                    columns: ['custentity_sin_permiso_sku']
+                });
+                var editaso_facturada = userPermisos.custentity_sin_permiso_sku;
+                console.log('editaso_facturada', editaso_facturada);
                 
-                if (quantityavailable < 1 && editaso_facturada == true) {
-                    console.log('Mostrando alerta - stock insuficiente');
+                var currentRecord = scriptContext.currentRecord;
+                var itemId = currentRecord.getCurrentSublistValue({
+                    sublistId: 'item',
+                    fieldId: 'item'
+                });
+                console.log('itemId', itemId);
+                var quantityavailable = currentRecord.getCurrentSublistValue({
+                    sublistId: 'item',
+                    fieldId: 'quantityavailable'
+                });
+                console.log('Item ID obtenido:', itemId);
+                console.log('Cantidad disponible:', quantityavailable);
+                // Validar que quantityavailable sea válido (no nulo, no vacío y numérico)
+                console.log('Validando quantityavailable:', quantityavailable);
+                console.log('Tipo de quantityavailable:', typeof quantityavailable);
+                console.log('¿Es válido?', quantityavailable !== null && quantityavailable !== '' && !isNaN(quantityavailable));
+                
+                if (quantityavailable !== null && quantityavailable !== '' && !isNaN(quantityavailable)) {
+                    // Solo ejecutar la validación si quantityavailable es un valor válido y numérico
+                    console.log('quantityavailable es válido, verificando si es < 1:', quantityavailable < 1);
+                    console.log('editaso_facturada es:', editaso_facturada);
+                    
+                    if (quantityavailable < 1 && editaso_facturada == true) {
+                        console.log('Mostrando alerta - stock insuficiente');
+                        dialog.alert({
+                            title: 'Alerta',
+                            message: 'No hay stock disponible para este item'
+                        });
+                        return false; // No permite guardar la línea
+                    }
+                }
+                
+               
+                
+                console.log('Item ID obtenido:', itemId);
+                console.log('Cantidad disponible:', quantityavailable);
+                
+                //no deja guardar linea si es pedido manual, solo deja a tienda en linea
+                if(itemId == 2763 && context != 'RESTLET' && tipoVenta == '2'){
+                    console.log('Mostrando alerta - TM7');
                     dialog.alert({
                         title: 'Alerta',
-                        message: 'No hay stock disponible para este item'
+                        message: 'La Pre venta de TM7 es únicamente en Tienda en línea'
                     });
-                    return false; // No permite guardar la línea
+                    return false;
                 }
+                            
+                
             }
             
-           
-            
-            console.log('Item ID obtenido:', itemId);
-            console.log('Cantidad disponible:', quantityavailable);
-            
-                        
-            
+            return true; // Permite guardar la línea
         }
-        
-        return true; // Permite guardar la línea
-    }
 
     /**
      * Validation function to be executed when sublist line is inserted.
@@ -204,24 +220,63 @@ function(record,search,https,runtime,currentRecord,dialog) {
      * @since 2015.2
      */
     function saveRecord(scriptContext) {
-        try{
-            var rec = scriptContext.currentRecord;
-            var typeSales= rec.getValue('custbody_tipo_venta');
-            // if(typeSales == '1'){
-            //  alert('No se puede seleccionar este tipo de venta')
-            //  return false;
-            // }
-            
-            if(typeSales == '19' && rec.getValue('custbody_presentadora_tm_paga') == ''){
-                alert('Debe de ingresar un valor en : PRESENTADORA TM PAGADA')
-                return false;
+            try{
+                var context = runtime.executionContext;
+                console.log('context', context);
+                var rec = scriptContext.currentRecord;
+                var typeSales= rec.getValue('custbody_tipo_venta');
+                // Validar que la ubicación principal coincida con la ubicación de cada línea de item
+                var mainLocation = rec.getValue('location');
+                var itemLines = rec.getLineCount({
+                    sublistId: 'item'
+                });
+                
+                for(var i = 0; i < itemLines; i++) {
+                    var itemLocation = rec.getSublistValue({
+                        sublistId: 'item',
+                        fieldId: 'location',
+                        line: i
+                    });
+                    var item = rec.getSublistValue({
+                        sublistId: 'item',
+                        fieldId: 'item',
+                        line: i
+                    });
+                    
+                    if(mainLocation !== itemLocation) {
+                        dialog.alert({
+                            title: 'Error de Validación',
+                            message: 'La ubicación debe coincidir en todas las líneas del pedido. Por favor, verifique que la ubicación principal sea la misma que la ubicación de cada línea de artículos.'
+                        });
+                        return false;
+                    }
+                    if(item == 2763 && typeSales == '2' && context != 'RESTLET'){
+                        console.log('Mostrando alerta - TM7 en saverecord');
+                        dialog.alert({
+                            title: 'Error de Validación',
+                            message: 'La Pre venta de TM7 es únicamente en Tienda en línea'
+                        });
+                        return false;
+                    }
+
+                }
+                
+                
+                // if(typeSales == '1'){
+                //  alert('No se puede seleccionar este tipo de venta')
+                //  return false;
+                // }
+                
+                if(typeSales == '19' && rec.getValue('custbody_presentadora_tm_paga') == ''){
+                    alert('Debe de ingresar un valor en : PRESENTADORA TM PAGADA')
+                    return false;
+                }
+                
+            }catch(err){
+                console.debug('errorsaveRecord',err)
             }
-            
-        }catch(err){
-            console.debug('errorsaveRecord',err)
+            return true;
         }
-        return true;
-    }
     
     
     function requestTraking(idSalesOrder,companyname,phone,email_company,address,legalname){
