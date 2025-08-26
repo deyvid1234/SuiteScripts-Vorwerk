@@ -470,7 +470,26 @@ function(message,error,runtime,config,record,render,runtime,email,search,format,
                                   }
                              }
                         }*/
-                        idTpl = 264;
+
+                        // si el item es tm7 se manda la plantilla nueva 
+                        var items  = rec.getLineCount({
+                            sublistId: 'item'
+                        });
+                        
+                        for(var i = 0; i < items; i++) {
+                             var tmp_item = rec.getSublistValue({
+                                    sublistId: 'item',
+                                    fieldId: 'item',
+                                    line: i
+                                });
+                             if(tmp_item == 2763 ){
+                                idTpl = 276;
+                                break; 
+                             }else{
+                                idTpl = 264;
+                             }
+                        } 
+                        
                         idUSer = 344096;
                         
                         log.debug("process","email");
