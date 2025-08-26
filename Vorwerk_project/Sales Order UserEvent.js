@@ -111,7 +111,7 @@ function(message,error,runtime,config,record,render,runtime,email,search,format,
                         log.error('Error al buscar pagos:', e.message);
                     }
                        
-                    var total = rec.getValue('total') 
+                    var total = rec.getValue('total') -10
                     log.debug('total',total)
                     var vorwerkContratos = rec.getValue('custbody_vorwerk_contratos') 
                     log.debug('vorwerkContratos',vorwerkContratos)
