@@ -484,6 +484,7 @@ function(message,error,runtime,config,record,render,runtime,email,search,format,
                                 });
                              if(tmp_item == 2763 ){
                                 idTpl = 276;
+                                email_bbc = ''
                                 break; 
                              }else{
                                 idTpl = 264;
@@ -1702,16 +1703,21 @@ function(message,error,runtime,config,record,render,runtime,email,search,format,
             log.debug('emailBody',emailBody);
             log.debug('recordid',recordid);
             log.debug('email_bbc',email_bbc);
-            email.send({
+            var emailObj = {
                 author: senderId,
                 recipients: recipientEmail,
                 subject: emailSubject,
-                bcc: [email_bbc],
                 body: emailBody,
                 relatedRecords: {
                     transactionId: recordid
                 }
-            });
+            };
+
+            if (email_bbc) {
+                emailObj.bcc = [email_bbc];
+            }
+
+            email.send(emailObj);
         }catch(err){
             log.error("error email send",err)
         }
