@@ -139,7 +139,23 @@ function(record,dialog,http,https,search) {
      * @since 2015.2
      */
     function validateField(scriptContext) {
-
+        if(scriptContext.fieldId == 'isinactive') {
+            var isInactive = scriptContext.currentRecord.getValue('isinactive');
+            // Se ejecuta cuando se intenta desmarcar el campo (cambiar de true a false)
+            if(!isInactive) {
+                var urlCsf = scriptContext.currentRecord.getValue('custentity_url_csf');
+                var autorizadoFinanzas = scriptContext.currentRecord.getValue('custentity_autorizado_finanzas');
+                
+                if(!urlCsf || !autorizadoFinanzas) {
+                    dialog.alert({
+                        title: 'Error de Validación',
+                        message: 'El presentador no tiene CSF y/o no ha sido validada, no puede darse de alta'
+                    });
+                    return false; // Revierte el checkbox a marcado (true)
+                }
+            }
+        }
+        return true;
     }
 
     /**
@@ -225,7 +241,7 @@ function(record,dialog,http,https,search) {
 //        postSourcing: postSourcing,
 //        sublistChanged: sublistChanged,
 //        lineInit: lineInit,
-//        validateField: validateField,
+        validateField: validateField,
 //        validateLine: validateLine,
 //        validateInsert: validateInsert,
 //        validateDelete: validateDelete,
