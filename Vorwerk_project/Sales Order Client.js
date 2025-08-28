@@ -164,9 +164,9 @@ define(['N/record','N/search','N/https','N/runtime','N/currentRecord','N/ui/dial
                     var userPermisos = search.lookupFields({
                         type: 'employee',
                         id: idUser,
-                        columns: ['custentity_editaso_facturada']
+                        columns: ['custentity_sin_permiso_sku']
                     });
-                    var editaso_facturada = userPermisos.custentity_editaso_facturada;
+                    var editaso_facturada = userPermisos.custentity_sin_permiso_sku;
                     console.log('editaso_facturada', editaso_facturada);
                     
                     var currentRecord = scriptContext.currentRecord;
@@ -211,7 +211,7 @@ define(['N/record','N/search','N/https','N/runtime','N/currentRecord','N/ui/dial
                     var executionMode = getExecutionMode(scriptContext);
                     console.log('Modo de ejecución detectado:', executionMode);
                     
-                    if(itemId == 2680 && context != 'RESTLET' && tipoVenta == '2' && executionMode === 'create'){
+                    if(itemId == 2763 && context != 'RESTLET' && tipoVenta == '2' && executionMode === 'create'){
                         console.log('Mostrando alerta - TM7');
                         dialog.alert({
                             title: 'Alerta',
@@ -300,7 +300,7 @@ define(['N/record','N/search','N/https','N/runtime','N/currentRecord','N/ui/dial
                         var executionMode = getExecutionMode(scriptContext);
                         console.log('Modo de ejecución en saveRecord:', executionMode);
                         
-                        if(item == 2680 && typeSales == '2' && context != 'RESTLET' && executionMode === 'create'){
+                        if(item == 2763 && typeSales == '2' && context != 'RESTLET' && executionMode === 'create'){
                             console.log('Mostrando alerta - TM7 en saverecord');
                             dialog.alert({
                                 title: 'Error de Validación',
