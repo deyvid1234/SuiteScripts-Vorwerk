@@ -312,7 +312,9 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 var urlDetalle = 'https://3367613.app.netsuite.com/app/site/hosting/scriptlet.nl?script=1358&deploy=2'+'&periodoI='+inicioPeriodo+'&periodoF='+finPeriodo+'&promo='+empPromo+'&tipo='+empType+'&pre='+empID
                 switch(tipoReporteGloobal){
                     case 1: //Reporte LE
-                        if(empType == 3 && empPromo == 2 /*&& allPresentadoras[i].internalid == '15929'*/){
+                        if(empType == 3 && empPromo == 2 && allPresentadoras[i].internalid == '11512'){
+                            // verificar si tiene programas gana tm activos
+                            var programasActivos = programas(allPresentadoras[i].internalid)
                             //Calcular reporte para la persona
                             var reclutas = listaReclutas[i]
                             var integrantesEquipo = listaGrupos[i]   
@@ -356,7 +358,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                             var amounTrue = validateAmount(sublist,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objReclutamiento,objEntrega,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objXmasdosNLE,objJoya,objCook,objNuevoRecluta,objActividad,objProductividadTMSB)
         
                             if(amounTrue){
-                                fillTable(sublist,urlDetalle,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objReclutamiento,objEntrega,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objXmasdosNLE,objJoya,objCook,objNuevoRecluta,objActividad,objProductividadTMSB,false)
+                                fillTable(sublist,urlDetalle,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objReclutamiento,objEntrega,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objXmasdosNLE,objJoya,objCook,objNuevoRecluta,objActividad,objProductividadTMSB,programasActivos,false)
                                 cont_line++
                             }
                         }
@@ -401,7 +403,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                             var amounTrue = validateAmount(sublist,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objReclutamiento,objEntrega,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objXmasdosNLE,objJoya,objCook,objNuevoRecluta,objActividad,objProductividadTMSB)
         
                             if(amounTrue){
-                                fillTable(sublist,urlDetalle,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objReclutamiento,objEntrega,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objXmasdosNLE,objJoya,objCook,objNuevoRecluta,objActividad,objProductividadTMSB)
+                                fillTable(sublist,urlDetalle,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objReclutamiento,objEntrega,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objXmasdosNLE,objJoya,objCook,objNuevoRecluta,objActividad,objProductividadTMSB,null)
                                 cont_line++
                             }
                         }
@@ -421,7 +423,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                             var amounTrue = validateAmount(sublist,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objReclutamiento,objEntrega,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objXmasdosNLE,objJoya,objCook,objNuevoRecluta,objActividad,objProductividadTMSB)
         
                             if(amounTrue){
-                                fillTable(sublist,urlDetalle,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objReclutamiento,objEntrega,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objXmasdosNLE,objJoya,objCook,objNuevoRecluta,objActividad,objProductividadTMSB)
+                                fillTable(sublist,urlDetalle,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objReclutamiento,objEntrega,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objXmasdosNLE,objJoya,objCook,objNuevoRecluta,objActividad,objProductividadTMSB,null)
                                 cont_line++
                             }
                         }
@@ -532,7 +534,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
         return v;
 
     }
-    function fillTable(sublist,urlDetalle,dataEmp,ventasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,reclutamiento,entrega,productividad,ventaEquipo,ventasEquipoNLE,garantia,xMasdosNLE,joya,cookKey,nuevoRecluta,actividad,productividadTMSB){
+    function fillTable(sublist,urlDetalle,dataEmp,ventasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,reclutamiento,entrega,productividad,ventaEquipo,ventasEquipoNLE,garantia,xMasdosNLE,joya,cookKey,nuevoRecluta,actividad,productividadTMSB,programasActivos){
         var linea = cont_line
         var subtotal=0
         
@@ -581,6 +583,28 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 line : cont_line,
                 value : v!=''?v:''
              });
+            
+            // Llenar campo de programa Gana TM
+            var programaDetalle = '';
+            if(programasActivos && programasActivos.tieneProgramasActivos && programasActivos.detalleProgramas.length > 0) {
+                var programa = programasActivos.detalleProgramas[0]; // Tomar el primer programa activo
+                programaDetalle = 'Programa: ' + (programa.nombre || 'N/A') + 
+                                ' | Inicio: ' + (programa.fechaInicio || 'N/A') + 
+                                ' | Fin: ' + (programa.fechaFin || 'N/A') + 
+                                ' | Estado: ' + (programa.estado || 'N/A');
+                if(programa.listIdsOdv && programa.listIdsOdv !== '') {
+                    programaDetalle += ' | ODV IDs: ' + programa.listIdsOdv;
+                }
+            } else {
+                programaDetalle = 'Sin programas activos';
+            }
+            
+            sublist.setSublistValue({
+                id : 'programa_gana_tm',
+                line : cont_line,
+                value : programaDetalle
+            });
+            
             sublist.setSublistValue({
                 id : 'custpage_ver_detalle',
                 line : cont_line,
@@ -2737,6 +2761,14 @@ una rcluta de algun miembro del equipo*/
                 label: 'Fecha de Contratacion'
             }).updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
             arrayFields.push({idfield : thidField.id, namefield : thidField.label})
+            
+            thidField = sublist.addField({
+                id: 'programa_gana_tm',
+                type: serverWidget.FieldType.TEXTAREA,
+                label: 'Programa Gana TM Activo'
+            }).updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
+            arrayFields.push({idfield : thidField.id, namefield : thidField.label})
+            
             //Terminan campos compartidos
               
 
@@ -3086,6 +3118,79 @@ una rcluta de algun miembro del equipo*/
             log.error('Error en addFieldsTabla',e)
         }
     }//Fin addFieldsTabla
+
+    /**
+     * Función que verifica si un empleado tiene algún programa activo
+     * @param {number} empleadoId - ID del empleado para verificar programas
+     * @returns {Object} - Información sobre los programas activos del empleado
+     */
+    function programas(empleadoId) {
+        try {
+            log.debug('programas', 'Verificando programas activos para empleado: ' + empleadoId);
+            
+            // Crear búsqueda del registro customrecord_gana_tm
+            var programaSearch = search.create({
+                type: 'customrecord_gana_tm',
+                filters: [
+                    ['custrecord_presentador_id', 'anyof', empleadoId]
+                ],
+                columns: [
+                    'custrecord_nombre_programa',
+                    'custrecord_start_date',
+                    'custrecord_end_date',
+                    'custrecord_status_program',
+                    'custrecord_numero_ventas',
+                    'custrecord_list_ids_odv'
+                ]
+            });
+
+            var programasActivos = [];
+            var tieneProgramasActivos = false;
+
+            // Ejecutar la búsqueda
+            programaSearch.run().each(function(result) {
+                tieneProgramasActivos = true;
+                
+                var programa = {
+                    id: result.id,
+                    nombre: result.getValue('custrecord_nombre_programa'),
+                    fechaInicio: result.getValue('custrecord_start_date'),
+                    fechaFin: result.getValue('custrecord_end_date'),
+                    estado: result.getValue('custrecord_status_program'),
+                    numeroVentas: result.getValue('custrecord_numero_ventas'),
+                    listIdsOdv: result.getValue('custrecord_list_ids_odv') || ''
+                };
+                
+                programasActivos.push(programa);
+                
+                return true; // Continuar iteración
+            });
+
+            log.debug('programas resultado', {
+                empleadoId: empleadoId,
+                tieneProgramasActivos: tieneProgramasActivos
+            });
+
+            return {
+                tieneProgramasActivos: tieneProgramasActivos,
+                detalleProgramas: programasActivos
+           };
+
+        } catch (error) {
+            log.error('Error en función programas', {
+                empleadoId: empleadoId,
+                error: error.toString()
+            });
+            
+            return {
+                tieneProgramasActivos: false,
+                detalleProgramas: [],
+                programas: [], // Mantener por compatibilidad
+                error: error.toString()
+            };
+        }
+    }
+
     return {
         onRequest: onRequest
     };
