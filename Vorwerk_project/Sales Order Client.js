@@ -153,13 +153,9 @@ define(['N/record','N/search','N/https','N/runtime','N/currentRecord','N/ui/dial
                 // Validar stock cuando se confirma una línea de item
                 if (scriptContext.sublistId === 'item') {
                     var context = runtime.executionContext;
-                    console.log('context', context);
                     var record = scriptContext.currentRecord;
-                    console.log('record', record);
                     var tipoVenta = record.getValue('custbody_tipo_venta');
-                    console.log('tipoVenta', tipoVenta);
                     var userObj = runtime.getCurrentUser();
-                    console.log('userObj', userObj);
                     var idUser = userObj.id;
                     var userPermisos = search.lookupFields({
                         type: 'employee',
@@ -179,33 +175,25 @@ define(['N/record','N/search','N/https','N/runtime','N/currentRecord','N/ui/dial
                         sublistId: 'item',
                         fieldId: 'quantityavailable'
                     });
-                    console.log('Item ID obtenido:', itemId);
-                    console.log('Cantidad disponible:', quantityavailable);
-                    // Validar que quantityavailable sea válido (no nulo, no vacío y numérico)
-                    console.log('Validando quantityavailable:', quantityavailable);
-                    console.log('Tipo de quantityavailable:', typeof quantityavailable);
-                    console.log('¿Es válido?', quantityavailable !== null && quantityavailable !== '' && !isNaN(quantityavailable));
                     
-                    if (quantityavailable !== null && quantityavailable !== '' && !isNaN(quantityavailable)) {
-                        // Solo ejecutar la validación si quantityavailable es un valor válido y numérico
-                        console.log('quantityavailable es válido, verificando si es < 1:', quantityavailable < 1);
-                        console.log('editaso_facturada es:', editaso_facturada);
-                        
-                        if (quantityavailable < 1 && editaso_facturada == true) {
-                            console.log('Mostrando alerta - stock insuficiente');
-                            dialog.alert({
-                                title: 'Alerta',
-                                message: 'No hay stock disponible para este item'
-                            });
-                            return false; // No permite guardar la línea
+
+                    if(itemId == 2763 && (tipoVenta == '33' || tipoVenta == '1' || tipoVenta == '19' || tipoVenta == '35')){
+                        console.log('Permitir en sku stock 0');
+                    }else{
+                        if (quantityavailable !== null && quantityavailable !== '' && !isNaN(quantityavailable)) {
+                            // Solo ejecutar la validación si quantityavailable es un valor válido y numérico
+                                                      
+                            if (quantityavailable < 1 && editaso_facturada == true) {
+                                console.log('Mostrando alerta - stock insuficiente');
+                                dialog.alert({
+                                    title: 'Alerta',
+                                    message: 'No hay stock disponible para este item'
+                                });
+                                return false; // No permite guardar la línea
+                            }
                         }
                     }
-                    
-                   
-                    
-                    console.log('Item ID obtenido:', itemId);
-                    console.log('Cantidad disponible:', quantityavailable);
-                    
+                                        
                     //no deja guardar linea si es pedido manual, solo deja a tienda en linea
                     // Solo validar en modo create, permitir en modo edit
                     var executionMode = getExecutionMode(scriptContext);
@@ -299,7 +287,8 @@ define(['N/record','N/search','N/https','N/runtime','N/currentRecord','N/ui/dial
                         // Solo validar en modo create, permitir en modo edit
                         var executionMode = getExecutionMode(scriptContext);
                         console.log('Modo de ejecución en saveRecord:', executionMode);
-                        
+                        console.log('item', item);
+                        console.log('typeSales', typeSales);
                         if(item == 2763 && typeSales == '2' && context != 'RESTLET' && executionMode === 'create'){
                             console.log('Mostrando alerta - TM7 en saverecord');
                             dialog.alert({
