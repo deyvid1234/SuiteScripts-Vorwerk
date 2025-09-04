@@ -29,9 +29,11 @@ function(runtime,config,record,render,runtime,email,search,format) {
                 		var salesrep = search.lookupFields({
 	                    type: 'salesorder',
 	                    id: createdfrom,
-	                    columns: ['salesrep','trandate','serialnumbers']
+	                    columns: ['salesrep','trandate','serialnumbers','custbody_tipo_venta']
                 		});
                 		log.debug('salesrep',salesrep)
+                		var tipoVenta = salesrep.custbody_tipo_venta[0]['value']
+                		log.debug('tipoVenta',tipoVenta)
                 		var date_so = salesrep.trandate
                 		log.debug('date_so',date_so)
                 		date_so = date_so.split('/')
@@ -149,57 +151,61 @@ function(runtime,config,record,render,runtime,email,search,format) {
 		            		log.debug('idUSer',idUSer)
 		            		log.debug('recordid',recordid)
 		            		log.debug('estatus_envio',estatus_envio)
-		            		if(estatus_envio == 7 ){
-		            			var myMergeResult = render.mergeEmail({
-			            		    templateId: 272,
-			            		    entity: {
-			            		        	type: 'employee',
-			            		        	id: idUSer
-			        		        },
-			            		    recipient: {
-			            		        	type: 'customer',
-			            		        	id: customer
-			        		        },
-			            		    transactionId: recordid
-		            		    });
-			            		var senderId = idUSer;
-			            		var recipientEmail = customer
-			            		var emailSubject = myMergeResult.subject; 
-			            		var emailBody = myMergeResult.body 
-								log.debug('myMergeResult',myMergeResult)
-			            		log.debug('emailBody',' senderId '+senderId+' recipientEmail '+recipientEmail+' emailSubject '+emailSubject);
-			            		log.debug('emailBody',emailBody)
-			            		emailBody = emailBody.replace(/@numero_serie/g,inventorydetail);
-			            		emailBody = emailBody.replace(/@fecha_gara/g,fDate);
-			            		
-			            		sendemail(senderId,customer,emailSubject,emailBody,recordid,salesrep)
-		            		}else{
-		            			var myMergeResult = render.mergeEmail({
-			            		    templateId: 271,
-			            		    entity: {
-			            		        	type: 'employee',
-			            		        	id: idUSer
-			        		        },
-			            		    recipient: {
-			            		        	type: 'customer',
-			            		        	id: customer
-			        		        },
-			            		    transactionId: recordid
-		            		    });
-			            		var senderId = idUSer;
-			            		var recipientEmail = customer
-			            		var emailSubject = myMergeResult.subject; 
-			            		var emailBody = myMergeResult.body 
-								log.debug('myMergeResult',myMergeResult)
-			            		log.debug('emailBody',' senderId '+senderId+' recipientEmail '+recipientEmail+' emailSubject '+emailSubject);
-			            		log.debug('emailBody',emailBody)
-			            		emailBody = emailBody.replace(/@numero_serie/g,inventorydetail);
-			            		emailBody = emailBody.replace(/@fecha_gara/g,fDate);
-			            		emailBody = emailBody.replace(/@boton/g,'&iquest;D&oacute;nde est&aacute; mi Thermomix&reg;?');
-			            		emailBody = emailBody.replace(/@url_ac/g,url);
-			            		
-			            		sendemail(senderId,customer,emailSubject,emailBody,recordid,salesrep)
+
+		            		if(tipoVenta == '2'){ // solo se va a enviar si es tipo de venta Ventas tm
+		            			if(estatus_envio == 7 ){
+			            			var myMergeResult = render.mergeEmail({
+				            		    templateId: 272,
+				            		    entity: {
+				            		        	type: 'employee',
+				            		        	id: idUSer
+				        		        },
+				            		    recipient: {
+				            		        	type: 'customer',
+				            		        	id: customer
+				        		        },
+				            		    transactionId: recordid
+			            		    });
+				            		var senderId = idUSer;
+				            		var recipientEmail = customer
+				            		var emailSubject = myMergeResult.subject; 
+				            		var emailBody = myMergeResult.body 
+									log.debug('myMergeResult',myMergeResult)
+				            		log.debug('emailBody',' senderId '+senderId+' recipientEmail '+recipientEmail+' emailSubject '+emailSubject);
+				            		log.debug('emailBody',emailBody)
+				            		emailBody = emailBody.replace(/@numero_serie/g,inventorydetail);
+				            		emailBody = emailBody.replace(/@fecha_gara/g,fDate);
+				            		
+				            		sendemail(senderId,customer,emailSubject,emailBody,recordid,salesrep)
+			            		}else{
+			            			var myMergeResult = render.mergeEmail({
+				            		    templateId: 271,
+				            		    entity: {
+				            		        	type: 'employee',
+				            		        	id: idUSer
+				        		        },
+				            		    recipient: {
+				            		        	type: 'customer',
+				            		        	id: customer
+				        		        },
+				            		    transactionId: recordid
+			            		    });
+				            		var senderId = idUSer;
+				            		var recipientEmail = customer
+				            		var emailSubject = myMergeResult.subject; 
+				            		var emailBody = myMergeResult.body 
+									log.debug('myMergeResult',myMergeResult)
+				            		log.debug('emailBody',' senderId '+senderId+' recipientEmail '+recipientEmail+' emailSubject '+emailSubject);
+				            		log.debug('emailBody',emailBody)
+				            		emailBody = emailBody.replace(/@numero_serie/g,inventorydetail);
+				            		emailBody = emailBody.replace(/@fecha_gara/g,fDate);
+				            		emailBody = emailBody.replace(/@boton/g,'&iquest;D&oacute;nde est&aacute; mi Thermomix&reg;?');
+				            		emailBody = emailBody.replace(/@url_ac/g,url);
+				            		
+				            		sendemail(senderId,customer,emailSubject,emailBody,recordid,salesrep)
+			            		}
 		            		}
+		            		
 	                     }
 	                     
 	            		
