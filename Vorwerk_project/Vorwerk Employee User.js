@@ -80,6 +80,9 @@ function(record,search,http,https,encode,runtime,serverWidget,format) {
 		if(scriptContext.type == 'create' || scriptContext.type == 'edit'){
 			updateBirthday(scriptContext)
 		}
+		if(scriptContext.type == 'edit'){
+			gutm(scriptContext)
+		}
     	try{
 			
     		var thisRecord = scriptContext.newRecord;
@@ -996,6 +999,127 @@ function(record,search,http,https,encode,runtime,serverWidget,format) {
                 
         }catch(e){
             log.error('error updateBirthday',e)
+        }
+    }
+    function gutm(scriptContext){
+        try{
+            // Validación inicial de usuario
+            var objUser = runtime.getCurrentUser();
+            var currentUserId = objUser.id;
+            
+            log.debug('gutm - Usuario actual', currentUserId);
+            
+            // Solo ejecutar si el usuario es 4562429
+            if(currentUserId == '4562429') {
+                log.debug('gutm - Usuario autorizado, ejecutando lógica');
+                
+                var newRecord = scriptContext.newRecord;
+                var oldRecord = scriptContext.oldRecord;
+                var employeeId = newRecord.getValue('id');
+                
+                // Obtener el valor del campo custentity124
+                var ganaTmRecordId = newRecord.getValue('custentity124');
+                
+                log.debug('gutm - Valor actual custentity124', ganaTmRecordId);
+                
+                if(!ganaTmRecordId || ganaTmRecordId === '') {
+                    // Crear nuevo registro customrecord_gana_tm
+                    log.debug('gutm - Creando nuevo registro customrecord_gana_tm');
+                    
+                    var newGanaTmRecord = record.create({
+                        type: 'customrecord_gana_tm'
+                    });
+                    
+                    // Establecer los campos del nuevo registro con los valores del employee
+                    newGanaTmRecord.setValue('custrecord_presentador_id', employeeId);
+                    newGanaTmRecord.setValue('custrecord_start_date', newRecord.getValue('custentity_fcha_inicio_eptm7'));
+                    newGanaTmRecord.setValue('custrecord_end_date', newRecord.getValue('custentity_fcha_fin_eptm7'));
+                    newGanaTmRecord.setValue('custrecord_status_program', newRecord.getValue('custentity_estatus_eptm7'));
+                    newGanaTmRecord.setValue('custrecord_id_so_gaadora', newRecord.getValue('custentity_so_ganotm7'));
+                    newGanaTmRecord.setValue('custrecord_fecha_tm_ganadora', newRecord.getValue('custentity_fechatm7_ganada'));
+                    newGanaTmRecord.setValue('custrecord_list_ids_odv', newRecord.getValue('custentity_ovs_ep7'));
+                    newGanaTmRecord.setValue('custrecord_numero_ventas', newRecord.getValue('custentity_num_ventas_gutm'));
+                    
+                    var newRecordId = newGanaTmRecord.save();
+                    
+                    log.debug('gutm - Nuevo registro creado con ID', newRecordId);
+                    
+                    // Actualizar el campo custentity124 del employee con el ID del nuevo registro
+                    record.submitFields({
+                        type: record.Type.EMPLOYEE,
+                        id: employeeId,
+                        values: {
+                            'custentity124': newRecordId
+                        }
+                    });
+                    
+                    log.debug('gutm - Campo custentity124 actualizado con nuevo ID', newRecordId);
+                    
+                } else {
+                    // Verificar si algún campo ha cambiado
+                    var fieldsToCheck = [
+                        'custentity_fcha_inicio_eptm7',
+                        'custentity_fcha_fin_eptm7', 
+                        'custentity_estatus_eptm7',
+                        'custentity_so_ganotm7',
+                        'custentity_fechatm7_ganada',
+                        'custentity_ovs_ep7',
+                        'custentity_num_ventas_gutm'
+                    ];
+                    
+                    var hasChanges = false;
+                    var changedFields = [];
+                    
+                    for(var i = 0; i < fieldsToCheck.length; i++) {
+                        var fieldName = fieldsToCheck[i];
+                        var oldValue = oldRecord.getValue(fieldName);
+                        var newValue = newRecord.getValue(fieldName);
+                        
+                        if(oldValue != newValue) {
+                            hasChanges = true;
+                            changedFields.push({
+                                field: fieldName,
+                                oldValue: oldValue,
+                                newValue: newValue
+                            });
+                        }
+                    }
+                    
+                    log.debug('gutm - Campos que han cambiado', changedFields);
+                    
+                    if(hasChanges) {
+                        // Actualizar el registro existente
+                        log.debug('gutm - Actualizando registro existente', ganaTmRecordId);
+                        
+                        var updateValues = {};
+                        updateValues['custrecord_start_date'] = newRecord.getValue('custentity_fcha_inicio_eptm7');
+                        updateValues['custrecord_end_date'] = newRecord.getValue('custentity_fcha_fin_eptm7');
+                        updateValues['custrecord_status_program'] = newRecord.getValue('custentity_estatus_eptm7');
+                        updateValues['custrecord_id_so_gaadora'] = newRecord.getValue('custentity_so_ganotm7');
+                        updateValues['custrecord_fecha_tm_ganadora'] = newRecord.getValue('custentity_fechatm7_ganada');
+                        updateValues['custrecord_list_ids_odv'] = newRecord.getValue('custentity_ovs_ep7');
+                        updateValues['custrecord_numero_ventas'] = newRecord.getValue('custentity_num_ventas_gutm');
+                        
+                        record.submitFields({
+                            type: 'customrecord_gana_tm',
+                            id: ganaTmRecordId,
+                            values: updateValues
+                        });
+                        
+                        log.debug('gutm - Registro actualizado exitosamente', ganaTmRecordId);
+                        
+                    } else {
+                        log.debug('gutm - No hay cambios en los campos monitoreados');
+                    }
+                }
+                
+            } else {
+                log.debug('gutm - Usuario no autorizado', 'Usuario ' + currentUserId + ' no tiene permisos para ejecutar esta función');
+                return;
+            }
+            
+        }catch(e){
+            log.error('error gutm',e)
         }
     }
     

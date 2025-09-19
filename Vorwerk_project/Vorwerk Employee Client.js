@@ -78,6 +78,25 @@ function(record,dialog,http,https,search) {
                 }
             }
     		
+    		// Funcionalidad complementaria GUTM - Limpiar campos relacionados cuando cambia custentity_nombre_programa
+    		if(scriptContext.fieldId == 'custentity_nombre_programa'){
+    			// Array de campos que se deben limpiar cuando cambie el programa
+    			var fieldsToReset = [
+    				'custentity_fcha_inicio_eptm7',
+    				'custentity_fcha_fin_eptm7',
+    				'custentity_estatus_eptm7',
+    				'custentity_so_ganotm7',
+    				'custentity_fechatm7_ganada',
+    				'custentity_ovs_ep7',
+    				'custentity_num_ventas_gutm'
+    			];
+    			
+    			// Limpiar cada campo
+    			for(var i = 0; i < fieldsToReset.length; i++){
+    				thisRecord.setValue(fieldsToReset[i], '');
+    			}
+    		}
+    		
     		return true;
     	}catch(err){
     		log.error("error inactive",err);
