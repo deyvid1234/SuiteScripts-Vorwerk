@@ -3,9 +3,9 @@
  * @NScriptType ClientScript
  * @NModuleScope SameAccount
  */
-define(['N/record','N/ui/dialog','N/http','N/https','N/search'],
+define(['N/record','N/ui/dialog','N/http','N/https','N/search','N/runtime'],
 
-function(record,dialog,http,https,search) {
+function(record,dialog,http,https,search,runtime) {
     
     /**
      * Function to be executed after page is initialized.
@@ -80,20 +80,26 @@ function(record,dialog,http,https,search) {
     		
     		// Funcionalidad complementaria GUTM - Limpiar campos relacionados cuando cambia custentity_nombre_programa
     		if(scriptContext.fieldId == 'custentity_nombre_programa'){
-    			// Array de campos que se deben limpiar cuando cambie el programa
-    			var fieldsToReset = [
-    				'custentity_fcha_inicio_eptm7',
-    				'custentity_fcha_fin_eptm7',
-    				'custentity_estatus_eptm7',
-    				'custentity_so_ganotm7',
-    				'custentity_fechatm7_ganada',
-    				'custentity_ovs_ep7',
-    				'custentity_num_ventas_gutm'
-    			];
+    			// Validación de usuario - Solo el usuario 4562429 puede ejecutar esta funcionalidad
+    			var objUser = runtime.getCurrentUser();
+    			var currentUserId = objUser.id;
     			
-    			// Limpiar cada campo
-    			for(var i = 0; i < fieldsToReset.length; i++){
-    				thisRecord.setValue(fieldsToReset[i], '');
+    			if(currentUserId == '4562429') {
+    				// Array de campos que se deben limpiar cuando cambie el programa
+    				var fieldsToReset = [
+    					'custentity_fcha_inicio_eptm7',
+    					'custentity_fcha_fin_eptm7',
+    					'custentity_estatus_eptm7',
+    					'custentity_so_ganotm7',
+    					'custentity_fechatm7_ganada',
+    					'custentity_ovs_ep7',
+    					'custentity_num_ventas_gutm'
+    				];
+    				
+    				// Limpiar cada campo
+    				for(var i = 0; i < fieldsToReset.length; i++){
+    					thisRecord.setValue(fieldsToReset[i], '');
+    				}
     			}
     		}
     		
