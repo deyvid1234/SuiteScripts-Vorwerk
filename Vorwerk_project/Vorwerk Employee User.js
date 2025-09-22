@@ -80,9 +80,9 @@ function(record,search,http,https,encode,runtime,serverWidget,format) {
 		if(scriptContext.type == 'create' || scriptContext.type == 'edit'){
 			updateBirthday(scriptContext)
 		}
-		if(scriptContext.type == 'edit'){
+		/*if(scriptContext.type == 'edit'){
 			gutm(scriptContext)
-		}
+		}*/
     	try{
 			
     		var thisRecord = scriptContext.newRecord;
@@ -1039,6 +1039,7 @@ function(record,search,http,https,encode,runtime,serverWidget,format) {
                     newGanaTmRecord.setValue('custrecord_fecha_tm_ganadora', newRecord.getValue('custentity_fechatm7_ganada'));
                     newGanaTmRecord.setValue('custrecord_list_ids_odv', newRecord.getValue('custentity_ovs_ep7'));
                     newGanaTmRecord.setValue('custrecord_numero_ventas', newRecord.getValue('custentity_num_ventas_gutm'));
+					newGanaTmRecord.setValue('custrecord_nombre_programa', newRecord.getText('custentity_nombre_programa'));
                     
                     var newRecordId = newGanaTmRecord.save();
                     
