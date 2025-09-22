@@ -3,9 +3,12 @@
  * @NScriptType ClientScript
  * @NModuleScope SameAccount
  */
-define(['N/record','N/ui/dialog','N/http','N/https','N/search','N/runtime'],
+define(['N/record','N/ui/dialog','N/http','N/https','N/search','N/runtime','N/log'],
 
-function(record,dialog,http,https,search,runtime) {
+function(record,dialog,http,https,search,runtime,log) {
+    
+    // Variable global para almacenar el valor inicial de custentity_nombre_programa
+    var initialProgramValue = '';
     
     /**
      * Function to be executed after page is initialized.
@@ -17,6 +20,13 @@ function(record,dialog,http,https,search,runtime) {
      * @since 2015.2
      */
     function pageInit(scriptContext) {
+    	try {
+    		var thisRecord = scriptContext.currentRecord;
+    		// Guardar el valor inicial del programa para comparar en fieldChanged
+    		initialProgramValue = thisRecord.getValue('custentity_nombre_programa') || '';
+    	} catch(err) {
+    		log.error("error pageInit", err);
+    	}
     	
     	return true;
     }
@@ -79,29 +89,38 @@ function(record,dialog,http,https,search,runtime) {
             }
     		
     		// Funcionalidad complementaria GUTM - Limpiar campos relacionados cuando cambia custentity_nombre_programa
-    		if(scriptContext.fieldId == 'custentity_nombre_programa'){
+    		/*if(scriptContext.fieldId == 'custentity_nombre_programa'){
     			// Validación de usuario - Solo el usuario 4562429 puede ejecutar esta funcionalidad
     			var objUser = runtime.getCurrentUser();
     			var currentUserId = objUser.id;
     			
     			if(currentUserId == '4562429') {
-    				// Array de campos que se deben limpiar cuando cambie el programa
-    				var fieldsToReset = [
-    					'custentity_fcha_inicio_eptm7',
-    					'custentity_fcha_fin_eptm7',
-    					'custentity_estatus_eptm7',
-    					'custentity_so_ganotm7',
-    					'custentity_fechatm7_ganada',
-    					'custentity_ovs_ep7',
-    					'custentity_num_ventas_gutm'
-    				];
+    				var currentProgramValue = thisRecord.getValue('custentity_nombre_programa') || '';
     				
-    				// Limpiar cada campo
-    				for(var i = 0; i < fieldsToReset.length; i++){
-    					thisRecord.setValue(fieldsToReset[i], '');
+    				// Solo limpiar campos si el valor anterior NO estaba vacío (cambio de valor a valor, no de vacío a valor)
+    				if(initialProgramValue !== '' && initialProgramValue !== currentProgramValue) {
+    					// Array de campos que se deben limpiar cuando cambie el programa
+    					var fieldsToReset = [
+    						'custentity_fcha_inicio_eptm7',
+    						'custentity_fcha_fin_eptm7',
+    						'custentity_estatus_eptm7',
+    						'custentity_so_ganotm7',
+    						'custentity_fechatm7_ganada',
+    						'custentity_ovs_ep7',
+    						'custentity_num_ventas_gutm',
+                            'custentity124'
+    					];
+    					
+    					// Limpiar cada campo
+    					for(var i = 0; i < fieldsToReset.length; i++){
+    						thisRecord.setValue(fieldsToReset[i], '');
+    					}
     				}
+    				
+    				// Actualizar el valor inicial para futuras comparaciones
+    				initialProgramValue = currentProgramValue;
     			}
-    		}
+    		}*/
     		
     		return true;
     	}catch(err){
