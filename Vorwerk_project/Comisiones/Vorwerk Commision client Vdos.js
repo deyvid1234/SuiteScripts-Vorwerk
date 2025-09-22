@@ -488,6 +488,26 @@ function(record,https,currentRecord,runtime,file,search,message) {
                         fieldId: "custentity_cincomasdos_nle_monto",
                         line: i
                     });
+                    var cincodos_nle = record.getSublistValue({
+                        sublistId: "sublist",
+                        fieldId: "custentity_cincomasdos_nle_monto",
+                        line: i
+                    });
+                    var ordenes_extaordinarias = record.getSublistValue({
+                        sublistId: "sublist",
+                        fieldId: "ordenes_extaordinarias",
+                        line: i
+                    });
+                    var monto_ventapropia_extra = record.getSublistValue({
+                        sublistId: "sublist",
+                        fieldId: "custpage_monto_ventapropia_extra",
+                        line: i
+                    });
+                    var monto_prod_extra = record.getSublistValue({
+                        sublistId: "sublist",
+                        fieldId: "custpage_monto_prod_extra",
+                        line: i
+                    });
                     /*var rec_extendido = record.getSublistValue({
                         sublistId: "sublist",
                         fieldId: "custentity_bono_rec4a_venta",
@@ -557,6 +577,9 @@ function(record,https,currentRecord,runtime,file,search,message) {
                             ventaPropia_monto_tmsb :ventaPropia_monto_tmsb,
                             productividad_tmsb    :productividad_tmsb,
                             productividad_monto_tmsb :productividad_monto_tmsb,
+                            ordenes_extaordinarias: ordenes_extaordinarias,
+                            monto_ventapropia_extra: monto_ventapropia_extra,
+                            monto_prod_extra       : monto_prod_extra,
                             //rec_extendido         : rec_extendido,
                             //rec_extendidoODV      : rec_extendidoODV
 

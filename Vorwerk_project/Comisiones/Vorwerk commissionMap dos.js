@@ -334,7 +334,18 @@ function(email,record, file, search, https, runtime,format,Dictionary) {
                     fieldId: config_fields.odv_tmsb[config.type],
                     value: comissionInfo.productividad_tmsb    
                 });
-
+                registerEmp.setValue({
+                    fieldId: config_fields.ordenes_extaordinarias[config.type],
+                    value: comissionInfo.ordenes_extaordinarias    
+                });
+                registerEmp.setValue({
+                    fieldId: config_fields.monto_ventapropia_extra[config.type],
+                    value: comissionInfo.monto_ventapropia_extra    
+                });
+                registerEmp.setValue({
+                    fieldId: config_fields.monto_prod_extra[config.type],
+                    value: comissionInfo.monto_prod_extra    
+                });
                 registerEmp.setValue({
                     fieldId: field_id[type_to_add][1],
                     value: idrg
@@ -355,6 +366,36 @@ function(email,record, file, search, https, runtime,format,Dictionary) {
                         values: {'custentity_estatus_tm_sinbarreras': '1'}
                     });
                     log.debug("registro de empleado actualizado a compensacion tmsb pagadas",comissionInfo.idEmp);
+                }
+                if(comissionInfo.monto_ventapropia_extra > 0){
+                   
+                    
+                    // Extraer ID del campo custrecord_ordenes_extaordinarias_le y actualizar customrecord_gana_tm
+                    try {
+                        if(comissionInfo.ordenes_extaordinarias) {
+                            var ordenesString = comissionInfo.ordenes_extaordinarias.toString();
+                            log.debug("ordenes_extaordinarias string", ordenesString);
+                            
+                            // Buscar el pattern "id: X" usando regex
+                            var idMatch = ordenesString.match(/id:\s*(\d+)/);
+                            
+                            if(idMatch && idMatch[1]) {
+                                var ganaTmId = idMatch[1];
+                                log.debug("ID extraído para customrecord_gana_tm", ganaTmId);
+                                
+                                record.submitFields({
+                                    type: 'customrecord_gana_tm',
+                                    id: ganaTmId,
+                                    values: {'custrecord_status_program': '8','custrecord_periodo_comp_pagada':config.period}
+                                });
+                                log.debug("registro customrecord_gana_tm actualizado a status 8", ganaTmId);
+                            } else {
+                                log.debug("No se pudo extraer el ID del string ordenes_extaordinarias", ordenesString);
+                            }
+                        }
+                    } catch(errorGanaTm) {
+                        log.error("Error actualizando customrecord_gana_tm", errorGanaTm);
+                    }
                 }
             }catch(errRE){
                 log.error('error al crear registro por empleado',errRE)

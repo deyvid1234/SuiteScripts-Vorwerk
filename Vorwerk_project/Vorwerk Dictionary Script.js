@@ -372,6 +372,21 @@ function() {
 				2:'',
 				3:'custrecord_odv_tmsb_le'
 			},
+			ordenes_extaordinarias:{
+				1:'custrecord_ordenes_extaordinarias',
+				2:'',
+				3:'custrecord_ordenes_extaordinarias_le'
+			},
+			monto_ventapropia_extra:{
+				1:'custrecord_monto_ventapropia_extra',
+				2:'',
+				3:'custrecord_monto_ventapropia_extra_le'
+			},
+			monto_prod_extra:{
+				1:'custrecord_monto_prod_extra',
+				2:'',
+				3:'custrecord_monto_prod_extra_le'
+			}
 		} 
 	}
     return {
