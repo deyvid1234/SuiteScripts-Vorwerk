@@ -377,6 +377,239 @@ function table_v_propiaTMSB(data,tmp_emp,type_emp,promocion,dataSOtmsinBarreras,
 		log.error('error table_v_propiaTMSB',e)
 	}
 }
+function table_GUTM(data,tmp_emp,type_emp,promocion,dataSOtmsinBarreras,CompConfigDetails,cust_period){
+	try{
+		var employee = data.id_presentadora
+		log.debug('employee GUTM',employee)
+		const fechaPeriodoCalculado = search.lookupFields({ type: 'customrecord_periods', id: cust_period, columns: ['custrecord_inicio','custrecord_final','name']});
+      	const namePeriodo= fechaPeriodoCalculado.name //mm/yyyy
+      	const inicioPeriodo = fechaPeriodoCalculado.custrecord_inicio // dd/mm/yyyy
+      	const finPeriodo = fechaPeriodoCalculado.custrecord_final // dd/mm/yyyy
+  		const inicioPeriodoDate =  Util.stringToDate(inicioPeriodo)
+      	const finPeriodoDate = Util.stringToDate(finPeriodo)
+      	var finMenosCinco = Util.restarMeses(finPeriodo, 5);
+      	var fechaInicioSearch = finMenosCinco
+      	
+      	log.debug('fechaInicioSearch GUTM',fechaInicioSearch)
+      	log.debug('finPeriodoDate GUTM',finPeriodoDate)
+      	var objSObyEmp = {};
+      	var objSObyid = {}
+      	const salesOrderSearchFilters = [
+          	['item', 'anyof', '2638','2280','2001','2571','2170','1757','1126','2035','2402','2490','2671'],
+          	'AND',
+          	['salesrep', 'is', employee],
+          	'AND',
+          	['type', 'anyof', 'SalesOrd'],
+          	'AND',
+          	['custbody_tipo_venta', 'anyof', '2', '19', '1'],
+      	];
+
+      	const salesOrderSearchColSalesRep = search.createColumn({ name: 'salesrep' });
+      	const salesOrderSearchColTranId = search.createColumn({ name: 'tranid' });
+      	const salesOrderSearchColInternalId = search.createColumn({ name: 'internalid' });
+      	const salesOrderSearchColTranDate = search.createColumn({ name: 'trandate' });
+      	const salesOrderSearchColItem = search.createColumn({ name: 'item' });
+      	const salesOrderSearchColentity = search.createColumn({ name: 'entity' });
+      	const salesOrderSearchcustipo_venta = search.createColumn({ name: 'custbody_tipo_venta' });
+      	const salesOrderSearchColSalesRepLider = search.createColumn({ name: 'supervisor', join: 'salesrep' });
+      	const searchSalesGar = search.create({
+          	type: 'salesorder',
+          	filters: salesOrderSearchFilters,
+          	columns: [
+              	salesOrderSearchColSalesRep,
+              	salesOrderSearchColTranId,
+              	salesOrderSearchColInternalId,
+              	salesOrderSearchColTranDate,
+              	salesOrderSearchColItem,
+              	salesOrderSearchColentity,
+              	salesOrderSearchcustipo_venta,
+              	salesOrderSearchColSalesRepLider
+             
+          	],
+      	});
+      	searchSalesGar.filters.push(search.createFilter({
+            name: 'trandate',
+            operator: 'within',
+            values: [Util.dateToString(fechaInicioSearch),Util.dateToString(finPeriodoDate)]
+      	}));
+      	var pagedResults = searchSalesGar.runPaged();
+      	pagedResults.pageRanges.forEach(function (pageRange){
+         	var currentPage = pagedResults.fetch({index: pageRange.index});
+         	currentPage.data.forEach(function (r) {
+              	var dataSO = r.getAllValues()
+              	var salrep = r.getValue('salesrep')
+              	var internalID = r.getValue('internalid')
+                var liderSalesRep = r.getValue({ name: 'supervisor', join: 'salesrep' })
+
+              	if(salrep in objSObyEmp){
+               	 	objSObyEmp[salrep].push(dataSO);
+              	}else{
+                	objSObyEmp[salrep]= [dataSO]; 
+              	}
+              	objSObyid[internalID] = dataSO
+		    });
+
+      	});
+		// Validar que existan los datos necesarios
+		if(!data.ordenesExtraordinariasList || data.ordenesExtraordinariasList == ''){
+			log.debug('No hay datos de ordenes extraordinarias para GUTM')
+			return {
+				tabla: '',
+				nombrePrograma: 'GUTM'
+			}
+		}
+		
+		log.debug('Datos GUTM raw', data.ordenesExtraordinariasList)
+		
+		// Procesar el formato personalizado de texto
+		var odv_p = []
+		var ordenesText = data.ordenesExtraordinariasList
+		
+		// Extraer las órdenes del formato: "ordenes: 6106693 (96), 6106694 (96), id: 1..."
+		var ordenesMatch = ordenesText.match(/ordenes:\s*([^,]+(?:,\s*[^,]+)*),\s*id:/);
+		if(ordenesMatch && ordenesMatch[1]) {
+			var ordenesString = ordenesMatch[1]
+			log.debug('ordenes string extraído', ordenesString)
+			
+			// Dividir las órdenes individuales
+			var ordenesIndividuales = ordenesString.split(',')
+			
+			for(var i = 0; i < ordenesIndividuales.length; i++) {
+				var ordenMatch = ordenesIndividuales[i].trim().match(/(\d+)\s*\((\d+)\)/)
+				if(ordenMatch) {
+					var internalId = ordenMatch[1]
+					var periodo = ordenMatch[2]
+					
+					odv_p.push({
+						internalid: internalId,
+						periodo: periodo
+					})
+					
+					log.debug('Orden procesada GUTM', {internalid: internalId, periodo: periodo})
+				}
+			}
+		}
+		
+		if(odv_p.length === 0) {
+			log.debug('No se pudieron extraer órdenes del formato GUTM')
+			return {
+				tabla: '',
+				nombrePrograma: 'GUTM'
+			}
+		}
+		
+		// Extraer el nombre del programa del campo de datos
+		var nombrePrograma = "GUTM" // valor por defecto
+		var nombreMatch = ordenesText.match(/nombre:\s*([^,]+)/);
+		if(nombreMatch && nombreMatch[1]) {
+			nombrePrograma = nombreMatch[1].trim()
+			log.debug('Nombre del programa extraído GUTM', nombrePrograma)
+		}
+		
+		var odv_p_monto = data.montoVentaPropiaExtra || 0
+		var montoProd = data.montoProdExtra || 0
+		var totalCompensacionesGUTM = parseInt(odv_p_monto) + parseInt(montoProd)
+  		log.debug('odv_p GUTM',odv_p)
+		log.debug('odv_p_monto GUTM',odv_p_monto)
+		
+		
+		log.debug('objSObyid GUTM',objSObyid)
+		var strTable = ''
+			strTable += "<p font-family=\"Helvetica\" font-size=\"6\" align=\"center\"><b>" + escapexml(nombrePrograma) + "</b></p>";
+			strTable += "<table width='670px'>";
+			strTable += "<tr>";
+			strTable += "<td border='0.5' width='10px'><b>#</b></td>";
+			strTable += "<td border='0.5' width='100px'><b>VENTA REALIZADA POR</b></td>";
+			strTable += "<td border='0.5' width='200px'><b>CLIENTE</b></td>";
+			strTable += "<td border='0.5' width='0px'><b>FECHA</b></td>";
+			strTable += "<td border='0.5' width='0px'><b>PEDIDO</b></td>";
+			strTable += "<td border='0.5' width='0px'><b>PERIODO</b></td>";
+			strTable += "<td border='0.5' width='40px'><b>MONTO</b></td>";
+			//strTable += "<td border='0.5' width='0px'><b>ENTREGA</b></td>";
+			strTable += "</tr>";
+			/*fin encabezado de tabla
+			cuerpo de tabla*/
+			var lineaRec = 0
+			
+			// Procesar cada orden
+			for(var i = 0; i < odv_p.length; i++){
+				try {
+					var orden = odv_p[i]
+					log.debug('Procesando orden GUTM', orden)
+					
+					var thisSO = objSObyid[orden.internalid]
+					
+					if(!thisSO){
+						log.debug('No se encontró SO para internalid GUTM', orden.internalid)
+						continue
+					}
+					
+					var periodo = orden.periodo
+					var periodoName = search.lookupFields({ type: 'customrecord_periods', id: periodo, columns: ['custrecord_inicio','custrecord_final','name']});
+					var nameP = periodoName.name //mm/yyyy
+				    log.debug('namePeriodo GUTM', nameP)
+					
+					var monto
+					if(type_emp == 1 && promocion == 1){
+						monto = "$0.00"
+					}else{
+						monto = "$2,500.00"
+					}
+
+					lineaRec++
+					var b_produc
+					if(promocion == 1){
+						b_produc = 0
+					}else{
+						b_produc = (CompConfigDetails['1']['esquemaVentasPresentadora'][lineaRec]['bonoProductividad'])-(CompConfigDetails['1']['esquemaVentasPresentadora'][lineaRec-1]['bonoProductividad'])
+
+					}
+					//& 
+					var cliente = thisSO.entity[0].text.replace(/&/gi," ")
+					
+					strTable += "<tr>";
+					strTable += "<td border='0.5' border-style='dotted-narrow'>" + lineaRec 	+ "</td>";	
+					strTable += "<td border='0.5' border-style='dotted-narrow'>" + thisSO.salesrep[0].text 	+ "</td>";
+					strTable += "<td border='0.5' border-style='dotted-narrow'>" + cliente	+ "</td>";
+					strTable += "<td border='0.5' border-style='dotted-narrow'>" + thisSO.trandate 		+ "</td>";
+					strTable += "<td border='0.5' border-style='dotted-narrow'>" + thisSO.tranid		+ "</td>";
+					strTable += "<td border='0.5' border-style='dotted-narrow' align='left'>" + nameP	+ "</td>";
+					strTable += "<td border='0.5' border-style='dotted-narrow' align='right'>" + monto + "</td>";
+					strTable += "</tr>";
+				} catch(error) {
+					log.error('Error procesando orden GUTM', error)
+					continue
+				}
+			}
+			
+			strTable += "<tr>";
+			strTable += "<td border='0.5' colspan= '6' border-style='none' align='right'><b>Monto Venta Propia</b></td>";
+			strTable += "<td border='0.5' border-style='dotted-narrow' align='right'><b>" + currencyFormat('$',(odv_p_monto)+'.00')	+ "</b></td>";
+			strTable += "</tr>";	
+			strTable += "<tr>";
+			strTable += "<td border='0.5' colspan= '6' border-style='none' align='right'><b>Monto Productividad</b></td>";
+			strTable += "<td border='0.5' border-style='dotted-narrow' align='right'><b>" + currencyFormat('$',(montoProd)+'.00')	+ "</b></td>";
+			strTable += "</tr>";
+			strTable += "<tr>";
+			strTable += "<td border='0.5' colspan= '6' border-style='none' align='right'><b>Total Compensaciones " + escapexml(nombrePrograma) + "</b></td>";
+			strTable += "<td border='0.5' border-style='dotted-narrow' align='right'><b>" + currencyFormat('$',(totalCompensacionesGUTM)+'.00')	+ "</b></td>";
+			strTable += "</tr>";		
+			strTable += "</table>";
+			/*cuerpo de tabla*/
+			return {
+				tabla: strTable,
+				nombrePrograma: nombrePrograma
+			}
+			//fin tabla
+
+	}catch(e){
+		log.error('error table_GUTM',e)
+		return {
+			tabla: '',
+			nombrePrograma: 'GUTM'
+		}
+	}
+}
 function table_v_propia(data,tmp_emp,type_emp,promocion,dataSO,CompConfigDetails){
 	try{
 		var odv_p;
@@ -1075,6 +1308,12 @@ function createTable(data,CompConfigDetails,type_emp_text,period_name,type_emp,c
 		if(data.montoVentaPropiaTMSB){
 			strTable += table_v_propiaTMSB(data,tmp_emp,type_emp,promocion,dataSO,CompConfigDetails,cust_period)
 		}
+		if(data.montoVentaPropiaExtra && data.montoVentaPropiaExtra > 0 && data.ordenesExtraordinariasList && data.ordenesExtraordinariasList != ''){
+			var gutmTable = table_GUTM(data,tmp_emp,type_emp,promocion,dataSO,CompConfigDetails,cust_period)
+			strTable += gutmTable.tabla
+			// Guardar el nombre del programa para usar en el resumen
+			data.nombreProgramaGUTM = gutmTable.nombrePrograma
+		}
 		if (type_emp == 3 && data.comision_equipo > 0){
 			strTable += table_v_equipo(data,dataSO,CompConfigDetails)
 		}
@@ -1107,6 +1346,15 @@ function createTable(data,CompConfigDetails,type_emp_text,period_name,type_emp,c
         strTable += "<td border='0.5' border-style='dotted-narrow'>Ventas Propias</td>";
         strTable += "<td border='0.5' border-style='dotted-narrow' align='right'>"+ currencyFormat('$',(data.venta_propia != ''? (data.venta_propia+'.00'):'0.00')) +"</td>";
         strTable += "</tr>";
+        
+        // Agregar GUTM al resumen si existe
+        if(data.montoVentaPropiaExtra && data.montoVentaPropiaExtra > 0 && data.ordenesExtraordinariasList && data.ordenesExtraordinariasList != ''){
+	        var nombrePrograma = data.nombreProgramaGUTM || 'GUTM'
+	        strTable += "<tr>";
+	        strTable += "<td border='0.5' border-style='dotted-narrow'>" + escapexml(nombrePrograma) + "</td>";
+	        strTable += "<td border='0.5' border-style='dotted-narrow' align='right'>"+ currencyFormat('$',((parseInt(data.montoVentaPropiaExtra || 0) + parseInt(data.montoProdExtra || 0))+'.00')) +"</td>";
+	        strTable += "</tr>";
+        }
 
         strTable += "<tr>";
 		strTable += "<td border='0.5' border-style='dotted-narrow'>Movimientos Manuales</td>";
@@ -1421,6 +1669,10 @@ function search_crecord(id_jdg,type_emp,promocion){
         data.montoVentaPropiaTMSB =  r.getValue(config_fields.ventaPropia_tmsb[type_emp])
         data.montoProdTMSB =  r.getValue(config_fields.productividad_tmsb[type_emp])
         data.dataTMSB =  r.getValue(config_fields.odv_tmsb[type_emp])
+        // Nuevos campos para GUTM
+        data.ordenesExtraordinariasList =  r.getValue(config_fields.ordenes_extaordinarias[type_emp])
+        data.montoVentaPropiaExtra =  r.getValue(config_fields.monto_ventapropia_extra[type_emp])
+        data.montoProdExtra =  r.getValue(config_fields.monto_prod_extra[type_emp])
         /*data.odv_tres_dos = r.getValue(config_fields.tres_dos[type_emp]);
         data.sc = r.getValue(config_fields.sc[type_emp]);
         
