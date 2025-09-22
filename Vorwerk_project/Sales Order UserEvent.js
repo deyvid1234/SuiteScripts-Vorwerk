@@ -1338,17 +1338,21 @@ function(message,error,runtime,config,record,render,runtime,email,search,format,
                     'custentity_estatus_eptm7',            // status
                     'custentity_so_ganotm7',               // orden con la que gano tm7
                     'custentity_fechatm7_ganada',          // fecha en que gano tm7
-                    'custentity_ovs_ep7'                   // arreglo de órdenes de venta procesadas
+                    'custentity_ovs_ep7',                   // arreglo de órdenes de venta procesadas
+                    'custentity_num_ventas_gutm'
                 ]
             });
 
             //Determinacion de limite de ventas
+            const numVentasGutm = presentadorFields.custentity_num_ventas_gutm;
+            log.debug('[' + salesrep + '] numVentasGutm', numVentasGutm)
+         
             const epTm7 = presentadorFields.custentity_checkbox_eptm7;
             log.debug('[' + salesrep + '] epTm7', epTm7)
             
             // es eptm7?
             if(epTm7){
-                var limit = 3
+                var limit = numVentasGutm
                 var newStatus
                 // Determinar el límite basado en la diferencia de días entre fechas
                 const fecha_inicio = presentadorFields.custentity_fcha_inicio_eptm7;
@@ -1372,7 +1376,7 @@ function(message,error,runtime,config,record,render,runtime,email,search,format,
                     log.debug('[' + salesrep + '] diferenciaDias', diferenciaDias);
                     
                     // Si hay más de 31 días, el límite es 4, sino es 3
-                    if (diferenciaDias > 40) {
+                    /*if (diferenciaDias > 40) {
                         limit = 4;
                         newStatus = 4
                         log.debug('[' + salesrep + '] *** LIMITE ESTABLECIDO EN 4 (más de 31 días) ***');
@@ -1383,7 +1387,7 @@ function(message,error,runtime,config,record,render,runtime,email,search,format,
                     }
                 } else {
                     log.debug('[' + salesrep + '] *** LIMITE ESTABLECIDO EN 3 (fechas no disponibles) ***');
-                }
+                }*/
                 
                 const fecha_ganotm7 = presentadorFields.custentity_fechatm7_ganada;
                 
@@ -1434,42 +1438,16 @@ function(message,error,runtime,config,record,render,runtime,email,search,format,
                        
                     }
                     
-                   log.debug('[' + salesrep + '] Procesando orden ' + cont + ' de ' + limit + ' - ID: ' + internalId + ' - Tipo: ' + tipoVenta)
-                    switch(cont){
-                        case 1:
-                        log.debug('[' + salesrep + '] case1 ',fechaSO)
-                            newStatus = 2
-                            break;
-                        case 2:
-                        log.debug('[' + salesrep + '] case2 ',fechaSO) 
-                            newStatus = 2
-                            break;
-                        case 3: 
-                        log.debug('[' + salesrep + '] case3 ',fechaSO)
-                            if(limit == 3){
-                                newStatus = 3
-                                setfechafin = true 
-                                soGanadora = internalId
-                                log.debug('[' + salesrep + '] *** TM7 GANADA EN ORDEN 3 ***');
-                            }
-                            
-                            break;
-                        case 4: 
-                        log.debug('[' + salesrep + '] case4 ',fechaSO)
-                            if(limit == 4){
-                                newStatus = 3
-                                setfechafin = true 
-                                soGanadora = internalId
-                                log.debug('[' + salesrep + '] *** TM7 GANADA EN ORDEN 4 ***');
-                            }
-                            break;
-                        
-                        default: 
-                            newStatus = ''
-                            log.error('[' + salesrep + '] ERROR switch - contador fuera de rango')
-                            break;
-                    
+                    log.debug('[' + salesrep + '] Procesando orden ' + cont + ' de ' + limit + ' - ID: ' + internalId + ' - Tipo: ' + tipoVenta)
+                    if(cont == limit){
+                      newStatus = 3
+                      setfechafin = true 
+                      soGanadora = internalId
+                      log.debug('[' + salesrep + '] *** TM7 GANADA EN ORDEN 3 ***');
+                    }else{
+                      newStatus = 2
                     }
+                    
                     log.debug('[' + salesrep + '] newStatus ',newStatus)
                     log.debug('[' + salesrep + '] fechaSO ',fechaSO)
                     log.debug('[' + salesrep + '] soGanadora ',soGanadora)
