@@ -163,7 +163,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                container: 'custpage_filters'
             });
             
-            /*form.addButton({
+            /*	form.addButton({
                 id : 'custpage_searchData',
                 label : 'Guardar',
                 functionName : 'saveData()'
@@ -189,7 +189,9 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             const namePeriodo= fechaPeriodoCalculado.name //mm/yyyy
             const inicioPeriodo = fechaPeriodoCalculado.custrecord_inicio // dd/mm/yyyy
             const finPeriodo = fechaPeriodoCalculado.custrecord_final // dd/mm/yyyy
-
+            
+            log.debug('inicioPeriodo',inicioPeriodo)
+            log.debug('finPeriodo',finPeriodo)
             //Creacion de sublista y sus campos
             var sublist = addFieldsTabla(form,cust_type,cust_promo,cust_period,cust_entrega)
             const listasPresentadora = searchDataPresentadoras(fechaPeriodoCalculado,cust_period)
@@ -236,8 +238,9 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             const listaEquipoRecluta=listasPresentadora.equipoYRecluta
             //log.debug('listaEquipoRecluta', listaEquipoRecluta)
             const listaNombramientos=listasPresentadora.nombramiento
+                        
             var todosPeriodos = Utils.obtenerTodosPeriodos();
-            log.debug('listaNombramientos',listaNombramientos)
+            //log.debug('listaNombramientos',listaNombramientos)
             newCheckTime = new Date();
             timeDiff = newCheckTime - startTime; //in ms
             timeDiff /= 1000;
@@ -312,32 +315,39 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 var urlDetalle = 'https://3367613.app.netsuite.com/app/site/hosting/scriptlet.nl?script=1358&deploy=2'+'&periodoI='+inicioPeriodo+'&periodoF='+finPeriodo+'&promo='+empPromo+'&tipo='+empType+'&pre='+empID
                 switch(tipoReporteGloobal){
                     case 1: //Reporte LE
-                        if(empType == 3 && empPromo == 2 && allPresentadoras[i].internalid == '11512'){
-                            // verificar si tiene programas gana tm activos
-                            var programasActivos = programas(allPresentadoras[i].internalid)
+                        if(empType == 3 && empPromo == 2 /*&& allPresentadoras[i].internalid == '11512'*/){
+                           
                             //Calcular reporte para la persona
                             var reclutas = listaReclutas[i]
                             var integrantesEquipo = listaGrupos[i]   
                             var reclutasEquipo = listaEquipoRecluta[i]
                             var ventasEmp = thisPeriodSO[i] 
                             var conf = Utils.getConf(empConfiguracion);
-                            //log.debug('ventasEmp',ventasEmp)
+                            log.debug('ventasEmp',ventasEmp)
+                            var programasActivos = programas(dataEmp.internalid,compConfigDetails,todosPeriodos,dataEmp);
+                            log.debug('programasActivos',programasActivos)
+                            var detalleProgramas = programasActivos.detalleProgramas
+                            log.debug('detalleProgramas',detalleProgramas)
+                            var listIdsOdv = programasActivos.listIdsOdv
                             
-                            objVentasPropias = bonoVentaPropia(dataEmp,ventasEmp,compConfigDetails)
-                            //log.debug('objVentasPropias'+empID,objVentasPropias)
+                            // Capturar datos de programas antes de sobreescribir
+                            var programasData = programasActivos;
                             
+                            objVentasPropias = bonoVentaPropia(dataEmp,ventasEmp,compConfigDetails,listIdsOdv)
+                            log.debug('objVentasPropias'+empID,objVentasPropias)
+                            var programasActivos = objVentasPropias.programas
                             //objSupercomision = bonoSupercomision(integrantesEquipo,historicoSO,thisPeriodSO,allPresentadoras,dHistorico)
                             //log.debug('objSupercomision',objSupercomision)
                             
                             objReclutamiento = bonoReclutamiento(reclutas,historicoSO,thisPeriodSO,dataEmp,compConfigDetails,allPresentadoras,dHistorico)
-                            log.debug('objReclutamiento',objReclutamiento)
+                            //log.debug('objReclutamiento',objReclutamiento)
                             
                             objEntrega = bonoEntrega(dataEmp,ventasEmp,cust_entrega)
                             //log.debug('objEntrega',objEntrega)
                             
                             objXmasDos = bonoXmasDos(dataEmp,reclutasEquipo,thisPeriodSO,ventasEmp,historicoSO,allPresentadoras,dHistorico,integrantesEquipo,reclutas,listaReclutas)
                             //log.debug('objXmasDos',objXmasDos)
-                            objProductividad = bonoProductividad(dataEmp,ventasEmp,compConfigDetails)
+                            objProductividad = bonoProductividad(dataEmp,ventasEmp,compConfigDetails,listIdsOdv)
                              //log.debug('objProductividad',objProductividad)
                             
                             objVentaEquipo = bonoVentaEquipo(ventasEmp,compConfigDetails,conf,integrantesEquipo,thisPeriodSO,listaNombramientos,dataEmp,listaGrupos,allPresentadoras)
@@ -355,37 +365,51 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                             //log.debug('objActividad',objActividad)
                             //objRecTresxDos = bonoExtendido(reclutas,historicoSO,thisPeriodSO,dataEmp,compConfigDetails,allPresentadoras,dHistorico)
                             //log.debug('objRecTresxDos',objRecTresxDos)
-                            var amounTrue = validateAmount(sublist,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objReclutamiento,objEntrega,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objXmasdosNLE,objJoya,objCook,objNuevoRecluta,objActividad,objProductividadTMSB)
+                            var amounTrue = validateAmount(sublist,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objReclutamiento,objEntrega,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objXmasdosNLE,objJoya,objCook,objNuevoRecluta,objActividad,objProductividadTMSB,programasData)
         
                             if(amounTrue){
-                                fillTable(sublist,urlDetalle,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objReclutamiento,objEntrega,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objXmasdosNLE,objJoya,objCook,objNuevoRecluta,objActividad,objProductividadTMSB,programasActivos,false)
+                                fillTable(sublist,urlDetalle,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objReclutamiento,objEntrega,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objXmasdosNLE,objJoya,objCook,objNuevoRecluta,objActividad,objProductividadTMSB,programasActivos,false,programasData)
                                 cont_line++
                             }
                         }
 
                     break;
                     case 2: //Reporte Presentadora
-                        if(empType == 1 && empPromo == 2 /*&& allPresentadoras[i].internalid == '12255'*/){
+                        if(empType == 1 && empPromo == 2 /*&& allPresentadoras[i].internalid == '4388820'*/){
+                            
                             //Calcular reporte para la persona
                             var reclutas=listaReclutas[i]
                             var integrantesEquipo=listaGrupos[i]   
                             var reclutasEquipo=listaEquipoRecluta[i]
+                            
+                            
                             var ventasEmp =thisPeriodSO[i] 
                             var conf = Utils.getConf(empConfiguracion);
+                            
+                            var programasActivos = programas(dataEmp.internalid,compConfigDetails,todosPeriodos,dataEmp);
+                            log.debug('programasActivos',programasActivos)
+                            var detalleProgramas = programasActivos.detalleProgramas
+                            log.debug('detalleProgramas',detalleProgramas)
+                            var listIdsOdv = programasActivos.listIdsOdv
+                            
+                            // Capturar datos de programas antes de sobreescribir
+                            var programasData = programasActivos;
+                           
                             //log.debug('ventasEmp',ventasEmp)
                                 //objRecTresxDos = bonoExtendido(reclutas,historicoSO,thisPeriodSO,dataEmp,compConfigDetails,allPresentadoras,dHistorico)
                                 //log.debug('objRecTresxDos',objRecTresxDos)
                                 objProductividadTMSB = bonoProductividadTMSB(empID,dataEmp,tmsbSO,compConfigDetails,finPeriodo,inicioPeriodo,todosPeriodos,tmGanada,tmPagada)
-                                log.debug('objProductividadTMSB',objProductividadTMSB)
-                                objVentasPropias = bonoVentaPropia(dataEmp,ventasEmp,compConfigDetails)
-                                //log.debug('objVentasPropias',objVentasPropias)
+                                //log.debug('objProductividadTMSB',objProductividadTMSB)
+                                objVentasPropias = bonoVentaPropia(dataEmp,ventasEmp,compConfigDetails,listIdsOdv)
+                                log.debug('objVentasPropias case 2',objVentasPropias)
+                                var programasActivos = objVentasPropias.programas
                                 
                                 objReclutamiento = bonoReclutamiento(reclutas,historicoSO,thisPeriodSO,dataEmp,compConfigDetails,allPresentadoras,dHistorico)
                                 //log.debug('objReclutamiento',objReclutamiento)
                                 objEntrega = bonoEntrega(dataEmp,ventasEmp,cust_entrega)
                                 //log.debug('objEntrega',objEntrega)
                                 
-                                objProductividad = bonoProductividad(dataEmp,ventasEmp,compConfigDetails)
+                                objProductividad = bonoProductividad(dataEmp,ventasEmp,compConfigDetails,listIdsOdv)
                                 //log.debug('objProductividad',objProductividad)
                                 objReclutamiento = bonoReclutamiento(reclutas,historicoSO,thisPeriodSO,dataEmp,compConfigDetails,allPresentadoras,dHistorico)
                                 //log.debug('objReclutamiento',objReclutamiento)
@@ -393,17 +417,17 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                                 
                                 objJoya = bonoJoya(conf,ventasEmp,compConfigDetails)
                                 objCook = bonoCk(dataEmp,ckSO)
-                            
+                                
                             
                             /*
                             montoComisionCK = bonoComCK()
                             
                             */
 
-                            var amounTrue = validateAmount(sublist,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objReclutamiento,objEntrega,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objXmasdosNLE,objJoya,objCook,objNuevoRecluta,objActividad,objProductividadTMSB)
+                            var amounTrue = validateAmount(sublist,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objReclutamiento,objEntrega,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objXmasdosNLE,objJoya,objCook,objNuevoRecluta,objActividad,objProductividadTMSB,programasData)
         
                             if(amounTrue){
-                                fillTable(sublist,urlDetalle,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objReclutamiento,objEntrega,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objXmasdosNLE,objJoya,objCook,objNuevoRecluta,objActividad,objProductividadTMSB,null)
+                                fillTable(sublist,urlDetalle,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objReclutamiento,objEntrega,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objXmasdosNLE,objJoya,objCook,objNuevoRecluta,objActividad,objProductividadTMSB,programasActivos,true,programasData)
                                 cont_line++
                             }
                         }
@@ -420,10 +444,10 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                         
                             objCook = bonoCk(dataEmp,ckSO)
                             
-                            var amounTrue = validateAmount(sublist,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objReclutamiento,objEntrega,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objXmasdosNLE,objJoya,objCook,objNuevoRecluta,objActividad,objProductividadTMSB)
+                            var amounTrue = validateAmount(sublist,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objReclutamiento,objEntrega,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objXmasdosNLE,objJoya,objCook,objNuevoRecluta,objActividad,objProductividadTMSB,null)
         
                             if(amounTrue){
-                                fillTable(sublist,urlDetalle,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objReclutamiento,objEntrega,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objXmasdosNLE,objJoya,objCook,objNuevoRecluta,objActividad,objProductividadTMSB,null)
+                                fillTable(sublist,urlDetalle,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objReclutamiento,objEntrega,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,objXmasdosNLE,objJoya,objCook,objNuevoRecluta,objActividad,objProductividadTMSB,null,false,null)
                                 cont_line++
                             }
                         }
@@ -444,7 +468,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
         }   
     }//Fin sublista
 
-    function validateAmount(sublist,dataEmp,ventasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,reclutamiento,entrega,productividad,ventaEquipo,ventasEquipoNLE,garantia,xMasdosNLE,joya,cookKey,nuevoRecluta,actividad,productividadTMSB){
+    function validateAmount(sublist,dataEmp,ventasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,reclutamiento,entrega,productividad,ventaEquipo,ventasEquipoNLE,garantia,xMasdosNLE,joya,cookKey,nuevoRecluta,actividad,productividadTMSB,programasData){
         var subtotal=0
         var v
         if(ventasPropias){  
@@ -526,6 +550,18 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             subtotal+=parseInt(v,10)
         }
 
+        // Validar montos de programas extraordinarios
+        if(programasData){
+            if(programasData.monto && programasData.monto > 0){
+                v = programasData.monto
+                subtotal+=parseInt(v,10)
+            }
+            if(programasData.montoVP && programasData.montoVP > 0){
+                v = programasData.montoVP
+                subtotal+=parseInt(v,10)
+            }
+        }
+
         if( subtotal > 0 || (ventasPropias && ventasPropias.data && ventasPropias.data.length > 0) ){
             v = true
         }else{
@@ -534,7 +570,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
         return v;
 
     }
-    function fillTable(sublist,urlDetalle,dataEmp,ventasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,reclutamiento,entrega,productividad,ventaEquipo,ventasEquipoNLE,garantia,xMasdosNLE,joya,cookKey,nuevoRecluta,actividad,productividadTMSB,programasActivos){
+    function fillTable(sublist,urlDetalle,dataEmp,ventasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,reclutamiento,entrega,productividad,ventaEquipo,ventasEquipoNLE,garantia,xMasdosNLE,joya,cookKey,nuevoRecluta,actividad,productividadTMSB,programasActivos,esPruebaFalse,programasData){
         var linea = cont_line
         var subtotal=0
         
@@ -584,27 +620,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 value : v!=''?v:''
              });
             
-            // Llenar campo de programa Gana TM
-            var programaDetalle = '';
-            if(programasActivos && programasActivos.tieneProgramasActivos && programasActivos.detalleProgramas.length > 0) {
-                var programa = programasActivos.detalleProgramas[0]; // Tomar el primer programa activo
-                programaDetalle = 'Programa: ' + (programa.nombre || 'N/A') + 
-                                ' | Inicio: ' + (programa.fechaInicio || 'N/A') + 
-                                ' | Fin: ' + (programa.fechaFin || 'N/A') + 
-                                ' | Estado: ' + (programa.estado || 'N/A');
-                if(programa.listIdsOdv && programa.listIdsOdv !== '') {
-                    programaDetalle += ' | ODV IDs: ' + programa.listIdsOdv;
-                }
-            } else {
-                programaDetalle = 'Sin programas activos';
-            }
-            
-            sublist.setSublistValue({
-                id : 'programa_gana_tm',
-                line : cont_line,
-                value : programaDetalle
-            });
-            
+                        
             sublist.setSublistValue({
                 id : 'custpage_ver_detalle',
                 line : cont_line,
@@ -968,6 +984,92 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                  value : v
             });
         }
+
+        // Llenar campos de programas extraordinarios
+        if(programasData && programasData.montoVP > 0){
+            // Campo ordenes_extaordinarias - detalle de las órdenes
+            var ordenesExtraordinarias = '';
+            var ordenesArray = [];
+            
+            // Agregar información de programasData.data
+            if(programasData.data && typeof programasData.data === 'object'){
+                for (var periodo in programasData.data) {
+                    var ventasPeriodo = programasData.data[periodo];
+                    for (var i = 0; i < ventasPeriodo.length; i++) {
+                        ordenesArray.push(ventasPeriodo[i].internalid + ' (' + periodo + ')');
+                    }
+                }
+            }
+            
+            // Agregar información de programasData.detalleProgramas
+            if(programasData.detalleProgramas && Array.isArray(programasData.detalleProgramas)){
+                for (var i = 0; i < programasData.detalleProgramas.length; i++) {
+                    var detalle = programasData.detalleProgramas[i];
+                    if(detalle && typeof detalle === 'object'){
+                        // Agregar cada propiedad del detalle con su nombre real
+                        if(detalle.id) ordenesArray.push('id: ' + detalle.id);
+                        if(detalle.nombre) ordenesArray.push('nombre: ' + detalle.nombre);
+                        if(detalle.fechaInicio) ordenesArray.push('fechaInicio: ' + detalle.fechaInicio);
+                        if(detalle.fechaFin) ordenesArray.push('fechaFin: ' + detalle.fechaFin);
+                        if(detalle.estado) ordenesArray.push('estado: ' + detalle.estado);
+                    }
+                }
+            }
+            
+            ordenesExtraordinarias = 'ordenes: ' + ordenesArray.join(', '); 
+            
+            sublist.setSublistValue({
+                id : 'ordenes_extaordinarias',
+                line : linea,
+                value : ordenesExtraordinarias
+            });
+            
+            // Campo custpage_monto_ventapropia_extra - montoVP
+            var montoVPExtra = 0;
+            if(programasData.montoVP && programasData.montoVP > 0){
+                montoVPExtra = programasData.montoVP;
+                subtotal += parseInt(montoVPExtra, 10);
+            }
+            
+            sublist.setSublistValue({
+                id : 'custpage_monto_ventapropia_extra',
+                line : linea,
+                value : montoVPExtra
+            });
+            
+            // Campo custpage_monto_prod_extra - monto (productividad)
+            var montoProdExtra = 0;
+            if(programasData.monto && programasData.monto > 0){
+                montoProdExtra = programasData.monto;
+                subtotal += parseInt(montoProdExtra, 10);
+            }
+            
+            sublist.setSublistValue({
+                id : 'custpage_monto_prod_extra',
+                line : linea,
+                value : montoProdExtra
+            });
+        } else {
+            // Llenar campos vacíos si no hay datos de programas
+            sublist.setSublistValue({
+                id : 'ordenes_extaordinarias',
+                line : linea,
+                value : 'Sin programas extraordinarios'
+            });
+            
+            sublist.setSublistValue({
+                id : 'custpage_monto_ventapropia_extra',
+                line : linea,
+                value : 0
+            });
+            
+            sublist.setSublistValue({
+                id : 'custpage_monto_prod_extra',
+                line : linea,
+                value : 0
+            });
+        }
+
         var v = subtotal>0?subtotal:0
         // log.debug('subtotal v',v)
         sublist.setSublistValue({
@@ -978,6 +1080,175 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
         //log.debug('subtotal',subtotal)
         return fillTable;
         
+    }
+     /**
+     * Función que verifica si un empleado tiene algún programa activo usando el caché de presentadores
+     * @param {number} empleadoId - ID del empleado para verificar programas
+     * @param {Object} compConfigDetails - Configuración de la compañía
+     * @param {Object} todosPeriodos - Todos los períodos disponibles
+     * @param {Object} presentadoresConProgramas - Caché de todos los presentadores con programas
+     * @returns {Object} - Información sobre los programas activos del empleado
+     */
+     function programas(empleadoId,compConfigDetails,todosPeriodos,dataEmp) {
+        try {
+            
+            var isinactivePrograma = dataEmp.isinactivePrograma
+            var programasActivos = [];
+            var tieneProgramasActivos = false;
+            var ventasPorPeriodo = {}
+            
+            var montoTotalProductividad = 0;
+            var montoVentasPre = 0;
+            var todosListIdsOdv = []; // Variable para recopilar todos los IDs de todos los programas
+            if( isinactivePrograma == false){
+                var statusProgram = dataEmp.estatusDelPrograma
+                var internalidPrograma = dataEmp.internalidPrograma
+                var nombrePrograma = dataEmp.nombreDelPrograma
+                var fechaInicioPrograma = dataEmp.fechaInicioDelPrograma
+                var fechaFinPrograma = dataEmp.fechaFinDelPrograma
+                var listIdsOdv = dataEmp.listIdsOdvDelPrograma
+                log.debug('listIdsOdv', listIdsOdv) 
+                log.debug('statusProgram', statusProgram)
+                log.debug('internalidPrograma', internalidPrograma)
+                log.debug('nombrePrograma', nombrePrograma)
+                log.debug('fechaInicioPrograma', fechaInicioPrograma)
+                log.debug('fechaFinPrograma', fechaFinPrograma)
+                log.debug('isinactivePrograma', isinactivePrograma)
+                var data = [];
+                var numeroVentasPorPeriodo = {}         
+                var cantidadIds = 0;
+                var montoVentaPropiaPrograma = 0;
+                    
+                if (listIdsOdv && listIdsOdv.trim() !== '') {
+                    var idsArray = listIdsOdv.split(',');
+                    cantidadIds = idsArray.length;
+                    
+                    // Solo calcular montos si el estatus es 7, de lo contrario usar 0
+                    if (statusProgram == 7) {
+                        tieneProgramasActivos = true;
+                        montoVentaPropiaPrograma = cantidadIds * 2500;
+                        // Sumar al total de montoVP
+                        montoVentasPre += montoVentaPropiaPrograma;
+                        
+                    } else {
+                        montoVentaPropiaPrograma = 0;
+                        
+                    }
+                    
+                }
+
+                var programa = {
+                    id: internalidPrograma,
+                    nombre: nombrePrograma,
+                    fechaInicio: fechaInicioPrograma,
+                    fechaFin: fechaFinPrograma,
+                    estado: statusProgram
+                };
+                
+                programasActivos.push(programa);
+                
+                // Agregar IDs al array global
+                if (listIdsOdv && listIdsOdv.trim() !== '') {
+                    var idsDeEstePrograma = listIdsOdv.split(',');
+                    for (var j = 0; j < idsDeEstePrograma.length; j++) {
+                        var idLimpio = idsDeEstePrograma[j].trim();
+                        if (todosListIdsOdv.indexOf(idLimpio) === -1) { // Evitar duplicados
+                            todosListIdsOdv.push(idLimpio);
+                        }
+                    }
+                }
+                
+
+                // Solo calcular monto de productividad si el estatus es 7
+                if (statusProgram == 7) {
+                    var idsArray = listIdsOdv.split(',');
+                    for (var i = 0; i < idsArray.length; i++){
+                        var currentId = idsArray[i].trim(); // Eliminar espacios en blanco
+                        var objSO = search.lookupFields({
+                            type: 'salesorder',
+                            id: currentId,
+                            columns: ['trandate']
+                        });
+                        
+                        var fechaSO = objSO.trandate                    
+                        var periodoSO = Utils.encontrarPeriodo(fechaSO, todosPeriodos);                    
+                        
+                        data.push(currentId)
+
+                        if (!ventasPorPeriodo[periodoSO]) {
+                            ventasPorPeriodo[periodoSO] = [];
+                            numeroVentasPorPeriodo[periodoSO] = 0;
+                        }
+                        
+                        ventasPorPeriodo[periodoSO].push({
+                            internalid: currentId,
+                            fecha: fechaSO,
+                            periodo: periodoSO,
+                        });
+                        numeroVentasPorPeriodo[periodoSO]++;
+                        
+                    }
+                    
+                
+                        
+                    var totalVentasPorPeriodo = {};
+                    for (var periodo in ventasPorPeriodo) {
+                        totalVentasPorPeriodo[periodo] = ventasPorPeriodo[periodo].length;
+                    }
+                    for (e in numeroVentasPorPeriodo){
+                        var ventasEnPeriodo = numeroVentasPorPeriodo[e]; 
+                        
+                        var montoProductividadxPeriodo= compConfigDetails[1]['esquemaVentasPresentadora'][ventasEnPeriodo]['bonoProductividad']
+                        
+                        montoProductividadxPeriodo = parseInt(montoProductividadxPeriodo);
+                        if(montoProductividadxPeriodo > 0){
+                            montoTotalProductividad += parseInt(montoProductividadxPeriodo);
+                        }
+                    }
+                }
+                
+            }
+
+            // Si no hay programas activos, retornar estructura vacía
+            if (!tieneProgramasActivos) {
+                return {
+                    tieneProgramasActivos: tieneProgramasActivos,
+                    detalleProgramas: programasActivos,
+                    monto: 0, 
+                    data: ventasPorPeriodo,
+                    montoVP: 0,
+                    listIdsOdv: todosListIdsOdv.join(',') // Convertir array a string separado por comas
+               };
+            }
+            
+            var resultado = {
+                tieneProgramasActivos: tieneProgramasActivos,
+                detalleProgramas: programasActivos,
+                monto: montoTotalProductividad, 
+                data: ventasPorPeriodo,
+                montoVP: montoVentasPre,
+                listIdsOdv: todosListIdsOdv.join(',') // Convertir array a string separado por comas
+           };
+           
+           return resultado;
+
+        } catch (error) {
+            log.error('Error en función programas', {
+                empleadoId: empleadoId,
+                error: error.toString()
+            });
+            
+            return {
+                tieneProgramasActivos: false,
+                detalleProgramas: [],
+                monto: 0, // Monto de productividad
+                data: {},
+                montoVP: 0, // Monto de venta propia
+                listIdsOdv: '', // Valor vacío en caso de error
+                programas: [], // Mantener por compatibilidad
+                error: error.toString()
+            };
+        }
     }
     function bonoProductividadTMSB(empID,dataEmp,historicoSO,compConfigDetails,finPeriodo,inicioPeriodo,todosPeriodos,tmGanada,tmPagada){//validar tipo de reingreso en el llamado, pasar a la funcion
         try{
@@ -1012,7 +1283,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             
             if(empTipoIngreso == 14  && finObjetivo2 <= finPeriodofecha && finObjetivo2 >= inicioPeriodofecha && !tmGanada.hasOwnProperty(empID) && !tmPagada.hasOwnProperty(empID)){
                 var ventas = historicoSO[empID]
-                log.debug('ventas',ventas)
+                //log.debug('ventas',ventas)
                 var data = []
                 var ventasPorPeriodo = {}
                 var numeroVentasPorPeriodo = {};
@@ -1095,7 +1366,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 reclutas.forEach(function(i,index) {//Se recorren las reclutas del Presentador
                     var ventasReclutaTP = thisPeriodSO[i];
                     var ventasReclutaH = historicoSO[i];
-                    log.debug('ventasReclutaH'+ i,ventasReclutaH)
+                    //log.debug('ventasReclutaH'+ i,ventasReclutaH)
                     var confRec = allPresentadoras[i]['conf_reclutamiento']?allPresentadoras[i]['conf_reclutamiento']:1
                     var hiredate = allPresentadoras[i]['hiredate']
                     var fechaObjetivo = allPresentadoras[i]['objetivo_2']
@@ -1139,7 +1410,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                             if(fechaSO <= fechaLimite30Dias && tipoVenta != 'TM Ganada'){
                                 cont ++
                                 if(cont == 4){
-                                    log.debug('armar arreglo y sumar bono')
+                                    //log.debug('armar arreglo y sumar bono')
                                     montoInd += 5000; // Bono extra por cuarta venta
                                     var pedidoExtra = { 
                                         idSO: id, 
@@ -1152,10 +1423,10 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                                     salesReclutas[i] = salesReclutaTP
                                     break
                                 }else if(cont > 4){
-                                    log.debug('ya se debio haber pagado')
+                                    //log.debug('ya se debio haber pagado')
                                     break
                                 }else if(cont < 4){
-                                    log.debug('continuar con la siguiente orden')
+                                    //log.debug('continuar con la siguiente orden')
                                 }
                             }
                             
@@ -1227,7 +1498,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                                 
                                 fechaSO = Utils.stringToDate(fechaSO)
                                 if( fechaSO <= fechaObjetivo){//dentro del primer mes natural que es el objetivo 1
-                                    log.debug('esta si ',id)
+                                    //log.debug('esta si ',id)
                                     cont ++ 
                                     noReclutasActivos ++
                                     var pedido = { idSO:id,docNum:docNum, noVenta:cont} 
@@ -1654,15 +1925,15 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
         return {monto:venta_equipo, porcentaje:porcentaje, infoVentasEquipo:infoVentasEquipo, noVentas:numeroVentasEquipo, infoNle:nle.dataNle}
 
     }
-    function bonoProductividad(dataEmp,ventasEmp,compConfigDetails){
+    function bonoProductividad(dataEmp,ventasEmp,compConfigDetails,listIdsOdv){
         try{
             
             var ventasNo = 0
             var ventas = ventasEmp
-            log.debug('ventas',ventas)
+           // log.debug('ventas',ventas)
             var data = []
             var epTm7 = dataEmp.epTm7
-            log.debug('epTm7',epTm7)
+            //log.debug('epTm7',epTm7)
             var epTm7_inicio = dataEmp.epTm7_inicio
             var fechatm7_ganada = dataEmp.fechatm7_ganada
             var soid_Ganadora = dataEmp.so_ganotm7
@@ -1675,9 +1946,9 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             var tm 
             if(epTm7 == true && epTm7_inicio) {
                 epTm7_inicio = Utils.stringToDate(epTm7_inicio)
-                log.debug('epTm7_inicio',epTm7_inicio)
+                //log.debug('epTm7_inicio',epTm7_inicio)
                 fecha_termino = Utils.stringToDate(fecha_termino)
-                log.debug('fecha_termino',fecha_termino)
+                //log.debug('fecha_termino',fecha_termino)
                 for (i in ventas){
                     var ventasData= Object.keys(ventas[i])
                     //thisPeriodSO['id presentador'][indice]['id pedido']['etiqueta']
@@ -1687,10 +1958,33 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                     var id = ventas[i][ventasData]['internalid']
                     var tm
                     fechaSO = Utils.stringToDate(fechaSO)
-                    log.debug('fechaSO',fechaSO)
+                    //log.debug('fechaSO',fechaSO)
                     //log.debug('comisionables',comisionables)
 
                     if(comisionables != 'No Comisionable' && tipoVenta != 'TM Ganada'){
+                        // Validar si el ID existe en listIdsOdv (programas extraordinarios)
+                        var idExisteEnPrograma = false;
+                        if (listIdsOdv && typeof listIdsOdv === 'string' && listIdsOdv.trim() !== '') {
+                            var ordenesPrograma = listIdsOdv.split(',');
+                            idExisteEnPrograma = ordenesPrograma.indexOf(id.toString()) !== -1;
+                        }
+                        
+                        log.debug('bonoProductividad - ID en programa extraordinario', {
+                            id: id,
+                            idExisteEnPrograma: idExisteEnPrograma,
+                            listIdsOdv: listIdsOdv
+                        });
+                        
+                        // Si existe en programa extraordinario, excluir del cálculo de productividad
+                        if (idExisteEnPrograma) {
+                            log.debug('bonoProductividad - Orden excluida por programa extraordinario', {
+                                id: id,
+                                fechaSO: fechaSO,
+                                tipoVenta: tipoVenta
+                            });
+                            continue; // Saltar esta iteración
+                        }
+                        
                         // Validar si el ID existe en el campo custentity_ovs_ep7
                         var ordenesEP7 = dataEmp.ovs_ep7;
                         var idExisteEnEP7 = false;
@@ -1724,8 +2018,31 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                     //thisPeriodSO['id presentador'][indice]['id pedido']['etiqueta']
                     var comisionables = ventas[i][ventasData]['custbody_vw_comission_status']
                     var tipoVenta = ventas[i][ventasData]['custbody_tipo_venta']
+                    var id = ventas[i][ventasData]['internalid']
                     //log.debug('comisionables',comisionables)
                     if(comisionables != 'No Comisionable' && tipoVenta != 'TM Ganada'){
+                        // Validar si el ID existe en listIdsOdv (programas extraordinarios)
+                        var idExisteEnPrograma = false;
+                        if (listIdsOdv && typeof listIdsOdv === 'string' && listIdsOdv.trim() !== '') {
+                            var ordenesPrograma = listIdsOdv.split(',');
+                            idExisteEnPrograma = ordenesPrograma.indexOf(id.toString()) !== -1;
+                        }
+                        
+                        log.debug('bonoProductividad (else) - ID en programa extraordinario', {
+                            id: id,
+                            idExisteEnPrograma: idExisteEnPrograma,
+                            listIdsOdv: listIdsOdv
+                        });
+                        
+                        // Si existe en programa extraordinario, excluir del cálculo de productividad
+                        if (idExisteEnPrograma) {
+                            log.debug('bonoProductividad (else) - Orden excluida por programa extraordinario', {
+                                id: id,
+                                tipoVenta: tipoVenta
+                            });
+                            continue; // Saltar esta iteración
+                        }
+                        
                         tm = 'tm6'
                         var pedido = { idSO:id,programa:tm} 
                         data.push(pedido)
@@ -2019,9 +2336,9 @@ una rcluta de algun miembro del equipo*/
                 var salesReclutas = {}
 
                 reclutas.forEach(function(i,index) {//Se recorren las reclutas del Presentador
-                    log.debug('recluta',i)
+                    //log.debug('recluta',i)
                     var ventasReclutaTP = thisPeriodSO[i];
-                    log.debug('ventasReclutaTP',ventasReclutaTP)
+                    //log.debug('ventasReclutaTP',ventasReclutaTP)
                     var montoInd = 0  
                     if(ventasReclutaTP){//Debe tener Ventas en el periodo calculado
                         
@@ -2049,9 +2366,9 @@ una rcluta de algun miembro del equipo*/
                             }else if(confRec == 11 || confRec == 12 || confRec == 13 || confRec == 14){
                                 var noComisiona = 4
                             }
-                            log.debug('confRec',confRec)
-                            log.debug('noComisiona',noComisiona)
-                            log.debug('ventasReclutaH',ventasReclutaH)
+                            //log.debug('confRec',confRec)
+                            //log.debug('noComisiona',noComisiona)
+                            //log.debug('ventasReclutaH',ventasReclutaH)
                             var cont = 0
                             var faltantesRec = 0
                             if( ventasReclutaH ){  
@@ -2060,8 +2377,8 @@ una rcluta de algun miembro del equipo*/
                             }else{
                                 faltantesRec = noComisiona
                             }
-                            log.debug('faltantesRec',faltantesRec)
-                            log.debug('cont',cont)
+                            //log.debug('faltantesRec',faltantesRec)
+                            //log.debug('cont',cont)
                             if(faltantesRec > 0){ 
                                 for(j in ventasReclutaTP){//Se recorren las Ordenes de cada recluta del Presentador
                                     key = Object.keys(ventasReclutaTP[j])
@@ -2072,7 +2389,7 @@ una rcluta de algun miembro del equipo*/
                                     
                                     fechaSO = Utils.stringToDate(fechaSO)
                                     if(tipoVenta != 'TM Ganada'&& fechaSO <= fechaObjetivo){
-                                        log.debug('tiene que entraraqui')
+                                        //log.debug('tiene que entraraqui')
                                         cont ++ 
                                         var pedido = { idSO:id,docNum:docNum, noVenta:cont} 
                                         montoInd = montoInd + Math.abs(compConfigDetails[confRec]['esquemaVentasReclutamiento'][cont]['compensacion'])
@@ -2136,7 +2453,7 @@ una rcluta de algun miembro del equipo*/
         }
 
     }
-    function bonoVentaPropia(dataEmp,empSOThisPeriod,compConfigDetails){
+    function bonoVentaPropia(dataEmp,empSOThisPeriod,compConfigDetails,listIdsOdv){
         try{
             if(empSOThisPeriod){
                 var ventasNo = 0
@@ -2146,6 +2463,7 @@ una rcluta de algun miembro del equipo*/
                 var epTm7 = dataEmp.epTm7
                 log.debug('epTm7',epTm7)
 
+                
                 var epTm7_inicio = dataEmp.epTm7_inicio
                 var fechatm7_ganada = dataEmp.fechatm7_ganada
                 var soid_Ganadora = dataEmp.so_ganotm7
@@ -2158,6 +2476,7 @@ una rcluta de algun miembro del equipo*/
                 }
                 var tm 
                 if(epTm7  && epTm7_inicio) {
+                    // Lógica original de EP7 - mantener intacta
                     epTm7_inicio = Utils.stringToDate(epTm7_inicio)
                     log.debug('epTm7_inicio',epTm7_inicio)
                     fecha_termino = Utils.stringToDate(fecha_termino)
@@ -2174,6 +2493,15 @@ una rcluta de algun miembro del equipo*/
                         log.debug('fechaSO',fechaSO)
                         //log.debug('comisionables',comisionables)
                         if(comisionables != 'No Comisionable' && tipoVenta != 'TM Ganada'){
+                            // Validación adicional: verificar programas activos
+                            
+                            if ( listIdsOdv && listIdsOdv.trim() !== '') {
+                                var ordenesPrograma = listIdsOdv.split(',');
+                                idExisteEnPrograma = ordenesPrograma.indexOf(id.toString()) !== -1;
+                                // Si el status es 7, aunque esté en el programa, sí debe comisionar
+                                
+                            }
+                            
                             // Validar si el ID existe en el campo custentity_ovs_ep7
                             var ordenesEP7 = dataEmp.ovs_ep7;
                             var idExisteEnEP7 = false;
@@ -2191,9 +2519,12 @@ una rcluta de algun miembro del equipo*/
                                 tm = 'EP_tm7'
                                 var pedido = { idSO:id,programa:tm} 
                                 data.push(pedido)
-                            } else {
-                                log.debug('si comisiona esta venta 1 - ID NO existe en EP7',id)
-                                tm = 'tm6'
+                            } else if (idExisteEnPrograma) {
+                                log.debug('no comisiona esta venta - ID existe en programa activo (status != 7)',id)
+                                
+                            } else if(!idExisteEnPrograma && !idExisteEnEP7){
+                                                                
+                                tm = 'Regular'
                                 var pedido = { idSO:id,programa:tm} 
                                 data.push(pedido)
                                 ventasNo ++
@@ -2207,12 +2538,28 @@ una rcluta de algun miembro del equipo*/
                         //thisPeriodSO['id presentador'][indice]['id pedido']['etiqueta']
                         var comisionables = ventas[i][ventasData]['custbody_vw_comission_status']
                         var tipoVenta = ventas[i][ventasData]['custbody_tipo_venta']
+                        var id = ventas[i][ventasData]['internalid']
                         //log.debug('comisionables',comisionables)
                         if(comisionables != 'No Comisionable' && tipoVenta != 'TM Ganada'){
-                            tm = 'tm6'
-                            var pedido = { idSO:id,programa:tm} 
-                            data.push(pedido)
-                            ventasNo ++
+                            // Validación adicional: verificar programas activos
+                            var idExisteEnPrograma = false;
+                            
+                            if ( listIdsOdv && listIdsOdv.trim() !== '') {
+                                var ordenesPrograma = listIdsOdv.split(',');
+                                idExisteEnPrograma = ordenesPrograma.indexOf(id.toString()) !== -1;
+                                
+                            }
+                            
+                            if (idExisteEnPrograma) {
+                                log.debug('no comisiona esta venta - ID existe en programa activo (status != 7)',id)
+                                
+                            } else if(!idExisteEnPrograma){
+                                
+                                tm = 'Regular'
+                                var pedido = { idSO:id,programa:tm} 
+                                data.push(pedido)
+                                ventasNo ++
+                            }
                         }
 
                     } 
@@ -2226,7 +2573,11 @@ una rcluta de algun miembro del equipo*/
     data: Arreglo de Internal id de Sales Order del EMP
     */
 
-                return {monto:montoVentasPre, data:data}
+                return {
+                    monto: montoVentasPre, 
+                    data: data,
+                    
+                }
             }
             return false
         }catch(e){
@@ -2291,7 +2642,16 @@ una rcluta de algun miembro del equipo*/
             const empSearchfecha_tm7_ganada = search.createColumn({ name: 'custentity_fechatm7_ganada'});
             const empSearch_so_ganotm7 = search.createColumn({ name: 'custentity_so_ganotm7'});
             const empSearch_ovs_ep7 = search.createColumn({ name: 'custentity_ovs_ep7'});
-
+            //inician campos de GUTM
+            const empSearchEstatusDelPrograma = search.createColumn({ name: 'custrecord_status_program', join: 'custrecord_presentador_id' })
+            const empSearchNombreDelPrograma = search.createColumn({ name: 'custrecord_nombre_programa', join: 'custrecord_presentador_id' })
+            const empSearchFechaInicioDelPrograma = search.createColumn({ name: 'custrecord_start_date', join: 'custrecord_presentador_id' })
+            const empSearchFechaFinDelPrograma = search.createColumn({ name: 'custrecord_end_date', join: 'custrecord_presentador_id' })
+            const empSearchNumeroVentasDelPrograma = search.createColumn({ name: 'custrecord_numero_ventas', join: 'custrecord_presentador_id' })
+            const empSearchListIdsOdvDelPrograma = search.createColumn({ name: 'custrecord_list_ids_odv', join: 'custrecord_presentador_id' })
+            const empSearchinternalidPrograma = search.createColumn({ name: 'internalid', join: 'custrecord_presentador_id' })
+            const empSearchisinactivePrograma = search.createColumn({ name: 'isinactive', join: 'custrecord_presentador_id' })
+            
             const mySearch = search.create({
                 type: 'employee',
                 filters: employeeSearchFilters,
@@ -2327,9 +2687,15 @@ una rcluta de algun miembro del equipo*/
                     empSearchEptm7_fin,
                     empSearchfecha_tm7_ganada,
                     empSearch_so_ganotm7,
-                    empSearch_ovs_ep7
-
-
+                    empSearch_ovs_ep7,
+                    empSearchEstatusDelPrograma,
+                    empSearchNombreDelPrograma,
+                    empSearchFechaInicioDelPrograma,
+                    empSearchFechaFinDelPrograma,
+                    empSearchNumeroVentasDelPrograma,
+                    empSearchListIdsOdvDelPrograma,
+                    empSearchinternalidPrograma,
+                    empSearchisinactivePrograma
                 ],
             });
             
@@ -2376,6 +2742,16 @@ una rcluta de algun miembro del equipo*/
                     objEMP.fechatm7_ganada = r.getValue('custentity_fechatm7_ganada')
                     objEMP.so_ganotm7 = r.getValue('custentity_so_ganotm7')
                     objEMP.ovs_ep7 = r.getValue('custentity_ovs_ep7')
+                    
+                    objEMP.estatusDelPrograma = r.getValue({ name: 'custrecord_status_program', join: 'custrecord_presentador_id' })
+                    objEMP.nombreDelPrograma = r.getValue({ name: 'custrecord_nombre_programa', join: 'custrecord_presentador_id' })
+                    objEMP.fechaInicioDelPrograma = r.getValue({ name: 'custrecord_start_date', join: 'custrecord_presentador_id' })
+                    objEMP.fechaFinDelPrograma = r.getValue({ name: 'custrecord_end_date', join: 'custrecord_presentador_id' })
+                    objEMP.numeroVentasDelPrograma = r.getValue({ name: 'custrecord_numero_ventas', join: 'custrecord_presentador_id' })
+                    objEMP.listIdsOdvDelPrograma = r.getValue({ name: 'custrecord_list_ids_odv', join: 'custrecord_presentador_id' })
+                    objEMP.internalidPrograma = r.getValue({ name: 'internalid', join: 'custrecord_presentador_id' })
+                    objEMP.isinactivePrograma = r.getValue({ name: 'isinactive', join: 'custrecord_presentador_id' })
+
                     allPresentadorData[objEMP.internalid] = objEMP
 
                     if(empGrupos.hasOwnProperty(objEMP.supervisor)){
@@ -2659,7 +3035,7 @@ una rcluta de algun miembro del equipo*/
                     objSO.custbody_otro_financiamiento = r.custbody_otro_financiamiento
                     objSO.custbody_vw_recruiter = r.custbody_vw_recruiter
                    
-
+                    
                     var idSO = {}
                     idSO[objSO.internalid] = objSO 
                     if(dateSO >= inicioPeriodoDate && dateSO <= finPeriodoDate){
@@ -2763,12 +3139,24 @@ una rcluta de algun miembro del equipo*/
             arrayFields.push({idfield : thidField.id, namefield : thidField.label})
             
             thidField = sublist.addField({
-                id: 'programa_gana_tm',
+                id: 'ordenes_extaordinarias',
                 type: serverWidget.FieldType.TEXTAREA,
-                label: 'Programa Gana TM Activo'
+                label: 'GUT Info'
             }).updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
             arrayFields.push({idfield : thidField.id, namefield : thidField.label})
             
+            thidField = sublist.addField({
+                id: 'custpage_monto_ventapropia_extra',
+                type: serverWidget.FieldType.CURRENCY,
+                label: 'Monto GUT Venta propia'
+            }).updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
+            arrayFields.push({idfield : thidField.id, namefield : thidField.label})
+            thidField = sublist.addField({
+                id: 'custpage_monto_prod_extra',
+                type: serverWidget.FieldType.CURRENCY,
+                label: 'Monto GUT Productividad'
+            }).updateDisplayType({displayType: serverWidget.FieldDisplayType.READONLY});
+            arrayFields.push({idfield : thidField.id, namefield : thidField.label})
             //Terminan campos compartidos
               
 
@@ -3119,78 +3507,8 @@ una rcluta de algun miembro del equipo*/
         }
     }//Fin addFieldsTabla
 
-    /**
-     * Función que verifica si un empleado tiene algún programa activo
-     * @param {number} empleadoId - ID del empleado para verificar programas
-     * @returns {Object} - Información sobre los programas activos del empleado
-     */
-    function programas(empleadoId) {
-        try {
-            log.debug('programas', 'Verificando programas activos para empleado: ' + empleadoId);
-            
-            // Crear búsqueda del registro customrecord_gana_tm
-            var programaSearch = search.create({
-                type: 'customrecord_gana_tm',
-                filters: [
-                    ['custrecord_presentador_id', 'anyof', empleadoId]
-                ],
-                columns: [
-                    'custrecord_nombre_programa',
-                    'custrecord_start_date',
-                    'custrecord_end_date',
-                    'custrecord_status_program',
-                    'custrecord_numero_ventas',
-                    'custrecord_list_ids_odv'
-                ]
-            });
-
-            var programasActivos = [];
-            var tieneProgramasActivos = false;
-
-            // Ejecutar la búsqueda
-            programaSearch.run().each(function(result) {
-                tieneProgramasActivos = true;
-                
-                var programa = {
-                    id: result.id,
-                    nombre: result.getValue('custrecord_nombre_programa'),
-                    fechaInicio: result.getValue('custrecord_start_date'),
-                    fechaFin: result.getValue('custrecord_end_date'),
-                    estado: result.getValue('custrecord_status_program'),
-                    numeroVentas: result.getValue('custrecord_numero_ventas'),
-                    listIdsOdv: result.getValue('custrecord_list_ids_odv') || ''
-                };
-                
-                programasActivos.push(programa);
-                
-                return true; // Continuar iteración
-            });
-
-            log.debug('programas resultado', {
-                empleadoId: empleadoId,
-                tieneProgramasActivos: tieneProgramasActivos
-            });
-
-            return {
-                tieneProgramasActivos: tieneProgramasActivos,
-                detalleProgramas: programasActivos
-           };
-
-        } catch (error) {
-            log.error('Error en función programas', {
-                empleadoId: empleadoId,
-                error: error.toString()
-            });
-            
-            return {
-                tieneProgramasActivos: false,
-                detalleProgramas: [],
-                programas: [], // Mantener por compatibilidad
-                error: error.toString()
-            };
-        }
-    }
-
+   
+   
     return {
         onRequest: onRequest
     };
