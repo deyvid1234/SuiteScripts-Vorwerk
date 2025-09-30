@@ -61,7 +61,7 @@ function Orden_Venta_PDF(request,response)
             companyInfoLogoObj  = nlapiLoadFile(NO_LOGO_ID);
         }
         if (nlapiGetContext().getEnvironment() == "SANDBOX") {
-            companyInfoLogoURL = '/core/media/media.nl?id=2576941&c=3367613_SB1&h=EVQpFOUkyARO0Xup5ue_KhGuik1V9R-xb--eYG7FiF_7YPaV'
+            companyInfoLogoURL = '/core/media/media.nl?id=2461144&c=3367613_SB1&h=eEB3Zn7T6vRFsbPljmmuN0ORPNQ5jSQGt3ys437w_kszrBvh'
         }
         else {
             companyInfoLogoURL = '/core/media/media.nl?id=2576941&c=3367613&h=EVQpFOUkyARO0Xup5ue_KhGuik1V9R-xb--eYG7FiF_7YPaV'
@@ -111,7 +111,7 @@ function Orden_Venta_PDF(request,response)
                 };
                
 
-                if(tmp_item == 2001 || tmp_item == 2170 || tmp_item == 2490 || tmp_item == 2571 || tmp_item == 2280|| tmp_item == 2650 || tmp_item == 2671){
+                if(tmp_item == 2001 || tmp_item == 2170 || tmp_item == 2490 || tmp_item == 2571 || tmp_item == 2280|| tmp_item == 2650 || tmp_item == 2671 || tmp_item ==2763){
                     var subrecord = salesorder.viewLineItemSubrecord('item', 'inventorydetail',i);
                     nlapiLogExecution('debug', 'subrecord', JSON.stringify(subrecord));
                     if(subrecord != null) {
