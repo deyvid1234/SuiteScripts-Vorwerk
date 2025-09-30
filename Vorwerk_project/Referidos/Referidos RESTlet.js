@@ -816,7 +816,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                     
                 }
 
-            return obj_ret
+            return 'Servicio inactivo desde 30/09/2025'
         }catch(err){
             log.error("error post",err)
             return obj_ret;
@@ -968,7 +968,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                     log.debug('objAD',objAD)
                     log.debug('objAD stringfy',JSON.stringify(objAD))
                     
-                        var responseService = https.post({
+                        /*var responseService = https.post({
                         url: urlAD,
                         body : objAD,//JSON.stringify(
                         headers: {
@@ -976,7 +976,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                             "User-Agent": "NetSuite/2019.2(SuiteScript)",
                         }
                     }).body;
-                    log.debug('responseService AD',responseService)
+                    log.debug('responseService AD',responseService)*/
                     }else{
 
                         var objAD = {
@@ -997,7 +997,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                         log.debug('objAD',objAD)
                         log.debug('objAD stringfy',JSON.stringify(objAD))
                         
-                            var responseService = https.post({
+                            /*var responseService = https.post({
                             url: urlAD,
                             body : objAD,//JSON.stringify(
                             headers: {
@@ -1005,7 +1005,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                                 "User-Agent": "NetSuite/2019.2(SuiteScript)",
                             }
                         }).body;
-                        log.debug('responseService AD',responseService)
+                        log.debug('responseService AD',responseService)*/
 
                     }
 
@@ -1014,7 +1014,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                    }catch(e){
                     log.debug('Error Agenda digital Referidos restlet',e)
                    }
-                   return {
+                   return 'Servicio inactivo desde 30/09/2025'/*{
                         respuesta:id_cliente, 
                         err:false,
                         idPresentadora:internalid_p,
@@ -1024,10 +1024,10 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                         namePresentadora:altname,
                         emailPresentadora:email_p,
                         clienteTM:false
-                    };
+                    };*/
             }else{
                 var id_cliente = null
-                return {
+                return 'Servicio inactivo desde 30/09/2025'/*{
                     respuesta:'El correo ya se encuentra registrado como PRESENTADOR', 
                     err:true,
                     idPresentadora:internalid_p,
@@ -1038,7 +1038,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                     emailPresentadora:email_p,
                     clienteTM:false,
                     id_cliente:id_cliente
-                };
+                };*/
             }
             
             
@@ -1208,7 +1208,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                         log.debug('objAD',objAD)
                         log.debug('objAD stringfy',JSON.stringify(objAD))
 
-                        var responseService = https.post({
+                        /*var responseService = https.post({
                         url: urlAD,
                         body : objAD,//JSON.stringify(
                         headers: {
@@ -1216,7 +1216,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                             "User-Agent": "NetSuite/2019.2(SuiteScript)",
                         }
                         }).body;
-                        log.debug('responseService AD',responseService)
+                        log.debug('responseService AD',responseService)*/
 
                     }else{
 
@@ -1239,7 +1239,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                         log.debug('objAD',objAD)
                         log.debug('objAD stringfy',JSON.stringify(objAD))
 
-                        var responseService = https.post({
+                        /*var responseService = https.post({
                         url: urlAD,
                         body : objAD,//JSON.stringify(
                         headers: {
@@ -1247,7 +1247,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                             "User-Agent": "NetSuite/2019.2(SuiteScript)",
                         }
                         }).body;
-                        log.debug('responseService AD',responseService)
+                        log.debug('responseService AD',responseService)*/
                     }
                
 
@@ -1284,7 +1284,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
 
             });
 
-        return {
+        return 'Servicio inactivo desde 30/09/2025'/*{
             respuesta:id_cliente, 
             err:false,
             idPresentadora:internalid_p,
@@ -1295,6 +1295,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
             emailPresentadora:email_p,
             clienteTM:clienteTM
         };
+        */
             
         }catch(err){
             log.error("error actualizarCliente",err)
@@ -1341,7 +1342,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
             
             var aleatorionuem = (Math.floor(Math.random() * totalPresentadoras.length))
             
-            return totalPresentadoras[aleatorionuem]
+            return 'Servicio inactivo desde 30/09/2025'//totalPresentadoras[aleatorionuem]
         }catch(e){
             log.debug('Error presentadorAleatorio',e)
         }
@@ -1383,7 +1384,7 @@ function(record,search,https,file,http,format,encode,email,runtime) {
             
             var aleatorionuem = (Math.floor(Math.random() * totalPresentadoras.length))
             
-            return totalPresentadoras[aleatorionuem]
+            return 'Servicio inactivo desde 30/09/2025'//totalPresentadoras[aleatorionuem]
         }catch(e){
             log.debug('Error presentadorAleatorio',e)
         }
@@ -1486,10 +1487,10 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                     
                     var aleatorionuem = (Math.floor(Math.random() * totalPresentadoras.length))
                     
-                    return totalPresentadoras[aleatorionuem]
+                    return //'Servicio inactivo desde 30/09/2025'totalPresentadoras[aleatorionuem]
                 }
             }else{//El Recomendador o cliente no tiene Presentador recomendador ni Sales Rep 
-                return presentadorAleatorio(req_info)
+                return 'Servicio inactivo desde 30/09/2025'//presentadorAleatorio(req_info)
             }
             
         }catch(e){
@@ -1545,10 +1546,10 @@ function(record,search,https,file,http,format,encode,email,runtime) {
                     obj_ret.mensaje = 'Cliente No existe'
                 }
                
-                return obj_ret
+                return 'Servicio inactivo desde 30/09/2025'//obj_ret
             }catch(err){
                 log.error("error getInBuscarPresentador",err)
-                return obj_ret;
+                return 'Servicio inactivo desde 30/09/2025'//obj_ret;
             }
         }
     /**
