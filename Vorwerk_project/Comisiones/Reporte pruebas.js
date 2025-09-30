@@ -82,6 +82,66 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             log.error('error form',e);
         }
     }
+    
+    /**
+     * Función que busca registros GUTM con status program igual a 7
+     * 
+     * @returns {Array} Array de registros GUTM filtrados
+     * @since 2015.1
+     */
+    function busquedaGUTM() {
+        try {
+            log.audit('busquedaGUTM', 'Iniciando búsqueda de registros customrecord_gana_tm con status 7');
+            
+            // Crear la búsqueda de registros GUTM
+            var busquedaGUTM = search.create({
+                type: 'customrecord_gana_tm',
+                filters: [
+                    ['custrecord_status_program', 'anyof', '7']
+                ],
+                columns: [
+                    'custrecord_presentador_id',
+                    'custrecord_start_date',
+                    'custrecord_end_date',
+                    'custrecord_status_program',
+                    'custrecord_id_so_gaadora',
+                    'custrecord_fecha_tm_ganadora',
+                    'custrecord_list_ids_odv',
+                    'internalid',
+                    'custrecord_nombre_programa'
+                ]
+            });
+            
+            // Ejecutar la búsqueda y obtener todos los resultados
+            var resultados = {};
+            var contador = 0;
+            busquedaGUTM.run().each(function(resultado) {
+                var presentadorId = resultado.getValue('custrecord_presentador_id') || '';
+                var registro = {
+                    custrecord_start_date: resultado.getValue('custrecord_start_date') || '',
+                    custrecord_end_date: resultado.getValue('custrecord_end_date') || '',
+                    custrecord_status_program: resultado.getValue('custrecord_status_program') || '',
+                    custrecord_id_so_gaadora: resultado.getValue('custrecord_id_so_gaadora') || '',
+                    custrecord_fecha_tm_ganadora: resultado.getValue('custrecord_fecha_tm_ganadora') || '',
+                    custrecord_list_ids_odv: resultado.getValue('custrecord_list_ids_odv') || '',
+                    internalid: resultado.getValue('internalid') || '',
+                    custrecord_nombre_programa: resultado.getValue('custrecord_nombre_programa') || ''
+                };
+                
+                // Usar el presentador ID como clave principal
+                resultados[presentadorId] = registro;
+                contador++;
+                return true; // Continuar con el siguiente resultado
+            });
+            
+            log.audit('busquedaGUTM', 'Búsqueda completada. Registros encontrados: ' + contador);
+            return resultados;
+            
+        } catch (error) {
+            log.error('busquedaGUTM - Error', 'Error al realizar la búsqueda: ' + error.message);
+            return {};
+        }
+    }
    
     function createForm(){
         try{
@@ -245,6 +305,12 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             timeDiff = newCheckTime - startTime; //in ms
             timeDiff /= 1000;
             log.debug("Checkpoint searchDataPresentadoras: ", timeDiff + ' seconds');
+            
+            // Llamada a la función busquedaGUTM
+            var registrosGUTM = busquedaGUTM();
+            log.audit('busquedaGUTM - Resultados', 'Se encontraron ' + Object.keys(registrosGUTM).length + ' registros con status 7');
+            log.debug('busquedaGUTM - Presentadores con programas activos', Object.keys(registrosGUTM));
+            
             /*var datos0008=allPresentadoras['12000']
             log.debug('datos0008',datos0008)
             var datos008=allPresentadoras['12000']['employeetype']
@@ -315,7 +381,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 var urlDetalle = 'https://3367613.app.netsuite.com/app/site/hosting/scriptlet.nl?script=1358&deploy=2'+'&periodoI='+inicioPeriodo+'&periodoF='+finPeriodo+'&promo='+empPromo+'&tipo='+empType+'&pre='+empID
                 switch(tipoReporteGloobal){
                     case 1: //Reporte LE
-                        if(empType == 3 && empPromo == 2 /*&& allPresentadoras[i].internalid == '11512'*/){
+                        if(empType == 3 && empPromo == 2 && allPresentadoras[i].internalid == '11512'){
                            
                             //Calcular reporte para la persona
                             var reclutas = listaReclutas[i]
@@ -324,16 +390,16 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                             var ventasEmp = thisPeriodSO[i] 
                             var conf = Utils.getConf(empConfiguracion);
                             log.debug('ventasEmp',ventasEmp)
-                            var programasActivos = programas(dataEmp.internalid,compConfigDetails,todosPeriodos,dataEmp);
+                            var programasActivos = programas(dataEmp.internalid,compConfigDetails,todosPeriodos,dataEmp,registrosGUTM);
                             log.debug('programasActivos',programasActivos)
                             var detalleProgramas = programasActivos.detalleProgramas
                             log.debug('detalleProgramas',detalleProgramas)
-                            var listIdsOdv = programasActivos.listIdsOdv
+                            
                             
                             // Capturar datos de programas antes de sobreescribir
                             var programasData = programasActivos;
                             
-                            objVentasPropias = bonoVentaPropia(dataEmp,ventasEmp,compConfigDetails,listIdsOdv)
+                            objVentasPropias = bonoVentaPropia(dataEmp,ventasEmp,compConfigDetails)
                             log.debug('objVentasPropias'+empID,objVentasPropias)
                             var programasActivos = objVentasPropias.programas
                             //objSupercomision = bonoSupercomision(integrantesEquipo,historicoSO,thisPeriodSO,allPresentadoras,dHistorico)
@@ -347,7 +413,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                             
                             objXmasDos = bonoXmasDos(dataEmp,reclutasEquipo,thisPeriodSO,ventasEmp,historicoSO,allPresentadoras,dHistorico,integrantesEquipo,reclutas,listaReclutas)
                             //log.debug('objXmasDos',objXmasDos)
-                            objProductividad = bonoProductividad(dataEmp,ventasEmp,compConfigDetails,listIdsOdv)
+                            objProductividad = bonoProductividad(dataEmp,ventasEmp,compConfigDetails)
                              //log.debug('objProductividad',objProductividad)
                             
                             objVentaEquipo = bonoVentaEquipo(ventasEmp,compConfigDetails,conf,integrantesEquipo,thisPeriodSO,listaNombramientos,dataEmp,listaGrupos,allPresentadoras)
@@ -386,11 +452,11 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                             var ventasEmp =thisPeriodSO[i] 
                             var conf = Utils.getConf(empConfiguracion);
                             
-                            var programasActivos = programas(dataEmp.internalid,compConfigDetails,todosPeriodos,dataEmp);
+                            var programasActivos = programas(dataEmp.internalid,compConfigDetails,todosPeriodos,dataEmp,registrosGUTM);
                             log.debug('programasActivos',programasActivos)
                             var detalleProgramas = programasActivos.detalleProgramas
                             log.debug('detalleProgramas',detalleProgramas)
-                            var listIdsOdv = programasActivos.listIdsOdv
+                            
                             
                             // Capturar datos de programas antes de sobreescribir
                             var programasData = programasActivos;
@@ -400,7 +466,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                                 //log.debug('objRecTresxDos',objRecTresxDos)
                                 objProductividadTMSB = bonoProductividadTMSB(empID,dataEmp,tmsbSO,compConfigDetails,finPeriodo,inicioPeriodo,todosPeriodos,tmGanada,tmPagada)
                                 //log.debug('objProductividadTMSB',objProductividadTMSB)
-                                objVentasPropias = bonoVentaPropia(dataEmp,ventasEmp,compConfigDetails,listIdsOdv)
+                                objVentasPropias = bonoVentaPropia(dataEmp,ventasEmp,compConfigDetails)
                                 log.debug('objVentasPropias case 2',objVentasPropias)
                                 var programasActivos = objVentasPropias.programas
                                 
@@ -409,7 +475,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                                 objEntrega = bonoEntrega(dataEmp,ventasEmp,cust_entrega)
                                 //log.debug('objEntrega',objEntrega)
                                 
-                                objProductividad = bonoProductividad(dataEmp,ventasEmp,compConfigDetails,listIdsOdv)
+                                objProductividad = bonoProductividad(dataEmp,ventasEmp,compConfigDetails)
                                 //log.debug('objProductividad',objProductividad)
                                 objReclutamiento = bonoReclutamiento(reclutas,historicoSO,thisPeriodSO,dataEmp,compConfigDetails,allPresentadoras,dHistorico)
                                 //log.debug('objReclutamiento',objReclutamiento)
@@ -1089,10 +1155,128 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
      * @param {Object} presentadoresConProgramas - Caché de todos los presentadores con programas
      * @returns {Object} - Información sobre los programas activos del empleado
      */
-     function programas(empleadoId,compConfigDetails,todosPeriodos,dataEmp) {
+     function programas(empleadoId,compConfigDetails,todosPeriodos,dataEmp,registrosGUTM) {
         try {
+            if(registrosGUTM.hasOwnProperty(empleadoId)){
+                log.debug('registrosGUTM', registrosGUTM[empleadoId])
+                var statusProgram = registrosGUTM[empleadoId].custrecord_status_program
+                var nombrePrograma = registrosGUTM[empleadoId].custrecord_nombre_programa
+                var fechaInicioPrograma = registrosGUTM[empleadoId].custrecord_start_date
+                var fechaFinPrograma = registrosGUTM[empleadoId].custrecord_end_date
+                var listIdsOdv = registrosGUTM[empleadoId].custrecord_list_ids_odv
+                var internalidPrograma = registrosGUTM[empleadoId].internalid
+                var programasActivos = [];
+                var ventasPorPeriodo = {}
+                
+                var montoTotalProductividad = 0;
+                var montoVentasPre = 0;
+                var todosListIdsOdv = []; // Variable para recopilar todos los IDs de todos los programas
+                
+                    
+                log.debug('listIdsOdv', listIdsOdv) 
+                log.debug('statusProgram', statusProgram)
+                log.debug('nombrePrograma', nombrePrograma)
+                log.debug('fechaInicioPrograma', fechaInicioPrograma)
+                log.debug('fechaFinPrograma', fechaFinPrograma)
+                
+                log.debug('internalidPrograma', internalidPrograma)
+                var data = [];
+                var numeroVentasPorPeriodo = {}         
+                var cantidadIds = 0;
+                var montoVentaPropiaPrograma = 0;
+                    
+                if (listIdsOdv && listIdsOdv.trim() !== '') {
+                    var idsArray = listIdsOdv.split(',');
+                    cantidadIds = idsArray.length;
+                    
+                    montoVentaPropiaPrograma = cantidadIds * 2500;
+                    // Sumar al total de montoVP
+                    montoVentasPre += montoVentaPropiaPrograma;
+                                                                
+                }
+    
+                var programa = {
+                    id: internalidPrograma,
+                    nombre: nombrePrograma,
+                    fechaInicio: fechaInicioPrograma,
+                    fechaFin: fechaFinPrograma,
+                    estado: statusProgram
+                };
+                
+                programasActivos.push(programa);
+                    
+                // Agregar IDs al array global
+                if (listIdsOdv && listIdsOdv.trim() !== '') {
+                    var idsDeEstePrograma = listIdsOdv.split(',');
+                    for (var j = 0; j < idsDeEstePrograma.length; j++) {
+                        var idLimpio = idsDeEstePrograma[j].trim();
+                        if (todosListIdsOdv.indexOf(idLimpio) === -1) { // Evitar duplicados
+                            todosListIdsOdv.push(idLimpio);
+                        }
+                    }
+                }
+                
+                var idsArray = listIdsOdv.split(',');
+                for (var i = 0; i < idsArray.length; i++){
+                    var currentId = idsArray[i].trim(); // Eliminar espacios en blanco
+                    var objSO = search.lookupFields({
+                        type: 'salesorder',
+                        id: currentId,
+                        columns: ['trandate']
+                    });
+                    
+                    var fechaSO = objSO.trandate                    
+                    var periodoSO = Utils.encontrarPeriodo(fechaSO, todosPeriodos);                    
+                    
+                    data.push(currentId)
+
+                    if (!ventasPorPeriodo[periodoSO]) {
+                        ventasPorPeriodo[periodoSO] = [];
+                        numeroVentasPorPeriodo[periodoSO] = 0;
+                    }
+                    
+                    ventasPorPeriodo[periodoSO].push({
+                        internalid: currentId,
+                        fecha: fechaSO,
+                        periodo: periodoSO,
+                    });
+                    numeroVentasPorPeriodo[periodoSO]++;
+                    
+                }
+                
             
-            var isinactivePrograma = dataEmp.isinactivePrograma
+                    
+                var totalVentasPorPeriodo = {};
+                for (var periodo in ventasPorPeriodo) {
+                    totalVentasPorPeriodo[periodo] = ventasPorPeriodo[periodo].length;
+                }
+                for (e in numeroVentasPorPeriodo){
+                    var ventasEnPeriodo = numeroVentasPorPeriodo[e]; 
+                    
+                    var montoProductividadxPeriodo= compConfigDetails[1]['esquemaVentasPresentadora'][ventasEnPeriodo]['bonoProductividad']
+                    
+                    montoProductividadxPeriodo = parseInt(montoProductividadxPeriodo);
+                    if(montoProductividadxPeriodo > 0){
+                        montoTotalProductividad += parseInt(montoProductividadxPeriodo);
+                    }
+                }
+                
+                var resultado = {
+                    
+                    detalleProgramas: programasActivos,
+                    monto: montoTotalProductividad, 
+                    data: ventasPorPeriodo,
+                    montoVP: montoVentasPre,
+                    listIdsOdv: todosListIdsOdv.join(',') // Convertir array a string separado por comas
+               };
+               
+               return resultado;
+    
+
+            }else{
+                return false
+            }
+            /*var isinactivePrograma = dataEmp.isinactivePrograma
             var programasActivos = [];
             var tieneProgramasActivos = false;
             var ventasPorPeriodo = {}
@@ -1230,7 +1414,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 listIdsOdv: todosListIdsOdv.join(',') // Convertir array a string separado por comas
            };
            
-           return resultado;
+           return resultado;*/
 
         } catch (error) {
             log.error('Error en función programas', {
@@ -1239,7 +1423,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             });
             
             return {
-                tieneProgramasActivos: false,
+                
                 detalleProgramas: [],
                 monto: 0, // Monto de productividad
                 data: {},
@@ -1925,7 +2109,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
         return {monto:venta_equipo, porcentaje:porcentaje, infoVentasEquipo:infoVentasEquipo, noVentas:numeroVentasEquipo, infoNle:nle.dataNle}
 
     }
-    function bonoProductividad(dataEmp,ventasEmp,compConfigDetails,listIdsOdv){
+    function bonoProductividad(dataEmp,ventasEmp,compConfigDetails){
         try{
             
             var ventasNo = 0
@@ -1933,6 +2117,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
            // log.debug('ventas',ventas)
             var data = []
             var epTm7 = dataEmp.epTm7
+            var ordenesAExcluir = dataEmp.custentity_ordenes_a_excluir
             //log.debug('epTm7',epTm7)
             var epTm7_inicio = dataEmp.epTm7_inicio
             var fechatm7_ganada = dataEmp.fechatm7_ganada
@@ -1962,49 +2147,40 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                     //log.debug('comisionables',comisionables)
 
                     if(comisionables != 'No Comisionable' && tipoVenta != 'TM Ganada'){
-                        // Validar si el ID existe en listIdsOdv (programas extraordinarios)
-                        var idExisteEnPrograma = false;
-                        if (listIdsOdv && typeof listIdsOdv === 'string' && listIdsOdv.trim() !== '') {
-                            var ordenesPrograma = listIdsOdv.split(',');
-                            idExisteEnPrograma = ordenesPrograma.indexOf(id.toString()) !== -1;
-                        }
-                        
-                        log.debug('bonoProductividad - ID en programa extraordinario', {
-                            id: id,
-                            idExisteEnPrograma: idExisteEnPrograma,
-                            listIdsOdv: listIdsOdv
-                        });
-                        
-                        // Si existe en programa extraordinario, excluir del cálculo de productividad
-                        if (idExisteEnPrograma) {
-                            log.debug('bonoProductividad - Orden excluida por programa extraordinario', {
-                                id: id,
-                                fechaSO: fechaSO,
-                                tipoVenta: tipoVenta
-                            });
-                            continue; // Saltar esta iteración
-                        }
-                        
-                        // Validar si el ID existe en el campo custentity_ovs_ep7
+                                               
+                                            
+                        // Validar si el ID existe en ordenesEP7 o en ordenesAExcluir
                         var ordenesEP7 = dataEmp.ovs_ep7;
                         var idExisteEnEP7 = false;
+                        var idExisteEnExcluir = false;
                         
+                        // Verificar en ordenesEP7
                         if (ordenesEP7 && typeof ordenesEP7 === 'string' && ordenesEP7.trim() !== '') {
-                            var ordenesArray = ordenesEP7.split(',');
-                            idExisteEnEP7 = ordenesArray.indexOf(id.toString()) !== -1;
+                            var ordenesArrayEP7 = ordenesEP7.split(',');
+                            idExisteEnEP7 = ordenesArrayEP7.indexOf(id.toString()) !== -1;
                         }
                         
-                        log.debug('idExisteEnEP7', idExisteEnEP7 + ' para ID: ' + id);
-                        log.debug('ordenesEP7', ordenesEP7);
+                        // Verificar en ordenesAExcluir
+                        if (ordenesAExcluir && typeof ordenesAExcluir === 'string' && ordenesAExcluir.trim() !== '') {
+                            var ordenesArrayExcluir = ordenesAExcluir.split(',');
+                            idExisteEnExcluir = ordenesArrayExcluir.indexOf(id.toString()) !== -1;
+                        }
+                        
+                        log.debug('idExisteEnEP7 p', idExisteEnEP7 + ' para ID: ' + id);
+                        log.debug('idExisteEnExcluir p', idExisteEnExcluir + ' para ID: ' + id);
+                        log.debug('ordenesEP7 p', ordenesEP7);
+                        log.debug('ordenesAExcluir p', ordenesAExcluir);
 
-                        if (idExisteEnEP7) {
-                            log.debug('no comisiona esta venta 2 - ID existe en EP7',id)
+                        if (idExisteEnExcluir) {
+                            // Orden completamente excluida - no se agrega al array data
+                            log.debug('orden completamente excluida - está en ordenesAExcluir p', id);
+                        } else if (idExisteEnEP7) {
+                            log.debug('no comisiona esta venta 2 - ID existe en EP7 p',id)
                             tm = 'EP_tm7'
                             var pedido = { idSO:id,programa:tm} 
                             data.push(pedido)
                         } else {
-                            log.debug('si comisiona esta venta 2 - ID NO existe en EP7',id)
-                            tm = 'tm6'
+                            tm = 'Regular'
                             var pedido = { idSO:id,programa:tm} 
                             data.push(pedido)
                             ventasNo ++
@@ -2021,32 +2197,43 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                     var id = ventas[i][ventasData]['internalid']
                     //log.debug('comisionables',comisionables)
                     if(comisionables != 'No Comisionable' && tipoVenta != 'TM Ganada'){
-                        // Validar si el ID existe en listIdsOdv (programas extraordinarios)
-                        var idExisteEnPrograma = false;
-                        if (listIdsOdv && typeof listIdsOdv === 'string' && listIdsOdv.trim() !== '') {
-                            var ordenesPrograma = listIdsOdv.split(',');
-                            idExisteEnPrograma = ordenesPrograma.indexOf(id.toString()) !== -1;
+                                                
+                        // Validar si el ID existe en ordenesEP7 o en ordenesAExcluir
+                        var ordenesEP7 = dataEmp.ovs_ep7;
+                        var idExisteEnEP7 = false;
+                        var idExisteEnExcluir = false;
+                        
+                        // Verificar en ordenesEP7
+                        if (ordenesEP7 && typeof ordenesEP7 === 'string' && ordenesEP7.trim() !== '') {
+                            var ordenesArrayEP7 = ordenesEP7.split(',');
+                            idExisteEnEP7 = ordenesArrayEP7.indexOf(id.toString()) !== -1;
                         }
                         
-                        log.debug('bonoProductividad (else) - ID en programa extraordinario', {
-                            id: id,
-                            idExisteEnPrograma: idExisteEnPrograma,
-                            listIdsOdv: listIdsOdv
-                        });
-                        
-                        // Si existe en programa extraordinario, excluir del cálculo de productividad
-                        if (idExisteEnPrograma) {
-                            log.debug('bonoProductividad (else) - Orden excluida por programa extraordinario', {
-                                id: id,
-                                tipoVenta: tipoVenta
-                            });
-                            continue; // Saltar esta iteración
+                        // Verificar en ordenesAExcluir
+                        if (ordenesAExcluir && typeof ordenesAExcluir === 'string' && ordenesAExcluir.trim() !== '') {
+                            var ordenesArrayExcluir = ordenesAExcluir.split(',');
+                            idExisteEnExcluir = ordenesArrayExcluir.indexOf(id.toString()) !== -1;
                         }
                         
-                        tm = 'tm6'
-                        var pedido = { idSO:id,programa:tm} 
-                        data.push(pedido)
-                        ventasNo ++
+                        log.debug('idExisteEnEP7', idExisteEnEP7 + ' para ID: ' + id);
+                        log.debug('idExisteEnExcluir', idExisteEnExcluir + ' para ID: ' + id);
+                        log.debug('ordenesEP7', ordenesEP7);
+                        log.debug('ordenesAExcluir', ordenesAExcluir);
+
+                        if (idExisteEnExcluir) {
+                            // Orden completamente excluida - no se agrega al array data
+                            log.debug('orden completamente excluida - está en ordenesAExcluir', id);
+                        } else if (idExisteEnEP7) {
+                            log.debug('no comisiona esta venta 2 - ID existe en EP7',id)
+                            tm = 'EP_tm7'
+                            var pedido = { idSO:id,programa:tm} 
+                            data.push(pedido)
+                        } else {
+                            tm = 'Regular'
+                            var pedido = { idSO:id,programa:tm} 
+                            data.push(pedido)
+                            ventasNo ++
+                        }
                     }
 
                 } 
@@ -2460,6 +2647,8 @@ una rcluta de algun miembro del equipo*/
                 var ventas = empSOThisPeriod
                 log.debug('ventas',ventas)
                 var data = []
+                var ordenesAExcluir = dataEmp.custentity_ordenes_a_excluir
+                log.debug('ordenesAExcluir antes de todo el codigo',ordenesAExcluir)
                 var epTm7 = dataEmp.epTm7
                 log.debug('epTm7',epTm7)
 
@@ -2493,37 +2682,38 @@ una rcluta de algun miembro del equipo*/
                         log.debug('fechaSO',fechaSO)
                         //log.debug('comisionables',comisionables)
                         if(comisionables != 'No Comisionable' && tipoVenta != 'TM Ganada'){
-                            // Validación adicional: verificar programas activos
-                            
-                            if ( listIdsOdv && listIdsOdv.trim() !== '') {
-                                var ordenesPrograma = listIdsOdv.split(',');
-                                idExisteEnPrograma = ordenesPrograma.indexOf(id.toString()) !== -1;
-                                // Si el status es 7, aunque esté en el programa, sí debe comisionar
-                                
-                            }
-                            
-                            // Validar si el ID existe en el campo custentity_ovs_ep7
+                                                        
+                            // Validar si el ID existe en ordenesEP7 o en ordenesAExcluir
                             var ordenesEP7 = dataEmp.ovs_ep7;
                             var idExisteEnEP7 = false;
+                            var idExisteEnExcluir = false;
                             
+                            // Verificar en ordenesEP7
                             if (ordenesEP7 && typeof ordenesEP7 === 'string' && ordenesEP7.trim() !== '') {
-                                var ordenesArray = ordenesEP7.split(',');
-                                idExisteEnEP7 = ordenesArray.indexOf(id.toString()) !== -1;
+                                var ordenesArrayEP7 = ordenesEP7.split(',');
+                                idExisteEnEP7 = ordenesArrayEP7.indexOf(id.toString()) !== -1;
+                            }
+                            
+                            // Verificar en ordenesAExcluir
+                            if (ordenesAExcluir && typeof ordenesAExcluir === 'string' && ordenesAExcluir.trim() !== '') {
+                                var ordenesArrayExcluir = ordenesAExcluir.split(',');
+                                idExisteEnExcluir = ordenesArrayExcluir.indexOf(id.toString()) !== -1;
                             }
                             
                             log.debug('idExisteEnEP7', idExisteEnEP7 + ' para ID: ' + id);
+                            log.debug('idExisteEnExcluir', idExisteEnExcluir + ' para ID: ' + id);
                             log.debug('ordenesEP7', ordenesEP7);
+                            log.debug('ordenesAExcluir', ordenesAExcluir);
     
-                            if (idExisteEnEP7) {
+                            if (idExisteEnExcluir) {
+                                // Orden completamente excluida - no se agrega al array data
+                                log.debug('orden completamente excluida - está en ordenesAExcluir', id);
+                            } else if (idExisteEnEP7) {
                                 log.debug('no comisiona esta venta 2 - ID existe en EP7',id)
                                 tm = 'EP_tm7'
                                 var pedido = { idSO:id,programa:tm} 
                                 data.push(pedido)
-                            } else if (idExisteEnPrograma) {
-                                log.debug('no comisiona esta venta - ID existe en programa activo (status != 7)',id)
-                                
-                            } else if(!idExisteEnPrograma && !idExisteEnEP7){
-                                                                
+                            } else {
                                 tm = 'Regular'
                                 var pedido = { idSO:id,programa:tm} 
                                 data.push(pedido)
@@ -2541,20 +2731,38 @@ una rcluta de algun miembro del equipo*/
                         var id = ventas[i][ventasData]['internalid']
                         //log.debug('comisionables',comisionables)
                         if(comisionables != 'No Comisionable' && tipoVenta != 'TM Ganada'){
-                            // Validación adicional: verificar programas activos
-                            var idExisteEnPrograma = false;
+                                                        
+                            // Validar si el ID existe en ordenesEP7 o en ordenesAExcluir
+                            var ordenesEP7 = dataEmp.ovs_ep7;
+                            var idExisteEnEP7 = false;
+                            var idExisteEnExcluir = false;
                             
-                            if ( listIdsOdv && listIdsOdv.trim() !== '') {
-                                var ordenesPrograma = listIdsOdv.split(',');
-                                idExisteEnPrograma = ordenesPrograma.indexOf(id.toString()) !== -1;
-                                
+                            // Verificar en ordenesEP7
+                            if (ordenesEP7 && typeof ordenesEP7 === 'string' && ordenesEP7.trim() !== '') {
+                                var ordenesArrayEP7 = ordenesEP7.split(',');
+                                idExisteEnEP7 = ordenesArrayEP7.indexOf(id.toString()) !== -1;
                             }
                             
-                            if (idExisteEnPrograma) {
-                                log.debug('no comisiona esta venta - ID existe en programa activo (status != 7)',id)
-                                
-                            } else if(!idExisteEnPrograma){
-                                
+                            // Verificar en ordenesAExcluir
+                            if (ordenesAExcluir && typeof ordenesAExcluir === 'string' && ordenesAExcluir.trim() !== '') {
+                                var ordenesArrayExcluir = ordenesAExcluir.split(',');
+                                idExisteEnExcluir = ordenesArrayExcluir.indexOf(id.toString()) !== -1;
+                            }
+                            
+                            log.debug('idExisteEnEP7', idExisteEnEP7 + ' para ID: ' + id);
+                            log.debug('idExisteEnExcluir', idExisteEnExcluir + ' para ID: ' + id);
+                            log.debug('ordenesEP7', ordenesEP7);
+                            log.debug('ordenesAExcluir', ordenesAExcluir);
+    
+                            if (idExisteEnExcluir) {
+                                // Orden completamente excluida - no se agrega al array data
+                                log.debug('orden completamente excluida - está en ordenesAExcluir', id);
+                            } else if (idExisteEnEP7) {
+                                log.debug('no comisiona esta venta 2 - ID existe en EP7',id)
+                                tm = 'EP_tm7'
+                                var pedido = { idSO:id,programa:tm} 
+                                data.push(pedido)
+                            } else {
                                 tm = 'Regular'
                                 var pedido = { idSO:id,programa:tm} 
                                 data.push(pedido)
@@ -2642,15 +2850,8 @@ una rcluta de algun miembro del equipo*/
             const empSearchfecha_tm7_ganada = search.createColumn({ name: 'custentity_fechatm7_ganada'});
             const empSearch_so_ganotm7 = search.createColumn({ name: 'custentity_so_ganotm7'});
             const empSearch_ovs_ep7 = search.createColumn({ name: 'custentity_ovs_ep7'});
-            //inician campos de GUTM
-            const empSearchEstatusDelPrograma = search.createColumn({ name: 'custrecord_status_program', join: 'custrecord_presentador_id' })
-            const empSearchNombreDelPrograma = search.createColumn({ name: 'custrecord_nombre_programa', join: 'custrecord_presentador_id' })
-            const empSearchFechaInicioDelPrograma = search.createColumn({ name: 'custrecord_start_date', join: 'custrecord_presentador_id' })
-            const empSearchFechaFinDelPrograma = search.createColumn({ name: 'custrecord_end_date', join: 'custrecord_presentador_id' })
-            const empSearchNumeroVentasDelPrograma = search.createColumn({ name: 'custrecord_numero_ventas', join: 'custrecord_presentador_id' })
-            const empSearchListIdsOdvDelPrograma = search.createColumn({ name: 'custrecord_list_ids_odv', join: 'custrecord_presentador_id' })
-            const empSearchinternalidPrograma = search.createColumn({ name: 'internalid', join: 'custrecord_presentador_id' })
-            const empSearchisinactivePrograma = search.createColumn({ name: 'isinactive', join: 'custrecord_presentador_id' })
+            const empSearch_ordenes_a_excluir = search.createColumn({ name: 'custentity_ordenes_a_excluir'});
+            
             
             const mySearch = search.create({
                 type: 'employee',
@@ -2688,14 +2889,7 @@ una rcluta de algun miembro del equipo*/
                     empSearchfecha_tm7_ganada,
                     empSearch_so_ganotm7,
                     empSearch_ovs_ep7,
-                    empSearchEstatusDelPrograma,
-                    empSearchNombreDelPrograma,
-                    empSearchFechaInicioDelPrograma,
-                    empSearchFechaFinDelPrograma,
-                    empSearchNumeroVentasDelPrograma,
-                    empSearchListIdsOdvDelPrograma,
-                    empSearchinternalidPrograma,
-                    empSearchisinactivePrograma
+                    empSearch_ordenes_a_excluir
                 ],
             });
             
@@ -2742,15 +2936,8 @@ una rcluta de algun miembro del equipo*/
                     objEMP.fechatm7_ganada = r.getValue('custentity_fechatm7_ganada')
                     objEMP.so_ganotm7 = r.getValue('custentity_so_ganotm7')
                     objEMP.ovs_ep7 = r.getValue('custentity_ovs_ep7')
+                    objEMP.custentity_ordenes_a_excluir = r.getValue('custentity_ordenes_a_excluir')
                     
-                    objEMP.estatusDelPrograma = r.getValue({ name: 'custrecord_status_program', join: 'custrecord_presentador_id' })
-                    objEMP.nombreDelPrograma = r.getValue({ name: 'custrecord_nombre_programa', join: 'custrecord_presentador_id' })
-                    objEMP.fechaInicioDelPrograma = r.getValue({ name: 'custrecord_start_date', join: 'custrecord_presentador_id' })
-                    objEMP.fechaFinDelPrograma = r.getValue({ name: 'custrecord_end_date', join: 'custrecord_presentador_id' })
-                    objEMP.numeroVentasDelPrograma = r.getValue({ name: 'custrecord_numero_ventas', join: 'custrecord_presentador_id' })
-                    objEMP.listIdsOdvDelPrograma = r.getValue({ name: 'custrecord_list_ids_odv', join: 'custrecord_presentador_id' })
-                    objEMP.internalidPrograma = r.getValue({ name: 'internalid', join: 'custrecord_presentador_id' })
-                    objEMP.isinactivePrograma = r.getValue({ name: 'isinactive', join: 'custrecord_presentador_id' })
 
                     allPresentadorData[objEMP.internalid] = objEMP
 
