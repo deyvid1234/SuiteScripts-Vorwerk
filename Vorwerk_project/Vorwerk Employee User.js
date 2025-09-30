@@ -77,12 +77,12 @@ function(record,search,http,https,encode,runtime,serverWidget,format) {
      * @Since 2015.2
      */
     function afterSubmit(scriptContext) {
-		if(scriptContext.type == 'create' || scriptContext.type == 'edit'){
+		/*if(scriptContext.type == 'create' || scriptContext.type == 'edit'){
 			updateBirthday(scriptContext)
-		}
-		/*if(scriptContext.type == 'edit'){
-			gutm(scriptContext)
 		}*/
+		if(scriptContext.type == 'edit'){
+			gutm(scriptContext)
+		}
     	try{
 			
     		var thisRecord = scriptContext.newRecord;
@@ -1001,6 +1001,71 @@ function(record,search,http,https,encode,runtime,serverWidget,format) {
             log.error('error updateBirthday',e)
         }
     }
+    /**
+     * Función para concatenar órdenes de manera inteligente
+     * @param {String} ordenesExistentes - Órdenes ya existentes en el campo
+     * @param {String} nuevasOrdenes - Nuevas órdenes a agregar
+     * @returns {String} - Órdenes concatenadas correctamente
+     */
+    function concatenarOrdenes(ordenesExistentes, nuevasOrdenes) {
+        try {
+            // Convertir a string y limpiar espacios
+            var existentes = (ordenesExistentes || '').toString().trim();
+            var nuevas = (nuevasOrdenes || '').toString().trim();
+            
+            // Si no hay órdenes nuevas, devolver las existentes
+            if (!nuevas) {
+                return existentes;
+            }
+            
+            // Si no hay órdenes existentes, devolver las nuevas
+            if (!existentes) {
+                return nuevas;
+            }
+            
+            // Dividir por comas y limpiar espacios
+            var ordenesArray = existentes.split(',').map(function(orden) {
+                return orden.trim();
+            }).filter(function(orden) {
+                return orden !== ''; // Filtrar elementos vacíos
+            });
+            
+            var nuevasArray = nuevas.split(',').map(function(orden) {
+                return orden.trim();
+            }).filter(function(orden) {
+                return orden !== ''; // Filtrar elementos vacíos
+            });
+            
+            // Agregar las nuevas órdenes evitando duplicados
+            for (var i = 0; i < nuevasArray.length; i++) {
+                var nuevaOrden = nuevasArray[i];
+                if (ordenesArray.indexOf(nuevaOrden) === -1) {
+                    ordenesArray.push(nuevaOrden);
+                }
+            }
+            
+            // Unir con comas
+            var resultado = ordenesArray.join(',');
+            
+            log.debug('concatenarOrdenes - Resultado', {
+                ordenesExistentes: existentes,
+                nuevasOrdenes: nuevas,
+                resultado: resultado
+            });
+            
+            return resultado;
+            
+        } catch (error) {
+            log.error('Error en concatenarOrdenes', {
+                ordenesExistentes: ordenesExistentes,
+                nuevasOrdenes: nuevasOrdenes,
+                error: error
+            });
+            // En caso de error, intentar concatenación simple
+            return (ordenesExistentes || '') + ',' + (nuevasOrdenes || '');
+        }
+    }
+
     function gutm(scriptContext){
         try{
             // Validación inicial de usuario
@@ -1009,25 +1074,44 @@ function(record,search,http,https,encode,runtime,serverWidget,format) {
             
             log.debug('gutm - Usuario actual', currentUserId);
             
-            // Solo ejecutar si el usuario es 4562429
-            if(currentUserId == '4562429') {
-                log.debug('gutm - Usuario autorizado, ejecutando lógica');
+            
                 
                 var newRecord = scriptContext.newRecord;
                 var oldRecord = scriptContext.oldRecord;
                 var employeeId = newRecord.getValue('id');
-                
+                var nombrePrograma = newRecord.getValue('custentity_nombre_programa');
+				var nombreProgramaOld = oldRecord.getValue('custentity_nombre_programa');
+				var ordenesGutm = newRecord.getValue('custentity_ovs_ep7');
+				var ordenesAExcluir = newRecord.getValue('custentity_ordenes_a_excluir');
+				var inactive = newRecord.getValue('isinactive');
+				var eptm7 = newRecord.getValue('custentity_checkbox_eptm7');
+				log.debug('gutm - inactive', inactive);
                 // Obtener el valor del campo custentity124
                 var ganaTmRecordId = newRecord.getValue('custentity124');
                 
                 log.debug('gutm - Valor actual custentity124', ganaTmRecordId);
                 
-                if(!ganaTmRecordId || ganaTmRecordId === '') {
+                // Crear nuevo registro si custentity124 está vacío O si cambió el nombre del programa
+                if((!ganaTmRecordId || ganaTmRecordId === '' || nombrePrograma != nombreProgramaOld) && eptm7 === true) {
                     // Crear nuevo registro customrecord_gana_tm
-                    log.debug('gutm - Creando nuevo registro customrecord_gana_tm');
+                    
+                    // Validar si el employee está inactivo y activarlo temporalmente
+                    var wasInactive = false;
+                    if(inactive === true) {
+                        wasInactive = true;
+                        log.debug('gutm - Employee inactivo, activando temporalmente', employeeId);
+                        record.submitFields({
+                            type: record.Type.EMPLOYEE,
+                            id: employeeId,
+                            values: {
+                                isinactive: false
+                            }
+                        });
+                    }
                     
                     var newGanaTmRecord = record.create({
-                        type: 'customrecord_gana_tm'
+                        type: 'customrecord_gana_tm',
+						isDynamic: false,
                     });
                     
                     // Establecer los campos del nuevo registro con los valores del employee
@@ -1039,22 +1123,43 @@ function(record,search,http,https,encode,runtime,serverWidget,format) {
                     newGanaTmRecord.setValue('custrecord_fecha_tm_ganadora', newRecord.getValue('custentity_fechatm7_ganada'));
                     newGanaTmRecord.setValue('custrecord_list_ids_odv', newRecord.getValue('custentity_ovs_ep7'));
                     newGanaTmRecord.setValue('custrecord_numero_ventas', newRecord.getValue('custentity_num_ventas_gutm'));
-					newGanaTmRecord.setValue('custrecord_nombre_programa', newRecord.getText('custentity_nombre_programa'));
+					newGanaTmRecord.setValue('custrecord_nombre_programa', newRecord.getValue('custentity_nombre_programa'));
                     
-                    var newRecordId = newGanaTmRecord.save();
+                    var newRecordId = newGanaTmRecord.save({enableSourcing: false,ignoreMandatoryFields: true});;
                     
                     log.debug('gutm - Nuevo registro creado con ID', newRecordId);
+                    
+                    // Si el employee estaba inactivo, volver a inactivarlo
+                    if(wasInactive === true) {
+                        log.debug('gutm - Volviendo a inactivar employee', employeeId);
+                        record.submitFields({
+                            type: record.Type.EMPLOYEE,
+                            id: employeeId,
+                            values: {
+                                isinactive: true
+                            }
+                        });
+                    }
+                    
+                    // Concatenar órdenes de manera inteligente
+                    var nuevasOrdenesAExcluir = concatenarOrdenes(ordenesAExcluir, ordenesGutm);
                     
                     // Actualizar el campo custentity124 del employee con el ID del nuevo registro
                     record.submitFields({
                         type: record.Type.EMPLOYEE,
                         id: employeeId,
                         values: {
-                            'custentity124': newRecordId
+                            'custentity124': newRecordId,
+                            'custentity_ordenes_a_excluir': nuevasOrdenesAExcluir
                         }
                     });
                     
-                    log.debug('gutm - Campo custentity124 actualizado con nuevo ID', newRecordId);
+                    log.debug('gutm - Campo custentity124 actualizado con nuevo ID y órdenes concatenadas', {
+                        newRecordId: newRecordId,
+                        ordenesAnteriores: ordenesAExcluir,
+                        ordenesGutm: ordenesGutm,
+                        nuevasOrdenesAExcluir: nuevasOrdenesAExcluir
+                    });
                     
                 } else {
                     // Verificar si algún campo ha cambiado
@@ -1114,10 +1219,7 @@ function(record,search,http,https,encode,runtime,serverWidget,format) {
                     }
                 }
                 
-            } else {
-                log.debug('gutm - Usuario no autorizado', 'Usuario ' + currentUserId + ' no tiene permisos para ejecutar esta función');
-                return;
-            }
+            
             
         }catch(e){
             log.error('error gutm',e)

@@ -89,12 +89,12 @@ function(record,dialog,http,https,search,runtime,log) {
             }
     		
     		// Funcionalidad complementaria GUTM - Limpiar campos relacionados cuando cambia custentity_nombre_programa
-    		/*if(scriptContext.fieldId == 'custentity_nombre_programa'){
+    		if(scriptContext.fieldId == 'custentity_nombre_programa'){
     			// Validación de usuario - Solo el usuario 4562429 puede ejecutar esta funcionalidad
     			var objUser = runtime.getCurrentUser();
     			var currentUserId = objUser.id;
     			
-    			if(currentUserId == '4562429') {
+    			
     				var currentProgramValue = thisRecord.getValue('custentity_nombre_programa') || '';
     				
     				// Solo limpiar campos si el valor anterior NO estaba vacío (cambio de valor a valor, no de vacío a valor)
@@ -106,7 +106,6 @@ function(record,dialog,http,https,search,runtime,log) {
     						'custentity_estatus_eptm7',
     						'custentity_so_ganotm7',
     						'custentity_fechatm7_ganada',
-    						'custentity_ovs_ep7',
     						'custentity_num_ventas_gutm',
                             'custentity124'
     					];
@@ -119,8 +118,8 @@ function(record,dialog,http,https,search,runtime,log) {
     				
     				// Actualizar el valor inicial para futuras comparaciones
     				initialProgramValue = currentProgramValue;
-    			}
-    		}*/
+    			
+    		}
     		
     		return true;
     	}catch(err){
