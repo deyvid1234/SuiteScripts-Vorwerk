@@ -23,7 +23,7 @@ function(runtime,config,record,render,runtime,email,search,format) {
             if (scriptContext.type == 'create') {
                 for(var x = 0; x < currentRecord.getLineCount({sublistId: 'item'}); x++){
                 	var item = currentRecord.getSublistValue({sublistId: 'item', fieldId: 'item', line:x})
-                	if( item == 2001 || item == 2170 || item == 2490 || item == 2571 || item == 2638 || item == 2671){// kit 2555, 2170 tm del kit
+                	if( item == 2001 || item == 2170 || item == 2490 || item == 2571 || item == 2638 || item == 2671 || item == 2680){// kit 2555, 2170 tm del kit
                 		var recordid = parseInt(rec.getValue('id'))
                 		var createdfrom = rec.getValue('createdfrom')
                 		var salesrep = search.lookupFields({
@@ -153,9 +153,15 @@ function(runtime,config,record,render,runtime,email,search,format) {
 		            		log.debug('estatus_envio',estatus_envio)
 
 		            		if(tipoVenta == '2'){ // solo se va a enviar si es tipo de venta Ventas tm
-		            			if(estatus_envio == 7 ){
+		            			if(estatus_envio == 7 ){//sucursal
+		            				var idTpl 
+		            				if(item == 2680){
+		            					idTpl = 283
+		            				} else{
+		            					idTpl = 272
+		            				}
 			            			var myMergeResult = render.mergeEmail({
-				            		    templateId: 272,
+				            		    templateId: idTpl,
 				            		    entity: {
 				            		        	type: 'employee',
 				            		        	id: idUSer
@@ -178,8 +184,14 @@ function(runtime,config,record,render,runtime,email,search,format) {
 				            		
 				            		sendemail(senderId,customer,emailSubject,emailBody,recordid,salesrep)
 			            		}else{
+			            			var idTpl 
+		            				if(item == 2680){
+		            					idTpl = 282
+		            				} else{
+		            					idTpl = 271
+		            				}
 			            			var myMergeResult = render.mergeEmail({
-				            		    templateId: 271,
+				            		    templateId: idTpl,
 				            		    entity: {
 				            		        	type: 'employee',
 				            		        	id: idUSer
