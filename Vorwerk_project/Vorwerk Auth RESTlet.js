@@ -730,7 +730,7 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                                     line      : i
                                 });
                                 
-                                if(itemId != 1441 && itemId != 859 && itemId != 2001 && itemId != 2170 && itemId != 2490 && itemId != 2571 && itemId != 2638 && itemId != 2671){//que no sea kit, bundle, tms, costo por financiamiento 
+                                if(itemId != 1441 && itemId != 859 && itemId != 2001 && itemId != 2170 && itemId != 2490 && itemId != 2571 && itemId != 2638 && itemId != 2671 && itemId != 2763){//que no sea kit, bundle, tms, costo por financiamiento 
                                     segundaGuia = true
                                     description.push(objSO.getSublistValue({
                                         sublistId : 'item',
@@ -1504,7 +1504,7 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                     line      : i
                 });
 
-                if( itemId == 2001 || itemId == 2170 || itemId == 2490 || itemId == 2571 || itemId == 2638 || itemId == 2280 || itemId == 1757 || itemId == 1126 || itemId == 2035 || itemId == 2671){
+                if( itemId == 2001 || itemId == 2170 || itemId == 2490 || itemId == 2571 || itemId == 2638 || itemId == 2280 || itemId == 1757 || itemId == 1126 || itemId == 2035 || itemId == 2671 || itemId ==2763){
                     obj_traking.setValue({
                         fieldId: 'custrecord_peso',
                         value: '12.60 kg'

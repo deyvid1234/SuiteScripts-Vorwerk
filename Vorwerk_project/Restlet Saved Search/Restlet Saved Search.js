@@ -362,7 +362,7 @@ function(record,search,https,file,http,format,encode,email,runtime,Utils) {
                         'AND',
                         ['custbody_tipo_venta', 'anyof', '1', '2', '19'],
                         'AND',
-                        ['item', 'anyof', '2280', '2001', '2170', '2490', '2571', '2638'],
+                        ['item', 'anyof', '2280', '2001', '2170', '2490', '2571', '2638','2763'],
                         'AND',
                         ['trandate', 'within', currentPeriod.startDate, currentPeriod.endDate],
                     ],
@@ -370,7 +370,7 @@ function(record,search,https,file,http,format,encode,email,runtime,Utils) {
                     [
                         ['custbody_fcha_cancelacion', 'within', currentPeriod.startDate, currentPeriod.endDate],
                         'AND',
-                        ['item', 'anyof', '2280', '2001', '2170', '2490', '2571'],
+                        ['item', 'anyof', '2280', '2001', '2170', '2490', '2571','2763'],
                         'AND',
                         ['type', 'anyof', 'SalesOrd'],
                         'AND',

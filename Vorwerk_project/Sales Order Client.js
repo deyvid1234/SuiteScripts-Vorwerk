@@ -374,7 +374,7 @@ define(['N/record','N/search','N/https','N/runtime','N/currentRecord','N/ui/dial
                     if(itemId != 1441 && itemId != 859){
                         //valida si es la primer guia creada
                         if(cont_trak.length == 0){
-                            if(itemId == 2001 || itemId == 2170 || itemId == 2490 || itemId == 2571){//en caso de ser la primera y tener tm6 toma su decripcion
+                            if(itemId == 2001 || itemId == 2170 || itemId == 2490 || itemId == 2571 || itemId == 2763){//en caso de ser la primera y tener tm6 toma su decripcion
                                 description.push(objSO.getSublistValue({
                                     sublistId : 'item',
                                     fieldId   : 'description',
@@ -390,7 +390,7 @@ define(['N/record','N/search','N/https','N/runtime','N/currentRecord','N/ui/dial
                                 }));
                             }
                         }else{//en caso de tener más de una guia toma todas las descripciones de los demás items
-                            if(itemId != 2001 && itemId != 2170 && itemId != 2490 && itemId != 2571){
+                            if(itemId != 2001 && itemId != 2170 && itemId != 2490 && itemId != 2571 && itemId != 2763){
                                 description.push(objSO.getSublistValue({
                                     sublistId : 'item',
                                     fieldId   : 'description',
