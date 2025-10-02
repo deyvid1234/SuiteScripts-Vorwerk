@@ -488,11 +488,6 @@ function(record,https,currentRecord,runtime,file,search,message) {
                         fieldId: "custentity_cincomasdos_nle_monto",
                         line: i
                     });
-                    var cincodos_nle = record.getSublistValue({
-                        sublistId: "sublist",
-                        fieldId: "custentity_cincomasdos_nle_monto",
-                        line: i
-                    });
                     var ordenes_extaordinarias = record.getSublistValue({
                         sublistId: "sublist",
                         fieldId: "ordenes_extaordinarias",

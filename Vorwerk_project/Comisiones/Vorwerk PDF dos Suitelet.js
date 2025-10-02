@@ -154,7 +154,7 @@ function salesOrdersTP(cust_period){
       	var objSObyEmp = {};
       	var objSObyid = [];
       	const salesOrderSearchFilters = [
-          	['item', 'anyof', '2638','2280','2001','2571','2170','1757','1126','2035','2402','2490','2671'],
+          	['item', 'anyof', '2638','2280','2001','2571','2170','1757','1126','2035','2402','2490','2671','2763'],
           	'AND',
           	['salesrep.isinactive', 'is', 'F'],
           	'AND',
@@ -235,7 +235,7 @@ function table_v_propiaTMSB(data,tmp_emp,type_emp,promocion,dataSOtmsinBarreras,
       	var objSObyEmp = {};
       	var objSObyid = {}
       	const salesOrderSearchFilters = [
-          	['item', 'anyof', '2638','2280','2001','2571','2170','1757','1126','2035','2402','2490','2671'],
+          	['item', 'anyof', '2638','2280','2001','2571','2170','1757','1126','2035','2402','2490','2671','2763'],
           	'AND',
           	['salesrep', 'is', employee],
           	'AND',
@@ -395,7 +395,7 @@ function table_GUTM(data,tmp_emp,type_emp,promocion,dataSOtmsinBarreras,CompConf
       	var objSObyEmp = {};
       	var objSObyid = {}
       	const salesOrderSearchFilters = [
-          	['item', 'anyof', '2638','2280','2001','2571','2170','1757','1126','2035','2402','2490','2671'],
+          	['item', 'anyof', '2638','2280','2001','2571','2170','1757','1126','2035','2402','2490','2671','2763'],
           	'AND',
           	['salesrep', 'is', employee],
           	'AND',
