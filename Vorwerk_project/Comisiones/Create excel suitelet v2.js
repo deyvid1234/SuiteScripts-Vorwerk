@@ -60,6 +60,9 @@
                                 + '<Cell><Data ss:Type="String">NOMBRE</Data></Cell>'
                             + '<Cell><Data ss:Type="String">COMPENSACIONES DE INGRESO</Data></Cell>'
                             + '<Cell><Data ss:Type="String">UNIDAD</Data></Cell>'
+                            + '<Cell><Data ss:Type="String">Info GUTM</Data></Cell>'
+                            + '<Cell><Data ss:Type="String">Monto Venta Propia GUTM</Data></Cell>'
+                            + '<Cell><Data ss:Type="String">Monto Productividad GUTM</Data></Cell>'
                             + '<Cell><Data ss:Type="String">VENTAS TM Ó VENTAS CK</Data></Cell>'
                             //+ '<Cell><Data ss:Type="String">TM PAGADAS PROPIAS</Data></Cell>'
                             + '<Cell><Data ss:Type="String">IDS DE VENTAS PROPIA</Data></Cell>'
@@ -168,13 +171,19 @@
                          var ventaPropiaTMSB_monto = typeof data[x].ventaPropia_monto_tmsb === 'undefined'?"0":data[x].ventaPropia_monto_tmsb;
                          var productividadTMSB = typeof data[x].productividad_tmsb === 'undefined'?"0":data[x].productividad_tmsb;
                          var productividadTMSB_monto = typeof data[x].productividad_monto_tmsb === 'undefined'?"0":data[x].productividad_monto_tmsb;
-                         var dataActividad = typeof data[x].dataActividad === 'undefined'?"0":data[x].dataActividad;
+                         var dataActividad = typeof data[x].dataActividad === 'undefined'?"0":data[x].dataActividad; 
+                         var dataGUTM = typeof data[x].ordenes_extaordinarias === 'undefined'?"0":data[x].ordenes_extaordinarias;
+                         var ventaPropiaGUTM = typeof data[x].monto_ventapropia_extra === 'undefined'?"0":data[x].monto_ventapropia_extra;
+                         var productividadGUTM = typeof data[x].monto_prod_extra === 'undefined'?"0":data[x].monto_prod_extra;
                          //var dataExtendido = typeof data[x].rec_extendido === 'undefined'?"0":data[x].rec_extendido;
                          //var dataExtendidoODV = typeof data[x].rec_extendidoODV === 'undefined'?"0":data[x].rec_extendidoODV;
                          xmlStr += '<Row>'
                            +'<Cell><Data ss:Type="String">'+data[x].nameEmp+'</Data></Cell>'
                                + '<Cell><Data ss:Type="String">'+data[x].ingreso+'</Data></Cell>'
                                + '<Cell><Data ss:Type="String">'+data[x].nombre_unidad+'</Data></Cell>'
+                               + '<Cell><Data ss:Type="String">'+data[x].dataGUTM+'</Data></Cell>'
+                               + '<Cell><Data ss:Type="String">'+data[x].ventaPropiaGUTM+'</Data></Cell>'
+                               + '<Cell><Data ss:Type="String">'+data[x].productividadGUTM+'</Data></Cell>'
                                + '<Cell><Data ss:Type="String">'+ventas_propias_num+'</Data></Cell>'
                                //+ '<Cell><Data ss:Type="String">'+tm_pagada+'</Data></Cell>'
                                + '<Cell><Data ss:Type="String">'+ventas_propias_ids+'</Data></Cell>'
