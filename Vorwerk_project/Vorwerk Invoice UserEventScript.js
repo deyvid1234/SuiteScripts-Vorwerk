@@ -156,7 +156,7 @@ function(runtime,config,record,render,runtime,email,search,format) {
 		            			if(estatus_envio == 7 ){//sucursal
 		            				var idTpl 
 		            				if(item == 2680){
-		            					idTpl = 283
+		            					idTpl = 279
 		            				} else{
 		            					idTpl = 272
 		            				}
@@ -186,7 +186,7 @@ function(runtime,config,record,render,runtime,email,search,format) {
 			            		}else{
 			            			var idTpl 
 		            				if(item == 2680){
-		            					idTpl = 282
+		            					idTpl = 280
 		            				} else{
 		            					idTpl = 271
 		            				}
