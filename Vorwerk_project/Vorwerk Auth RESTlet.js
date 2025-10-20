@@ -330,58 +330,151 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
             });
             var address_arr = [];
             for(var i=0; i < totalLines; i++){
-                var internalid = objRecord.getSublistValue({
-                    sublistId: 'addressbook',
-                    fieldId: 'id',
-                    line: i
-                });
-                var id = objRecord.getSublistValue({
-                    sublistId: 'addressbook',
-                    fieldId: 'label',
-                    line: i
-                });
-                var subRecord = objRecord.getSublistSubrecord({
-                   sublistId : 'addressbook',
-                   fieldId   : 'addressbookaddress',
-                   line      : i
-                });
-                var country = subRecord.getText({
-                    fieldId: 'country'
-                });
-                var addressee = subRecord.getValue({
-                    fieldId: 'addressee'
-                });
-                var addrphone = subRecord.getText({
-                    fieldId: 'addrphone'
-                });
-                var addr1 = subRecord.getValue({
-                    fieldId: 'addr1'
-                });
-                var addr2 = subRecord.getValue({
-                    fieldId: 'addr2'
-                });
-                var city = subRecord.getValue({
-                    fieldId: 'city'
-                });
-                var state = subRecord.getValue({
-                    fieldId: 'state'
-                });
-                var zip = subRecord.getValue({
-                    fieldId: 'zip'
-                });
+
+
+
+
+
+                try {
+                        var internalid = objRecord.getSublistValue({
+                            sublistId: 'addressbook',
+                            fieldId: 'id',
+                            line: i
+                        });
+                        var id = objRecord.getSublistValue({
+                            sublistId: 'addressbook',
+                            fieldId: 'label',
+                            line: i
+                        });
+                        
+                        // Verificar si existe el subrecord de dirección antes de acceder a él
+                        var subRecord = null;
+                        try {
+                            subRecord = objRecord.getSublistSubrecord({
+                               sublistId : 'addressbook',
+                               fieldId   : 'addressbookaddress',
+                               line      : i
+                            });
+                        } catch (subRecordError) {
+                            // Si no se puede obtener el subrecord, continuar con datos básicos
+                            log.debug('No se pudo obtener subrecord de dirección para línea ' + i, subRecordError);
+                            address_arr.push({
+                                internalid : internalid,
+                                id : id,
+                                country : null,
+                                addressee : null,
+                                addrphone : null,
+                                addr1 : null,
+                                addr2 : null,
+                                city : null,
+                                state : null,
+                                zip : null
+                            });
+                            continue;
+                        }
+                        
+                        // Si el subrecord existe, intentar obtener los datos de dirección
+                        var country = null;
+                        var addressee = null;
+                        var addrphone = null;
+                        var addr1 = null;
+                        var addr2 = null;
+                        var city = null;
+                        var state = null;
+                        var zip = null;
+                        
+                        try {
+                            country = subRecord.getText({
+                                fieldId: 'country'
+                            });
+                        } catch (e) {
+                            log.debug('Error obteniendo country para línea ' + i, e);
+                        }
+                        
+                        try {
+                            addressee = subRecord.getValue({
+                                fieldId: 'addressee'
+                            });
+                        } catch (e) {
+                            log.debug('Error obteniendo addressee para línea ' + i, e);
+                        }
+                        
+                        try {
+                            addrphone = subRecord.getText({
+                                fieldId: 'addrphone'
+                            });
+                        } catch (e) {
+                            log.debug('Error obteniendo addrphone para línea ' + i, e);
+                        }
+                        
+                        try {
+                            addr1 = subRecord.getValue({
+                                fieldId: 'addr1'
+                            });
+                        } catch (e) {
+                            log.debug('Error obteniendo addr1 para línea ' + i, e);
+                        }
+                        
+                        try {
+                            addr2 = subRecord.getValue({
+                                fieldId: 'addr2'
+                            });
+                        } catch (e) {
+                            log.debug('Error obteniendo addr2 para línea ' + i, e);
+                        }
+                        
+                        try {
+                            city = subRecord.getValue({
+                                fieldId: 'city'
+                            });
+                        } catch (e) {
+                            log.debug('Error obteniendo city para línea ' + i, e);
+                        }
+                        
+                        try {
+                            state = subRecord.getValue({
+                                fieldId: 'state'
+                            });
+                        } catch (e) {
+                            log.debug('Error obteniendo state para línea ' + i, e);
+                        }
+                        
+                        try {
+                            zip = subRecord.getValue({
+                                fieldId: 'zip'
+                            });
+                        } catch (e) {
+                            log.debug('Error obteniendo zip para línea ' + i, e);
+                        }
+                        
+                        address_arr.push({
+                            internalid : internalid,
+                            id : id,
+                            country : country,
+                            addressee : addressee,
+                            addrphone : addrphone,
+                            addr1 : addr1,
+                            addr2 : addr2,
+                            city : city,
+                            state : state,
+                            zip : zip
+                        });
+                        
+                    } catch (lineError) {
+                        // Si hay error en una línea específica, continuar con la siguiente
+                        log.debug('Error procesando línea de dirección ' + i, lineError);
+                        continue;
+                    }
+
+
+
+
+
+
+
+
+
                 
-                address_arr.push({
-                    internalid : internalid,
-                    id : id,
-                    country : country,
-                    addressee : addressee,
-                    addrphone : addrphone,
-                    addr1 : addr1,
-                    addr2 : addr2,
-                    city : city,
-                    state : state,
-                    zip : zip
-                });
                 
             }
             
