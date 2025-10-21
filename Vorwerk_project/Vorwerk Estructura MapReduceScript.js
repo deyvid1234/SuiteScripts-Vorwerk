@@ -46,7 +46,7 @@ function(search,https,runtime) {
 	        	obj_detail.estructura.push(regional_manager)
 	    	}
 	    	if(obj_detail.area_manager != ''){
-	        	var area_manager = getEmployeeData(obj_detail.area_manager,'area manager')
+	        	var area_manager = getEmployeeData(obj_detail.area_manager,'AM / BDM')
 	        	obj_detail.estructura.push(area_manager)
 	    	}
 	    	if(obj_detail.gerente != '' ){

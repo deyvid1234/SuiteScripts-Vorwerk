@@ -205,11 +205,11 @@ define(['N/record','N/search','N/http','N/https','N/encode','N/runtime','N/ui/se
 							obj_detail[0].estructura.push(regional_manager)
 						}
 						if(obj_detail[0].area_manager != ''){
-							var area_manager = getEmployeeData(obj_detail[0].area_manager,'area manager')
+							var area_manager = getEmployeeData(obj_detail[0].area_manager,'AM / BDM')
 							obj_detail[0].estructura.push(area_manager)
 						}
 						if(obj_detail[0].gerente != '' ){
-							var obj_gerente = getEmployeeData(obj_detail[0].gerente,'gerente')
+							var obj_gerente = getEmployeeData(obj_detail[0].gerente,'GV/SrTL')
 							obj_detail[0].estructura.push(obj_gerente)
 						}
 						if(obj_detail[0].lider != ''){
@@ -743,6 +743,7 @@ define(['N/record','N/search','N/http','N/https','N/encode','N/runtime','N/ui/se
 					}else{
 						obj_emp.employeetype[0].text = rol
 					}
+					
 					
 					var obj_aux={
 						id:idemp,
