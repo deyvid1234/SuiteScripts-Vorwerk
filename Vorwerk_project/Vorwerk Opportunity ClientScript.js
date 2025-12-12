@@ -25,103 +25,83 @@
          try {
              var thisRecord = scriptContext.currentRecord;
              actualizarEdicionCampoDescuento(thisRecord);
-             
-             // Deshabilitar visualmente el campo si el tipo de garantía no es 4
-             setTimeout(function() {
-                 deshabilitarCampoVisualmente();
-             }, 500);
          } catch (err) {
              console.error('Error pageInit', err);
          }
      }
      
-     /**
-      * Deshabilita visualmente el campo custcol_aplica_descuento usando CSS
-      */
-     function deshabilitarCampoVisualmente() {
-         try {
-             var fieldId = 'custcol_aplica_descuento';
-             actualizarEstadoVisualCampo(false);
-         } catch (err) {
-             console.log('Error deshabilitarCampoVisualmente: ' + err.message);
-         }
-     }
-     
-     /**
-      * Actualiza el estado visual del campo (habilitado/deshabilitado)
-      * @param {boolean} esEditable - true si el campo debe ser editable, false si debe estar deshabilitado
-      */
-     function actualizarEstadoVisualCampo(esEditable) {
-         try {
-             var fieldId = 'custcol_aplica_descuento';
-             
-             // Buscar todos los checkboxes que puedan ser el campo
-             var checkboxes = document.querySelectorAll('input[type="checkbox"]');
-             
-             for (var i = 0; i < checkboxes.length; i++) {
-                 var checkbox = checkboxes[i];
-                 var id = checkbox.id || '';
-                 var name = checkbox.name || '';
-                 var className = checkbox.className || '';
-                 var parent = checkbox.parentElement;
-                 var parentText = parent ? parent.textContent || '' : '';
-                 
-                 // Verificar si este checkbox es el campo que buscamos
-                 // Buscar por ID, name, o por el texto del label asociado
-                 if (id.indexOf(fieldId) !== -1 || name.indexOf(fieldId) !== -1 || 
-                     className.indexOf(fieldId) !== -1 || parentText.indexOf('Aplica descuento') !== -1) {
-                     
-                     if (esEditable) {
-                         // Habilitar el campo
-                         checkbox.disabled = false;
-                         checkbox.style.pointerEvents = 'auto';
-                         checkbox.style.opacity = '1';
-                         checkbox.style.cursor = 'pointer';
-                         checkbox.removeAttribute('readonly');
-                     } else {
-                         // Deshabilitar el campo
-                         checkbox.disabled = true;
-                         checkbox.style.pointerEvents = 'none';
-                         checkbox.style.opacity = '0.5';
-                         checkbox.style.cursor = 'not-allowed';
-                         checkbox.setAttribute('readonly', 'readonly');
-                         
-                         // Prevenir eventos de click
-                         checkbox.addEventListener('click', function(e) {
-                             e.preventDefault();
-                             e.stopPropagation();
-                             return false;
-                         }, true);
-                     }
-                 }
-             }
-         } catch (err) {
-             console.log('Error actualizarEstadoVisualCampo: ' + err.message);
-         }
-     }
+    /**
+     * Actualiza el estado de habilitación del campo custcol_aplica_descuento usando la API de NetSuite
+     * @param {Record} thisRecord - Record actual
+     * @param {number} lineNum - Número de línea (opcional, si no se proporciona actualiza todas las líneas)
+     * @param {boolean} esEditable - true si el campo debe ser editable, false si debe estar deshabilitado
+     */
+    function actualizarEstadoCampoDescuento(thisRecord, lineNum, esEditable) {
+        try {
+            var fieldId = 'custcol_aplica_descuento';
+            
+            if (lineNum !== undefined && lineNum !== null) {
+                // Actualizar una línea específica
+                try {
+                    var checkboxField = thisRecord.getSublistField({
+                        sublistId: 'item',
+                        fieldId: fieldId,
+                        line: lineNum
+                    });
+                    checkboxField.isDisabled = !esEditable;
+                } catch (e) {
+                    console.log('Error al actualizar línea ' + lineNum + ': ' + e.message);
+                }
+            } else {
+                // Actualizar todas las líneas
+                try {
+                    var lineCount = thisRecord.getLineCount({
+                        sublistId: 'item'
+                    });
+                    
+                    for (var i = 0; i < lineCount; i++) {
+                        try {
+                            var checkboxField = thisRecord.getSublistField({
+                                sublistId: 'item',
+                                fieldId: fieldId,
+                                line: i
+                            });
+                            checkboxField.isDisabled = !esEditable;
+                        } catch (e) {
+                            console.log('Error al actualizar línea ' + i + ': ' + e.message);
+                        }
+                    }
+                } catch (e) {
+                    console.log('Error al obtener lineCount: ' + e.message);
+                }
+            }
+        } catch (err) {
+            console.log('Error actualizarEstadoCampoDescuento: ' + err.message);
+        }
+    }
 
-     /**
-      * Actualiza el estado de edición del campo custcol_aplica_descuento según el tipo de garantía
-      * @param {Record} thisRecord - Record actual
-      */
-     function actualizarEdicionCampoDescuento(thisRecord) {
-         try {
-             var tipoGarantia = thisRecord.getValue({
-                 fieldId: 'custbody_aplicacion_garantia'
-             });
+    /**
+     * Actualiza el estado de edición del campo custcol_aplica_descuento según el tipo de garantía
+     * @param {Record} thisRecord - Record actual
+     */
+    function actualizarEdicionCampoDescuento(thisRecord) {
+        try {
+            var tipoGarantia = thisRecord.getValue({
+                fieldId: 'custbody_aplicacion_garantia'
+            });
 
-             // Si el tipo de garantía es 4 (Garantía parcial), permitir edición
-             // De lo contrario, hacer el campo de solo lectura
-             var esEditable = (tipoGarantia === '4' || tipoGarantia === 4);
+            // Si el tipo de garantía es 4 (Garantía parcial), permitir edición
+            // De lo contrario, hacer el campo de solo lectura
+            var esEditable = (tipoGarantia === '4' || tipoGarantia === 4);
 
-             console.log('Actualizando estado de edición. Tipo garantía: ' + tipoGarantia + ', Es editable: ' + esEditable);
+            console.log('Actualizando estado de edición. Tipo garantía: ' + tipoGarantia + ', Es editable: ' + esEditable);
 
-             // Nota: En NetSuite Client Scripts, no podemos deshabilitar campos de sublista visualmente
-             // La validación se realizará en validateField para prevenir cambios no permitidos
-         } catch (err) {
-             console.error('Error actualizarEdicionCampoDescuento', err);
-         }
-     }
+            // Actualizar el estado del campo para todas las líneas
+            actualizarEstadoCampoDescuento(thisRecord, null, esEditable);
+        } catch (err) {
+            console.error('Error actualizarEdicionCampoDescuento', err);
+        }
+    }
 
      /**
       * Function to be executed when field is changed.
@@ -222,7 +202,7 @@
                     break;
                 case 'custbody_aplicacion_garantia':
                         // Cuando cambia el tipo de garantía, actualizar el estado de edición del campo custcol_aplica_descuento
-                        log.debug('Actualizando estado de edición del campo custcol_aplica_descuento', 'Tipo de garantía: ' + fieldValue);
+                        console.log('Actualizando estado de edición del campo custcol_aplica_descuento. Tipo de garantía: ' + fieldValue);
                      actualizarEdicionCampoDescuento(thisRecord);
                      
                      // Actualizar los valores guardados para todas las líneas
@@ -247,12 +227,6 @@
                      } catch (e) {
                          console.log('Error al actualizar valores guardados: ' + e.message);
                      }
-                     
-                     // Actualizar el estado visual del campo
-                     setTimeout(function() {
-                         var esEditable = (fieldValue === '4' || fieldValue === 4);
-                         actualizarEstadoVisualCampo(esEditable);
-                     }, 300);
                      break;
                  default:
                      break;
@@ -333,10 +307,8 @@
                                  
                                  console.log('sublistChanged - Valor revertido a: ' + valorAnterior);
                                  
-                                 // Deshabilitar el campo visualmente
-                                 setTimeout(function() {
-                                     actualizarEstadoVisualCampo(false);
-                                 }, 100);
+                                 // Deshabilitar el campo
+                                 actualizarEstadoCampoDescuento(thisRecord, currentLine, false);
                              }
                          }
                      } catch (e) {
@@ -358,10 +330,8 @@
                              
                              valoresAnteriores[currentLine] = valorActual;
                              
-                             // Habilitar el campo visualmente
-                             setTimeout(function() {
-                                 actualizarEstadoVisualCampo(true);
-                             }, 100);
+                             // Habilitar el campo
+                             actualizarEstadoCampoDescuento(thisRecord, currentLine, true);
                          }
                      } catch (e) {
                          // Ignorar error
@@ -408,6 +378,9 @@
                          });
                          
                          valoresAnteriores[currentLine] = valorActual;
+                         
+                         // Actualizar el estado del campo según el tipo de garantía
+                         actualizarEstadoCampoDescuento(thisRecord, currentLine, esEditable);
                          
                          console.log('lineInit: Línea ' + currentLine + ' - Valor guardado: ' + valorActual + ', Es editable: ' + esEditable);
                      }
