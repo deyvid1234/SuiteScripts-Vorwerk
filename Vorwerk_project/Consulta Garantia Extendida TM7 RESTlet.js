@@ -87,7 +87,7 @@ function(record,search,format) {
             var date = new Date();
             var is_valid = false;
             var itemSearch = search.load({
-                id: 'customsearch_search_by_seria' // Item Search Service NS
+                id: 'customsearch_garantia_tm7' // Item Search Service NS
             });
 
             itemSearch.filters.push(search.createFilter({
