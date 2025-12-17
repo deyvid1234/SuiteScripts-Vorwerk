@@ -1344,10 +1344,12 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
     
                 //Determinacion de limite de ventas
                 const epTm7 = presentadorFields.custentity_checkbox_eptm7;
+                const estatusEptm7 = presentadorFields.custentity_estatus_eptm7;
                 log.debug('[' + salesrep + '] epTm7', epTm7)
+                log.debug('[' + salesrep + '] estatusEptm7', estatusEptm7)
                 
                 // es eptm7?
-                if(epTm7){
+                if(epTm7 && (estatusEptm7 == 1 || estatusEptm7 == 2 || estatusEptm7 == 4)){
                     var limit = 3
                     var newStatus
                     // Determinar el límite basado en la diferencia de días entre fechas
