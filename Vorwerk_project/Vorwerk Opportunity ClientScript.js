@@ -3,9 +3,9 @@
  * @NScriptType ClientScript
  * @NModuleScope SameAccount
  */
- define(['N/currentRecord', 'N/url', 'N/ui/dialog','N/format', 'N/runtime'],
+ define(['N/currentRecord', 'N/url', 'N/ui/dialog','N/format', 'N/runtime', 'N/record'],
 
- function (currentRecord, url, dialog, format,runtime) {
+ function (currentRecord, url, dialog, format, runtime, record) {
             // Usuario ejecutando
              var userObj = runtime.getCurrentUser();
              var userId = parseInt(userObj.id);
@@ -81,7 +81,41 @@
     }
 
     /**
-     * Actualiza el estado de edición del campo custcol_aplica_descuento según el tipo de garantía
+     * Carga la configuración de descuento y obtiene el valor de custrecord_descuentos_a_aplicar
+     * @param {string|number} tipoGarantia - ID del tipo de garantía
+     * @returns {string|null} - Valor de custrecord_descuentos_a_aplicar o null si hay error
+     */
+    function obtenerDescuentosAAplicar(tipoGarantia) {
+        try {
+            if (!tipoGarantia || tipoGarantia === '') {
+                console.log('obtenerDescuentosAAplicar', 'No hay tipo de garantía definido');
+                return null;
+            }
+
+            // Cargar el registro de configuración usando el tipo de garantía como ID
+            var configRecord = record.load({
+                type: 'customrecord_conf_descuento',
+                id: tipoGarantia,
+                isDynamic: false
+            });
+
+            // Obtener el campo custrecord_descuentos_a_aplicar
+            var descuentosAAplicar = configRecord.getValue({
+                fieldId: 'custrecord_descuentos_a_aplicar'
+            });
+
+            console.log('obtenerDescuentosAAplicar', 'Descuentos a aplicar: ' + descuentosAAplicar);
+
+            return descuentosAAplicar ? String(descuentosAAplicar) : null;
+
+        } catch (err) {
+            console.error('Error obtenerDescuentosAAplicar', err);
+            return null;
+        }
+    }
+
+    /**
+     * Actualiza el estado de edición del campo custcol_aplica_descuento según custrecord_descuentos_a_aplicar
      * @param {Record} thisRecord - Record actual
      */
     function actualizarEdicionCampoDescuento(thisRecord) {
@@ -90,16 +124,31 @@
                 fieldId: 'custbody_aplicacion_garantia'
             });
 
-            // Si el tipo de garantía es 4 (Garantía parcial), permitir edición
-            // De lo contrario, hacer el campo de solo lectura
-            var esEditable = (tipoGarantia === '4' || tipoGarantia === 4);
+            if (!tipoGarantia || tipoGarantia === '') {
+                // Si no hay tipo de garantía, deshabilitar el campo
+                actualizarEstadoCampoDescuento(thisRecord, null, false);
+                return;
+            }
 
-            console.log('Actualizando estado de edición. Tipo garantía: ' + tipoGarantia + ', Es editable: ' + esEditable);
+            // Obtener el valor de custrecord_descuentos_a_aplicar de la configuración
+            var descuentosAAplicar = obtenerDescuentosAAplicar(tipoGarantia);
+
+            // Si custrecord_descuentos_a_aplicar es 5 (Elección manual), permitir edición
+            // De lo contrario, hacer el campo de solo lectura
+            var esEditable = (descuentosAAplicar === '5');
+
+            console.log('Actualizando estado de edición. Tipo garantía: ' + tipoGarantia + ', Descuentos a aplicar: ' + descuentosAAplicar + ', Es editable: ' + esEditable);
 
             // Actualizar el estado del campo para todas las líneas
             actualizarEstadoCampoDescuento(thisRecord, null, esEditable);
         } catch (err) {
             console.error('Error actualizarEdicionCampoDescuento', err);
+            // En caso de error, deshabilitar el campo por seguridad
+            try {
+                actualizarEstadoCampoDescuento(thisRecord, null, false);
+            } catch (e) {
+                console.error('Error al deshabilitar campo en caso de error', e);
+            }
         }
     }
 
@@ -274,8 +323,11 @@
                      fieldId: 'custbody_aplicacion_garantia'
                  });
 
-                 // Si el tipo de garantía no es 4, revertir cualquier cambio en custcol_aplica_descuento
-                 if (tipoGarantia !== '4' && tipoGarantia !== 4) {
+                 // Obtener el valor de custrecord_descuentos_a_aplicar
+                 var descuentosAAplicar = obtenerDescuentosAAplicar(tipoGarantia);
+
+                 // Si custrecord_descuentos_a_aplicar no es 5, revertir cualquier cambio en custcol_aplica_descuento
+                 if (descuentosAAplicar !== '5') {
                      // Obtener la línea actual
                      try {
                          var currentLine = thisRecord.getCurrentSublistIndex({
@@ -316,7 +368,7 @@
                          console.log('sublistChanged - Error: ' + e.message);
                      }
                  } else {
-                     // Si el tipo de garantía es 4, actualizar el valor guardado para permitir cambios
+                     // Si custrecord_descuentos_a_aplicar es 5, actualizar el valor guardado para permitir cambios
                      try {
                          var currentLine = thisRecord.getCurrentSublistIndex({
                              sublistId: 'item'
@@ -362,7 +414,9 @@
                      fieldId: 'custbody_aplicacion_garantia'
                  });
 
-                 var esEditable = (tipoGarantia === '4' || tipoGarantia === 4);
+                 // Obtener el valor de custrecord_descuentos_a_aplicar
+                 var descuentosAAplicar = obtenerDescuentosAAplicar(tipoGarantia);
+                 var esEditable = (descuentosAAplicar === '5');
                  
                  // Obtener el índice de la línea actual
                  try {
@@ -409,7 +463,7 @@
       */
      function validateField(scriptContext) {
          try {
-             // Validar que el campo custcol_aplica_descuento no se pueda editar si el tipo de garantía no es 4
+             // Validar que el campo custcol_aplica_descuento no se pueda editar si custrecord_descuentos_a_aplicar no es 5
              if (scriptContext.sublistId === 'item' && scriptContext.fieldId === 'custcol_aplica_descuento') {
                  console.log('validateField ejecutado para custcol_aplica_descuento');
                  var thisRecord = scriptContext.currentRecord;
@@ -417,10 +471,13 @@
                      fieldId: 'custbody_aplicacion_garantia'
                  });
 
-                 console.log('validateField - Tipo garantía: ' + tipoGarantia);
+                 // Obtener el valor de custrecord_descuentos_a_aplicar
+                 var descuentosAAplicar = obtenerDescuentosAAplicar(tipoGarantia);
 
-                 // Si el tipo de garantía no es 4, no permitir edición
-                 if (tipoGarantia !== '4' && tipoGarantia !== 4) {
+                 console.log('validateField - Tipo garantía: ' + tipoGarantia + ', Descuentos a aplicar: ' + descuentosAAplicar);
+
+                 // Si custrecord_descuentos_a_aplicar no es 5, no permitir edición
+                 if (descuentosAAplicar !== '5') {
                      var lineNum = scriptContext.lineNum;
                      console.log('validateField - Preveniendo cambio. Línea: ' + lineNum);
                      
@@ -446,7 +503,7 @@
                          if (valorActual !== nuevoValor) {
                              dialog.alert({
                                  title: "Campo no editable",
-                                 message: "El campo 'Aplica descuento' no puede ser editado manualmente cuando el tipo de garantía no es 'Garantía parcial' (tipo 4). El valor se establecerá automáticamente al guardar según el tipo de garantía seleccionado."
+                                 message: "El campo 'Aplica descuento' no puede ser editado manualmente. El valor se establecerá automáticamente al guardar según la configuración de descuento seleccionada."
                              });
                              
                              // Restaurar el valor anterior
@@ -482,7 +539,7 @@
       */
      function validateLine(scriptContext) {
          try {
-             // Validar que el campo custcol_aplica_descuento no se pueda editar si el tipo de garantía no es 4
+             // Validar que el campo custcol_aplica_descuento no se pueda editar si custrecord_descuentos_a_aplicar no es 5
              if (scriptContext.sublistId === 'item') {
                  console.log('validateLine ejecutado para sublista item');
                  var thisRecord = scriptContext.currentRecord;
@@ -490,10 +547,13 @@
                      fieldId: 'custbody_aplicacion_garantia'
                  });
 
-                 console.log('validateLine - Tipo garantía: ' + tipoGarantia);
+                 // Obtener el valor de custrecord_descuentos_a_aplicar
+                 var descuentosAAplicar = obtenerDescuentosAAplicar(tipoGarantia);
 
-                 // Si el tipo de garantía no es 4, verificar que no se haya modificado custcol_aplica_descuento
-                 if (tipoGarantia !== '4' && tipoGarantia !== 4) {
+                 console.log('validateLine - Tipo garantía: ' + tipoGarantia + ', Descuentos a aplicar: ' + descuentosAAplicar);
+
+                 // Si custrecord_descuentos_a_aplicar no es 5, verificar que no se haya modificado custcol_aplica_descuento
+                 if (descuentosAAplicar !== '5') {
                      var lineNum = scriptContext.lineNum;
                      console.log('validateLine - Línea: ' + lineNum);
                      
@@ -573,8 +633,11 @@
                 fieldId: 'custbody_aplicacion_garantia'
             });
 
-            // Si el tipo de garantía es 4, validar que al menos un artículo tenga el check marcado
-            if (tipoGarantia === '4' || tipoGarantia === 4) {
+            // Obtener el valor de custrecord_descuentos_a_aplicar
+            var descuentosAAplicar = obtenerDescuentosAAplicar(tipoGarantia);
+
+            // Si custrecord_descuentos_a_aplicar es 5, validar que al menos un artículo tenga el check marcado
+            if (descuentosAAplicar === '5') {
                 var lineCount = thisRecord.getLineCount({
                     sublistId: 'item'
                 });
@@ -613,8 +676,8 @@
                 // Si no hay ningún artículo marcado, mostrar alerta y prevenir el guardado
                 if (!hayAlMenosUnoMarcado) {
                     dialog.alert({
-                        title: "Validación de Garantía Parcial",
-                        message: "El tipo de garantía requiere por lo menos un artículo marcado. Marque un artículo para aplicar el descuento o cambie el tipo de garantía a aplicar."
+                        title: "Validación de Elección Manual",
+                        message: "La configuración de descuento requiere por lo menos un artículo marcado. Marque un artículo para aplicar el descuento o cambie la configuración de descuento."
                     });
                     return false; // Prevenir el guardado
                 }
