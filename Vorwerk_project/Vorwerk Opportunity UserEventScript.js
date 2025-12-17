@@ -54,7 +54,7 @@ define(['N/runtime','N/url','N/https','N/record','N/log'],
         /**
          * Carga el registro de configuración de descuento basado en el tipo de garantía
          * @param {string|number} tipoGarantia - ID del tipo de garantía
-         * @returns {Object} - Objeto con skuDescuento, manoObra, itemsDescuento y descuentosAAplicar, o null si hay error
+         * @returns {Object} - Objeto con skuDescuento, itemsDescuento y descuentosAAplicar, o null si hay error
          */
         function cargarConfiguracionDescuento(tipoGarantia) {
             try {
@@ -72,10 +72,6 @@ define(['N/runtime','N/url','N/https','N/record','N/log'],
     
                 var skuDescuento = configRecord.getValue({
                     fieldId: 'custrecord_sku_descuento'
-                });
-    
-                var manoObra = configRecord.getValue({
-                    fieldId: 'custrecord_mano_obra'
                 });
     
                 // Obtener el campo custrecord211 (items de descuento)
@@ -99,11 +95,10 @@ define(['N/runtime','N/url','N/https','N/record','N/log'],
                     fieldId: 'custrecord_descuentos_a_aplicar'
                 });
     
-                log.debug('Carga configuración descuento', 'Configuración cargada - SKU Descuento: ' + skuDescuento + ', Mano de Obra: ' + manoObra + ', Items Descuento: ' + JSON.stringify(itemsDescuentoArray) + ', Descuentos a Aplicar: ' + descuentosAAplicar);
+                log.debug('Carga configuración descuento', 'Configuración cargada - SKU Descuento: ' + skuDescuento + ', Items Descuento: ' + JSON.stringify(itemsDescuentoArray) + ', Descuentos a Aplicar: ' + descuentosAAplicar);
     
                 return {
                     skuDescuento: skuDescuento,
-                    manoObra: manoObra,
                     itemsDescuento: itemsDescuentoArray,
                     descuentosAAplicar: descuentosAAplicar
                 };
@@ -587,29 +582,6 @@ define(['N/runtime','N/url','N/https','N/record','N/log'],
             } catch (err) {
                 log.error('Error aplicarDescuentosPorGarantia', err);
                 throw err;
-            }
-        }
-    
-        /**
-         * Determina si un item es de "mano de obra"
-         * @param {number|string} itemId - ID del item
-         * @param {number|string} manoObraId - ID del item de mano de obra desde la configuración
-         * @returns {boolean} - true si es item de mano de obra, false en caso contrario
-         */
-        function esItemManoDeObra(itemId, manoObraId) {
-            try {
-                if (!manoObraId) {
-                    log.debug('esItemManoDeObra', 'No hay ID de mano de obra configurado');
-                    return false;
-                }
-                
-                var itemIdNum = parseInt(itemId);
-                var manoObraIdNum = parseInt(manoObraId);
-                return itemIdNum === manoObraIdNum;
-            } catch (err) {
-                log.error('Error esItemManoDeObra', err);
-                // En caso de error, asumir que NO es mano de obra para aplicar el descuento
-                return false;
             }
         }
     
