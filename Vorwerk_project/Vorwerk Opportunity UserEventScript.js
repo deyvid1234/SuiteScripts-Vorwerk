@@ -54,7 +54,7 @@ define(['N/runtime','N/url','N/https','N/record','N/log'],
         /**
          * Carga el registro de configuración de descuento basado en el tipo de garantía
          * @param {string|number} tipoGarantia - ID del tipo de garantía
-         * @returns {Object} - Objeto con skuDescuento y manoObra, o null si hay error
+         * @returns {Object} - Objeto con skuDescuento, manoObra, itemsDescuento y descuentosAAplicar, o null si hay error
          */
         function cargarConfiguracionDescuento(tipoGarantia) {
             try {
@@ -78,11 +78,34 @@ define(['N/runtime','N/url','N/https','N/record','N/log'],
                     fieldId: 'custrecord_mano_obra'
                 });
     
-                log.debug('Carga configuración descuento', 'Configuración cargada - SKU Descuento: ' + skuDescuento + ', Mano de Obra: ' + manoObra);
+                // Obtener el campo custrecord211 (items de descuento)
+                var itemsDescuento = configRecord.getValue({
+                    fieldId: 'custrecord211'
+                });
+                
+                // Si es un array (multi-select), obtener todos los valores
+                var itemsDescuentoArray = [];
+                if (itemsDescuento) {
+                    if (Array.isArray(itemsDescuento)) {
+                        itemsDescuentoArray = itemsDescuento;
+                    } else {
+                        // Si es un solo valor, convertirlo a array
+                        itemsDescuentoArray = [itemsDescuento];
+                    }
+                }
+                
+                // Obtener el campo custrecord_descuentos_a_aplicar
+                var descuentosAAplicar = configRecord.getValue({
+                    fieldId: 'custrecord_descuentos_a_aplicar'
+                });
+    
+                log.debug('Carga configuración descuento', 'Configuración cargada - SKU Descuento: ' + skuDescuento + ', Mano de Obra: ' + manoObra + ', Items Descuento: ' + JSON.stringify(itemsDescuentoArray) + ', Descuentos a Aplicar: ' + descuentosAAplicar);
     
                 return {
                     skuDescuento: skuDescuento,
-                    manoObra: manoObra
+                    manoObra: manoObra,
+                    itemsDescuento: itemsDescuentoArray,
+                    descuentosAAplicar: descuentosAAplicar
                 };
     
             } catch (err) {
@@ -92,7 +115,7 @@ define(['N/runtime','N/url','N/https','N/record','N/log'],
         }
     
         /**
-         * Valida y establece el campo custcol_aplica_descuento a nivel de línea según el tipo de garantía
+         * Valida y establece el campo custcol_aplica_descuento a nivel de línea según la configuración de descuento
          * @param {Object} scriptContext - Contexto del script
          */
         function validarCampoAplicaDescuento(scriptContext) {
@@ -115,6 +138,13 @@ define(['N/runtime','N/url','N/https','N/record','N/log'],
                     return;
                 }
     
+                // Obtener el valor de custrecord_descuentos_a_aplicar
+                var descuentosAAplicar = config.descuentosAAplicar;
+                if (!descuentosAAplicar || descuentosAAplicar === '') {
+                    log.debug('Validación aplica descuento', 'No hay valor configurado en custrecord_descuentos_a_aplicar');
+                    return;
+                }
+    
                 var lineCount = rec.getLineCount({
                     sublistId: 'item'
                 });
@@ -124,21 +154,28 @@ define(['N/runtime','N/url','N/https','N/record','N/log'],
                     return;
                 }
     
-                // Tipo 1: No aplica - Marcar todos los items como false
-                if (tipoGarantia === '1') {
-                    log.debug('Validación aplica descuento', 'Tipo 1 - Marcando todos los items como false');
-                    for (var i = 0; i < lineCount; i++) {
-                        rec.setSublistValue({
-                            sublistId: 'item',
-                            fieldId: 'custcol_aplica_descuento',
-                            line: i,
-                            value: false
-                        });
+                // Convertir descuentosAAplicar a string para comparación
+                var descuentosAAplicarStr = String(descuentosAAplicar);
+                
+                // Obtener los items de descuento del campo custrecord211
+                var itemsDescuento = config.itemsDescuento || [];
+                // Convertir a array de strings para comparación
+                var itemsDescuentoStr = itemsDescuento.map(function(item) {
+                    return String(item);
+                });
+                
+                // Función auxiliar para verificar si un item está en la lista de items de descuento
+                function esItemEnListaDescuento(itemId) {
+                    if (!itemsDescuentoStr || itemsDescuentoStr.length === 0) {
+                        return false;
                     }
+                    var itemIdStr = String(itemId);
+                    return itemsDescuentoStr.indexOf(itemIdStr) !== -1;
                 }
-                // Tipo 2: Garantía al 100% - Marcar todos los items como true
-                else if (tipoGarantia === '2') {
-                    log.debug('Validación aplica descuento', 'Tipo 2 - Marcando todos los items como true');
+    
+                // Internal ID 1: Marcar el check de todos los artículos
+                if (descuentosAAplicarStr === '1') {
+                    log.debug('Validación aplica descuento', 'Internal ID 1 - Marcando todos los items como true');
                     for (var i = 0; i < lineCount; i++) {
                         rec.setSublistValue({
                             sublistId: 'item',
@@ -148,9 +185,9 @@ define(['N/runtime','N/url','N/https','N/record','N/log'],
                         });
                     }
                 }
-                // Tipo 3: Garantía total excepto mano de obra - Marcar todos como true excepto mano de obra
-                else if (tipoGarantia === '3') {
-                    log.debug('Validación aplica descuento', 'Tipo 3 - Marcando todos los items como true excepto mano de obra');
+                // Internal ID 2: Solo marcar los artículos del campo custrecord211
+                else if (descuentosAAplicarStr === '2') {
+                    log.debug('Validación aplica descuento', 'Internal ID 2 - Marcando solo items del campo custrecord211');
                     for (var i = 0; i < lineCount; i++) {
                         var itemId = rec.getSublistValue({
                             sublistId: 'item',
@@ -158,25 +195,61 @@ define(['N/runtime','N/url','N/https','N/record','N/log'],
                             line: i
                         });
                         
-                        var esManoDeObra = esItemManoDeObra(itemId, config.manoObra);
+                        var debeMarcar = esItemEnListaDescuento(itemId);
                         
-                        // Si NO es mano de obra, marcar como true, si es mano de obra marcar como false
                         rec.setSublistValue({
                             sublistId: 'item',
                             fieldId: 'custcol_aplica_descuento',
                             line: i,
-                            value: !esManoDeObra
+                            value: debeMarcar
                         });
                     }
                 }
-                // Tipo 4: Garantía parcial - No hacer nada, el usuario seleccionará manualmente
-                else if (tipoGarantia === '4') {
-                    log.debug('Validación aplica descuento', 'Tipo 4 - El usuario debe seleccionar manualmente');
+                // Internal ID 3: No marcar ningún check
+                else if (descuentosAAplicarStr === '3') {
+                    log.debug('Validación aplica descuento', 'Internal ID 3 - Marcando todos los items como false');
+                    for (var i = 0; i < lineCount; i++) {
+                        rec.setSublistValue({
+                            sublistId: 'item',
+                            fieldId: 'custcol_aplica_descuento',
+                            line: i,
+                            value: false
+                        });
+                    }
+                }
+                // Internal ID 4: Marcar todos los artículos excepto los del campo custrecord211
+                else if (descuentosAAplicarStr === '4') {
+                    log.debug('Validación aplica descuento', 'Internal ID 4 - Marcando todos los items excepto los del campo custrecord211');
+                    for (var i = 0; i < lineCount; i++) {
+                        var itemId = rec.getSublistValue({
+                            sublistId: 'item',
+                            fieldId: 'item',
+                            line: i
+                        });
+                        
+                        var esItemDescuento = esItemEnListaDescuento(itemId);
+                        
+                        // Marcar como true si NO está en la lista de items de descuento
+                        rec.setSublistValue({
+                            sublistId: 'item',
+                            fieldId: 'custcol_aplica_descuento',
+                            line: i,
+                            value: !esItemDescuento
+                        });
+                    }
+                }
+                // Internal ID 5: No ejecutar ninguna acción (el usuario marcará manualmente)
+                else if (descuentosAAplicarStr === '5') {
+                    log.debug('Validación aplica descuento', 'Internal ID 5 - No se ejecuta ninguna acción, el usuario marcará manualmente');
                     // No se modifica nada, el usuario debe seleccionar manualmente
                     return;
                 }
+                else {
+                    log.debug('Validación aplica descuento', 'Valor desconocido en custrecord_descuentos_a_aplicar: ' + descuentosAAplicarStr);
+                    return;
+                }
     
-                log.debug('Validación aplica descuento', 'Campo custcol_aplica_descuento validado correctamente para tipo: ' + tipoGarantia);
+                log.debug('Validación aplica descuento', 'Campo custcol_aplica_descuento validado correctamente para descuentosAAplicar: ' + descuentosAAplicarStr);
     
             } catch (err) {
                 log.error('Error validarCampoAplicaDescuento', err);
