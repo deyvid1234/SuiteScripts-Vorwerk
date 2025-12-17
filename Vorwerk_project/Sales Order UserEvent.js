@@ -1348,7 +1348,9 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                 log.debug('[' + salesrep + '] numVentasGutm', numVentasGutm)
              
                 const epTm7 = presentadorFields.custentity_checkbox_eptm7;
+                const estatusEptm7 = presentadorFields.custentity_estatus_eptm7;
                 log.debug('[' + salesrep + '] epTm7', epTm7)
+                log.debug('[' + salesrep + '] estatusEptm7', estatusEptm7)
                 
                 // es eptm7?
                 if(epTm7 && (estatusEptm7 == 1 || estatusEptm7 == 2 || estatusEptm7 == 4)){
@@ -1358,36 +1360,39 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                     const fecha_inicio = presentadorFields.custentity_fcha_inicio_eptm7;
                     const fecha_fin = presentadorFields.custentity_fcha_fin_eptm7;
                     
-                    if (fecha_inicio && fecha_fin) {
-                        // Convertir fechas usando el formato de NetSuite
-                        var fechaInicio = Utils.stringToDate(fecha_inicio);
-                        var fechaFin = Utils.stringToDate(fecha_fin);
-                        
-                        // Calcular diferencia en días
-                        var diferenciaTiempo = fechaFin.getTime() - fechaInicio.getTime();
-                        var diferenciaDias = Math.ceil(diferenciaTiempo / (1000 * 3600 * 24));
-                        
-                        // Logs agrupados para debugging de fechas
-                        log.debug('[' + salesrep + '] === CALCULO DE LIMITE ===');
-                        log.debug('[' + salesrep + '] fecha_inicio', fecha_inicio);
-                        log.debug('[' + salesrep + '] fecha_fin', fecha_fin);
-                        log.debug('[' + salesrep + '] fechaInicio (Date)', fechaInicio);
-                        log.debug('[' + salesrep + '] fechaFin (Date)', fechaFin);
-                        log.debug('[' + salesrep + '] diferenciaDias', diferenciaDias);
-                        
-                        // Si hay más de 31 días, el límite es 4, sino es 3
-                        /*if (diferenciaDias > 40) {
-                            limit = 4;
-                            newStatus = 4
-                            log.debug('[' + salesrep + '] *** LIMITE ESTABLECIDO EN 4 (más de 31 días) ***');
-                        } else {
-                            limit = 3;
-                            newStatus = 1
-                            log.debug('[' + salesrep + '] *** LIMITE ESTABLECIDO EN 3 (31 días o menos) ***');
-                        }
+                    // Validar por fecha solo si numVentasGutm es vacío o nulo
+                    if (!numVentasGutm || numVentasGutm == null || numVentasGutm == '') {
+                        if (fecha_inicio && fecha_fin) {
+                            // Convertir fechas usando el formato de NetSuite
+                            var fechaInicio = Utils.stringToDate(fecha_inicio);
+                            var fechaFin = Utils.stringToDate(fecha_fin);
+                            
+                            // Calcular diferencia en días
+                            var diferenciaTiempo = fechaFin.getTime() - fechaInicio.getTime();
+                            var diferenciaDias = Math.ceil(diferenciaTiempo / (1000 * 3600 * 24));
+                            
+                            // Logs agrupados para debugging de fechas
+                            log.debug('[' + salesrep + '] === CALCULO DE LIMITE ===');
+                            log.debug('[' + salesrep + '] fecha_inicio', fecha_inicio);
+                            log.debug('[' + salesrep + '] fecha_fin', fecha_fin);
+                            log.debug('[' + salesrep + '] fechaInicio (Date)', fechaInicio);
+                            log.debug('[' + salesrep + '] fechaFin (Date)', fechaFin);
+                            log.debug('[' + salesrep + '] diferenciaDias', diferenciaDias);
+                            
+                            // Si hay más de 31 días, el límite es 4, sino es 3
+                            if (diferenciaDias > 40) {
+                                limit = 4;
+                                newStatus = 4
+                                log.debug('[' + salesrep + '] *** LIMITE ESTABLECIDO EN 4 (más de 31 días) ***');
+                            } else {
+                                limit = 3;
+                                newStatus = 1
+                                log.debug('[' + salesrep + '] *** LIMITE ESTABLECIDO EN 3 (31 días o menos) ***');
+                            }
+                        } 
                     } else {
-                        log.debug('[' + salesrep + '] *** LIMITE ESTABLECIDO EN 3 (fechas no disponibles) ***');
-                    }*/
+                        log.debug('[' + salesrep + '] *** LIMITE ESTABLECIDO EN ' + limit + ' (usando numVentasGutm) ***');
+                    }
                     
                     const fecha_ganotm7 = presentadorFields.custentity_fechatm7_ganada;
                     
