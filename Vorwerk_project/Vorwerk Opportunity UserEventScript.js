@@ -74,9 +74,9 @@ define(['N/runtime','N/url','N/https','N/record','N/log'],
                     fieldId: 'custrecord_sku_descuento'
                 });
     
-                // Obtener el campo custrecord211 (items de descuento)
+                // Obtener el campo custrecord_sku_relacionado (items de descuento)
                 var itemsDescuento = configRecord.getValue({
-                    fieldId: 'custrecord211'
+                    fieldId: 'custrecord_sku_relacionado'
                 });
                 
                 // Si es un array (multi-select), obtener todos los valores
@@ -152,7 +152,7 @@ define(['N/runtime','N/url','N/https','N/record','N/log'],
                 // Convertir descuentosAAplicar a string para comparación
                 var descuentosAAplicarStr = String(descuentosAAplicar);
                 
-                // Obtener los items de descuento del campo custrecord211
+                // Obtener los items de descuento del campo custrecord_sku_relacionado
                 var itemsDescuento = config.itemsDescuento || [];
                 // Convertir a array de strings para comparación
                 var itemsDescuentoStr = itemsDescuento.map(function(item) {
@@ -180,9 +180,9 @@ define(['N/runtime','N/url','N/https','N/record','N/log'],
                         });
                     }
                 }
-                // Internal ID 2: Solo marcar los artículos del campo custrecord211
+                // Internal ID 2: Solo marcar los artículos del campo custrecord_sku_relacionado
                 else if (descuentosAAplicarStr === '2') {
-                    log.debug('Validación aplica descuento', 'Internal ID 2 - Marcando solo items del campo custrecord211');
+                    log.debug('Validación aplica descuento', 'Internal ID 2 - Marcando solo items del campo custrecord_sku_relacionado');
                     for (var i = 0; i < lineCount; i++) {
                         var itemId = rec.getSublistValue({
                             sublistId: 'item',
@@ -212,9 +212,9 @@ define(['N/runtime','N/url','N/https','N/record','N/log'],
                         });
                     }
                 }
-                // Internal ID 4: Marcar todos los artículos excepto los del campo custrecord211
+                // Internal ID 4: Marcar todos los artículos excepto los del campo custrecord_sku_relacionado
                 else if (descuentosAAplicarStr === '4') {
-                    log.debug('Validación aplica descuento', 'Internal ID 4 - Marcando todos los items excepto los del campo custrecord211');
+                    log.debug('Validación aplica descuento', 'Internal ID 4 - Marcando todos los items excepto los del campo custrecord_sku_relacionado');
                     for (var i = 0; i < lineCount; i++) {
                         var itemId = rec.getSublistValue({
                             sublistId: 'item',
