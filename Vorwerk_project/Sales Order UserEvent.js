@@ -243,7 +243,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                 }
                 // actualizacion de commission status 
                 try{
-                    commissionStatus(salesrep)
+                    commissionStatus(salesrep,rec.id)
                 }catch(e){
                     log.debug('error actualizacion de commission status',e)
                 }
@@ -1507,7 +1507,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
             }
     
         }
-        function commissionStatus(salesrep){
+        function commissionStatus(salesrep,recordid){
             try{
                 
                 var presentadorFields = search.lookupFields({
@@ -1606,20 +1606,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                     var tipoVenta = r.getValue('custbody_tipo_venta')
                     var fechaSO = r.getValue('trandate')
                     fechaSO = Utils.stringToDate(fechaSO)
-                    if (contVentas >= 10){
-                        if(arregloPrimerasVentas.hasOwnProperty(recordid)){
-                            log.debug('esta en el arreglo, ya paso por el for')
-                        }else{
-                            log.debug('vamos a actualizar el com status de ',recordid)
-                            var submitFields = record.submitFields({
-                                type: record.Type.SALES_ORDER,
-                                id: recordid,
-                                values: {'custbody_vw_comission_status':''}
-                            });
-                        }
-
-                        return false
-                    }
+                    
     
                     if(tipoIngreso == 11 && promocion == 2){
                         log.debug('caso 1')
@@ -1644,7 +1631,18 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                         });
                     }
                     cont++
-                    if (cont >= 7) {
+                    if (contVentas >= 10){
+                        if(arregloPrimerasVentas.hasOwnProperty(recordid)){
+                            log.debug('esta en el arreglo, ya paso por el for')
+                        }else{
+                            log.debug('vamos a actualizar el com status de ',recordid)
+                            var submitFields = record.submitFields({
+                                type: record.Type.SALES_ORDER,
+                                id: recordid,
+                                values: {'custbody_vw_comission_status':''}
+                            });
+                        }
+
                         return false
                     }
                     return true
