@@ -1583,7 +1583,8 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
     
                     
                 var cont = 1
-                   
+                var arregloPrimerasVentas= []
+                var contVentas = 0
                 var soSearch = search.load({
                     id: 'customsearch_so_commission_status' //busqueda de so 
                 });
@@ -1599,10 +1600,26 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                 }));
                     
                 soSearch.run().each(function(r){
+                    contVentas ++
                     var internalId = r.getValue('internalid')
+                    arregloPrimerasVentas.push(internalId)
                     var tipoVenta = r.getValue('custbody_tipo_venta')
                     var fechaSO = r.getValue('trandate')
                     fechaSO = Utils.stringToDate(fechaSO)
+                    if (contVentas >= 10){
+                        if(arregloPrimerasVentas.hasOwnProperty(recordid)){
+                            log.debug('esta en el arreglo, ya paso por el for')
+                        }else{
+                            log.debug('vamos a actualizar el com status de ',recordid)
+                            var submitFields = record.submitFields({
+                                type: record.Type.SALES_ORDER,
+                                id: recordid,
+                                values: {'custbody_vw_comission_status':''}
+                            });
+                        }
+
+                        return false
+                    }
     
                     if(tipoIngreso == 11 && promocion == 2){
                         log.debug('caso 1')
