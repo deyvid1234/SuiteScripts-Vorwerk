@@ -1011,12 +1011,39 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                 return {error_order:err_so};
             }
             
+            // Extraer fecha del primer pago si existe multipago
+            var fecha_primer_pago = null;
+            if(salesorder_payment && salesorder_payment.length > 0){
+                var primer_pago = salesorder_payment[0];
+                // Verificar si tiene transdate o trandate
+                if(primer_pago.transdate){
+                    fecha_primer_pago = parseDate(primer_pago.transdate);
+                    log.debug('Fecha primer pago (transdate)', fecha_primer_pago);
+                }else if(primer_pago.trandate){
+                    fecha_primer_pago = parseDate(primer_pago.trandate);
+                    log.debug('Fecha primer pago (trandate)', fecha_primer_pago);
+                }
+            }
+            
             var id_payment = setPaymentMethod(id_sales_order, salesorder_payment, req_info.entity)
             try{
+                // Preparar valores para actualizar la Sales Order
+                var values_to_update = {
+                    'orderstatus':'B',
+                    'custbody_vorwerk_contratos':id_payment.contract,
+                    'custbody_total_pagado':id_payment.total_payment
+                };
+                
+                // Agregar fecha del primer pago si existe
+                if(fecha_primer_pago){
+                    values_to_update['trandate'] = fecha_primer_pago;
+                    log.debug('Fecha de pago seteada en Sales Order', fecha_primer_pago);
+                }
+                
                 var submitFields = record.submitFields({
                     type: record.Type.SALES_ORDER,
                     id: id_sales_order,
-                    values: {'orderstatus':'B','custbody_vorwerk_contratos':id_payment.contract,'custbody_total_pagado':id_payment.total_payment}
+                    values: values_to_update
                 });
                 log.debug('total in set',id_payment.total_payment)
                 log.debug('prueba 1 ',req_info.multipago.custbody_forma_tipo_de_pago)// == 222
@@ -1107,8 +1134,15 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                                 var id_account = tmp_tipo_pago.custrecord_ref_pago_cuenta_bancaria[0].value;
                                 obj_payment.setValue('account',id_account);
                                 obj_payment.setValue('custbody_forma_tipo_de_pago',info_payment[x][y]);
-                            }else if(y == "trandate"){
-                                obj_payment.setValue(y,parseDate(info_payment[x][y]))
+                            }else if(y == "trandate" || y == "transdate"){
+                                // Maneja tanto "trandate" como "transdate" del JSON, pero siempre setea "trandate" en NetSuite
+                                var fecha_pago = parseDate(info_payment[x][y]);
+                                if(fecha_pago){
+                                    obj_payment.setValue('trandate', fecha_pago);
+                                    log.debug('Fecha de pago seteada', fecha_pago);
+                                }else{
+                                    log.error('Error al parsear fecha de pago', info_payment[x][y]);
+                                }
                             }else if(y=="ccexpiredate"){
                                 var ccexp = format.parse({value: info_payment[x][y], type: format.Type.CCEXPDATE})
                                 log.debug('-- ccexp'+y,ccexp);
@@ -1445,6 +1479,10 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
     
     function parseDate(date_req){
         try{
+            if(!date_req || date_req == ""){
+                log.debug("date_req vacío o null",date_req);
+                return null;
+            }
             log.debug('date_req',date_req)
             var fdate = format.parse({
                 value: date_req,
@@ -1452,7 +1490,8 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
             });
             return fdate;
         }catch(err){
-            log.debug("err parse Date",err);
+            log.error("err parse Date",err);
+            return null;
         }
         
     }
