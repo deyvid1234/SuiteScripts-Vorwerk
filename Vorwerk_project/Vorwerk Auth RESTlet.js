@@ -660,7 +660,40 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
             });
 //          obj_sales_order.setValue({fieldId: 'orderstatus', value: 'B'});
             obj_sales_order.setValue("customform",105);
-            if("discountrate" in req_info){
+            
+            // Determinar el item de descuento basado en los items recibidos
+            
+            var items_especiales = [];
+            var discont_base;
+            var discont_tm7;
+            if(runtime.envType == "SANDBOX"){
+                // Items que requieren item de descuento 2692 en sandbox
+                items_especiales = ["2685", "2686"];
+                discont_base = 1876;
+                discont_tm7 = 2692;
+            }else{//produccion
+                items_especiales = ["2685", "2686"];
+                discont_base = 1876;
+                discont_tm7 = 2692;
+            }
+            var discount_item_id = discont_base; // Item de descuento por defecto
+            var tiene_item_2686 = false; // Flag para detectar si hay item 2686 (KIT DE DESGASTE TM7)
+            
+            // Verificar si alguno de los items recibidos está en la lista de items especiales
+            for(var x in req_info.items){
+                if(items_especiales.indexOf(req_info.items[x].item_id) !== -1){
+                    discount_item_id = discont_tm7;
+                    log.debug('Item de descuento cambiado a 2692 por item', req_info.items[x].item_id);
+                    
+                        tiene_item_2686 = true;
+                        log.debug('Item 2686 (KIT DE DESGASTE TM7) detectado - se aplicará descuento único al final');
+                    
+                    break;
+                }
+            }
+            
+            // Calcular descuento solo si NO hay item 2686 (para item 2686 se aplica descuento único al final)
+            if("discountrate" in req_info && !tiene_item_2686){
                 if(parseFloat(req_info['discountrate']) > 0){
                     for(var x in req_info.items){
                         if(req_info.items[x].item_id != "859"){
@@ -749,12 +782,27 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                     sublistId: 'item'
                 });
                 
-                if(total_amount_aux > 0 && item_mine.item_id != "859"){
+                // NO aplicar descuento por item si hay item 2686 (se aplicará un solo descuento al final)
+                if(!tiene_item_2686 && total_amount_aux > 0 && item_mine.item_id != "859"){
                     var discount_item = parseFloat(item_mine.amount)*discount_aux*parseInt(item_mine.quantity,10);
+                    // Sumar .01 para evitar que el descuento quede en 0
+                    discount_item = discount_item + 0.01;
+                    log.debug('discount_item calculado', discount_item);
 //                  log.debug('item_mine.amount',item_mine.amount);
 //                  log.debug('discount_aux',discount_aux);
-                    setItemDiscount(obj_sales_order,discount_item);
+                    setItemDiscount(obj_sales_order, discount_item, discount_item_id);
                 }
+            }
+            
+            // Si hay item 2686, aplicar un solo descuento al final
+            if(tiene_item_2686 && "discountrate" in req_info && parseFloat(req_info['discountrate']) > 0){
+                // Calcular descuento único: discountrate - 0.04 para que el total final quede con .04 centavos
+                // Ejemplo: garantía 1000 + kit 700 = 1700, descuento 700, total final debe ser 1000.04
+                // Entonces: 1700 - 699.96 = 1000.04 (en lugar de 1700 - 700.04 = 999.96)
+                var descuento_unico = parseFloat(req_info['discountrate']) - 0.04;
+                log.debug('Aplicando descuento único para item 2686', descuento_unico);
+                log.debug('discountrate original', req_info['discountrate']);
+                setItemDiscount(obj_sales_order, descuento_unico, discont_tm7, true);
             }
 
             var  salesorder_payment = req_info.multipago;
@@ -1011,17 +1059,28 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                 return {error_order:err_so};
             }
             
-            // Extraer fecha del primer pago si existe multipago
-            var fecha_primer_pago = null;
+            // Extraer fecha del último pago si existe multipago y hay más de 1 pago
+            // Si solo hay 1 pago, tomar ese; si hay más de 1, tomar el último
+            var fecha_pago = null;
             if(salesorder_payment && salesorder_payment.length > 0){
-                var primer_pago = salesorder_payment[0];
+                var pago_a_usar;
+                if(salesorder_payment.length > 1){
+                    // Si hay más de 1 pago, tomar el último
+                    pago_a_usar = salesorder_payment[salesorder_payment.length - 1];
+                    log.debug('Hay más de 1 pago, tomando fecha del último pago');
+                }else{
+                    // Si solo hay 1 pago, tomar ese
+                    pago_a_usar = salesorder_payment[0];
+                    log.debug('Solo hay 1 pago, tomando fecha de ese pago');
+                }
+                
                 // Verificar si tiene transdate o trandate
-                if(primer_pago.transdate){
-                    fecha_primer_pago = parseDate(primer_pago.transdate);
-                    log.debug('Fecha primer pago (transdate)', fecha_primer_pago);
-                }else if(primer_pago.trandate){
-                    fecha_primer_pago = parseDate(primer_pago.trandate);
-                    log.debug('Fecha primer pago (trandate)', fecha_primer_pago);
+                if(pago_a_usar.transdate){
+                    fecha_pago = parseDate(pago_a_usar.transdate);
+                    log.debug('Fecha pago (transdate)', fecha_pago);
+                }else if(pago_a_usar.trandate){
+                    fecha_pago = parseDate(pago_a_usar.trandate);
+                    log.debug('Fecha pago (trandate)', fecha_pago);
                 }
             }
             
@@ -1034,10 +1093,10 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                     'custbody_total_pagado':id_payment.total_payment
                 };
                 
-                // Agregar fecha del primer pago si existe
-                if(fecha_primer_pago){
-                    values_to_update['trandate'] = fecha_primer_pago;
-                    log.debug('Fecha de pago seteada en Sales Order', fecha_primer_pago);
+                // Agregar fecha del pago si existe (último pago si hay más de 1)
+                if(fecha_pago){
+                    values_to_update['trandate'] = fecha_pago;
+                    log.debug('Fecha de pago seteada en Sales Order', fecha_pago);
                 }
                 
                 var submitFields = record.submitFields({
@@ -1068,37 +1127,87 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
         }
     }
 
-    function setItemDiscount(obj_sales_order,discount_item){
+    function setItemDiscount(obj_sales_order, discount_item, discount_item_id, es_descuento_unico_2686){
         try{
+            // Si no se proporciona discount_item_id, usar el por defecto (1876)
+            if(!discount_item_id){
+                discount_item_id = 1876;
+            }
             
-            var price_negative = discount_item*-1;
-            log.debug('price_negative',price_negative);
-            obj_sales_order.selectNewLine({
+            // Si es descuento único del item 2686, calcular rate (sin IVA) y gross (con IVA)
+            if(es_descuento_unico_2686){
+                // discount_item viene con IVA incluido (ej: 699.96)
+                // Rate (sin IVA): dividir entre 1.16
+                var rate_sin_iva = (discount_item * -1) / 1.16;
+                // Gross/Amount (con IVA): el monto original negativo
+                var gross_con_iva = discount_item * -1;
+                
+                log.debug('Descuento único 2686 - rate sin IVA', rate_sin_iva);
+                log.debug('Descuento único 2686 - gross con IVA', gross_con_iva);
+                
+                obj_sales_order.selectNewLine({
                     sublistId : 'item',
-            });
-            obj_sales_order.setCurrentSublistValue({
-                sublistId: 'item',
-                fieldId: 'item',
-                value: 1876
-            });
-            obj_sales_order.setCurrentSublistValue({
-                sublistId: 'item',
-                fieldId: 'price',
-                value: -1
-            });
-            obj_sales_order.setCurrentSublistValue({
-                sublistId: 'item',
-                fieldId: 'rate',
-                value: price_negative.toFixed(2)
-            });
-            obj_sales_order.setCurrentSublistValue({
-                sublistId: 'item',
-                fieldId: 'amount',
-                value: price_negative
-            });
-            obj_sales_order.commitLine({
-                sublistId: 'item'
-            });
+                });
+                obj_sales_order.setCurrentSublistValue({
+                    sublistId: 'item',
+                    fieldId: 'item',
+                    value: discount_item_id
+                });
+                obj_sales_order.setCurrentSublistValue({
+                    sublistId: 'item',
+                    fieldId: 'price',
+                    value: -1
+                });
+                obj_sales_order.setCurrentSublistValue({
+                    sublistId: 'item',
+                    fieldId: 'rate',
+                    value: rate_sin_iva.toFixed(2)
+                });
+                obj_sales_order.setCurrentSublistValue({
+                    sublistId: 'item',
+                    fieldId: 'amount',
+                    value: gross_con_iva
+                });
+                obj_sales_order.setCurrentSublistValue({
+                    sublistId: 'item',
+                    fieldId: 'grossamt',
+                    value: gross_con_iva
+                });
+                obj_sales_order.commitLine({
+                    sublistId: 'item'
+                });
+            }else{
+                // Lógica original para descuentos normales
+                var price_negative = discount_item*-1;
+                log.debug('price_negative',price_negative);
+                log.debug('discount_item_id usado', discount_item_id);
+                obj_sales_order.selectNewLine({
+                        sublistId : 'item',
+                });
+                obj_sales_order.setCurrentSublistValue({
+                    sublistId: 'item',
+                    fieldId: 'item',
+                    value: discount_item_id
+                });
+                obj_sales_order.setCurrentSublistValue({
+                    sublistId: 'item',
+                    fieldId: 'price',
+                    value: -1
+                });
+                obj_sales_order.setCurrentSublistValue({
+                    sublistId: 'item',
+                    fieldId: 'rate',
+                    value: price_negative.toFixed(2)
+                });
+                obj_sales_order.setCurrentSublistValue({
+                    sublistId: 'item',
+                    fieldId: 'amount',
+                    value: price_negative
+                });
+                obj_sales_order.commitLine({
+                    sublistId: 'item'
+                });
+            }
         }catch(err){
             log.error("error set Discount",err);
         }
