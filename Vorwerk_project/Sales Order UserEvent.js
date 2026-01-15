@@ -295,19 +295,19 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                                         log.debug('cambio de sales rep')
                                         setRecruiter(rec);//si hay cambio en el sales rep se actualiza el recruiter
                                     }
-                                   var numOdv = tmGanada(scriptContext);
+                                   //var numOdv = tmGanada(scriptContext);
                                 }
     
                             } else if (type == 'create'){
                                 
-                                var numOdv = tmGanada(scriptContext);
+                                //var numOdv = tmGanada(scriptContext);
                             }
                              
                         } catch(e){
                             log.debug('error actualizacion de commission status',e)
                         }
                         
-                        var numOdv = tmGanada(scriptContext);
+                        //var numOdv = tmGanada(scriptContext);
                         //dd
                         try{
                             var numLines = salesorder.getLineCount({
