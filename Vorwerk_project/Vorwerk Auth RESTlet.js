@@ -55,7 +55,7 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
 //      return ret;
         try{
             var res = {};
-            log.debug("requestBody",requestBody);
+            log.audit("requestBody",requestBody);
             var req_info= requestBody;
             switch(req_info.type){
                 case "login":
@@ -388,7 +388,7 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                                 fieldId: 'country'
                             });
                         } catch (e) {
-                            log.debug('Error obteniendo country para línea ' + i, e);
+                            log.error('Error obteniendo country para línea ' + i, e);
                         }
                         
                         try {
@@ -396,7 +396,7 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                                 fieldId: 'addressee'
                             });
                         } catch (e) {
-                            log.debug('Error obteniendo addressee para línea ' + i, e);
+                            log.error('Error obteniendo addressee para línea ' + i, e);
                         }
                         
                         try {
@@ -404,7 +404,7 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                                 fieldId: 'addrphone'
                             });
                         } catch (e) {
-                            log.debug('Error obteniendo addrphone para línea ' + i, e);
+                            log.error('Error obteniendo addrphone para línea ' + i, e);
                         }
                         
                         try {
@@ -412,7 +412,7 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                                 fieldId: 'addr1'
                             });
                         } catch (e) {
-                            log.debug('Error obteniendo addr1 para línea ' + i, e);
+                            log.error('Error obteniendo addr1 para línea ' + i, e);
                         }
                         
                         try {
@@ -420,7 +420,7 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                                 fieldId: 'addr2'
                             });
                         } catch (e) {
-                            log.debug('Error obteniendo addr2 para línea ' + i, e);
+                            log.error('Error obteniendo addr2 para línea ' + i, e);
                         }
                         
                         try {
@@ -428,7 +428,7 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                                 fieldId: 'city'
                             });
                         } catch (e) {
-                            log.debug('Error obteniendo city para línea ' + i, e);
+                            log.error('Error obteniendo city para línea ' + i, e);
                         }
                         
                         try {
@@ -436,7 +436,7 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                                 fieldId: 'state'
                             });
                         } catch (e) {
-                            log.debug('Error obteniendo state para línea ' + i, e);
+                            log.error('Error obteniendo state para línea ' + i, e);
                         }
                         
                         try {
@@ -444,7 +444,7 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                                 fieldId: 'zip'
                             });
                         } catch (e) {
-                            log.debug('Error obteniendo zip para línea ' + i, e);
+                            log.error('Error obteniendo zip para línea ' + i, e);
                         }
                         
                         address_arr.push({
@@ -462,7 +462,7 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                         
                     } catch (lineError) {
                         // Si hay error en una línea específica, continuar con la siguiente
-                        log.debug('Error procesando línea de dirección ' + i, lineError);
+                        log.error('Error procesando línea de dirección ' + i, lineError);
                         continue;
                     }
 
@@ -516,11 +516,10 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                 
               obj_user.setValue('customform',-10);
               obj_user.setValue('issalesrep',true);
-              log.debug('custentity_fecha_preregistro',formatdate)
               obj_user.setValue('custentity_fecha_preregistro',formatdate);
-              log.debug('csf',req_info["url_csf"])
+             
                 if(req_info["url_csf"]){
-                    log.debug('hay url csf nuevo if')
+                    
                     obj_user.setValue('custentity_url_csf',req_info["url_csf"]);
                 }
               //imagen de usuario
@@ -683,11 +682,9 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
             for(var x in req_info.items){
                 if(items_especiales.indexOf(req_info.items[x].item_id) !== -1){
                     discount_item_id = discont_tm7;
-                    log.debug('Item de descuento cambiado a 2692 por item', req_info.items[x].item_id);
-                    
+                                        
                         tiene_item_2686 = true;
-                        log.debug('Item 2686 (KIT DE DESGASTE TM7) detectado - se aplicará descuento único al final');
-                    
+                        
                     break;
                 }
             }
@@ -718,13 +715,13 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                 log.debug(x,req_info[x])
                 if((x == "location" || x == "Location")&& req_info[x] == 53){//Se asigna Ermita si viene con location Eshop
                     locationValidado = 53 // 82 Cambiar a 82 en prod
-                    log.debug('primer if',locationValidado)
+                   
                     obj_sales_order.setValue('location',locationValidado)
                     obj_sales_order.setValue('custbody_so_eshop',true)
                 }
                 if(x == "location" || x == "Location"){//Si el location es diferente a Eshop asigna lo que manda tienda en linea
                     locationValidado = req_info[x]
-                    log.debug('segundo if',locationValidado)
+                  
                     obj_sales_order.setValue('location',locationValidado)
                     obj_sales_order.setValue('custbody_so_eshop',true)
                     if(req_info.custbody46 != ''|| req_info.custbody_estatus_envio != 7){
@@ -782,26 +779,21 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                     sublistId: 'item'
                 });
                 
-                // NO aplicar descuento por item si hay item 2686 (se aplicará un solo descuento al final)
+                
                 if(!tiene_item_2686 && total_amount_aux > 0 && item_mine.item_id != "859"){
                     var discount_item = parseFloat(item_mine.amount)*discount_aux*parseInt(item_mine.quantity,10);
-                    // Sumar .01 para evitar que el descuento quede en 0
+                    
                     discount_item = discount_item + 0.01;
-                    log.debug('discount_item calculado', discount_item);
-//                  log.debug('item_mine.amount',item_mine.amount);
-//                  log.debug('discount_aux',discount_aux);
+                   
                     setItemDiscount(obj_sales_order, discount_item, discount_item_id);
                 }
             }
             
             // Si hay item 2686, aplicar un solo descuento al final
             if(tiene_item_2686 && "discountrate" in req_info && parseFloat(req_info['discountrate']) > 0){
-                // Calcular descuento único: discountrate - 0.04 para que el total final quede con .04 centavos
-                // Ejemplo: garantía 1000 + kit 700 = 1700, descuento 700, total final debe ser 1000.04
-                // Entonces: 1700 - 699.96 = 1000.04 (en lugar de 1700 - 700.04 = 999.96)
+                
                 var descuento_unico = parseFloat(req_info['discountrate']) - 0.04;
-                log.debug('Aplicando descuento único para item 2686', descuento_unico);
-                log.debug('discountrate original', req_info['discountrate']);
+                
                 setItemDiscount(obj_sales_order, descuento_unico, discont_tm7, true);
             }
 
@@ -843,7 +835,7 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                         var urlTwo = req_info.custbody_url_two_aclogistics
                          
                         if(tipoVenta == 2 && statusEnvio != 7 && urlOne && urlTwo){//status de envio 7 es Entrega en sucursal
-                            log.debug('entra if segunda guia')
+                            
                             var apiKey = "", description = [], description_txt = "", segundaGuia = false;
                             if(runtime.envType  == "SANDBOX"){
                                 apiKey = "c9df5be32d150aaae2c5f3a2cddacb44" //Apikey Logistica 
@@ -856,14 +848,12 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                                 id: id_sales_order,
                                 isDynamic: false,
                             });
-                            log.debug('objSO',objSO);
-                            
+                                                        
 
                             var itemLines = objSO.getLineCount({
                                 sublistId  : 'item'
                             });
-                            log.debug('itemLines',itemLines);
-                            
+                                                        
                             for(var i=0; i < itemLines; i++){
                                 var itemId = objSO.getSublistValue({
                                     sublistId : 'item',
@@ -881,7 +871,6 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                                 }
                             }   
                             description_txt = description.join(',');
-                            log.debug('description_txt',description_txt);
                             
                             var objTracking = search.lookupFields({
                                 type: 'customrecord_vk_traking_information',
@@ -896,7 +885,7 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                                 isDynamic: false,
                             });
                             //extrae la información del cliente
-                            log.debug('objCustomer',objCustomer);
+                            
                             var email_customer = objCustomer.getValue('email');
                             var nameCustomer = objCustomer.getValue('altname');
                             var addrphone = "";
@@ -908,7 +897,7 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                             var totalLines = objCustomer.getLineCount({
                                 sublistId  : 'addressbook'
                             });
-                            log.debug('totalLines',totalLines);
+                           
                             for(var i=0; i < totalLines; i++){
                                 var defaultshipping = objCustomer.getSublistValue({
                                     sublistId : 'addressbook',
@@ -922,7 +911,7 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                                        fieldId   : 'addressbookaddress',
                                        line      : i
                                     });
-                                    log.debug('subrec',subRecord)
+                                   
 
                                     addrphone = subRecord.getText({
                                         fieldId: 'addrphone'
@@ -971,8 +960,8 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                                      "seguro": "false"
                                 } 
                             
-                            log.debug("Datos a enviar",objRequest);
-                            log.debug("Datos a enviar stringify",JSON.stringify(objRequest));
+                            log.audit("Datos a enviar",objRequest);
+                            
         
                             var responseService = https.post({
                                 url: 'https://www.smartship.mx/api/documentar/',
@@ -982,7 +971,7 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                                 }
                             }).body;
                             try{
-                                log.debug("responseService",responseService);
+                                log.audit("responseService",responseService);
                             
                                 if(JSON.parse(responseService).mensaje == 'Exitoso'){
                                     log.debug("if true",JSON.parse(responseService).mensaje);
@@ -1065,38 +1054,36 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
             if(salesorder_payment && salesorder_payment.length > 0){
                 var pago_a_usar;
                 if(salesorder_payment.length > 1){
-                    // Si hay más de 1 pago, tomar el último
                     pago_a_usar = salesorder_payment[salesorder_payment.length - 1];
-                    log.debug('Hay más de 1 pago, tomando fecha del último pago');
-                }else{
-                    // Si solo hay 1 pago, tomar ese
+                    
+                }else{                    
                     pago_a_usar = salesorder_payment[0];
-                    log.debug('Solo hay 1 pago, tomando fecha de ese pago');
+                    
                 }
                 
                 // Verificar si tiene transdate o trandate
                 if(pago_a_usar.transdate){
                     fecha_pago = parseDate(pago_a_usar.transdate);
-                    log.debug('Fecha pago (transdate)', fecha_pago);
+                    
                 }else if(pago_a_usar.trandate){
                     fecha_pago = parseDate(pago_a_usar.trandate);
-                    log.debug('Fecha pago (trandate)', fecha_pago);
+                    
                 }
             }
             
             var id_payment = setPaymentMethod(id_sales_order, salesorder_payment, req_info.entity)
             try{
-                // Preparar valores para actualizar la Sales Order
+                
                 var values_to_update = {
                     'orderstatus':'B',
                     'custbody_vorwerk_contratos':id_payment.contract,
                     'custbody_total_pagado':id_payment.total_payment
                 };
                 
-                // Agregar fecha del pago si existe (último pago si hay más de 1)
+                
                 if(fecha_pago){
                     values_to_update['trandate'] = fecha_pago;
-                    log.debug('Fecha de pago seteada en Sales Order', fecha_pago);
+                   
                 }
                 
                 var submitFields = record.submitFields({
@@ -1104,9 +1091,7 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                     id: id_sales_order,
                     values: values_to_update
                 });
-                log.debug('total in set',id_payment.total_payment)
-                log.debug('prueba 1 ',req_info.multipago.custbody_forma_tipo_de_pago)// == 222
-                log.debug('id_payment.contract',id_payment.contract)
+                
                 if(id_payment.contract && id_payment.contract != ''){
 
                     var submitFields = record.submitFields({
@@ -1134,17 +1119,12 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                 discount_item_id = 1876;
             }
             
-            // Si es descuento único del item 2686, calcular rate (sin IVA) y gross (con IVA)
+            
             if(es_descuento_unico_2686){
-                // discount_item viene con IVA incluido (ej: 699.96)
-                // Rate (sin IVA): dividir entre 1.16
+               
                 var rate_sin_iva = (discount_item * -1) / 1.16;
-                // Gross/Amount (con IVA): el monto original negativo
                 var gross_con_iva = discount_item * -1;
-                
-                log.debug('Descuento único 2686 - rate sin IVA', rate_sin_iva);
-                log.debug('Descuento único 2686 - gross con IVA', gross_con_iva);
-                
+                                
                 obj_sales_order.selectNewLine({
                     sublistId : 'item',
                 });
@@ -1239,7 +1219,7 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                                     id: info_payment[x][y],
                                     columns: ['custrecord_ref_pago_cuenta_bancaria']
                                 });
-                                log.debug('tmp_tipo_pago',tmp_tipo_pago);
+                                
                                 var id_account = tmp_tipo_pago.custrecord_ref_pago_cuenta_bancaria[0].value;
                                 obj_payment.setValue('account',id_account);
                                 obj_payment.setValue('custbody_forma_tipo_de_pago',info_payment[x][y]);
@@ -1488,7 +1468,7 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                             }
                             //log.debug('valid_to_create creare ','status: '+valid_to_create+'   '+internalid +" momento "+req_info['address'][x].id);
                             if(valid_to_create){//en caso de recibir un id no existente en Netsuite crea una nueva direccion
-                                log.debug("valid to create")
+                                
                                 var address_info = req_info['address'][x];
                                 obj_user.insertLine({
                                     sublistId: 'addressbook',
@@ -1789,8 +1769,7 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                 var type=result.getText('type')
                 log.debug('type',type)
                 if(type == 'Item Fulfillment' ){//Es item fulfillment
-                    log.debug('es fufillment')
-                                    
+                                                        
                     var fdate_add = format.parse({//fecha de ejecucion con 169 dias adicionales 
                         value: info["formuladate_1"],
                         type: format.Type.DATE
@@ -1826,8 +1805,8 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                             valid: is_valid
                     }
                 }
-                log.debug('allValues',allValues)
-                log.debug('info ',info);
+                //log.debug('allValues',allValues)
+                //log.debug('info ',info);
                 
                 
                 return true;
@@ -2000,7 +1979,7 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                 return true;
 
             }); 
-            log.debug('allValues',allValues);
+            //log.debug('allValues',allValues);
             if(Object.keys(allValues).length > 0){//validamos si existe información de la busqueda
                 allValues.success = true;
                 allValues.error = "";
