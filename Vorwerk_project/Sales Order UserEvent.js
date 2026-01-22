@@ -27,19 +27,19 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                 var currentRecord = scriptContext.newRecord;
                 var form = scriptContext.form;
                 var type = scriptContext.type;
-                log.debug('type',type)
+                //log.debug('type',type)
                 if(type == 'edit' || type == 'view'){ //bloqueo de edicion de SO facturados para employees con el check
                     var status = rec.getValue('status') 
-                    log.debug('status',status)
+                    //log.debug('status',status)
                     var userObj = runtime.getCurrentUser();
                     var idUser = userObj.id
-                    var userPermisos = search.lookupFields({
+                   /* var userPermisos = search.lookupFields({
                         type: 'employee',
                         id: idUser,
                         columns: ['custentity_sin_permiso_sofacturada']
-                    });
-                    var editaso_facturada = userPermisos.custentity_sin_permiso_sofacturada
-                    log.debug('editaso_facturada',editaso_facturada)
+                    });*/
+                    var editaso_facturada = true//userPermisos.custentity_sin_permiso_sofacturada
+                    //log.debug('editaso_facturada',editaso_facturada)
                     if(editaso_facturada == true && (status == 'Billed' || status == 'Facturada') && type == 'view'){
                         var msgAuto = message.create({
                             title: "Permiso de edicion denegado",
@@ -47,7 +47,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                             type: message.Type.WARNING
                         });
                         scriptContext.form.addPageInitMessage({ message: msgAuto });
-                        log.debug('editaso_facturada',editaso_facturada)
+                        //log.debug('editaso_facturada',editaso_facturada)
                         form.removeButton('edit');   
                     } else if(editaso_facturada == true && status == 'Billed' && type == 'edit'){
                         throw error.create({
@@ -60,9 +60,9 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                 if(type == 'view'){//opcion para remover el boton del fulfill
                     
                     var recordid = rec.getValue('id')  
-                    log.debug('recordid',recordid)
+                    //log.debug('recordid',recordid)
                     var tipoVenta =rec.getValue('custbody_tipo_venta') 
-                    log.debug('tipoVenta',tipoVenta)
+                    //log.debug('tipoVenta',tipoVenta)
     
                     // Solo procesar si el tipo de venta es eshop vorwerk o ventas tm y no hay contrato digital credit
                     if(tipoVenta === '18' || tipoVenta === '2') {
@@ -104,19 +104,19 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                                 return true; // continuar con la siguiente línea
                             });
                             
-                            log.debug('Pagos encontrados:', pagos);
-                            log.debug('Total pagado (búsqueda):', totalPagadoSublist);
+                            //log.debug('Pagos encontrados:', pagos);
+                            //log.debug('Total pagado (búsqueda):', totalPagadoSublist);
                             
                         } catch (e) {
-                            log.error('Error al buscar pagos:', e.message);
+                            //log.error('Error al buscar pagos:', e.message);
                         }
                            
                         var total = rec.getValue('total') -10
-                        log.debug('total',total)
+                        //log.debug('total',total)
                         var vorwerkContratos = rec.getValue('custbody_vorwerk_contratos') 
-                        log.debug('vorwerkContratos',vorwerkContratos)
-                        log.debug('totalPagadoSublist',totalPagadoSublist)
-                        log.debug('Condición cumplida:', (totalPagadoSublist < total && !vorwerkContratos))
+                        //log.debug('vorwerkContratos',vorwerkContratos)
+                        //log.debug('totalPagadoSublist',totalPagadoSublist)
+                        //log.debug('Condición cumplida:', (totalPagadoSublist < total && !vorwerkContratos))
                         
                         
                         if(totalPagadoSublist < total && !vorwerkContratos ){
@@ -129,7 +129,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                             form.removeButton('process');                        
                         } 
                     } else {
-                        log.debug('Tipo de venta no es 18 ni 2:', tipoVenta)
+                        //log.debug('Tipo de venta no es 18 ni 2:', tipoVenta)
                     }
                 } 
             try{
@@ -197,7 +197,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                 }*/
                 
             }catch(err){
-                log.error("Error Aftersbumit",err);
+                //log.error("Error Aftersbumit",err);
             }
             
             return true;
@@ -228,31 +228,39 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
          */
         function afterSubmit(scriptContext) {
             try{
-                log.debug("runtime.executionContext",runtime.executionContext);
+                
                 var rec = scriptContext.newRecord;
                 var salesrep = rec.getValue('salesrep')
                 var typeEvent = runtime.executionContext;
-                log.debug('typeEvent',typeEvent)
-               
+                var type = scriptContext.type;
+                //Garantia extendida tm7
+                try{
+                    if(type == 'create'){
+                        log.debug('entre garantia extendida tm7',typeEvent)
+                        garantiaExtendidaTm7(rec)
+                    }
+                }catch(e){
+                    log.debug('error garantia extendida tm7',e)
+                }
                 //validar cancelacion
                 try{
                     cancelacion(scriptContext)
                     
                 }catch(e){
-                    log.debug('error actualizacion de commission status',e)
+                    //log.debug('error actualizacion de commission status',e)
                 }
                 // actualizacion de commission status 
                 try{
                     commissionStatus(salesrep,rec.id)
                 }catch(e){
-                    log.debug('error actualizacion de commission status',e)
+                    //log.debug('error actualizacion de commission status',e)
                 }
                 // earning program tm7
                 try{
                     //itemtype(scriptContext)
                     earningProgram(salesrep)
                 }catch(e){
-                    log.debug('error earning program tm7',e)
+                    //log.debug('error earning program tm7',e)
                 }
                 
                 if(typeEvent != runtime.ContextType.MAP_REDUCE  && typeEvent != runtime.ContextType.CSV_IMPORT ){
@@ -261,7 +269,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                     var recordid = rec.id;
                     var entity = parseInt(rec.getValue('entity'),10);
                     var salesrep = rec.getValue('salesrep')
-                    log.debug('salesrep',salesrep)
+                    //log.debug('salesrep',salesrep)
                     var fecha = rec.getValue('trandate')
                     var tipoventa = rec.getValue('custbody_tipo_venta')
                     var idTpl="",idUSer="",email_send="";
@@ -278,9 +286,9 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                         type: 'salesorder',
                         isDynamic: false
                     });
-                    log.debug('type',type);
+                    //log.debug('type',type);
                     if(type == 'create' || type == 'edit'){
-                        log.debug('se activo por el evento ')
+                        //log.debug('se activo por el evento ')
                         
                         try{
                             
@@ -292,7 +300,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                                 
                                 if (fechaOld != fecha || salesrepOld != salesrep || tipoventaOld != tipoventa ){
                                     if(salesrepOld != salesrep){
-                                        log.debug('cambio de sales rep')
+                                        //log.debug('cambio de sales rep')
                                         setRecruiter(rec);//si hay cambio en el sales rep se actualiza el recruiter
                                     }
                                    //var numOdv = tmGanada(scriptContext);
@@ -304,7 +312,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                             }
                              
                         } catch(e){
-                            log.debug('error actualizacion de commission status',e)
+                            //log.debug('error actualizacion de commission status',e)
                         }
                         
                         //var numOdv = tmGanada(scriptContext);
@@ -340,7 +348,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                                                 inventorydetail = serial
                                             }
                                         }
-                                        log.debug("inventorydetail",inventorydetail);
+                                        //log.debug("inventorydetail",inventorydetail);
                                         var objSearchResult = {};
                                         objSearchResult.id =false;
                                         if(inventorydetail){
@@ -370,7 +378,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                                                         columns: ['custbody_pi_pedimento_de_importacion']
                                                     });
                                                     idPedimento = idPedimento.custbody_pi_pedimento_de_importacion[0]['value']
-                                                    log.debug('Asignacion de Pedimento de Importacion','Item: '+tmp_id+' Inventorydetail: '+inventorydetail+' idItemReceipt: '+idItemReceipt+' Pedimento: '+pedimento+' idPedimento: '+idPedimento)
+                                                    //log.debug('Asignacion de Pedimento de Importacion','Item: '+tmp_id+' Inventorydetail: '+inventorydetail+' idItemReceipt: '+idItemReceipt+' Pedimento: '+pedimento+' idPedimento: '+idPedimento)
                                                    salesorder.setSublistValue({
                                                         sublistId : 'item',
                                                         fieldId : 'custcol_pedimento_de_importacion',
@@ -379,17 +387,17 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                                                     });
                                                    var id = salesorder.save();
                                             }else{
-                                                log.debug('Item Receipt no existe')
+                                                //log.debug('Item Receipt no existe')
                                             }
                                     }else{
-                                        log.debug('Sin Inventory Detail')
+                                        //log.debug('Sin Inventory Detail')
                                     } 
                                  }else{
-                                     log.debug('No se asigna Pedimento de importacion')
+                                     //log.debug('No se asigna Pedimento de importacion')
                                  } 
                             }
                         }catch(e){
-                            log.debug('Error asignacion pedimento de importacion',e)
+                            //log.debug('Error asignacion pedimento de importacion',e)
                         }
                         
                         
@@ -404,11 +412,11 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                             id: salesRep.salesrep[0].value,
                             columns: 'email'
                         });
-                        log.debug('salesRep',salesRep)
-                        log.debug('salesRep email',salesRep.email)
+                        //log.debug('salesRep',salesRep)
+                        //log.debug('salesRep email',salesRep.email)
                         var email_bbc = salesRep.email;
                         
-                        log.debug("process","evento "+type+" email send "+salesorder.getValue('custbody_email_send'));
+                        //log.debug("process","evento "+type+" email send "+salesorder.getValue('custbody_email_send'));
                         var salesorder = record.load({
                             id: recordid,
                             type: 'salesorder',
@@ -419,9 +427,9 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                              id: recordid,
                              columns: 'custbody_email_send'
                          });
-                         log.debug('fieldsLookUp',fieldsLookUp);
+                         //log.debug('fieldsLookUp',fieldsLookUp);
                         if(salesorder.getValue('custbody_email_send') == false){
-                            log.debug("process","evento "+type);
+                            //log.debug("process","evento "+type);
                             
                             var numLines_aux = salesorder.getLineCount({
                                 sublistId: 'recmachcustrecord_id_sales_order'
@@ -493,7 +501,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                             
                             idUSer = 344096;
                             
-                            log.debug("process","email");
+                            //log.debug("process","email");
                             var myMergeResult = render.mergeEmail({
                                     templateId: idTpl,
                                     entity: {
@@ -510,21 +518,21 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                             var recipientEmail = entity
                             var emailSubject = myMergeResult.subject; // Get the subject for the email
                             var emailBody = myMergeResult.body // Get the body for the email
-                            log.debug('emailBody',emailBody);
+                            //log.debug('emailBody',emailBody);
                             
                             emailBody = emailBody.replace(/@pedido/g,url_response);
                             
-                            log.debug('tipo de venta ',rec.getValue('custbody_tipo_venta') );
+                            //log.debug('tipo de venta ',rec.getValue('custbody_tipo_venta') );
                             if(rec.getValue('custbody_tipo_venta') == 2){
                                 if(rec.getValue('custbody_manual_sales_order') == false){
-                                    log.debug("Orden de Venta Normal",rec.getValue('custbody_manual_sales_order'));
+                                    //log.debug("Orden de Venta Normal",rec.getValue('custbody_manual_sales_order'));
                                     emailAndApprove(senderId,recipientEmail,emailSubject,emailBody,recordid,email_bbc)
                                     
                                 }
                             }
                             
                             
-                            log.debug("manual ",rec.getValue('custbody_manual_sales_order'));
+                            //log.debug("manual ",rec.getValue('custbody_manual_sales_order'));
                             //if(rec.getValue('custbody_tipo_venta') != 2)
                             {
                                 if(rec.getValue('custbody_manual_sales_order') == true){
@@ -550,14 +558,14 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                                        return true;
                                     });
                                     var total = parseFloat(rec.getValue('total'));
-                                    log.debug("Informacion de costos","total de SO: "+total+" Suma de los pagos: "+total_payment);
+                                    //log.debug("Informacion de costos","total de SO: "+total+" Suma de los pagos: "+total_payment);
                                     var total_pay = rec.getValue('custbody_total_pagado')
-                                    log.debug("Informacion de costos edicion manual","total de SO: "+total+" Suma de los pagos total pagado: "+total_pay);
+                                    //log.debug("Informacion de costos edicion manual","total de SO: "+total+" Suma de los pagos total pagado: "+total_pay);
                                     if((total-100)<= total_pay){
-                                        log.debug("email odv manual","El total -+ 100 esta en el rango");
+                                        //log.debug("email odv manual","El total -+ 100 esta en el rango");
                                         emailAndApprove(senderId,recipientEmail,emailSubject,emailBody,recordid,email_bbc)
                                     }else if((total-100)<= total_payment){
-                                        log.debug("email odv manual","El total -+ 100 esta en el rango");
+                                        //log.debug("email odv manual","El total -+ 100 esta en el rango");
                                         emailAndApprove(senderId,recipientEmail,emailSubject,emailBody,recordid,email_bbc)
                                         
                                     }else{
@@ -568,20 +576,20 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                                                 values: {'orderstatus':'A'}
                                             });
                                         }catch(e){
-                                            log.error("error","send info");
+                                            //log.error("error","send info");
                                             return {error_payment:e};
                                         }
                                     }
                                 }
                                 if( rec.getValue('custbody_vorwerk_contratos') != ""){
-                                    log.debug('contrato',rec.getValue('custbody_vorwerk_contratos') );
+                                    //log.debug('contrato',rec.getValue('custbody_vorwerk_contratos') );
                                     emailAndApprove(senderId,recipientEmail,emailSubject,emailBody,recordid,email_bbc)
                                 }
                                 
                             }
                                 
                         }else{
-                            log.debug("process","El email ya ha sido enviado no es necesario volver a enviarlo");
+                            //log.debug("process","El email ya ha sido enviado no es necesario volver a enviarlo");
                         }
                     }
                    
@@ -591,7 +599,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                 try{
                     var type = scriptContext.type;
                     var old_salesrep
-                    log.debug('type',type)
+                    //log.debug('type',type)
                     
                     
     
@@ -610,7 +618,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                     var tipo_venta = rec.getValue('custbody_tipo_venta')
     
                     old_salesrep = salesrep
-                    log.debug('salesrep Registra venta',salesrep)
+                    //log.debug('salesrep Registra venta',salesrep)
                     //Datos Customer
                     var objcustomer = search.lookupFields({
                     type: 'customer',
@@ -633,10 +641,10 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                     ,'custentitysales_rep_first_so' // SALES REP 1 SO REFERIDO
                     ]
                     });
-                    log.debug('objcustomer',objcustomer)
-                    log.debug('objcustomer.custentity_presentadora_referido',objcustomer.custentity_presentadora_referido)
+                    //log.debug('objcustomer',objcustomer)
+                    //log.debug('objcustomer.custentity_presentadora_referido',objcustomer.custentity_presentadora_referido)
                     if( objcustomer.custentity_presentadora_referido && objcustomer.custentity_presentadora_referido != '' && objcustomer.custentity_presentadora_referido != '[]'){ //Es cliente referido sin primer SO, Puede o no tener Recomendador
-                        log.debug('PO programa Recomendados')
+                        //log.debug('PO programa Recomendados')
                         var numLines = salesorder.getLineCount({
                             sublistId: 'item'
                         });
@@ -655,7 +663,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                         ,'email'
                         ]
                         });
-                        log.debug('objsalesrep',objsalesrep)
+                        //log.debug('objsalesrep',objsalesrep)
                         
                         //Datos presentadora REFERIDO 
                         var objPresentadora = search.lookupFields({
@@ -670,9 +678,9 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                         ,'email'
                         ]
                         });
-                        log.debug('objPresentadora',objPresentadora)
-                        log.debug('objPresentadora',objPresentadora)
-                        log.debug('type',type)
+                        //log.debug('objPresentadora',objPresentadora)
+                        //log.debug('objPresentadora',objPresentadora)
+                        //log.debug('type',type)
                         
                         if( (type == 'create' || salesrep != old_salesrep) && tipo_venta == 2){
     
@@ -708,7 +716,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                                 "IDUsalesRep":objsalesrep.entityid,
                                 "Order": ""+recordid+""
                             }
-                            log.debug('objRequest LMS',objRequest)
+                            //log.debug('objRequest LMS',objRequest)
                             var responseService = https.post({
                                 url: urlLMS,
                                 body : JSON.stringify(objRequest),
@@ -717,9 +725,9 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                                     "Authorization": "Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJJZCI6IjIyMWFmN2U5LTJjMDAtNDYzZC1hYzliLThkZDA2MzhmYzYzMSIsInN1YiI6InRocm14Lm5ldHN1aXRlLmFwaUBsbXMtbGEuY29tIiwiZW1haWwiOiJ0aHJteC5uZXRzdWl0ZS5hcGlAbG1zLWxhLmNvbSIsInVuaXF1ZV9uYW1lIjoidGhybXgubmV0c3VpdGUuYXBpQGxtcy1sYS5jb20iLCJqdGkiOiJkMDdkZmJhNy04MjA1LTRkZjYtODdlMS0xZDE2YmUyYTAwOTMiLCJuYmYiOjE3MzYyMTMwNzAsImV4cCI6MTc2Nzc0OTA3MCwiaWF0IjoxNzM2MjEzMDcwfQ.4lCT7MyZ1OPFQhO6opfc1lEUyz-nyDpmE7_ZNVdwbvIIanlzuWIoD5XzjTnojLFO6EThVieiOiPUl7EhqrhkNg"
                                 }
                             }).body;
-                            log.debug('responseService LMS',responseService)
+                            //log.debug('responseService LMS',responseService)
     
-                            log.debug('pre actualizacion customer',objcustomer.custentity_first_so[0].value)
+                            //log.debug('pre actualizacion customer',objcustomer.custentity_first_so[0].value)
                             if(objcustomer.custentity_first_so[0].value == false || objcustomer.custentity_first_so[0].value == ''){
                                 //Actualizar Customer
                                 var submitFields = record.submitFields({
@@ -741,8 +749,8 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                                     "noPedido":numOrden,
                                     "PedidoStatus":'Activo',
                                 }
-                                log.debug('objRequestAD',JSON.stringify(objRequestAD))
-    
+                                //log.debug('objRequestAD',JSON.stringify(objRequestAD))
+                                
                                 //Agenda Digital
                                 var responseService = https.post({
                                     url: urlAD,
@@ -752,7 +760,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                                         "x-api-key": "QxTbKbIDyB7eN0wCHxCZH5SN6gZzd0Nd7yreJAhW"
                                     }
                                 }).body;
-                                log.debug('responseService AD',responseService)
+                                //log.debug('responseService AD',responseService)
     
                             }
                             
@@ -769,7 +777,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                         var op2old = oldrec.getValue('custbody_tipo_venta')
                         //log.debug('op2old',op2old)
                         if( type == 'edit' && ( (op1 == 4 && op1!=op1old) || (op2 == 16 && op2 != op2old) )){
-                            log.debug('Es cancelacion')
+                            //log.debug('Es cancelacion')
                             
                             var urlLMSCancel
                             var urlADCancel
@@ -801,8 +809,8 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                                 "IDUsalesRep":objsalesrep.entityid,
                                 "Order": ""+recordid+""
                             }
-                            log.debug('objRequest LMS',objRequest)
-                            log.debug('objRequest.length',JSON.stringify(objRequest).length)
+                            //log.debug('objRequest LMS',objRequest)
+                            //log.debug('objRequest.length',JSON.stringify(objRequest).length)
                             var responseService = https.post({
                                 url: urlLMSCancel,
                                 body : JSON.stringify(objRequest),
@@ -811,10 +819,10 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                                     "Content-Type": "application/json",
                                 }
                             }).body;
-                            log.debug('responseService',responseService)
+                            //log.debug('responseService',responseService)
     
                             //Solo si es la primera SO recomendados
-                            log.debug('pre actualizacion customer',objcustomer.custentity_first_so[0].value)
+                            //log.debug('pre actualizacion customer',objcustomer.custentity_first_so[0].value)
                             if(objcustomer.custentity_first_so[0].value == idOrden){
     
                                 //Cancel AD 
@@ -824,8 +832,8 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                                     "noPedido":numOrden,
                                     "PedidoStatus":'Cancelado',
                                 }
-                                log.debug('objRequestCancelAD',JSON.stringify(objRequestCancelAD))
-    
+                                //log.debug('objRequestCancelAD',JSON.stringify(objRequestCancelAD))
+                                
                                 //Agenda Digital
                                 var responseService = https.post({
                                     url: urlADCancel,
@@ -835,7 +843,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                                         "x-api-key": "QxTbKbIDyB7eN0wCHxCZH5SN6gZzd0Nd7yreJAhW"
                                     }
                                 }).body;
-                                log.debug('responseService AD',responseService)
+                                //log.debug('responseService AD',responseService)
     
     
                                 //Actualizar Customer
@@ -856,7 +864,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
     
                     }
                 }catch(e){
-                    log.debug('Error Registra venta',e)
+                    //log.debug('Error Registra venta',e)
                 }
                 //FIN Registra venta (LMS)
                
@@ -873,10 +881,10 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                     }
     
                     }catch(e){
-                        log.debug('Error Forma de pago',e)
+                        //log.debug('Error Forma de pago',e)
                     }
             }catch(err){
-                log.error("error after submit",err);
+                //log.error("error after submit",err);
             }
     
             try{//Actualizacion Inventario ficticio eshop
@@ -884,9 +892,9 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                     var numLines = salesorder.getLineCount({//Toma las lineas de la SO
                         sublistId: 'item'
                     });
-                    log.debug('numLines',numLines)
+                    //log.debug('numLines',numLines)
                     for(var e =0; e<numLines; e++){ //Se recorre cada linea
-                        log.debug('e',e)
+                        //log.debug('e',e)
                         var tmp_id = rec.getSublistValue({//ID del item
                             sublistId: 'item',
                             fieldId: 'item',
@@ -900,32 +908,32 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                             id: tmp_id,
                             columns: ['custitem_disponible_eshop','recordtype','custitem_transaccion_apartados']//Stock disponible en el campo para eshop, tipo de registro
                         });
-    
-                        log.debug('dataItem',dataItem)
+
+                        //log.debug('dataItem',dataItem)
                         var disponible_eshop = parseInt(dataItem['custitem_disponible_eshop'],10) //Stock dedicado a eshop
-                        log.debug('disponible_eshop',disponible_eshop)
+                        //log.debug('disponible_eshop',disponible_eshop)
                         var itemType = dataItem['recordtype']
-                        log.debug('itemType',itemType)
+                        //log.debug('itemType',itemType)
                         if(disponible_eshop > 0  && (custbody_so_eshop == true || locationSO == 53) ){//Cambiar Ermita 82 && locationSO == 53
                             //Restar quantity del stock eshop
-                            log.debug('entra if')
+                            //log.debug('entra if')
                             var quantitySalesOrder = rec.getSublistValue({
                                 sublistId: 'item',
                                 fieldId: 'quantity',
                                 line: e
                             })
-                            log.debug('quantitySalesOrder',quantitySalesOrder)
+                            //log.debug('quantitySalesOrder',quantitySalesOrder)
                             var stockAfter = disponible_eshop - quantitySalesOrder //Nuevo stock de Eshop, Disponibler eshop menos lo que acabamos de vender
-                            log.debug('stockAfter',stockAfter)
+                            //log.debug('stockAfter',stockAfter)
                             record.submitFields({
                                 type: itemType,
                                 id: tmp_id,
                                 values: { custitem_disponible_eshop: stockAfter}
                             })
                             //Actualizar SO apartados
-                            log.debug("cargar")
+                            //log.debug("cargar")
                             var transaccionApartado = dataItem.custitem_transaccion_apartados[0]
-                            log.debug('transaccionApartados', transaccionApartado)
+                            //log.debug('transaccionApartados', transaccionApartado)
                             var idSOaCargar = transaccionApartado.value
                             var cargarSO = record.load({
                                 type: record.Type.SALES_ORDER,
@@ -959,7 +967,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                                 }); 
     
                                 if(tmp_id == itemId){
-                                    log.debug("actualizar")
+                                    //log.debug("actualizar")
     
                                    
                                     var itemQuantity = cargarSO.getSublistValue({
@@ -1007,7 +1015,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                     }
                 }
             }catch(e){
-                log.debug('Error en Actualizacion Inventario ficticio eshop - Creacion',e)
+                //log.debug('Error en Actualizacion Inventario ficticio eshop - Creacion',e)
             }
             try{
                 if(type == 'edit'){
@@ -1020,13 +1028,13 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                     var so_first_canc = rec.getValue('custbody_so_first_canc')
     
                     if( type == 'edit' && ( (op1 == 4 && op1!=op1old) || (op2 == 16 && op2 != op2old) ) && !so_first_canc){
-                        log.debug('so_first_canc', so_first_canc)
+                        //log.debug('so_first_canc', so_first_canc)
                         var numLines = salesorder.getLineCount({//Toma las lineas de la SO
                             sublistId: 'item'
                         });
-                        log.debug('numLines',numLines)
+                        //log.debug('numLines',numLines)
                         for(var e =0; e<numLines; e++){ //Se recorre cada linea
-                            log.debug('e',e)
+                            //log.debug('e',e)
                             var tmp_id = rec.getSublistValue({//ID del item
                                 sublistId: 'item',
                                 fieldId: 'item',
@@ -1039,12 +1047,12 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                                 id: tmp_id,
                                 columns: ['custitem_disponible_eshop','recordtype','custitem_transaccion_apartados']//Stock disponible en el campo para eshop, tipo de registro
                             });
-    
-                            log.debug('dataItem',dataItem)
+
+                            //log.debug('dataItem',dataItem)
                             var disponible_eshop = parseInt(dataItem['custitem_disponible_eshop'],10) //Stock dedicado a eshop
-                            log.debug('disponible_eshop',disponible_eshop)
+                            //log.debug('disponible_eshop',disponible_eshop)
                             var itemType = dataItem['recordtype']
-                            log.debug('itemType',itemType)
+                            //log.debug('itemType',itemType)
                             if(disponible_eshop > 0 && (custbody_so_eshop == true || locationSO == 53)) {//Cambiar a Ermita 82  && locationSO == 53 
                                 //Restar quantity del stock eshop
                                 var quantitySalesOrder = rec.getSublistValue({
@@ -1052,18 +1060,18 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                                     fieldId: 'quantity',
                                     line: e
                                 })
-                                log.debug('quantitySalesOrder',quantitySalesOrder)
+                                //log.debug('quantitySalesOrder',quantitySalesOrder)
                                 var stockAfter = disponible_eshop + quantitySalesOrder //Nuevo stock de Eshop, Disponibler eshop menos lo que acabamos de vender
-                                log.debug('stockAfter',stockAfter)
+                                //log.debug('stockAfter',stockAfter)
                                 record.submitFields({
                                 type: itemType,
                                 id: tmp_id,
                                 values: { custitem_disponible_eshop: stockAfter}
                                 })
                                 //Actualizar SO apartados cancelacion
-                            log.debug("cargar cancelacion")
+                            //log.debug("cargar cancelacion")
                             var transaccionApartado = dataItem.custitem_transaccion_apartados[0]
-                            log.debug('transaccionApartados', transaccionApartado)
+                            //log.debug('transaccionApartados', transaccionApartado)
                             var idSOaCargar = transaccionApartado.value
                             var cargarSO = record.load({
                                 type: record.Type.SALES_ORDER,
@@ -1097,7 +1105,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                                 }); 
     
                                 if(tmp_id == itemId){
-                                    log.debug("actualizar")
+                                    //log.debug("actualizar")
     
                                    
                                     var itemQuantity = cargarSO.getSublistValue({
@@ -1153,7 +1161,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                     }
                 }
             }catch(e){
-                log.debug('Error en Actualizacion Inventario ficticio eshop - Cancelacion',e)
+                //log.debug('Error en Actualizacion Inventario ficticio eshop - Cancelacion',e)
             }
                 
                 
@@ -1193,9 +1201,121 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
             
             
         }
+        
+        function garantiaExtendidaTm7(rec){
+            try{
+                log.debug('garantia extendida tm7')
+                var recordid = rec.id;
+                var fechaCompraRaw = rec.getValue('trandate');
+                // Formatear fecha a dd/mm/yyyy
+                var fechaCompra = '';
+                if(fechaCompraRaw){
+                    var fechaCompraDate = fechaCompraRaw;
+                    if(typeof fechaCompraRaw === 'string'){
+                        fechaCompraDate = new Date(fechaCompraRaw);
+                    }
+                    var dia = fechaCompraDate.getDate();
+                    var mes = fechaCompraDate.getMonth() + 1; // Los meses empiezan en 0
+                    var anio = fechaCompraDate.getFullYear();
+                    // Agregar ceros a la izquierda si es necesario
+                    dia = (dia < 10) ? '0' + dia : dia;
+                    mes = (mes < 10) ? '0' + mes : mes;
+                    fechaCompra = dia + '/' + mes + '/' + anio;
+                }
+                log.debug('fechaCompra',fechaCompra)
+                var pedido = rec.getValue('tranid');
+                var salesorder = record.load({//Cargar registro 
+                    type: 'salesorder',
+                    id: recordid,
+                    isDynamic: false
+                });
+                var numLines = salesorder.getLineCount({//cuenta las lineas de mi sublista 
+                    sublistId : 'item'
+                });
+                var item2402Found = false;
+                for(var e =0; e<numLines; e++){ 
+                    var item_id = salesorder.getSublistValue({
+                         sublistId: 'item',
+                         fieldId: 'item',
+                         line: e
+                    });
+                    if(item_id == 2402){
+                        item2402Found = true;
+                        break;
+                    }
+                }
+                log.debug('item2402Found',item2402Found)
+                // Si se encuentra el item 2402, enviar email con plantilla 287
+                if(item2402Found){
+                    log.debug('entre if item found')
+                    // Obtener cupón disponible usando la función de Utils
+                    var cuponName = Utils.obtenerCupon();
+                    log.debug('Cupón obtenido:', cuponName);
+                    
+                    if(!cuponName){
+                        log.debug('No se encontró cupón disponible');
+                    }
+                    
+                    log.debug('Item 2402 encontrado, enviando email con plantilla 287');
+                    var entity = parseInt(salesorder.getValue('entity'),10);
+                    var idUSer = 344096;
+                    
+                    var myMergeResult = render.mergeEmail({
+                        templateId: 287,
+                        entity: {
+                            type: 'employee',
+                            id: idUSer
+                        },
+                        recipient: {
+                            type: 'customer',
+                            id: entity
+                        },
+                        transactionId: recordid
+                    });
+                    
+                    var senderId = idUSer;
+                    var recipientEmail = entity;
+                    var emailSubject = myMergeResult.subject;
+                    var emailBody = myMergeResult.body;
+                    var fDate = salesorder.getValue('trandate');
+                    log.debug('fDate',fDate)
+                    log.debug('emailSubject', emailSubject);
+                    log.debug('emailBody', emailBody);
+                    emailBody = emailBody.replace(/@cupon/g, cuponName || '');
+                    emailBody = emailBody.replace(/@fechadecompra/g,fechaCompra);
+                    emailBody = emailBody.replace(/@pedido/g,pedido);
+                    
+
+                    var emailObj = {
+                        author: senderId,
+                        recipients: recipientEmail,
+                        subject: emailSubject,
+                        body: emailBody,
+                        relatedRecords: {
+                            transactionId: recordid
+                        }
+                    };
+                    
+                    email.send(emailObj);
+                    log.debug('Email enviado exitosamente con plantilla 287');
+                    
+                    // Actualizar el cupón a estado usado (status = 2) después de enviar el email
+                    if(cuponName){
+                        var actualizado = Utils.actualizarCupon(cuponName);
+                        if(actualizado){
+                            log.debug('Cupón actualizado exitosamente a estado usado:', cuponName);
+                        } else {
+                            log.debug('Error al actualizar el cupón:', cuponName);
+                        }
+                    }
+                }
+            }catch(e){
+                log.debug('error garantia extendida tm7',e)
+            }
+        }
         function itemtype(scriptContext){
             try{
-                log.debug('nueva funcion ')
+                //log.debug('nueva funcion ')
                 var type = scriptContext.type;
                 var rec = scriptContext.newRecord;
                 if(type == 'create' || type == 'edit'){
@@ -1218,7 +1338,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                              fieldId: 'itemtype',
                              line: e
                         })
-                        log.debug('item_type',item_type)
+                        //log.debug('item_type',item_type)
                         if(item_type == 'NonInvtPart'){
                             nonInventory++
                         } else{
@@ -1241,13 +1361,13 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                 }
                     
             }catch(e){
-                log.error('error is serial',e)
+                //log.error('error is serial',e)
             }
         }
        
         function cancelacion(scriptContext){
             try{
-                log.debug('cancelacion ')
+                //log.debug('cancelacion ')
                 var rec = scriptContext.newRecord;
                 var type = scriptContext.type;
                 
@@ -1266,9 +1386,9 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                     var numLinesRecords = salesOrderRecord.getLineCount({
                         sublistId: 'links'
                     });
-                    log.debug('numLinesRecords',numLinesRecords)
+                    //log.debug('numLinesRecords',numLinesRecords)
                     var tipoVenta = salesorder.custbody_tipo_venta[0].value
-                    log.debug('tipoVenta',tipoVenta)
+                    //log.debug('tipoVenta',tipoVenta)
                     if(tipoVenta == 16 && numLinesRecords == 0){
                         // Cargar el registro completo y actualizarlo
                         var salesOrderRecord = record.load({
@@ -1282,7 +1402,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                             sublistId: 'item'
                         });
                         
-                        log.debug('numLines to close', numLines);
+                        //log.debug('numLines to close', numLines);
                         
                         // Cerrar cada línea individualmente
                         for(var i = 0; i < numLines; i++){
@@ -1302,7 +1422,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                                 sublistId: 'item'
                             });
                             
-                            log.debug('Line ' + i + ' closed');
+                            //log.debug('Line ' + i + ' closed');
                         }
                         
                         // Cambiar el status de la orden
@@ -1316,18 +1436,18 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                             ignoreMandatoryFields: true
                         });
                         
-                        log.debug('after submitcancelacion')
+                        //log.debug('after submitcancelacion')
                     }
     
                 }
                     
             }catch(e){
-                log.error('error cancelacion',e)
+                //log.error('error cancelacion',e)
             }
         }
         function earningProgram(salesrep){
             try{
-                log.debug('[' + salesrep + '] INICIO earningProgram')
+                //log.debug('[' + salesrep + '] INICIO earningProgram')
                 var presentadorFields = search.lookupFields({
                     type: search.Type.EMPLOYEE,
                     id: salesrep,
@@ -1345,12 +1465,12 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
     
                 //Determinacion de limite de ventas
                 const numVentasGutm = presentadorFields.custentity_num_ventas_gutm;
-                log.debug('[' + salesrep + '] numVentasGutm', numVentasGutm)
+                //log.debug('[' + salesrep + '] numVentasGutm', numVentasGutm)
              
                 const epTm7 = presentadorFields.custentity_checkbox_eptm7;
                 const estatusEptm7 = presentadorFields.custentity_estatus_eptm7;
-                log.debug('[' + salesrep + '] epTm7', epTm7)
-                log.debug('[' + salesrep + '] estatusEptm7', estatusEptm7)
+                //log.debug('[' + salesrep + '] epTm7', epTm7)
+                //log.debug('[' + salesrep + '] estatusEptm7', estatusEptm7)
                 
                 // es eptm7?
                 if(epTm7 && (estatusEptm7 == 1 || estatusEptm7 == 2 || estatusEptm7 == 4)){
@@ -1372,26 +1492,26 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                             var diferenciaDias = Math.ceil(diferenciaTiempo / (1000 * 3600 * 24));
                             
                             // Logs agrupados para debugging de fechas
-                            log.debug('[' + salesrep + '] === CALCULO DE LIMITE ===');
-                            log.debug('[' + salesrep + '] fecha_inicio', fecha_inicio);
-                            log.debug('[' + salesrep + '] fecha_fin', fecha_fin);
-                            log.debug('[' + salesrep + '] fechaInicio (Date)', fechaInicio);
-                            log.debug('[' + salesrep + '] fechaFin (Date)', fechaFin);
-                            log.debug('[' + salesrep + '] diferenciaDias', diferenciaDias);
+                            //log.debug('[' + salesrep + '] === CALCULO DE LIMITE ===');
+                            //log.debug('[' + salesrep + '] fecha_inicio', fecha_inicio);
+                            //log.debug('[' + salesrep + '] fecha_fin', fecha_fin);
+                            //log.debug('[' + salesrep + '] fechaInicio (Date)', fechaInicio);
+                            //log.debug('[' + salesrep + '] fechaFin (Date)', fechaFin);
+                            //log.debug('[' + salesrep + '] diferenciaDias', diferenciaDias);
                             
                             // Si hay más de 31 días, el límite es 4, sino es 3
                             if (diferenciaDias > 40) {
                                 limit = 4;
                                 newStatus = 4
-                                log.debug('[' + salesrep + '] *** LIMITE ESTABLECIDO EN 4 (más de 31 días) ***');
+                                //log.debug('[' + salesrep + '] *** LIMITE ESTABLECIDO EN 4 (más de 31 días) ***');
                             } else {
                                 limit = 3;
                                 newStatus = 1
-                                log.debug('[' + salesrep + '] *** LIMITE ESTABLECIDO EN 3 (31 días o menos) ***');
+                                //log.debug('[' + salesrep + '] *** LIMITE ESTABLECIDO EN 3 (31 días o menos) ***');
                             }
                         } 
                     } else {
-                        log.debug('[' + salesrep + '] *** LIMITE ESTABLECIDO EN ' + limit + ' (usando numVentasGutm) ***');
+                        //log.debug('[' + salesrep + '] *** LIMITE ESTABLECIDO EN ' + limit + ' (usando numVentasGutm) ***');
                     }
                     
                     const fecha_ganotm7 = presentadorFields.custentity_fechatm7_ganada;
@@ -1401,11 +1521,11 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                     
                   
                     fechaTermino = presentadorFields.custentity_fcha_fin_eptm7;
-                    log.debug('[' + salesrep + '] fechaTermino',fechaTermino  )
+                    //log.debug('[' + salesrep + '] fechaTermino',fechaTermino  )
       
                     
                     //fechaTermino_format_search = Utils.stringToDate(fechaTermino);
-                    log.debug('[' + salesrep + '] Datos de presentador',presentadorFields )
+                    //log.debug('[' + salesrep + '] Datos de presentador',presentadorFields )
                     
                         
                     var cont = 1
@@ -1429,8 +1549,8 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                             values: [fecha_inicio,fechaTermino]    // fecha en que inicio el presentador en el earning program
                     }));
                     
-                    log.debug('[' + salesrep + '] === PROCESANDO ORDENES ===');
-                    log.debug('[' + salesrep + '] limit configurado', limit);
+                    //log.debug('[' + salesrep + '] === PROCESANDO ORDENES ===');
+                    //log.debug('[' + salesrep + '] limit configurado', limit);
                         
                     soSearch.run().each(function(r){
                         var internalId = r.getValue('internalid')
@@ -1443,25 +1563,25 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                            
                         }
                         
-                        log.debug('[' + salesrep + '] Procesando orden ' + cont + ' de ' + limit + ' - ID: ' + internalId + ' - Tipo: ' + tipoVenta)
+                        //log.debug('[' + salesrep + '] Procesando orden ' + cont + ' de ' + limit + ' - ID: ' + internalId + ' - Tipo: ' + tipoVenta)
                         if(cont == limit){
                           newStatus = 3
                           setfechafin = true 
                           soGanadora = internalId
-                          log.debug('[' + salesrep + '] *** TM7 GANADA EN ORDEN 3 ***');
+                          //log.debug('[' + salesrep + '] *** TM7 GANADA EN ORDEN 3 ***');
                         }else{
                           newStatus = 2
                         }
                         
-                        log.debug('[' + salesrep + '] newStatus ',newStatus)
-                        log.debug('[' + salesrep + '] fechaSO ',fechaSO)
-                        log.debug('[' + salesrep + '] soGanadora ',soGanadora)
-                        log.debug('[' + salesrep + '] setfechafin ',setfechafin)
+                        //log.debug('[' + salesrep + '] newStatus ',newStatus)
+                        //log.debug('[' + salesrep + '] fechaSO ',fechaSO)
+                        //log.debug('[' + salesrep + '] soGanadora ',soGanadora)
+                        //log.debug('[' + salesrep + '] setfechafin ',setfechafin)
                         cont++
                        
                        // Terminar la búsqueda si alcanzamos el límite
                        if(cont > limit){
-                         log.debug('[' + salesrep + '] *** LIMITE ALCANZADO - TERMINANDO BUSQUEDA ***');
+                         //log.debug('[' + salesrep + '] *** LIMITE ALCANZADO - TERMINANDO BUSQUEDA ***');
                          return false;
                        }
                     
@@ -1478,11 +1598,11 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                         fechaSO = fechaTermino
                     }
                     
-                    log.debug('[' + salesrep + '] === ACTUALIZANDO EMPLEADO ===');
-                    log.debug('[' + salesrep + '] newStatus sub',newStatus)
-                    log.debug('[' + salesrep + '] fechaSO sub',fechaSO)
-                    log.debug('[' + salesrep + '] soGanadora sub',soGanadora)
-                    log.debug('[' + salesrep + '] ordenesProcesadas', ordenesProcesadas)
+                    //log.debug('[' + salesrep + '] === ACTUALIZANDO EMPLEADO ===');
+                    //log.debug('[' + salesrep + '] newStatus sub',newStatus)
+                    //log.debug('[' + salesrep + '] fechaSO sub',fechaSO)
+                    //log.debug('[' + salesrep + '] soGanadora sub',soGanadora)
+                    //log.debug('[' + salesrep + '] ordenesProcesadas', ordenesProcesadas)
                         
                     // Agregar los campos adicionales cuando gana
                     valoresActualizacion['custentity_estatus_eptm7'] = newStatus;
@@ -1496,14 +1616,14 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                         values: valoresActualizacion
                     });
                     
-                    log.debug('[' + salesrep + '] *** EMPLEADO ACTUALIZADO EXITOSAMENTE ***');
+                    //log.debug('[' + salesrep + '] *** EMPLEADO ACTUALIZADO EXITOSAMENTE ***');
                 } else {
-                    log.debug('[' + salesrep + '] No es EP TM7 - saltando proceso');
+                    //log.debug('[' + salesrep + '] No es EP TM7 - saltando proceso');
                 }
                 
     
             }catch (e){
-                log.error('[' + salesrep + '] ERROR funcion earning program',e)
+                //log.error('[' + salesrep + '] ERROR funcion earning program',e)
             }
     
         }
@@ -1550,7 +1670,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                 }
                 //hiredate = Utils.dateToString(hiredate);
                 fechaObj2 = Utils.stringToDate(fechaObj2);
-                log.debug('Datos de presentador',presentadorFields )
+                //log.debug('Datos de presentador',presentadorFields )
                 
                 //Define fecha en que se convierte en TM propia
                 var busqueda = search.load({
@@ -1576,10 +1696,10 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                     }
                     return true;
                 });
-                log.debug('date_transform_tm_propia',date_transform_tm_propia)
+                //log.debug('date_transform_tm_propia',date_transform_tm_propia)
                 //Fin de validacion de fecha        
-    
-                log.debug('Datos por variables','promocion '+promocion+' reactivacion '+reactivacion+' fechaObj2 '+fechaObj2+' hiredate '+hiredate +' limit '+limit +' date_transform_tm_propia '+date_transform_tm_propia +' tipoIngreso '+tipoIngreso)
+
+                //log.debug('Datos por variables','promocion '+promocion+' reactivacion '+reactivacion+' fechaObj2 '+fechaObj2+' hiredate '+hiredate +' limit '+limit +' date_transform_tm_propia '+date_transform_tm_propia +' tipoIngreso '+tipoIngreso)
     
                     
                 var cont = 1
@@ -1609,21 +1729,21 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                     
     
                     if(tipoIngreso == 11 && promocion == 2){
-                        log.debug('caso 1')
+                        //log.debug('caso 1')
                         record.submitFields({
                             type: record.Type.SALES_ORDER,
                             id: internalId,
                             values: {'custbody_vw_comission_status':''}
                         });
                     }else if( (fechaSO > date_transform_tm_propia || fechaSO > fechaObj2 || cont > limit) && promocion == 2 ){
-                        log.debug('caso 2')
+                        //log.debug('caso 2')
                         record.submitFields({
                             type: record.Type.SALES_ORDER,
                             id: internalId,
                             values: {'custbody_vw_comission_status':''}
                         });
                     }else {
-                        log.debug('caso 3')
+                        //log.debug('caso 3')
                         record.submitFields({
                             type: record.Type.SALES_ORDER,
                             id: internalId,
@@ -1633,9 +1753,9 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                     cont++
                     if (contVentas >= 10){
                         if(arregloPrimerasVentas.hasOwnProperty(recordid)){
-                            log.debug('esta en el arreglo, ya paso por el for')
+                            //log.debug('esta en el arreglo, ya paso por el for')
                         }else{
-                            log.debug('vamos a actualizar el com status de ',recordid)
+                            //log.debug('vamos a actualizar el com status de ',recordid)
                             var submitFields = record.submitFields({
                                 type: record.Type.SALES_ORDER,
                                 id: recordid,
@@ -1649,7 +1769,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                 });  
     
             }catch (e){
-                log.debug('error funcion comision status',e)
+                //log.debug('error funcion comision status',e)
             }
     
         }
@@ -1662,7 +1782,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                     id: idSalesRep,
                     columns: ['custentity_reclutadora']
                 });
-                log.debug('This is objRecruiter',objRecruiter);
+                //log.debug('This is objRecruiter',objRecruiter);
                 if(objRecruiter.custentity_reclutadora.length > 0){
                     var idRecruiter = objRecruiter['custentity_reclutadora'][0]['value'];
                     if(idRecruiter){
@@ -1690,17 +1810,17 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                 
             }
             catch(e){
-                log.error('There is an error in setRecruiter',e);
+                //log.error('There is an error in setRecruiter',e);
             }
         }
         
         function emailAndApprove(senderId,recipientEmail,emailSubject,emailBody,recordid,email_bbc){
             try{
-                log.debug('senderId',senderId);
-                log.debug('recipientEmail',recipientEmail);
-                log.debug('emailBody',emailBody);
-                log.debug('recordid',recordid);
-                log.debug('email_bbc',email_bbc);
+                //log.debug('senderId',senderId);
+                //log.debug('recipientEmail',recipientEmail);
+                //log.debug('emailBody',emailBody);
+                //log.debug('recordid',recordid);
+                //log.debug('email_bbc',email_bbc);
                 var emailObj = {
                     author: senderId,
                     recipients: recipientEmail,
@@ -1717,7 +1837,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
     
                 email.send(emailObj);
             }catch(err){
-                log.error("error email send",err)
+                //log.error("error email send",err)
             }
             
             try{
@@ -1727,7 +1847,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                     values: {'orderstatus':'B','custbody_email_send':true}
                 });
             }catch(e){
-                log.error("error","send info");
+                //log.error("error","send info");
                 return {error_payment:e};
             }
             
@@ -1805,10 +1925,10 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                 return searchSO;
             }
             catch(e){
-                log.debug('There is an error in searchSalesOrderBySalesRep',e);
+                //log.debug('There is an error in searchSalesOrderBySalesRep',e);
             }
         }
-    
+        
         function searchPromoSalesRep(idSalesRep){
             try{
                 var objPromo = search.lookupFields({
@@ -1819,7 +1939,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                 return setObjReturn(objPromo,'searchPromoSalesRep successful',false);
             }
             catch(e){
-                log.debug('There is an error in searchPromoSalesRep',e);
+                //log.debug('There is an error in searchPromoSalesRep',e);
             }
         }
     
@@ -1904,11 +2024,11 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                     if(numOrders.length >  6 || delegate == 2){
                         return false;
                     }
-                    log.debug('count pre if ',count)
+                    //log.debug('count pre if ',count)
                     //Agrupado de ordenes 
                     for(var index in numOrders){
                           
-                        log.debug('orders',numOrders[index])
+                        //log.debug('orders',numOrders[index])
                         if(numOrders[index].typeso == 2){
                             internals.push({
                                 internalodv: numOrders[index].internalid
@@ -1922,22 +2042,22 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                           
                     }
                     var numOdv = internals.length;//extrallendo numero de valores en el arreglo
-                    log.debug('numOdv',numOdv) 
-                    log.debug('info debug','count'+count+' firstso '+firstso+' type '+scriptContext.type );
+                    //log.debug('numOdv',numOdv) 
+                    //log.debug('info debug','count'+count+' firstso '+firstso+' type '+scriptContext.type );
                       
-                    log.debug('context',runtime.executionContext);
+                    //log.debug('context',runtime.executionContext);
                     //AJUSTE PARA CONSIDERAR PROMOCION TM EN PRESTAMO
                     
                     if( rec.getValue('custbody_tipo_venta') != 19 && delegate != 5 && delegate != 2){//edit
-                        log.debug('cuantos',count)
+                        //log.debug('cuantos',count)
                         if(count >= odv_ganaTM && firstso != '' ){//Necesita tener First SO porque es la que cambia a TM Ganada
-                            log.debug('comission antes de flujo TM ganada')
+                            //log.debug('comission antes de flujo TM ganada')
                             var objEmployee = record.load({//Cargar registro 
                                 type: 'employee',
                                 id: odv,
                                 isDynamic: false
                             });
-                            log.debug('seteo tm propia al employee: ',odv)
+                            //log.debug('seteo tm propia al employee: ',odv)
                             objEmployee.setValue('custentity_promocion','2')
                             objEmployee.setValue('custentity_pedido_tm_ganada',digital_id)
                             objEmployee.save();
@@ -1999,8 +2119,8 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                                         fieldId: 'amount',
                                         line: e
                                     })  
-                                    log.debug('tmp_amount tm',tmp_amount)
-                                    log.debug('tmp_id tm',tmp_id)
+                                    //log.debug('tmp_amount tm',tmp_amount)
+                                    //log.debug('tmp_id tm',tmp_id)
                                     descuentoTm = (tmp_amount-0.01)*(-.84)
                                 }
                                 
@@ -2016,7 +2136,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                                         fieldId: 'item',
                                         line: x
                                     })
-                                    log.debug('tmp_id',tmp_id+'  line  '+i)
+                                    //log.debug('tmp_id',tmp_id+'  line  '+i)
                                     if(tmp_id != 2170 && tmp_id != 2001 && tmp_id != 2280 && tmp_id != 2490 && tmp_id != 2571 && tmp_id !=2638 && tmp_id !=2671 && tmp_id != 2763){//2170=TM6 & Varoma 120V UL USA CA MX (24),2001=TM6 & Varoma 120V UL MX US,2280=TM6R,2490= Black,2571=Spark,2638=kit k00190
                                         
                                             salesorder.removeLine({
@@ -2032,7 +2152,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                                     ignoreMandatoryFields: true
                                 });
                             }catch(e){
-                                log.error('Error removeLine',e)
+                                //log.error('Error removeLine',e)
                                 setearArticulos = false
                                 record.submitFields({//setear memo
                                       type: 'salesorder',
@@ -2046,7 +2166,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                                     id: firstso,
                                     isDynamic: true
                                 });
-                                log.debug('descuentoTm',descuentoTm);
+                                //log.debug('descuentoTm',descuentoTm);
                                 salesorder.selectNewLine({
                                     sublistId : 'item',//seleccion de linea
                                 });
@@ -2088,7 +2208,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                                 salesorder.commitLine({//cierre de linea seleccionada 
                                     sublistId: 'item'
                                 });
-                                log.debug('que trae',arr_aux)
+                                //log.debug('que trae',arr_aux)
                                 
                                 
                                 
@@ -2123,7 +2243,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                                     
                                     }catch(aux){
                                         
-                                        log.debug('que pasa',aux)
+                                        //log.debug('que pasa',aux)
                                     }
                                 }
                                 
@@ -2131,7 +2251,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                                 salesorder.setValue('custbody_vorwerk_descuento',true) //seteo de checkbox descuento
                                 salesorder.setValue('trandate',fdate)
                                 var idODV = salesorder.save();
-                                log.debug('idODV',idODV);
+                                //log.debug('idODV',idODV);
                             }
                             
                             //Fin Descuento TM Ganada 
@@ -2154,10 +2274,10 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                         
                     }
                     
-                    log.debug('custbody_tipo_venta',rec.getValue('custbody_tipo_venta'))
+                    //log.debug('custbody_tipo_venta',rec.getValue('custbody_tipo_venta'))
                                                 
             }catch(err){
-                log.debug('error flujo tm ganada',err);
+                //log.debug('error flujo tm ganada',err);
             }
         }
         
@@ -2227,8 +2347,8 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                      }
                      return true;
                  });
-                 log.debug('numOdv',numOdv);
-                 log.debug('tabla_Tm',tabla_Tm);
+                 //log.debug('numOdv',numOdv);
+                 //log.debug('tabla_Tm',tabla_Tm);
                 if(numOdv >=0){
                     descuentoTm = tabla_Tm[numOdv].descuento//comparacion de numero de ordenes de la presentadora 
                 }
@@ -2239,7 +2359,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                  
             }catch(err){
                 
-                log.debug('errortabla_Tm',err)
+                //log.debug('errortabla_Tm',err)
                 return  0;
             }
         }
