@@ -671,9 +671,9 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                 discont_base = 1876;
                 discont_tm7 = 2692;
             }else{//produccion
-                items_especiales = ["2685", "2686"];
-                discont_base = 1876;
-                discont_tm7 = 2692;
+                items_especiales = ["2839", "2841"];//GETM,KIT DESGASTE TM7
+                discont_base = 1876;//descuento G0006
+                discont_tm7 = 2840;//descuento G0008
             }
             var discount_item_id = discont_base; // Item de descuento por defecto
             var tiene_item_2686 = false; // Flag para detectar si hay item 2686 (KIT DE DESGASTE TM7)
