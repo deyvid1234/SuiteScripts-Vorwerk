@@ -1239,7 +1239,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                          fieldId: 'item',
                          line: e
                     });
-                    if(item_id == 2402){
+                    if(item_id == 2685){
                         item2402Found = true;
                         break;
                     }
@@ -1285,6 +1285,20 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                     emailBody = emailBody.replace(/@fechadecompra/g,fechaCompra);
                     emailBody = emailBody.replace(/@pedido/g,pedido);
                     
+                    // Obtener el archivo del campo custbody_vw_pdf_warranty para adjuntarlo al email
+                    var warrantyFileId = salesorder.getValue('custbody_vw_pdf_warranty');
+                    var emailAttachments = [];
+                    if(warrantyFileId){
+                        try{
+                            var warrantyFile = file.load({
+                                id: warrantyFileId
+                            });
+                            emailAttachments.push(warrantyFile);
+                            log.debug('Archivo de garantía cargado para adjuntar:', warrantyFileId);
+                        }catch(fileError){
+                            log.error('Error al cargar el archivo de garantía:', fileError);
+                        }
+                    }
 
                     var emailObj = {
                         author: senderId,
@@ -1295,6 +1309,11 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                             transactionId: recordid
                         }
                     };
+                    
+                    // Agregar adjuntos solo si hay archivos
+                    if(emailAttachments.length > 0){
+                        emailObj.attachments = emailAttachments;
+                    }
                     
                     email.send(emailObj);
                     log.debug('Email enviado exitosamente con plantilla 287');
