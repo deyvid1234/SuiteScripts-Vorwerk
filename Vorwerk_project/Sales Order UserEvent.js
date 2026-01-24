@@ -1249,10 +1249,12 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                 if(item2402Found){
                     log.debug('entre if item found')
                     // Obtener cupón disponible usando la función de Utils
-                    var cuponName = Utils.obtenerCupon();
-                    log.debug('Cupón obtenido:', cuponName);
+                    var cuponData = Utils.obtenerCupon();
+                    var cuponName = cuponData ? cuponData.name : null;
+                    var cuponId = cuponData ? cuponData.id : null;
+                    log.debug('Cupón obtenido:', cuponData);
                     
-                    if(!cuponName){
+                    if(!cuponData){
                         log.debug('No se encontró cupón disponible');
                     }
                     
@@ -1319,12 +1321,12 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                     log.debug('Email enviado exitosamente con plantilla 287');
                     
                     // Actualizar el cupón a estado usado (status = 2) después de enviar el email
-                    if(cuponName){
-                        var actualizado = Utils.actualizarCupon(cuponName);
+                    if(cuponId){
+                        var actualizado = Utils.actualizarCupon(cuponId);
                         if(actualizado){
-                            log.debug('Cupón actualizado exitosamente a estado usado:', cuponName);
+                            log.debug('Cupón actualizado exitosamente a estado usado:', 'ID: ' + cuponId);
                         } else {
-                            log.debug('Error al actualizar el cupón:', cuponName);
+                            log.debug('Error al actualizar el cupón:', 'ID: ' + cuponId);
                         }
                     }
                 }

@@ -480,7 +480,7 @@ function(record, search, runtime, format, query,currency) {
             
             var cuponSearch = search.create({
                 type: 'customrecord_cupones',
-                columns: ['name'],
+                columns: ['name', 'internalid'],
                 filters: [
                     ['custrecord_status_cupon', 'anyof', 1],
                     'and',
@@ -492,13 +492,16 @@ function(record, search, runtime, format, query,currency) {
                 ]
             });
             
-            var cuponName = null;
+            var cuponData = null;
             cuponSearch.run().each(function(result) {
-                cuponName = result.getValue('name');
+                cuponData = {
+                    name: result.getValue('name'),
+                    id: result.id
+                };
                 return false; // Solo obtener el primer resultado
             });
             
-            return cuponName;
+            return cuponData;
         } catch (e) {
             log.error('Error en obtenerCupon', e);
             return null;
@@ -506,34 +509,14 @@ function(record, search, runtime, format, query,currency) {
     }
 
     // Función para actualizar el estado del cupón a usado (status = 2)
-    function actualizarCupon(cuponName) {
+    function actualizarCupon(cuponId) {
         try {
-            if (!cuponName) {
-                log.error('actualizarCupon: No se proporcionó el nombre del cupón');
-                return false;
-            }
-            
-            // Buscar el registro por name
-            var cuponSearch = search.create({
-                type: 'customrecord_cupones',
-                columns: ['internalid'],
-                filters: [
-                    ['name', 'is', cuponName]
-                ]
-            });
-            
-            var cuponId = null;
-            cuponSearch.run().each(function(result) {
-                cuponId = result.id;
-                return false; // Solo obtener el primer resultado
-            });
-            
             if (!cuponId) {
-                log.error('actualizarCupon: No se encontró el cupón con name: ' + cuponName);
+                log.error('actualizarCupon: No se proporcionó el ID interno del cupón');
                 return false;
             }
             
-            // Actualizar el estado del cupón a 2 (usado)
+            // Actualizar el estado del cupón a 2 (usado) usando el ID interno directamente
             record.submitFields({
                 type: 'customrecord_cupones',
                 id: cuponId,
@@ -546,7 +529,7 @@ function(record, search, runtime, format, query,currency) {
                 }
             });
             
-            log.debug('actualizarCupon: Cupón actualizado exitosamente', 'name: ' + cuponName + ', ID: ' + cuponId);
+            log.debug('actualizarCupon: Cupón actualizado exitosamente', 'ID: ' + cuponId);
             return true;
         } catch (e) {
             log.error('Error en actualizarCupon', e);
