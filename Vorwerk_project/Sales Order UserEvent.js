@@ -33,12 +33,12 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                     //log.debug('status',status)
                     var userObj = runtime.getCurrentUser();
                     var idUser = userObj.id
-                   /* var userPermisos = search.lookupFields({
+                   var userPermisos = search.lookupFields({
                         type: 'employee',
                         id: idUser,
                         columns: ['custentity_sin_permiso_sofacturada']
-                    });*/
-                    var editaso_facturada = true//userPermisos.custentity_sin_permiso_sofacturada
+                    });
+                    var editaso_facturada = userPermisos.custentity_sin_permiso_sofacturada
                     //log.debug('editaso_facturada',editaso_facturada)
                     if(editaso_facturada == true && (status == 'Billed' || status == 'Facturada') && type == 'view'){
                         var msgAuto = message.create({
@@ -108,7 +108,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                             //log.debug('Total pagado (búsqueda):', totalPagadoSublist);
                             
                         } catch (e) {
-                            //log.error('Error al buscar pagos:', e.message);
+                            log.error('Error al buscar pagos:', e.message);
                         }
                            
                         var total = rec.getValue('total') -10
@@ -197,7 +197,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                 }*/
                 
             }catch(err){
-                //log.error("Error Aftersbumit",err);
+                log.error("Error Aftersbumit",err);
             }
             
             return true;
@@ -236,7 +236,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                 //Garantia extendida tm7
                 try{
                     if(type == 'create'){
-                        log.debug('entre garantia extendida tm7',typeEvent)
+                        //log.debug('entre garantia extendida tm7',typeEvent)
                         garantiaExtendidaTm7(rec)
                     }
                 }catch(e){
@@ -246,21 +246,21 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                 try{
                     cancelacion(scriptContext)
                     
-                }catch(e){
-                    //log.debug('error actualizacion de commission status',e)
-                }
+                            }catch(e){
+                            log.debug('error actualizacion de commission status',e)
+                        }
                 // actualizacion de commission status 
                 try{
                     commissionStatus(salesrep,rec.id)
                 }catch(e){
-                    //log.debug('error actualizacion de commission status',e)
+                    log.debug('error actualizacion de commission status',e)
                 }
                 // earning program tm7
                 try{
                     //itemtype(scriptContext)
                     earningProgram(salesrep)
                 }catch(e){
-                    //log.debug('error earning program tm7',e)
+                    log.debug('error earning program tm7',e)
                 }
                 
                 if(typeEvent != runtime.ContextType.MAP_REDUCE  && typeEvent != runtime.ContextType.CSV_IMPORT ){
@@ -429,7 +429,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                          });
                          //log.debug('fieldsLookUp',fieldsLookUp);
                         if(salesorder.getValue('custbody_email_send') == false){
-                            //log.debug("process","evento "+type);
+                            log.debug("process","evento "+type);
                             
                             var numLines_aux = salesorder.getLineCount({
                                 sublistId: 'recmachcustrecord_id_sales_order'
@@ -501,7 +501,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                             
                             idUSer = 344096;
                             
-                            //log.debug("process","email");
+                            log.debug("process","email");
                             var myMergeResult = render.mergeEmail({
                                     templateId: idTpl,
                                     entity: {
@@ -576,7 +576,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                                                 values: {'orderstatus':'A'}
                                             });
                                         }catch(e){
-                                            //log.error("error","send info");
+                                            log.error("error","send info");
                                             return {error_payment:e};
                                         }
                                     }
@@ -589,7 +589,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                             }
                                 
                         }else{
-                            //log.debug("process","El email ya ha sido enviado no es necesario volver a enviarlo");
+                            log.debug("process","El email ya ha sido enviado no es necesario volver a enviarlo");
                         }
                     }
                    
@@ -716,7 +716,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                                 "IDUsalesRep":objsalesrep.entityid,
                                 "Order": ""+recordid+""
                             }
-                            //log.debug('objRequest LMS',objRequest)
+                            log.debug('objRequest LMS',objRequest)
                             var responseService = https.post({
                                 url: urlLMS,
                                 body : JSON.stringify(objRequest),
@@ -725,7 +725,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                                     "Authorization": "Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJJZCI6IjIyMWFmN2U5LTJjMDAtNDYzZC1hYzliLThkZDA2MzhmYzYzMSIsInN1YiI6InRocm14Lm5ldHN1aXRlLmFwaUBsbXMtbGEuY29tIiwiZW1haWwiOiJ0aHJteC5uZXRzdWl0ZS5hcGlAbG1zLWxhLmNvbSIsInVuaXF1ZV9uYW1lIjoidGhybXgubmV0c3VpdGUuYXBpQGxtcy1sYS5jb20iLCJqdGkiOiJkMDdkZmJhNy04MjA1LTRkZjYtODdlMS0xZDE2YmUyYTAwOTMiLCJuYmYiOjE3MzYyMTMwNzAsImV4cCI6MTc2Nzc0OTA3MCwiaWF0IjoxNzM2MjEzMDcwfQ.4lCT7MyZ1OPFQhO6opfc1lEUyz-nyDpmE7_ZNVdwbvIIanlzuWIoD5XzjTnojLFO6EThVieiOiPUl7EhqrhkNg"
                                 }
                             }).body;
-                            //log.debug('responseService LMS',responseService)
+                            log.debug('responseService LMS',responseService)
     
                             //log.debug('pre actualizacion customer',objcustomer.custentity_first_so[0].value)
                             if(objcustomer.custentity_first_so[0].value == false || objcustomer.custentity_first_so[0].value == ''){
@@ -749,7 +749,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                                     "noPedido":numOrden,
                                     "PedidoStatus":'Activo',
                                 }
-                                //log.debug('objRequestAD',JSON.stringify(objRequestAD))
+                                log.debug('objRequestAD',JSON.stringify(objRequestAD))
                                 
                                 //Agenda Digital
                                 var responseService = https.post({
@@ -760,7 +760,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                                         "x-api-key": "QxTbKbIDyB7eN0wCHxCZH5SN6gZzd0Nd7yreJAhW"
                                     }
                                 }).body;
-                                //log.debug('responseService AD',responseService)
+                                log.debug('responseService AD',responseService)
     
                             }
                             
@@ -809,8 +809,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                                 "IDUsalesRep":objsalesrep.entityid,
                                 "Order": ""+recordid+""
                             }
-                            //log.debug('objRequest LMS',objRequest)
-                            //log.debug('objRequest.length',JSON.stringify(objRequest).length)
+                            log.debug('objRequest LMS Cancel',objRequest)
                             var responseService = https.post({
                                 url: urlLMSCancel,
                                 body : JSON.stringify(objRequest),
@@ -819,7 +818,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                                     "Content-Type": "application/json",
                                 }
                             }).body;
-                            //log.debug('responseService',responseService)
+                            log.debug('responseService LMS Cancel',responseService)
     
                             //Solo si es la primera SO recomendados
                             //log.debug('pre actualizacion customer',objcustomer.custentity_first_so[0].value)
@@ -832,7 +831,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                                     "noPedido":numOrden,
                                     "PedidoStatus":'Cancelado',
                                 }
-                                //log.debug('objRequestCancelAD',JSON.stringify(objRequestCancelAD))
+                                log.debug('objRequestCancelAD',JSON.stringify(objRequestCancelAD))
                                 
                                 //Agenda Digital
                                 var responseService = https.post({
@@ -843,7 +842,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                                         "x-api-key": "QxTbKbIDyB7eN0wCHxCZH5SN6gZzd0Nd7yreJAhW"
                                     }
                                 }).body;
-                                //log.debug('responseService AD',responseService)
+                                log.debug('responseService AD Cancel',responseService)
     
     
                                 //Actualizar Customer
@@ -864,7 +863,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
     
                     }
                 }catch(e){
-                    //log.debug('Error Registra venta',e)
+                    log.debug('Error Registra venta',e)
                 }
                 //FIN Registra venta (LMS)
                
@@ -881,10 +880,10 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                     }
     
                     }catch(e){
-                        //log.debug('Error Forma de pago',e)
+                        log.debug('Error Forma de pago',e)
                     }
             }catch(err){
-                //log.error("error after submit",err);
+                log.error("error after submit",err);
             }
     
             try{//Actualizacion Inventario ficticio eshop
@@ -1015,7 +1014,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                     }
                 }
             }catch(e){
-                //log.debug('Error en Actualizacion Inventario ficticio eshop - Creacion',e)
+                log.debug('Error en Actualizacion Inventario ficticio eshop - Creacion',e)
             }
             try{
                 if(type == 'edit'){
@@ -1161,7 +1160,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                     }
                 }
             }catch(e){
-                //log.debug('Error en Actualizacion Inventario ficticio eshop - Cancelacion',e)
+                log.debug('Error en Actualizacion Inventario ficticio eshop - Cancelacion',e)
             }
                 
                 
@@ -1222,7 +1221,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                     mes = (mes < 10) ? '0' + mes : mes;
                     fechaCompra = dia + '/' + mes + '/' + anio;
                 }
-                log.debug('fechaCompra',fechaCompra)
+                //log.debug('fechaCompra',fechaCompra)
                 var pedido = rec.getValue('tranid');
                 var salesorder = record.load({//Cargar registro 
                     type: 'salesorder',
@@ -1244,10 +1243,10 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                         break;
                     }
                 }
-                log.debug('item2402Found',item2402Found)
+                //log.debug('item2402Found',item2402Found)
                 // Si se encuentra el item 2402, enviar email con plantilla 287
                 if(item2402Found){
-                    log.debug('entre if item found')
+                    //log.debug('entre if item found')
                     // Obtener cupón disponible usando la función de Utils
                     var cuponData = Utils.obtenerCupon();
                     var cuponName = cuponData ? cuponData.name : null;
@@ -1255,7 +1254,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                     log.debug('Cupón obtenido:', cuponData);
                     
                     if(!cuponData){
-                        log.debug('No se encontró cupón disponible');
+                        //log.debug('No se encontró cupón disponible');
                     }
                     
                     log.debug('Item 2402 encontrado, enviando email con plantilla 287');
@@ -1280,9 +1279,9 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                     var emailSubject = myMergeResult.subject;
                     var emailBody = myMergeResult.body;
                     var fDate = salesorder.getValue('trandate');
-                    log.debug('fDate',fDate)
-                    log.debug('emailSubject', emailSubject);
-                    log.debug('emailBody', emailBody);
+                    //log.debug('fDate',fDate)
+                    //log.debug('emailSubject', emailSubject);
+                    //log.debug('emailBody', emailBody);
                     emailBody = emailBody.replace(/@cupon/g, cuponName || '');
                     emailBody = emailBody.replace(/@fechadecompra/g,fechaCompra);
                     emailBody = emailBody.replace(/@pedido/g,pedido);
@@ -1382,13 +1381,13 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                 }
                     
             }catch(e){
-                //log.error('error is serial',e)
+                log.error('error is serial',e)
             }
         }
        
         function cancelacion(scriptContext){
             try{
-                //log.debug('cancelacion ')
+                log.debug('cancelacion ')
                 var rec = scriptContext.newRecord;
                 var type = scriptContext.type;
                 
@@ -1463,12 +1462,12 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                 }
                     
             }catch(e){
-                //log.error('error cancelacion',e)
+                log.error('error cancelacion',e)
             }
         }
         function earningProgram(salesrep){
             try{
-                //log.debug('[' + salesrep + '] INICIO earningProgram')
+                log.debug('[' + salesrep + '] INICIO earningProgram')
                 var presentadorFields = search.lookupFields({
                     type: search.Type.EMPLOYEE,
                     id: salesrep,
@@ -1644,7 +1643,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                 
     
             }catch (e){
-                //log.error('[' + salesrep + '] ERROR funcion earning program',e)
+                log.error('[' + salesrep + '] ERROR funcion earning program',e)
             }
     
         }
