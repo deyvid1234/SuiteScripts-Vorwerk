@@ -1238,7 +1238,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                          fieldId: 'item',
                          line: e
                     });
-                    if(item_id == 2685){
+                    if(item_id == 2839 ){//2839 prod 2685 sb
                         item2402Found = true;
                         break;
                     }
