@@ -198,8 +198,10 @@ function(record,search,format,log) {
                     log.debug('fdate_add',fdate_add);
                     if(date < fdate_add){
                         is_valid = true;
+                    } else {
+                        is_valid = false; // Caducado
                     }
-                    transactionId = result.getValue('createdfrom');
+                    transactionId = result.getValue('internalid');
                     allValues = {
                             internalid: transactionId,
                             ordernumber:info["createdFrom.tranid"],
@@ -218,6 +220,8 @@ function(record,search,format,log) {
                     log.debug('fdate_add',fdate_add);
                     if(date < fdate_add){
                         is_valid = true;
+                    } else {
+                        is_valid = false; // Caducado
                     }
                     transactionId = result.getValue('internalid');
                     allValues = {
@@ -246,45 +250,31 @@ function(record,search,format,log) {
                 };
             }
             
-            // Determinar el estatus
+            // Determinar el estatus usando la bandera is_valid
             var estatus = 'VALID';
-            var datetovalid = allValues.datetovalid;
             
-            if(datetovalid){
-                var fechaValidacion = format.parse({
-                    value: datetovalid,
-                    type: format.Type.DATE
+            // OUTDATED: si la fecha está caducada (is_valid = false)
+            if(!is_valid){
+                estatus = 'EXPIRED';
+            } else if(transactionId){
+                // DUPLICATED: buscar si existe una Sales Order con custbody_vw_odv_related_warranty igual a transactionId
+                var duplicateSearch = search.create({
+                    type: search.Type.SALES_ORDER,
+                    filters: [
+                        ['custbody_vw_odv_related_warranty', 'anyof', transactionId]
+                    ],
+                    columns: ['tranid', 'internalid']
                 });
                 
-                // Calcular diferencia en días
-                var diffTime = date.getTime() - fechaValidacion.getTime();
-                var diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+                var hasDuplicate = false;
+                duplicateSearch.run().each(function(duplicateResult) {
+                    hasDuplicate = true;
+                    log.debug('Encontrada orden duplicada', duplicateResult.getValue('tranid'));
+                    return true;
+                });
                 
-                log.debug('diffDays', diffDays);
-                
-                // OUTDATED: si la fecha es mayor a 180 días
-                if(diffDays > 180){
-                    estatus = 'OUTDATED';
-                } else if(transactionId){
-                    // DUPLICATED: buscar si existe una Sales Order con custbody_vw_odv_related_warranty igual a transactionId
-                    var duplicateSearch = search.create({
-                        type: search.Type.SALES_ORDER,
-                        filters: [
-                            ['custbody_vw_odv_related_warranty', 'anyof', transactionId]
-                        ],
-                        columns: ['tranid', 'internalid']
-                    });
-                    
-                    var hasDuplicate = false;
-                    duplicateSearch.run().each(function(duplicateResult) {
-                        hasDuplicate = true;
-                        log.debug('Encontrada orden duplicada', duplicateResult.getValue('tranid'));
-                        return true;
-                    });
-                    
-                    if(hasDuplicate){
-                        estatus = 'DUPLICATED';
-                    }
+                if(hasDuplicate){
+                    estatus = 'DUPLICATED';
                 }
             }
             
