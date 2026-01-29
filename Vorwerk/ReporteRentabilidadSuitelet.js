@@ -378,14 +378,6 @@ function(serverWidget, search, file, encode, log, record) {
         var invoiceSearchColItem = search.createColumn({ name: 'item' });
         // Nota: preferredvendor no está disponible como columna en búsqueda de transaction; el match de descuento proveedor se hace por Artículo + Cliente + vigencia
         var invoiceSearchColSalesRep = search.createColumn({ name: 'salesrep' });
-        // Campos de comisiones de gerentes del Employee (Representante de Ventas)
-        var invoiceSearchColComisionRosario = search.createColumn({ name: 'custentity_comision_rosario', join: 'salesrep' });
-        var invoiceSearchColComisionAlhely = search.createColumn({ name: 'custentity_comision_alhely', join: 'salesrep' });
-        var invoiceSearchColComisionGabriela = search.createColumn({ name: 'custentity_comision_gabriela', join: 'salesrep' });
-        var invoiceSearchColComisionMineria = search.createColumn({ name: 'custentity_comision_mineria', join: 'salesrep' });
-        var invoiceSearchColComisionAgro = search.createColumn({ name: 'custentity_comision_agro', join: 'salesrep' });
-        var invoiceSearchColComisionPrieto = search.createColumn({ name: 'custentity_comision_prieto', join: 'salesrep' });
-        var invoiceSearchColComisionOtros = search.createColumn({ name: 'custentity_comision_otros', join: 'salesrep' });
         var invoiceSearchColQuantity = search.createColumn({ name: 'quantity' });
         var invoiceSearchColAmount = search.createColumn({ name: 'amount' });
         var invoiceSearchColMetodoDeEntrega = search.createColumn({ name: 'custbodykop_metodo_entrega_ov' });
@@ -425,17 +417,12 @@ function(serverWidget, search, file, encode, log, record) {
                 invoiceSearchColTaxItem,
                 invoiceSearchColCreatedFrom,
                 invoiceSearchColCreatedFromCostoTransporte,
-                invoiceSearchColCreatedFromTranId,
-                // Campos de comisiones de gerentes del Employee
-                invoiceSearchColComisionRosario,
-                invoiceSearchColComisionAlhely,
-                invoiceSearchColComisionGabriela,
-                invoiceSearchColComisionMineria,
-                invoiceSearchColComisionAgro,
-                invoiceSearchColComisionPrieto,
-                invoiceSearchColComisionOtros
+                invoiceSearchColCreatedFromTranId
             ]
         });
+        
+        // Cargar cache de comisiones de gerentes una sola vez al inicio
+        loadComisionesGerentesCache();
         
         var results = [];
         var invoiceSearchPagedData = invoiceSearch.runPaged({ pageSize: 1000 });
@@ -474,14 +461,7 @@ function(serverWidget, search, file, encode, log, record) {
                         giroIndustrial: result.getText(invoiceSearchColCustomerMainGIROINDUSTRIAL) || result.getValue(invoiceSearchColCustomerMainGIROINDUSTRIAL),
                         articulo: result.getText(invoiceSearchColItem) || result.getValue(invoiceSearchColItem),
                         representanteVenta: result.getText(invoiceSearchColSalesRep) || result.getValue(invoiceSearchColSalesRep),
-                        // Porcentajes de comisión por gerente del Employee
-                        porcentajeComisionRosario: parseFloat(result.getValue(invoiceSearchColComisionRosario) || 0),
-                        porcentajeComisionAlhely: parseFloat(result.getValue(invoiceSearchColComisionAlhely) || 0),
-                        porcentajeComisionGabriela: parseFloat(result.getValue(invoiceSearchColComisionGabriela) || 0),
-                        porcentajeComisionMineria: parseFloat(result.getValue(invoiceSearchColComisionMineria) || 0),
-                        porcentajeComisionAgro: parseFloat(result.getValue(invoiceSearchColComisionAgro) || 0),
-                        porcentajeComisionPrieto: parseFloat(result.getValue(invoiceSearchColComisionPrieto) || 0),
-                        porcentajeComisionOtros: parseFloat(result.getValue(invoiceSearchColComisionOtros) || 0),
+                        representanteVentaId: result.getValue(invoiceSearchColSalesRep) || '', // ID del Employee para lookup en cache
                         cantidad: parseFloat(result.getValue(invoiceSearchColQuantity) || 0),
                         importe: parseFloat(result.getValue(invoiceSearchColAmount) || 0),
                         metodoEntrega: result.getText(invoiceSearchColMetodoDeEntrega) || result.getValue(invoiceSearchColMetodoDeEntrega),
@@ -512,6 +492,60 @@ function(serverWidget, search, file, encode, log, record) {
                     loadDescuentoProveedorCache();
                     var factor = getFactorDescuentoProveedor(row);
                     row.factorDescuento = factor != null ? factor : 0;
+                    
+                    // Obtener porcentajes de comisión de gerentes del Employee desde el cache
+                    // Convertir el ID a string para asegurar que coincida con las claves del cache
+                    var employeeIdStr = String(row.representanteVentaId || '');
+                    var comisionesGerentes = getComisionesGerentes(employeeIdStr);
+                    if (comisionesGerentes) {
+                        // Asignar valores TAL CUAL del registro Employee, sin conversiones
+                        row.porcentajeComisionRosario = comisionesGerentes.rosario || 0;
+                        row.porcentajeComisionAlhely = comisionesGerentes.alhely || 0;
+                        row.porcentajeComisionGabriela = comisionesGerentes.gabriela || 0;
+                        row.porcentajeComisionMineria = comisionesGerentes.mineria || 0;
+                        row.porcentajeComisionAgro = comisionesGerentes.agro || 0;
+                        row.porcentajeComisionPrieto = comisionesGerentes.prieto || 0;
+                        row.porcentajeComisionOtros = comisionesGerentes.otros || 0;
+                        row.porcentajeComisionTotal = comisionesGerentes.total || 0;
+                        
+                        // Log para debugging: verificar valores asignados (solo para el primer Employee encontrado)
+                        if (employeeIdStr && !row._loggedComisiones) {
+                            log.debug('Comisiones de gerentes asignadas', {
+                                employeeId: employeeIdStr,
+                                employeeName: row.representanteVenta,
+                                rosario: row.porcentajeComisionRosario,
+                                alhely: row.porcentajeComisionAlhely,
+                                gabriela: row.porcentajeComisionGabriela,
+                                mineria: row.porcentajeComisionMineria,
+                                agro: row.porcentajeComisionAgro,
+                                prieto: row.porcentajeComisionPrieto,
+                                otros: row.porcentajeComisionOtros,
+                                total: row.porcentajeComisionTotal
+                            });
+                            row._loggedComisiones = true; // Marcar para no repetir el log
+                        }
+                    } else {
+                        // Si no existe el Employee en el cache, todos los porcentajes son 0
+                        // Log para debugging: verificar si el Employee ID está correcto
+                        if (employeeIdStr) {
+                            var cache = loadComisionesGerentesCache();
+                            log.debug('Employee no encontrado en cache', {
+                                employeeId: employeeIdStr,
+                                employeeIdType: typeof employeeIdStr,
+                                employeeName: row.representanteVenta,
+                                cacheKeys: Object.keys(cache),
+                                cacheKeyTypes: Object.keys(cache).map(function(k) { return typeof k; })
+                            });
+                        }
+                        row.porcentajeComisionRosario = 0;
+                        row.porcentajeComisionAlhely = 0;
+                        row.porcentajeComisionGabriela = 0;
+                        row.porcentajeComisionMineria = 0;
+                        row.porcentajeComisionAgro = 0;
+                        row.porcentajeComisionPrieto = 0;
+                        row.porcentajeComisionOtros = 0;
+                        row.porcentajeComisionTotal = 0;
+                    }
                     // Nota Crédito Proveedor = Tipo de Cambio × Cantidad × Factor Descuento
                     row.notaCreditoProveedor = (row.tipoCambio || 0) * (row.cantidad || 0) * (row.factorDescuento || 0);
                     
@@ -665,6 +699,13 @@ function(serverWidget, search, file, encode, log, record) {
     function calculateExcelFormulas(row) {
         // Según el Excel:
         // INGRESO = Importe (columna O)
+        // Mapear campos del resultado de executeInvoiceSearch a los nombres usados en esta función
+        row.amount = row.amount || row.importe || 0;
+        row.quantity = row.quantity || row.cantidad || 0;
+        row.tipoDeCambio = row.tipoDeCambio || row.tipoCambio || 0;
+        row.costoUnitario = row.costoUnitario || (row.costoPorLineaV2 ? row.costoPorLineaV2 / (row.quantity || 1) : 0);
+        row.costoPorLineaV2 = row.costoPorLineaV2 || row.costoPorLinea || 0;
+        row.costoPorLinea = row.costoPorLinea || 0;
         row.montoBase = row.amount;
         
         // COSTO = Costo por línea (fulfillment cuenta 5100) o costo por línea de transacción
@@ -756,17 +797,9 @@ function(serverWidget, search, file, encode, log, record) {
         // VENTAS A 18.00 - podría ser un filtro o cálculo adicional
         row.ventasA18 = 0;
         
-        // Campos de distribución de comisiones por gerente
-        // Las comisiones se calculan multiplicando la comisión total por el porcentaje de cada gerente
-        // Los porcentajes vienen del Employee (Representante de Ventas) y están en formato decimal (0.18 = 18%)
-        var comisionTotal = row.comisionTotal || 0;
-        row.comisionRosario = comisionTotal * (row.porcentajeComisionRosario || 0);
-        row.comisionAlhely = comisionTotal * (row.porcentajeComisionAlhely || 0);
-        row.comisionGabriela = comisionTotal * (row.porcentajeComisionGabriela || 0);
-        row.comisionMineria = comisionTotal * (row.porcentajeComisionMineria || 0);
-        row.comisionAgro = comisionTotal * (row.porcentajeComisionAgro || 0);
-        row.comisionPrieto = comisionTotal * (row.porcentajeComisionPrieto || 0);
-        row.comisionOtros = comisionTotal * (row.porcentajeComisionOtros || 0);
+        // NOTA: Los porcentajes de comisión por gerente ya fueron asignados desde el cache del Employee
+        // en executeInvoiceSearch(). Aquí NO se calculan montos, solo se muestran los porcentajes tal cual
+        // del registro Employee. Los cálculos de montos de comisión se harán más adelante con diferentes fórmulas.
         
         return row;
     }
@@ -831,6 +864,13 @@ function(serverWidget, search, file, encode, log, record) {
      * Se carga una vez al generar el reporte.
      */
     var descuentoProveedorCache = null;
+    
+    /**
+     * Cache global de comisiones de gerentes por Employee (Representante de Ventas).
+     * Estructura: { employeeId: { rosario: 0.18, alhely: 0.25, ... } }
+     * Se carga una vez al generar el reporte.
+     */
+    var comisionesGerentesCache = null;
     
     /**
      * Carga todos los registros del Custom Record "Descuento Proveedor" para consulta por línea.
@@ -908,6 +948,140 @@ function(serverWidget, search, file, encode, log, record) {
     }
     
     /**
+     * Carga todos los Employees que tengan al menos uno de los campos de comisión configurado.
+     * Crea un objeto cache donde la clave es el ID del Employee y el valor es un objeto con los porcentajes.
+     * Se carga una vez al generar el reporte.
+     */
+    function loadComisionesGerentesCache() {
+        if (comisionesGerentesCache) {
+            return comisionesGerentesCache;
+        }
+        comisionesGerentesCache = {};
+        try {
+            // Buscar Employees que tengan al menos uno de los campos de comisión configurado
+            // Usamos OR para encontrar cualquier Employee con al menos un campo
+            // Nota: 'isnotempty' funciona con campos que tienen valor (no null, no vacío, no 0)
+            var employeeSearch = search.create({
+                type: 'employee',
+                filters: [
+                    ['custentity_comision_rosario', 'isnotempty', ''],
+                    'OR',
+                    ['custentity_comision_alhely', 'isnotempty', ''],
+                    'OR',
+                    ['custentity_comision_gabriela', 'isnotempty', ''],
+                    'OR',
+                    ['custentity_comision_mineria', 'isnotempty', ''],
+                    'OR',
+                    ['custentity_comision_agro', 'isnotempty', ''],
+                    'OR',
+                    ['custentity_comision_prieto', 'isnotempty', ''],
+                    'OR',
+                    ['custentity_comision_otros', 'isnotempty', '']
+                ],
+                columns: [
+                    search.createColumn({ name: 'internalid' }),
+                    search.createColumn({ name: 'custentity_comision_rosario' }),
+                    search.createColumn({ name: 'custentity_comision_alhely' }),
+                    search.createColumn({ name: 'custentity_comision_gabriela' }),
+                    search.createColumn({ name: 'custentity_comision_mineria' }),
+                    search.createColumn({ name: 'custentity_comision_agro' }),
+                    search.createColumn({ name: 'custentity_comision_prieto' }),
+                    search.createColumn({ name: 'custentity_comision_otros' }),
+                    search.createColumn({ name: 'custentity_comision_total' })
+                ]
+            });
+            
+            employeeSearch.run().each(function(result) {
+                // Convertir el ID a string para asegurar consistencia en las claves del cache
+                var employeeId = String(result.getValue('internalid') || '');
+                
+                // Obtener valores TAL CUAL del registro Employee, sin conversiones
+                // Para campos Percent en NetSuite:
+                // - getValue() retorna el valor como decimal (0.0018 para 0.18%, 0.007 para 0.7%)
+                // - getText() retorna el valor como string con formato ("0.18%", "0.7%")
+                // IMPORTANTE: Los campos Percent en serverWidget esperan valores entre 0 y 1 (decimal)
+                // donde 0.0018 representa 0.18% y 0.007 representa 0.7%
+                // Por lo tanto, usamos getValue() directamente sin conversiones
+                function getPercentValue(columnName) {
+                    var value = result.getValue(columnName);
+                    if (value === null || value === undefined || value === '') {
+                        return 0;
+                    }
+                    // Retornar el valor tal cual de getValue()
+                    // Para campos Percent: 0.18% se almacena como 0.0018, 0.7% se almacena como 0.007
+                    var num = parseFloat(value);
+                    return isNaN(num) ? 0 : num;
+                }
+                
+                var rosario = getPercentValue('custentity_comision_rosario');
+                var alhely = getPercentValue('custentity_comision_alhely');
+                var gabriela = getPercentValue('custentity_comision_gabriela');
+                var mineria = getPercentValue('custentity_comision_mineria');
+                var agro = getPercentValue('custentity_comision_agro');
+                var prieto = getPercentValue('custentity_comision_prieto');
+                var otros = getPercentValue('custentity_comision_otros');
+                var total = getPercentValue('custentity_comision_total');
+                
+                comisionesGerentesCache[employeeId] = {
+                    rosario: rosario,
+                    alhely: alhely,
+                    gabriela: gabriela,
+                    mineria: mineria,
+                    agro: agro,
+                    prieto: prieto,
+                    otros: otros,
+                    total: total
+                };
+                
+                // Log para debugging: verificar valores raw y parseados del cache
+                log.debug('Employee cargado en cache', {
+                    employeeId: employeeId,
+                    rosario: rosario,
+                    alhely: alhely,
+                    gabriela: gabriela,
+                    mineria: mineria,
+                    agro: agro,
+                    prieto: prieto,
+                    otros: otros,
+                    total: total,
+                    rosarioRaw: result.getValue('custentity_comision_rosario'),
+                    rosarioText: result.getText('custentity_comision_rosario'),
+                    gabrielaRaw: result.getValue('custentity_comision_gabriela'),
+                    gabrielaText: result.getText('custentity_comision_gabriela'),
+                    prietoRaw: result.getValue('custentity_comision_prieto'),
+                    prietoText: result.getText('custentity_comision_prieto'),
+                    totalRaw: result.getValue('custentity_comision_total'),
+                    totalText: result.getText('custentity_comision_total')
+                });
+                
+                return true;
+            });
+            
+            // Log para debugging: verificar cuántos Employees se cargaron
+            log.debug('Comisiones de gerentes cargadas', {
+                totalEmployees: Object.keys(comisionesGerentesCache).length,
+                employeeIds: Object.keys(comisionesGerentesCache)
+            });
+        } catch (e) {
+            log.debug('Error al cargar comisiones de gerentes desde Employees', e);
+        }
+        return comisionesGerentesCache;
+    }
+    
+    /**
+     * Obtiene los porcentajes de comisión de gerentes para un Employee específico.
+     * @param {string} employeeId - ID del Employee (Representante de Ventas)
+     * @returns {Object} Objeto con los porcentajes: { rosario: 0.18, alhely: 0.25, ... } o null si no existe
+     */
+    function getComisionesGerentes(employeeId) {
+        if (!employeeId) {
+            return null;
+        }
+        var cache = loadComisionesGerentesCache();
+        return cache[employeeId] || null;
+    }
+    
+    /**
      * Obtiene el porcentaje de comisión según el margen
      * Busca en los parámetros cargados o usa valores por defecto
      */
@@ -955,6 +1129,11 @@ function(serverWidget, search, file, encode, log, record) {
         };
         
         var results = executeInvoiceSearch(filters);
+        
+        // Calcular fórmulas de Excel para cada resultado
+        results.forEach(function(row) {
+            calculateExcelFormulas(row);
+        });
         
         var form = createReportForm(results, context.request.scriptId, context.request.deploymentId, filters);
         
@@ -1407,55 +1586,63 @@ function(serverWidget, search, file, encode, log, record) {
         });
         field35.updateDisplayType({ displayType: serverWidget.FieldDisplayType.READONLY });
         
-        // Columnas de comisiones por gerente
+        // Columnas de porcentajes de comisión por gerente (mostrar tal cual del registro Employee)
         var field36 = resultsSublist.addField({
-            id: 'custpage_comision_rosario',
-            type: serverWidget.FieldType.CURRENCY,
+            id: 'custpage_porcentaje_rosario',
+            type: serverWidget.FieldType.PERCENT,
             label: 'ROSARIO'
         });
         field36.updateDisplayType({ displayType: serverWidget.FieldDisplayType.READONLY });
         
         var field37 = resultsSublist.addField({
-            id: 'custpage_comision_alhely',
-            type: serverWidget.FieldType.CURRENCY,
+            id: 'custpage_porcentaje_alhely',
+            type: serverWidget.FieldType.PERCENT,
             label: 'ALHELY'
         });
         field37.updateDisplayType({ displayType: serverWidget.FieldDisplayType.READONLY });
         
         var field38 = resultsSublist.addField({
-            id: 'custpage_comision_gabriela',
-            type: serverWidget.FieldType.CURRENCY,
+            id: 'custpage_porcentaje_gabriela',
+            type: serverWidget.FieldType.PERCENT,
             label: 'GABRIELA'
         });
         field38.updateDisplayType({ displayType: serverWidget.FieldDisplayType.READONLY });
         
         var field39 = resultsSublist.addField({
-            id: 'custpage_comision_mineria',
-            type: serverWidget.FieldType.CURRENCY,
+            id: 'custpage_porcentaje_mineria',
+            type: serverWidget.FieldType.PERCENT,
             label: 'MINERIA'
         });
         field39.updateDisplayType({ displayType: serverWidget.FieldDisplayType.READONLY });
         
         var field40 = resultsSublist.addField({
-            id: 'custpage_comision_agro',
-            type: serverWidget.FieldType.CURRENCY,
+            id: 'custpage_porcentaje_agro',
+            type: serverWidget.FieldType.PERCENT,
             label: 'AGRO'
         });
         field40.updateDisplayType({ displayType: serverWidget.FieldDisplayType.READONLY });
         
         var field41 = resultsSublist.addField({
-            id: 'custpage_comision_prieto',
-            type: serverWidget.FieldType.CURRENCY,
+            id: 'custpage_porcentaje_prieto',
+            type: serverWidget.FieldType.PERCENT,
             label: 'PRIETO'
         });
         field41.updateDisplayType({ displayType: serverWidget.FieldDisplayType.READONLY });
         
         var field42 = resultsSublist.addField({
-            id: 'custpage_comision_otros',
-            type: serverWidget.FieldType.CURRENCY,
+            id: 'custpage_porcentaje_otros',
+            type: serverWidget.FieldType.PERCENT,
             label: 'OTROS'
         });
         field42.updateDisplayType({ displayType: serverWidget.FieldDisplayType.READONLY });
+        
+        // Campo Comisión Total (porcentaje tal cual del registro Employee)
+        var field43 = resultsSublist.addField({
+            id: 'custpage_porcentaje_total',
+            type: serverWidget.FieldType.PERCENT,
+            label: 'Comisión Total'
+        });
+        field43.updateDisplayType({ displayType: serverWidget.FieldDisplayType.READONLY });
         
         // Llenar la sublist con los resultados (asegurar que value nunca sea undefined ni NaN)
         results.forEach(function(row, index) {
@@ -1670,47 +1857,55 @@ function(serverWidget, search, file, encode, log, record) {
                 value: safeNum(row.ingresoCasa)
             });
             
-            // Comisiones por gerente
+            // Porcentajes de comisión por gerente (mostrar tal cual del registro Employee, sin cálculos)
+            // Los porcentajes ya están en formato decimal (0.0018 = 0.18%), pero NetSuite espera valores entre 0 y 1 para campos PERCENT
             resultsSublist.setSublistValue({
-                id: 'custpage_comision_rosario',
+                id: 'custpage_porcentaje_rosario',
                 line: index,
-                value: safeNum(row.comisionRosario)
+                value: safeNum(row.porcentajeComisionRosario)
             });
             
             resultsSublist.setSublistValue({
-                id: 'custpage_comision_alhely',
+                id: 'custpage_porcentaje_alhely',
                 line: index,
-                value: safeNum(row.comisionAlhely)
+                value: safeNum(row.porcentajeComisionAlhely)
             });
             
             resultsSublist.setSublistValue({
-                id: 'custpage_comision_gabriela',
+                id: 'custpage_porcentaje_gabriela',
                 line: index,
-                value: safeNum(row.comisionGabriela)
+                value: safeNum(row.porcentajeComisionGabriela)
             });
             
             resultsSublist.setSublistValue({
-                id: 'custpage_comision_mineria',
+                id: 'custpage_porcentaje_mineria',
                 line: index,
-                value: safeNum(row.comisionMineria)
+                value: safeNum(row.porcentajeComisionMineria)
             });
             
             resultsSublist.setSublistValue({
-                id: 'custpage_comision_agro',
+                id: 'custpage_porcentaje_agro',
                 line: index,
-                value: safeNum(row.comisionAgro)
+                value: safeNum(row.porcentajeComisionAgro)
             });
             
             resultsSublist.setSublistValue({
-                id: 'custpage_comision_prieto',
+                id: 'custpage_porcentaje_prieto',
                 line: index,
-                value: safeNum(row.comisionPrieto)
+                value: safeNum(row.porcentajeComisionPrieto)
             });
             
             resultsSublist.setSublistValue({
-                id: 'custpage_comision_otros',
+                id: 'custpage_porcentaje_otros',
                 line: index,
-                value: safeNum(row.comisionOtros)
+                value: safeNum(row.porcentajeComisionOtros)
+            });
+            
+            // Comisión Total (porcentaje tal cual del registro Employee)
+            resultsSublist.setSublistValue({
+                id: 'custpage_porcentaje_total',
+                line: index,
+                value: safeNum(row.porcentajeComisionTotal)
             });
         });
         
@@ -1854,7 +2049,7 @@ function(serverWidget, search, file, encode, log, record) {
         html += '<th>Comisión</th>';
         html += '<th>Utilidad Después Comisiones</th>';
         html += '<th>Margen Final</th>';
-        // Columnas de comisiones por gerente
+        // Columnas de porcentajes de comisión por gerente (mostrar tal cual del registro Employee)
         html += '<th>ROSARIO</th>';
         html += '<th>ALHELY</th>';
         html += '<th>GABRIELA</th>';
@@ -1862,6 +2057,7 @@ function(serverWidget, search, file, encode, log, record) {
         html += '<th>AGRO</th>';
         html += '<th>PRIETO</th>';
         html += '<th>OTROS</th>';
+        html += '<th>Comisión Total</th>';
         html += '</tr></thead><tbody>';
         
         results.forEach(function(row) {
@@ -1916,14 +2112,15 @@ function(serverWidget, search, file, encode, log, record) {
             html += '<td>$' + formatNumber(row.comisionTotal || 0) + '</td>';
             html += '<td>$' + formatNumber(row.utilidadDespuesComisiones || 0) + '</td>';
             html += '<td>' + formatPercent(row.margenFinal || 0) + '</td>';
-            // Comisiones por gerente
-            html += '<td>$' + formatNumber(row.comisionRosario || 0) + '</td>';
-            html += '<td>$' + formatNumber(row.comisionAlhely || 0) + '</td>';
-            html += '<td>$' + formatNumber(row.comisionGabriela || 0) + '</td>';
-            html += '<td>$' + formatNumber(row.comisionMineria || 0) + '</td>';
-            html += '<td>$' + formatNumber(row.comisionAgro || 0) + '</td>';
-            html += '<td>$' + formatNumber(row.comisionPrieto || 0) + '</td>';
-            html += '<td>$' + formatNumber(row.comisionOtros || 0) + '</td>';
+            // Porcentajes de comisión por gerente (mostrar tal cual del registro Employee)
+            html += '<td>' + formatPercent(row.porcentajeComisionRosario || 0) + '</td>';
+            html += '<td>' + formatPercent(row.porcentajeComisionAlhely || 0) + '</td>';
+            html += '<td>' + formatPercent(row.porcentajeComisionGabriela || 0) + '</td>';
+            html += '<td>' + formatPercent(row.porcentajeComisionMineria || 0) + '</td>';
+            html += '<td>' + formatPercent(row.porcentajeComisionAgro || 0) + '</td>';
+            html += '<td>' + formatPercent(row.porcentajeComisionPrieto || 0) + '</td>';
+            html += '<td>' + formatPercent(row.porcentajeComisionOtros || 0) + '</td>';
+            html += '<td>' + formatPercent(row.porcentajeComisionTotal || 0) + '</td>';
             html += '</tr>';
         });
         
@@ -1973,7 +2170,7 @@ function(serverWidget, search, file, encode, log, record) {
                 '% Comisión Tipo C', 'Comisión Tipo C', '% Comisión Adicional', 'Comisión Adicional',
                 'Suma % Comisiones', 'Comisión Total Porcentajes', 'Utilidad Después Comisiones',
                 'Margen Final',
-                'ROSARIO', 'ALHELY', 'GABRIELA', 'MINERIA', 'AGRO', 'PRIETO', 'OTROS'
+                'ROSARIO', 'ALHELY', 'GABRIELA', 'MINERIA', 'AGRO', 'PRIETO', 'OTROS', 'Comisión Total'
             ];
             
             headers.forEach(function(header) {
@@ -2060,13 +2257,14 @@ function(serverWidget, search, file, encode, log, record) {
                     row.comisionTotalPorcentajes || 0,
                     row.utilidadDespuesComisiones || 0,
                     row.margenFinal || 0,
-                    row.comisionRosario || 0,
-                    row.comisionAlhely || 0,
-                    row.comisionGabriela || 0,
-                    row.comisionMineria || 0,
-                    row.comisionAgro || 0,
-                    row.comisionPrieto || 0,
-                    row.comisionOtros || 0
+                    row.porcentajeComisionRosario || 0,
+                    row.porcentajeComisionAlhely || 0,
+                    row.porcentajeComisionGabriela || 0,
+                    row.porcentajeComisionMineria || 0,
+                    row.porcentajeComisionAgro || 0,
+                    row.porcentajeComisionPrieto || 0,
+                    row.porcentajeComisionOtros || 0,
+                    row.porcentajeComisionTotal || 0
                 ];
                 
                 values.forEach(function(value) {
