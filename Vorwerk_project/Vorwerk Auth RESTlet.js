@@ -154,6 +154,11 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                     values: req_info['rfc']
                 });
             }
+            filters.push({
+                name: 'custentity_creado_desde_presentador',
+                operator: 'is',
+                values: false
+            });
             soColumns = [
                 { name: 'internalid' },
                 { name: 'companyname' },
@@ -1760,6 +1765,11 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                 name: 'serialnumber',
                 operator: 'is',
                 values: req_info['serialnumber']
+            }));
+            itemSearch.filters.push(search.createFilter({
+                name: 'item',
+                operator: 'noneof',
+                values: '2763'
             }));
 
             itemSearch.run().each(function(result) {
