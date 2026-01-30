@@ -205,9 +205,27 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                 });
             });
             
+            // Crear filtros separados para employee (sin el campo custentity_creado_desde_presentador que solo existe en customer)
+            var filters_employee = [];
+            if(valid){
+                for(var x in req_info){
+                    if(x != "type" && x != "rfc"){
+                        filters_employee.push({
+                            name: x,
+                            operator: 'is',
+                            values: req_info[x]
+                        });
+                    }
+                }
+            }else{
+                filters_employee.push({
+                    name: 'email',
+                    operator: 'is',
+                    values: req_info
+                });
+            }
             if(valid_rfc){
-                filters.pop();
-                filters.push({
+                filters_employee.push({
                     name: 'custentity_ce_rfc',
                     operator: 'is',
                     values: req_info['rfc']
@@ -216,7 +234,7 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
             var busqueda = search.create({
                 type: "employee",
                 columns: ['internalid','altname','email','custentity_ce_rfc','custentity_curp','isinactive'],
-                filters: filters
+                filters: filters_employee
             });
 
             var pagedResults = busqueda.runPaged();
