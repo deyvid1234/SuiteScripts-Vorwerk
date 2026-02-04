@@ -53,8 +53,30 @@
  *      leen los porcentajes de comisión de ese Employee. Se calcula: Comisión Gerente = Comisión Total × Porcentaje del Gerente.
  *      Las comisiones se muestran en columnas separadas por cada gerente en el reporte.
  */
-define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/record'],
-function(serverWidget, search, file, encode, log, record) {
+define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/record', 'N/https', 'N/runtime'],
+function(serverWidget, search, file, encode, log, record, https, runtime) {
+    
+    /** Objeto global de tiempos por paso (se rellena con _t() y se registra con _logTimings()) */
+    var _timings = null;
+    /** Marca un paso y registra ms desde el paso anterior (o desde inicio) */
+    function _t(stepName) {
+        var now = Date.now();
+        if (!_timings) {
+            _timings = { start: now, steps: {}, last: now };
+        }
+        _timings.steps[stepName] = now - _timings.last;
+        _timings.last = now;
+    }
+    /** Escribe un solo log de auditoría con todos los tiempos y total; limpia _timings */
+    function _logTimings(accion, registros) {
+        if (!_timings) return;
+        _timings.total_ms = Date.now() - _timings.start;
+        _timings.accion = accion;
+        if (registros != null) _timings.registros = registros;
+        delete _timings._last;
+        log.audit('ReporteRentabilidad Tiempos', JSON.stringify(_timings));
+        _timings = null;
+    }
     
     /**
      * Función principal del Suitelet
@@ -144,15 +166,16 @@ function(serverWidget, search, file, encode, log, record) {
         });
         tipoCambioInternoField.defaultValue = params.tipo_cambio_interno ? parseFloat(params.tipo_cambio_interno) : 18;
         
-        // Campo de período
+        // Campo de período (inicia en blanco -- Ninguno --)
         var periodoField = form.addField({
             id: 'periodo',
             type: serverWidget.FieldType.SELECT,
             label: 'Período',
-            container: 'filtergroup_sec',
-            source: 'accountingperiod'
+            container: 'filtergroup_sec'
         });
-        // No se puede agregar opción vacía a campos con source
+        loadAccountingPeriodOptions().forEach(function(opt) {
+            periodoField.addSelectOption({ value: opt.value, text: opt.text });
+        });
         if (params.periodo) {
             periodoField.defaultValue = params.periodo;
         }
@@ -164,18 +187,9 @@ function(serverWidget, search, file, encode, log, record) {
             label: 'Tipo',
             container: 'filtergroup_sec'
         });
-        tipoField.addSelectOption({
-            value: '',
-            text: '-- Todos --'
-        });
-        tipoField.addSelectOption({
-            value: 'CustInvc',
-            text: 'Factura de Venta'
-        });
-        tipoField.addSelectOption({
-            value: 'CustCred',
-            text: 'Nota de Crédito'
-        });
+        tipoField.addSelectOption({ value: '', text: '-- Todos --' });
+        tipoField.addSelectOption({ value: 'CustInvc', text: 'Factura de Venta' });
+        tipoField.addSelectOption({ value: 'CustCred', text: 'Nota de Crédito' });
         if (params.tipo) {
             tipoField.defaultValue = params.tipo;
         }
@@ -188,7 +202,6 @@ function(serverWidget, search, file, encode, log, record) {
             container: 'filtergroup_sec',
             source: 'classification'
         });
-        // No se puede agregar opción vacía a campos con source
         if (params.clase) {
             claseField.defaultValue = params.clase;
         }
@@ -201,7 +214,6 @@ function(serverWidget, search, file, encode, log, record) {
             container: 'filtergroup_sec',
             source: 'location'
         });
-        // No se puede agregar opción vacía a campos con source
         if (params.ubicacion) {
             ubicacionField.defaultValue = params.ubicacion;
         }
@@ -214,7 +226,6 @@ function(serverWidget, search, file, encode, log, record) {
             container: 'filtergroup_sec',
             source: 'customer'
         });
-        // No se puede agregar opción vacía a campos con source
         if (params.cliente) {
             clienteField.defaultValue = params.cliente;
         }
@@ -227,7 +238,6 @@ function(serverWidget, search, file, encode, log, record) {
             container: 'filtergroup_sec',
             source: 'custcategory'
         });
-        // No se puede agregar opción vacía a campos con source
         if (params.giro_industrial) {
             giroField.defaultValue = params.giro_industrial;
         }
@@ -240,7 +250,6 @@ function(serverWidget, search, file, encode, log, record) {
             container: 'filtergroup_sec',
             source: 'employee'
         });
-        // No se puede agregar opción vacía a campos con source
         if (params.representante_ventas) {
             repVentasField.defaultValue = params.representante_ventas;
         }
@@ -253,7 +262,6 @@ function(serverWidget, search, file, encode, log, record) {
             container: 'filtergroup_sec',
             source: 'item'
         });
-        // No se puede agregar opción vacía a campos con source
         if (params.articulo) {
             articuloField.defaultValue = params.articulo;
         }
@@ -264,6 +272,31 @@ function(serverWidget, search, file, encode, log, record) {
         });
         
         context.response.writePage(form);
+    }
+    
+    /**
+     * Carga opciones de Período contable con primera opción en blanco (-- Ninguno --).
+     * Permite que el filtro Período inicie en blanco.
+     */
+    function loadAccountingPeriodOptions() {
+        var options = [{ value: '', text: '-- Ninguno --' }];
+        try {
+            var periodSearch = search.create({
+                type: 'accountingperiod',
+                filters: [],
+                columns: [search.createColumn({ name: 'internalid' }), search.createColumn({ name: 'periodname' })]
+            });
+            var colId = search.createColumn({ name: 'internalid' });
+            var colName = search.createColumn({ name: 'periodname' });
+            periodSearch.run().each(function(r) {
+                options.push({
+                    value: r.getValue(colId),
+                    text: r.getText(colName) || r.getValue(colName) || r.getValue(colId)
+                });
+                return true;
+            });
+        } catch (e) { /* períodos no disponibles */ }
+        return options;
     }
     
     /**
@@ -423,6 +456,10 @@ function(serverWidget, search, file, encode, log, record) {
         
         // Cargar cache de comisiones de gerentes una sola vez al inicio
         loadComisionesGerentesCache();
+        // Cuenta 5100 y caches por SO/fulfillment (una búsqueda de cuenta por request; impacto por fulfillment cacheado)
+        fulfillmentsBySOCache = {};
+        fulfillmentImpactCache = {};
+        var account5100Id = getAccount5100Id();
         
         var results = [];
         var invoiceSearchPagedData = invoiceSearch.runPaged({ pageSize: 1000 });
@@ -433,17 +470,15 @@ function(serverWidget, search, file, encode, log, record) {
                 var invoiceId = result.getValue(invoiceSearchColInternalId);
                 var salesOrderId = result.getValue(invoiceSearchColCreatedFrom);
                 
-                // Obtener Item Fulfillments relacionados con el Sales Order
+                // Obtener Item Fulfillments relacionados con el Sales Order (cache por salesOrderId)
                 var fulfillments = getItemFulfillmentsBySalesOrder(salesOrderId);
                 
-                // Una línea por línea de invoice: usar solo el primer fulfillment para costo y EPA
-                // (sumar todos los fulfillments triplicaba el costo; cada fulfillment devuelve el total de la transacción)
                 var costoFulfillment = 0;
                 var fulfillmentTranId = '';
                 
                 if (fulfillments.length > 0) {
                     var primerFulfillment = fulfillments[0];
-                    costoFulfillment = getFulfillmentAccountingImpact(primerFulfillment.id, invoiceId) || 0;
+                    costoFulfillment = getFulfillmentAccountingImpact(primerFulfillment.id, invoiceId, account5100Id) || 0;
                     fulfillmentTranId = primerFulfillment.tranid || '';
                 }
                 
@@ -488,8 +523,7 @@ function(serverWidget, search, file, encode, log, record) {
                         accountingImpact: costoFulfillment
                     };
                     
-                    // Cargar cache de descuento proveedor una sola vez
-                    loadDescuentoProveedorCache();
+                    // Descuento proveedor ya cargado en showReport; solo consultar cache
                     var factor = getFactorDescuentoProveedor(row);
                     row.factorDescuento = factor != null ? factor : 0;
                     
@@ -508,35 +542,8 @@ function(serverWidget, search, file, encode, log, record) {
                         row.porcentajeComisionOtros = comisionesGerentes.otros || 0;
                         row.porcentajeComisionTotal = comisionesGerentes.total || 0;
                         
-                        // Log para debugging: verificar valores asignados (solo para el primer Employee encontrado)
-                        if (employeeIdStr && !row._loggedComisiones) {
-                            log.debug('Comisiones de gerentes asignadas', {
-                                employeeId: employeeIdStr,
-                                employeeName: row.representanteVenta,
-                                rosario: row.porcentajeComisionRosario,
-                                alhely: row.porcentajeComisionAlhely,
-                                gabriela: row.porcentajeComisionGabriela,
-                                mineria: row.porcentajeComisionMineria,
-                                agro: row.porcentajeComisionAgro,
-                                prieto: row.porcentajeComisionPrieto,
-                                otros: row.porcentajeComisionOtros,
-                                total: row.porcentajeComisionTotal
-                            });
-                            row._loggedComisiones = true; // Marcar para no repetir el log
-                        }
                     } else {
                         // Si no existe el Employee en el cache, todos los porcentajes son 0
-                        // Log para debugging: verificar si el Employee ID está correcto
-                        if (employeeIdStr) {
-                            var cache = loadComisionesGerentesCache();
-                            log.debug('Employee no encontrado en cache', {
-                                employeeId: employeeIdStr,
-                                employeeIdType: typeof employeeIdStr,
-                                employeeName: row.representanteVenta,
-                                cacheKeys: Object.keys(cache),
-                                cacheKeyTypes: Object.keys(cache).map(function(k) { return typeof k; })
-                            });
-                        }
                         row.porcentajeComisionRosario = 0;
                         row.porcentajeComisionAlhely = 0;
                         row.porcentajeComisionGabriela = 0;
@@ -587,28 +594,32 @@ function(serverWidget, search, file, encode, log, record) {
         return results;
     }
     
+    /** Cache por Sales Order para no repetir búsqueda de fulfillments (mismo SO en muchas líneas) */
+    var fulfillmentsBySOCache = null;
+    
     /**
-     * Obtiene los Item Fulfillments relacionados con un Sales Order
+     * Obtiene los Item Fulfillments relacionados con un Sales Order (usa cache por request)
      */
     function getItemFulfillmentsBySalesOrder(salesOrderId) {
         if (!salesOrderId) {
             return [];
         }
-        
+        if (!fulfillmentsBySOCache) {
+            fulfillmentsBySOCache = {};
+        }
+        if (fulfillmentsBySOCache[salesOrderId]) {
+            return fulfillmentsBySOCache[salesOrderId];
+        }
         var fulfillments = [];
-        
         try {
             var fulfillmentSearch = search.create({
                 type: 'itemfulfillment',
-                filters: [
-                    ['createdfrom', 'anyof', salesOrderId]
-                ],
+                filters: [['createdfrom', 'anyof', salesOrderId]],
                 columns: [
                     search.createColumn({ name: 'internalid' }),
                     search.createColumn({ name: 'tranid' })
                 ]
             });
-            
             fulfillmentSearch.run().each(function(result) {
                 fulfillments.push({
                     id: result.getValue('internalid'),
@@ -617,58 +628,69 @@ function(serverWidget, search, file, encode, log, record) {
                 return true;
             });
         } catch (e) {
-            log.error('Error obteniendo fulfillments para Sales Order ' + salesOrderId, e);
+            log.error('ReporteRentabilidad fulfillments', salesOrderId, e.message || e);
         }
-        
+        fulfillmentsBySOCache[salesOrderId] = fulfillments;
         return fulfillments;
     }
     
+    /** Cache del internalid de la cuenta 5100 (una búsqueda por request) */
+    var account5100IdCache = null;
+    /** Cache de costo por fulfillment (evita repetir búsqueda de posting para el mismo fulfillment) */
+    var fulfillmentImpactCache = null;
+    
     /**
-     * Obtiene el impacto contable de un Item Fulfillment por línea
-     * Busca en accounting posting la cuenta 5100 (Materia Prima) relacionada con el fulfillment
+     * Obtiene el internalid de la cuenta 5100 (Materia Prima). Una sola búsqueda por request.
      */
-    function getFulfillmentAccountingImpact(fulfillmentId, invoiceId) {
+    function getAccount5100Id() {
+        if (account5100IdCache !== null) {
+            return account5100IdCache;
+        }
+        try {
+            var accountSearch = search.create({
+                type: 'account',
+                filters: [['number', 'is', '5100']],
+                columns: [search.createColumn({ name: 'internalid' })]
+            });
+            var id = null;
+            accountSearch.run().each(function(result) {
+                id = result.getValue('internalid');
+                return false;
+            });
+            account5100IdCache = id;
+            return id;
+        } catch (e) {
+            account5100IdCache = '';
+            return '';
+        }
+    }
+    
+    /**
+     * Obtiene el impacto contable de un Item Fulfillment por línea (cuenta 5100).
+     * Usa cache de accountId y cache por fulfillmentId para minimizar búsquedas.
+     */
+    function getFulfillmentAccountingImpact(fulfillmentId, invoiceId, optionalAccountId) {
         if (!fulfillmentId) {
             return 0;
         }
-        
+        if (!fulfillmentImpactCache) {
+            fulfillmentImpactCache = {};
+        }
+        if (fulfillmentImpactCache[fulfillmentId] !== undefined) {
+            return fulfillmentImpactCache[fulfillmentId];
+        }
         try {
-            // Buscar accounting postings relacionados con el fulfillment
-            // Filtrar por la cuenta 5100 (Materia Prima)
-            // Buscar la cuenta por número usando el campo 'number'
-            var accountSearch = search.create({
-                type: 'account',
-                filters: [
-                    ['number', 'is', '5100']
-                ],
-                columns: [
-                    search.createColumn({ name: 'internalid' })
-                ]
-            });
-            
-            var accountId = null;
-            accountSearch.run().each(function(result) {
-                accountId = result.getValue('internalid');
-                return false; // Solo necesitamos el primer resultado
-            });
-            
+            var accountId = optionalAccountId || getAccount5100Id();
             if (!accountId) {
-                log.debug('No se encontró la cuenta 5100');
                 return 0;
             }
-            
-            // Buscar accounting postings del fulfillment para la cuenta 5100
-            // Buscar en las líneas de transacción del fulfillment
             var postingSearch = search.create({
                 type: 'transaction',
                 filters: [
                     ['internalid', 'anyof', fulfillmentId],
-                    'AND',
-                    ['account', 'anyof', accountId],
-                    'AND',
-                    ['posting', 'is', 'T'],
-                    'AND',
-                    ['mainline', 'is', 'F'] // Solo líneas, no la línea principal
+                    'AND', ['account', 'anyof', accountId],
+                    'AND', ['posting', 'is', 'T'],
+                    'AND', ['mainline', 'is', 'F']
                 ],
                 columns: [
                     search.createColumn({ name: 'amount' }),
@@ -676,19 +698,16 @@ function(serverWidget, search, file, encode, log, record) {
                     search.createColumn({ name: 'quantity' })
                 ]
             });
-            
             var totalCosto = 0;
             postingSearch.run().each(function(result) {
                 var amount = parseFloat(result.getValue('amount') || 0);
-                // El amount puede ser negativo dependiendo del tipo de transacción
-                // Sumamos el valor absoluto para obtener el costo total
                 totalCosto += Math.abs(amount);
                 return true;
             });
-            
+            fulfillmentImpactCache[fulfillmentId] = totalCosto;
             return totalCosto;
         } catch (e) {
-            log.error('Error obteniendo impacto contable para Fulfillment ' + fulfillmentId, e);
+            fulfillmentImpactCache[fulfillmentId] = 0;
             return 0;
         }
     }
@@ -755,8 +774,9 @@ function(serverWidget, search, file, encode, log, record) {
         // BI = LOOKUP(BH, PARAMETROS) - porcentaje de comisión según margen
         row.porcentajeComision = getComisionPorMargen(margen);
         
-        // BJ = AZ * BI (comisión total) - donde AZ = AX (utilidad USD)
-        row.comisionTotal = row.utilidadUSD * row.porcentajeComision;
+        // Comisión = % Comisión × Ingreso Casa (porcentaje en decimal: 0.75% → 0.0075)
+        var pctComisionDec = (row.porcentajeComision || 0) > 0.02 ? (row.porcentajeComision / 100) : (row.porcentajeComision || 0);
+        row.comisionTotal = pctComisionDec * (row.ingresoCasa || 0);
         
         // Para las comisiones por tipo (BK, BL, BM, BN) según el Excel:
         // BA, BB, BC, BD son porcentajes que vienen de otras reglas de negocio
@@ -797,9 +817,25 @@ function(serverWidget, search, file, encode, log, record) {
         // VENTAS A 18.00 - podría ser un filtro o cálculo adicional
         row.ventasA18 = 0;
         
-        // NOTA: Los porcentajes de comisión por gerente ya fueron asignados desde el cache del Employee
-        // en executeInvoiceSearch(). Aquí NO se calculan montos, solo se muestran los porcentajes tal cual
-        // del registro Employee. Los cálculos de montos de comisión se harán más adelante con diferentes fórmulas.
+        // Montos de comisión por gerente: (porcentaje/100) × Ingreso Casa
+        // El valor del campo Percent en NetSuite puede venir como "puntos porcentuales" (0.18 = 0.18%), por eso dividimos entre 100
+        var ingresoCasa = row.ingresoCasa || 0;
+        var pct = function(v) { var n = Number(v); return (n !== n || v == null) ? 0 : n; };
+        row.comisionRosario = (pct(row.porcentajeComisionRosario) / 100) * ingresoCasa;
+        row.comisionAlhely = (pct(row.porcentajeComisionAlhely) / 100) * ingresoCasa;
+        row.comisionGabriela = (pct(row.porcentajeComisionGabriela) / 100) * ingresoCasa;
+        row.comisionMineria = (pct(row.porcentajeComisionMineria) / 100) * ingresoCasa;
+        row.comisionAgro = (pct(row.porcentajeComisionAgro) / 100) * ingresoCasa;
+        row.comisionPrieto = (pct(row.porcentajeComisionPrieto) / 100) * ingresoCasa;
+        row.comisionOtros = (pct(row.porcentajeComisionOtros) / 100) * ingresoCasa;
+        row.comisionTotalGerentes = (pct(row.porcentajeComisionTotal) / 100) * ingresoCasa;
+        
+        // Utilidad después de comisiones de gerencia = Utilidad Bruta - Comisión Total compensación
+        row.utilidadDespuesComisionesGerencia = (row.utilidadBruta || 0) - (row.comisionTotalGerentes || 0);
+        
+        // % Margen = Utilidad después de comisiones de gerencia / Ingreso (importe)
+        var ingreso = row.importe || row.montoBase || 0;
+        row.margenDespuesComisionesGerencia = ingreso > 0 ? (row.utilidadDespuesComisionesGerencia || 0) / ingreso : 0;
         
         return row;
     }
@@ -817,34 +853,49 @@ function(serverWidget, search, file, encode, log, record) {
         comisionParamsCache = [];
         
         try {
-            // Buscar Custom Record de tipo "customrecord_parametros_comision" o similar
-            // Ajusta el recordType según tu configuración en NetSuite
+            // Búsqueda global del Custom Record: todos los parámetros de comisión por margen (sin filtro isinactive para evitar errores)
+            var colMin = search.createColumn({ name: 'custrecord_margen_minimo' });
+            var colMax = search.createColumn({ name: 'custrecord_margen_maximo' });
+            var colPct = search.createColumn({ name: 'custrecord_porcentaje_comision' });
             var paramSearch = search.create({
                 type: 'customrecord_parametros_comision',
                 filters: [],
-                columns: [
-                    search.createColumn({ name: 'custrecord_margen_minimo' }),
-                    search.createColumn({ name: 'custrecord_margen_maximo' }),
-                    search.createColumn({ name: 'custrecord_porcentaje_comision' })
-                ]
+                columns: [colMin, colMax, colPct]
             });
+            var runSearch = paramSearch.run();
+            var start = 0;
+            var pageSize = 100;
+            var results;
+            do {
+                results = runSearch.getRange({ start: start, end: start + pageSize });
+                for (var i = 0; i < results.length; i++) {
+                    var result = results[i];
+                    try {
+                        var minVal = parseFloat(result.getValue(colMin) || 0);
+                        var maxVal = parseFloat(result.getValue(colMax) || 100);
+                        var pctRaw = result.getValue(colPct);
+                        var porcentaje = parseFloat(pctRaw) || 0;
+                        if (porcentaje > 1) {
+                            porcentaje = porcentaje / 100;
+                        }
+                        comisionParamsCache.push({
+                            min: minVal,
+                            max: maxVal,
+                            porcentaje: porcentaje
+                        });
+                    } catch (rowErr) { /* fila omitida */ }
+                }
+                start += pageSize;
+            } while (results.length === pageSize);
             
-            paramSearch.run().each(function(result) {
-                comisionParamsCache.push({
-                    min: parseFloat(result.getValue('custrecord_margen_minimo') || 0),
-                    max: parseFloat(result.getValue('custrecord_margen_maximo') || 100),
-                    porcentaje: parseFloat(result.getValue('custrecord_porcentaje_comision') || 0)
+            // Ordenar por margen mínimo descendente para que al buscar se tome el rango correcto
+            if (comisionParamsCache.length > 0) {
+                comisionParamsCache.sort(function(a, b) {
+                    return b.min - a.min;
                 });
-                return true;
-            });
-            
-            // Ordenar por margen mínimo descendente
-            comisionParamsCache.sort(function(a, b) {
-                return b.min - a.min;
-            });
+            }
             
         } catch (e) {
-            log.debug('No se encontró Custom Record de parámetros, usando valores por defecto', e);
             // Valores por defecto basados en el análisis del Excel
             comisionParamsCache = [
                 { min: 20, max: 100, porcentaje: 0.0050 }, // 0.50%
@@ -905,9 +956,7 @@ function(serverWidget, search, file, encode, log, record) {
                 });
                 return true;
             });
-        } catch (e) {
-            log.debug('No se encontró Custom Record Descuento Proveedor o no está configurado', e);
-        }
+        } catch (e) { /* Descuento Proveedor no configurado */ }
         return descuentoProveedorCache;
     }
     
@@ -1032,38 +1081,10 @@ function(serverWidget, search, file, encode, log, record) {
                     otros: otros,
                     total: total
                 };
-                
-                // Log para debugging: verificar valores raw y parseados del cache
-                log.debug('Employee cargado en cache', {
-                    employeeId: employeeId,
-                    rosario: rosario,
-                    alhely: alhely,
-                    gabriela: gabriela,
-                    mineria: mineria,
-                    agro: agro,
-                    prieto: prieto,
-                    otros: otros,
-                    total: total,
-                    rosarioRaw: result.getValue('custentity_comision_rosario'),
-                    rosarioText: result.getText('custentity_comision_rosario'),
-                    gabrielaRaw: result.getValue('custentity_comision_gabriela'),
-                    gabrielaText: result.getText('custentity_comision_gabriela'),
-                    prietoRaw: result.getValue('custentity_comision_prieto'),
-                    prietoText: result.getText('custentity_comision_prieto'),
-                    totalRaw: result.getValue('custentity_comision_total'),
-                    totalText: result.getText('custentity_comision_total')
-                });
-                
                 return true;
             });
-            
-            // Log para debugging: verificar cuántos Employees se cargaron
-            log.debug('Comisiones de gerentes cargadas', {
-                totalEmployees: Object.keys(comisionesGerentesCache).length,
-                employeeIds: Object.keys(comisionesGerentesCache)
-            });
         } catch (e) {
-            log.debug('Error al cargar comisiones de gerentes desde Employees', e);
+            /* comisiones gerentes: usar valores por defecto en silencio */
         }
         return comisionesGerentesCache;
     }
@@ -1082,29 +1103,24 @@ function(serverWidget, search, file, encode, log, record) {
     }
     
     /**
-     * Obtiene el porcentaje de comisión según el margen
-     * Busca en los parámetros cargados o usa valores por defecto
+     * Obtiene el % Comisión según el margen, consultando el arreglo de parámetros (customrecord_parametros_comision).
+     * Regla: margen (ej. 8.85%) se valida contra margen_minimo y margen_maximo; si min <= margen <= max, se usa ese porcentaje.
+     * Ejemplo: margen 8.85% está entre 7.51 y 10 → 0.75%.
      */
     function getComisionPorMargen(margen) {
-        // Convertir margen a porcentaje (0.05 = 5%)
-        var margenPorcentaje = margen * 100;
-        
         var params = loadComisionParams();
+        if (!params || params.length === 0) {
+            return 0;
+        }
+        // Margen en decimal (0.0885 = 8.85%); convertir a puntos para comparar con min/max del registro (7.51, 10)
+        var margenPuntos = (margen == null || isNaN(margen)) ? 0 : (parseFloat(margen) * 100);
         
-        // Buscar el rango que corresponde al margen
+        // Parámetros ordenados por min descendente; tomar el primer rango donde min <= margen <= max
         for (var i = 0; i < params.length; i++) {
-            if (margenPorcentaje >= params[i].min && margenPorcentaje < params[i].max) {
-                var porcentaje = params[i].porcentaje;
-                // Asegurar que el porcentaje esté en formato decimal (0.0050 = 0.50%)
-                // Si viene como 50.0 (50%), convertir a 0.50 (0.50%)
-                if (porcentaje > 1) {
-                    porcentaje = porcentaje / 100;
-                }
-                return porcentaje;
+            if (margenPuntos >= params[i].min && margenPuntos <= params[i].max) {
+                return params[i].porcentaje;
             }
         }
-        
-        // Si no encuentra, retornar 0
         return 0;
     }
     
@@ -1127,16 +1143,25 @@ function(serverWidget, search, file, encode, log, record) {
             articulo: params.articulo || '',
             tipoCambioInterno: params.tipo_cambio_interno ? parseFloat(params.tipo_cambio_interno) : 18
         };
-        
+        _t('inicio');
+        loadComisionParams();
+        _t('comisionParams');
+        loadComisionesGerentesCache();
+        _t('comisionGerentes');
+        loadDescuentoProveedorCache();
+        _t('descuentoProveedor');
         var results = executeInvoiceSearch(filters);
-        
-        // Calcular fórmulas de Excel para cada resultado
+        _t('invoiceSearch');
         results.forEach(function(row) {
             calculateExcelFormulas(row);
         });
-        
-        var form = createReportForm(results, context.request.scriptId, context.request.deploymentId, filters);
-        
+        _t('formulas');
+        var currentScript = runtime.getCurrentScript();
+        var scriptId = currentScript.id;
+        var deploymentId = currentScript.deploymentId;
+        var form = createReportForm(results, scriptId, deploymentId, filters);
+        _t('createForm');
+        _logTimings('showReport', results.length);
         context.response.writePage(form);
     }
     
@@ -1147,6 +1172,43 @@ function(serverWidget, search, file, encode, log, record) {
         var form = serverWidget.createForm({
             title: 'Reporte de Rentabilidad'
         });
+        
+        // Asegurar que al hacer clic en "Regenerar Reporte" se envíe action=show y no se confunda con export
+        var actionField = form.addField({
+            id: 'action',
+            type: serverWidget.FieldType.TEXT,
+            label: 'action'
+        });
+        actionField.updateDisplayType({ displayType: serverWidget.FieldDisplayType.HIDDEN });
+        actionField.defaultValue = 'show';
+        
+        // Botones en la parte superior (mismo estilo ambos)
+        var esc = function(v) { return (v != null && v !== '') ? String(v).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : ''; };
+        var btnStyle = 'display:inline-block;background-color:#4CAF50;color:white;padding:10px 20px;font-size:14px;font-family:Arial,sans-serif;border-radius:4px;border:none;cursor:pointer;text-decoration:none;text-align:center;margin-right:10px;';
+        var exportBtnStyle = 'display:inline-block;background-color:#4CAF50;color:white;padding:10px 20px;font-size:14px;font-family:Arial,sans-serif;border-radius:4px;border:none;cursor:pointer;text-align:center;';
+        var suiteletUrl = '/app/site/hosting/scriptlet.nl?script=' + scriptId + '&deploy=' + deploymentId;
+        var exportFormHtml = '<form method="POST" action="' + suiteletUrl + '" style="display:inline;margin:0;">';
+        exportFormHtml += '<input type="hidden" name="action" value="export">';
+        exportFormHtml += '<input type="hidden" name="invoice_id" value="' + esc(filters.invoiceId) + '">';
+        exportFormHtml += '<input type="hidden" name="fecha_desde" value="' + esc(filters.fechaDesde) + '">';
+        exportFormHtml += '<input type="hidden" name="fecha_hasta" value="' + esc(filters.fechaHasta) + '">';
+        exportFormHtml += '<input type="hidden" name="tipo_cambio_interno" value="' + esc(filters.tipoCambioInterno) + '">';
+        exportFormHtml += '<input type="hidden" name="periodo" value="' + esc(filters.periodo) + '">';
+        exportFormHtml += '<input type="hidden" name="tipo" value="' + esc(filters.tipo) + '">';
+        exportFormHtml += '<input type="hidden" name="clase" value="' + esc(filters.clase) + '">';
+        exportFormHtml += '<input type="hidden" name="ubicacion" value="' + esc(filters.ubicacion) + '">';
+        exportFormHtml += '<input type="hidden" name="cliente" value="' + esc(filters.cliente) + '">';
+        exportFormHtml += '<input type="hidden" name="giro_industrial" value="' + esc(filters.giroIndustrial) + '">';
+        exportFormHtml += '<input type="hidden" name="representante_ventas" value="' + esc(filters.representanteVentas) + '">';
+        exportFormHtml += '<input type="hidden" name="articulo" value="' + esc(filters.articulo) + '">';
+        exportFormHtml += '<button type="submit" style="' + exportBtnStyle + '">Exportar a Excel</button></form>';
+        var accionesGroup = form.addFieldGroup({ id: 'acciones_group', label: 'Acciones' });
+        form.addField({
+            id: 'custpage_acciones_buttons',
+            type: serverWidget.FieldType.INLINEHTML,
+            label: 'Acciones',
+            container: 'acciones_group'
+        }).defaultValue = '<a href="' + suiteletUrl + '" style="' + btnStyle + '">Nueva consulta</a>' + exportFormHtml;
         
         // Grupo de filtros principales (siempre visible)
         var filterGroupMain = form.addFieldGroup({
@@ -1202,17 +1264,14 @@ function(serverWidget, search, file, encode, log, record) {
         filterGroupSec.isCollapsible = true;
         filterGroupSec.isCollapsed = true;
         
-        // Campo de período
+        // Campo de período como texto (evita loadAccountingPeriodOptions y ahorra unidades de gobierno)
         var periodoField = form.addField({
             id: 'periodo',
-            type: serverWidget.FieldType.SELECT,
+            type: serverWidget.FieldType.TEXT,
             label: 'Período',
-            container: 'filtergroup_sec',
-            source: 'accountingperiod'
+            container: 'filtergroup_sec'
         });
-        if (filters.periodo) {
-            periodoField.defaultValue = filters.periodo;
-        }
+        periodoField.defaultValue = filters.periodo || '';
         
         // Campo de tipo
         var tipoField = form.addField({
@@ -1221,18 +1280,9 @@ function(serverWidget, search, file, encode, log, record) {
             label: 'Tipo',
             container: 'filtergroup_sec'
         });
-        tipoField.addSelectOption({
-            value: '',
-            text: '-- Todos --'
-        });
-        tipoField.addSelectOption({
-            value: 'CustInvc',
-            text: 'Factura de Venta'
-        });
-        tipoField.addSelectOption({
-            value: 'CustCred',
-            text: 'Nota de Crédito'
-        });
+        tipoField.addSelectOption({ value: '', text: '-- Todos --' });
+        tipoField.addSelectOption({ value: 'CustInvc', text: 'Factura de Venta' });
+        tipoField.addSelectOption({ value: 'CustCred', text: 'Nota de Crédito' });
         if (filters.tipo) {
             tipoField.defaultValue = filters.tipo;
         }
@@ -1309,12 +1359,17 @@ function(serverWidget, search, file, encode, log, record) {
             articuloField.defaultValue = filters.articulo;
         }
         
-        // Botón de regenerar reporte
-        form.addSubmitButton({
-            label: 'Regenerar Reporte'
+        // Grupo de resumen (totales de interés)
+        var totalIngreso = 0, totalCosto = 0, totalUtilidad = 0, totalComision = 0, totalImporte = 0;
+        results.forEach(function(row) {
+            totalIngreso += row.montoBase || 0;
+            totalCosto += row.costoTotal || 0;
+            totalUtilidad += row.utilidadBruta || 0;
+            totalComision += row.comisionTotal || 0;
+            totalImporte += row.importe || 0;
         });
+        var margenPct = totalIngreso > 0 ? (totalUtilidad / totalIngreso) * 100 : 0;
         
-        // Grupo de resumen
         var summaryGroup = form.addFieldGroup({
             id: 'summary_group',
             label: 'Resumen'
@@ -1327,18 +1382,47 @@ function(serverWidget, search, file, encode, log, record) {
             container: 'summary_group'
         }).defaultValue = '<p><strong>Total de Registros:</strong> ' + results.length + '</p>';
         
-        // Calcular totales
-        var totalImporte = 0;
-        results.forEach(function(row) {
-            totalImporte += row.importe || 0;
-        });
-        
         form.addField({
             id: 'total_importe',
             type: serverWidget.FieldType.INLINEHTML,
             label: 'Importe Total',
             container: 'summary_group'
         }).defaultValue = '<p><strong>Importe Total:</strong> $' + formatNumber(totalImporte) + '</p>';
+        
+        form.addField({
+            id: 'total_ingreso',
+            type: serverWidget.FieldType.INLINEHTML,
+            label: 'Ingreso Total',
+            container: 'summary_group'
+        }).defaultValue = '<p><strong>Ingreso Total:</strong> $' + formatNumber(totalIngreso) + '</p>';
+        
+        form.addField({
+            id: 'total_costo',
+            type: serverWidget.FieldType.INLINEHTML,
+            label: 'Costo Total',
+            container: 'summary_group'
+        }).defaultValue = '<p><strong>Costo Total:</strong> $' + formatNumber(totalCosto) + '</p>';
+        
+        form.addField({
+            id: 'total_utilidad',
+            type: serverWidget.FieldType.INLINEHTML,
+            label: 'Utilidad Bruta',
+            container: 'summary_group'
+        }).defaultValue = '<p><strong>Utilidad Bruta:</strong> $' + formatNumber(totalUtilidad) + '</p>';
+        
+        form.addField({
+            id: 'total_comision',
+            type: serverWidget.FieldType.INLINEHTML,
+            label: 'Comisión Total',
+            container: 'summary_group'
+        }).defaultValue = '<p><strong>Comisión Total:</strong> $' + formatNumber(totalComision) + '</p>';
+        
+        form.addField({
+            id: 'margen_promedio',
+            type: serverWidget.FieldType.INLINEHTML,
+            label: 'Margen Promedio',
+            container: 'summary_group'
+        }).defaultValue = '<p><strong>Margen Promedio:</strong> ' + (margenPct.toFixed(2)) + '%</p>';
         
         // Sublist para mostrar los resultados
         var resultsSublist = form.addSublist({
@@ -1586,69 +1670,149 @@ function(serverWidget, search, file, encode, log, record) {
         });
         field35.updateDisplayType({ displayType: serverWidget.FieldDisplayType.READONLY });
         
-        // Columnas de porcentajes de comisión por gerente (mostrar tal cual del registro Employee)
+        // Columnas de comisión por gerente: intercaladas % y compensación (monto) para cada uno
+        // ROSARIO % → ROSARIO compensación → ALHELY % → ALHELY compensación → ...
         var field36 = resultsSublist.addField({
             id: 'custpage_porcentaje_rosario',
             type: serverWidget.FieldType.PERCENT,
-            label: 'ROSARIO'
+            label: 'ROSARIO %'
         });
         field36.updateDisplayType({ displayType: serverWidget.FieldDisplayType.READONLY });
-        
         var field37 = resultsSublist.addField({
-            id: 'custpage_porcentaje_alhely',
-            type: serverWidget.FieldType.PERCENT,
-            label: 'ALHELY'
+            id: 'custpage_comision_rosario',
+            type: serverWidget.FieldType.CURRENCY,
+            label: 'ROSARIO compensación'
         });
         field37.updateDisplayType({ displayType: serverWidget.FieldDisplayType.READONLY });
         
         var field38 = resultsSublist.addField({
-            id: 'custpage_porcentaje_gabriela',
+            id: 'custpage_porcentaje_alhely',
             type: serverWidget.FieldType.PERCENT,
-            label: 'GABRIELA'
+            label: 'ALHELY %'
         });
         field38.updateDisplayType({ displayType: serverWidget.FieldDisplayType.READONLY });
-        
         var field39 = resultsSublist.addField({
-            id: 'custpage_porcentaje_mineria',
-            type: serverWidget.FieldType.PERCENT,
-            label: 'MINERIA'
+            id: 'custpage_comision_alhely',
+            type: serverWidget.FieldType.CURRENCY,
+            label: 'ALHELY compensación'
         });
         field39.updateDisplayType({ displayType: serverWidget.FieldDisplayType.READONLY });
         
         var field40 = resultsSublist.addField({
-            id: 'custpage_porcentaje_agro',
+            id: 'custpage_porcentaje_gabriela',
             type: serverWidget.FieldType.PERCENT,
-            label: 'AGRO'
+            label: 'GABRIELA %'
         });
         field40.updateDisplayType({ displayType: serverWidget.FieldDisplayType.READONLY });
-        
         var field41 = resultsSublist.addField({
-            id: 'custpage_porcentaje_prieto',
-            type: serverWidget.FieldType.PERCENT,
-            label: 'PRIETO'
+            id: 'custpage_comision_gabriela',
+            type: serverWidget.FieldType.CURRENCY,
+            label: 'GABRIELA compensación'
         });
         field41.updateDisplayType({ displayType: serverWidget.FieldDisplayType.READONLY });
         
         var field42 = resultsSublist.addField({
-            id: 'custpage_porcentaje_otros',
+            id: 'custpage_porcentaje_mineria',
             type: serverWidget.FieldType.PERCENT,
-            label: 'OTROS'
+            label: 'MINERIA %'
         });
         field42.updateDisplayType({ displayType: serverWidget.FieldDisplayType.READONLY });
-        
-        // Campo Comisión Total (porcentaje tal cual del registro Employee)
         var field43 = resultsSublist.addField({
-            id: 'custpage_porcentaje_total',
-            type: serverWidget.FieldType.PERCENT,
-            label: 'Comisión Total'
+            id: 'custpage_comision_mineria',
+            type: serverWidget.FieldType.CURRENCY,
+            label: 'MINERIA compensación'
         });
         field43.updateDisplayType({ displayType: serverWidget.FieldDisplayType.READONLY });
         
-        // Llenar la sublist con los resultados (asegurar que value nunca sea undefined ni NaN)
+        var field44 = resultsSublist.addField({
+            id: 'custpage_porcentaje_agro',
+            type: serverWidget.FieldType.PERCENT,
+            label: 'AGRO %'
+        });
+        field44.updateDisplayType({ displayType: serverWidget.FieldDisplayType.READONLY });
+        var field45 = resultsSublist.addField({
+            id: 'custpage_comision_agro',
+            type: serverWidget.FieldType.CURRENCY,
+            label: 'AGRO compensación'
+        });
+        field45.updateDisplayType({ displayType: serverWidget.FieldDisplayType.READONLY });
+        
+        var field46 = resultsSublist.addField({
+            id: 'custpage_porcentaje_prieto',
+            type: serverWidget.FieldType.PERCENT,
+            label: 'PRIETO %'
+        });
+        field46.updateDisplayType({ displayType: serverWidget.FieldDisplayType.READONLY });
+        var field47 = resultsSublist.addField({
+            id: 'custpage_comision_prieto',
+            type: serverWidget.FieldType.CURRENCY,
+            label: 'PRIETO compensación'
+        });
+        field47.updateDisplayType({ displayType: serverWidget.FieldDisplayType.READONLY });
+        
+        var field48 = resultsSublist.addField({
+            id: 'custpage_porcentaje_otros',
+            type: serverWidget.FieldType.PERCENT,
+            label: 'OTROS %'
+        });
+        field48.updateDisplayType({ displayType: serverWidget.FieldDisplayType.READONLY });
+        var field49 = resultsSublist.addField({
+            id: 'custpage_comision_otros',
+            type: serverWidget.FieldType.CURRENCY,
+            label: 'OTROS compensación'
+        });
+        field49.updateDisplayType({ displayType: serverWidget.FieldDisplayType.READONLY });
+        
+        var field50 = resultsSublist.addField({
+            id: 'custpage_porcentaje_total',
+            type: serverWidget.FieldType.PERCENT,
+            label: 'Comisión Total %'
+        });
+        field50.updateDisplayType({ displayType: serverWidget.FieldDisplayType.READONLY });
+        var field51 = resultsSublist.addField({
+            id: 'custpage_comision_total_gerentes',
+            type: serverWidget.FieldType.CURRENCY,
+            label: 'Comisión Total compensación'
+        });
+        field51.updateDisplayType({ displayType: serverWidget.FieldDisplayType.READONLY });
+        var field52 = resultsSublist.addField({
+            id: 'custpage_utilidad_despues_comisiones_gerencia',
+            type: serverWidget.FieldType.CURRENCY,
+            label: 'UTILIDAD DESPUÉS DE COMISIONES DE GERENCIA'
+        });
+        field52.updateDisplayType({ displayType: serverWidget.FieldDisplayType.READONLY });
+        var field53 = resultsSublist.addField({
+            id: 'custpage_margen_despues_comisiones_gerencia',
+            type: serverWidget.FieldType.TEXT,
+            label: '% Margen'
+        });
+        field53.updateDisplayType({ displayType: serverWidget.FieldDisplayType.READONLY });
+        // % Comisión (custom record por margen) y Comisión (monto USD) al final del orden
+        var field54 = resultsSublist.addField({
+            id: 'custpage_porcentaje_comision',
+            type: serverWidget.FieldType.TEXT,
+            label: '% Comisión'
+        });
+        field54.updateDisplayType({ displayType: serverWidget.FieldDisplayType.READONLY });
+        var field55 = resultsSublist.addField({
+            id: 'custpage_comision_total',
+            type: serverWidget.FieldType.CURRENCY,
+            label: 'Comisión'
+        });
+        field55.updateDisplayType({ displayType: serverWidget.FieldDisplayType.READONLY });
+        
+        // Llenar la sublist con los resultados (value obligatorio y nunca undefined)
+        var safeStr = function(v) {
+            if (v === undefined || v === null) return '';
+            var s = String(v);
+            return (s === 'undefined' || s === 'null') ? '' : s;
+        };
+        var safeNum = function(v) {
+            if (v === undefined || v === null) return 0;
+            var n = Number(v);
+            return (n !== n) ? 0 : n;
+        };
         results.forEach(function(row, index) {
-            var safeStr = function(v) { return (v != null && v !== '') ? String(v) : ''; };
-            var safeNum = function(v) { var n = Number(v); return (n !== n || v == null) ? 0 : n; };
-            
             resultsSublist.setSublistValue({
                 id: 'custpage_customform',
                 line: index,
@@ -1907,21 +2071,78 @@ function(serverWidget, search, file, encode, log, record) {
                 line: index,
                 value: safeNum(row.porcentajeComisionTotal)
             });
+            
+            // Montos: porcentaje × Ingreso Casa (mismos nombres)
+            resultsSublist.setSublistValue({
+                id: 'custpage_comision_rosario',
+                line: index,
+                value: safeNum(row.comisionRosario)
+            });
+            resultsSublist.setSublistValue({
+                id: 'custpage_comision_alhely',
+                line: index,
+                value: safeNum(row.comisionAlhely)
+            });
+            resultsSublist.setSublistValue({
+                id: 'custpage_comision_gabriela',
+                line: index,
+                value: safeNum(row.comisionGabriela)
+            });
+            resultsSublist.setSublistValue({
+                id: 'custpage_comision_mineria',
+                line: index,
+                value: safeNum(row.comisionMineria)
+            });
+            resultsSublist.setSublistValue({
+                id: 'custpage_comision_agro',
+                line: index,
+                value: safeNum(row.comisionAgro)
+            });
+            resultsSublist.setSublistValue({
+                id: 'custpage_comision_prieto',
+                line: index,
+                value: safeNum(row.comisionPrieto)
+            });
+            resultsSublist.setSublistValue({
+                id: 'custpage_comision_otros',
+                line: index,
+                value: safeNum(row.comisionOtros)
+            });
+            resultsSublist.setSublistValue({
+                id: 'custpage_comision_total_gerentes',
+                line: index,
+                value: safeNum(row.comisionTotalGerentes)
+            });
+            resultsSublist.setSublistValue({
+                id: 'custpage_utilidad_despues_comisiones_gerencia',
+                line: index,
+                value: safeNum(row.utilidadDespuesComisionesGerencia)
+            });
+            // % Margen como texto "8.20%" (value nunca undefined)
+            var margenPctStr = (row.margenDespuesComisionesGerencia != null && !isNaN(row.margenDespuesComisionesGerencia))
+                ? (parseFloat(row.margenDespuesComisionesGerencia) * 100).toFixed(2) + '%'
+                : '0.00%';
+            resultsSublist.setSublistValue({
+                id: 'custpage_margen_despues_comisiones_gerencia',
+                line: index,
+                value: margenPctStr || '0.00%'
+            });
+            // % Comisión (custom record): value nunca undefined
+            var pctVal = row.porcentajeComision != null ? parseFloat(row.porcentajeComision) : 0;
+            var pctComisionStr = (pctVal < 0.02)
+                ? (pctVal * 100).toFixed(2) + '%'
+                : (isNaN(pctVal) ? '0.00%' : pctVal.toFixed(2) + '%');
+            resultsSublist.setSublistValue({
+                id: 'custpage_porcentaje_comision',
+                line: index,
+                value: pctComisionStr || '0.00%'
+            });
+            resultsSublist.setSublistValue({
+                id: 'custpage_comision_total',
+                line: index,
+                value: safeNum(row.comisionTotal)
+            });
         });
-        
-        // Botón de exportación a Excel usando HTML inline
-        var exportButtonHtml = '<form method="POST" action="/app/site/hosting/scriptlet.nl?script=' + scriptId + '&deploy=' + deploymentId + '" style="margin: 10px 0;">';
-        exportButtonHtml += '<input type="hidden" name="action" value="export">';
-        exportButtonHtml += '<input type="hidden" name="data" value=\'' + JSON.stringify(results).replace(/'/g, "&#39;") + '\'>';
-        exportButtonHtml += '<button type="submit" style="background-color: #4CAF50; color: white; padding: 10px 20px; border: none; cursor: pointer;">Exportar a Excel</button>';
-        exportButtonHtml += '</form>';
-        
-        form.addField({
-            id: 'export_button',
-            type: serverWidget.FieldType.INLINEHTML,
-            label: 'Exportar',
-            container: 'summary_group'
-        }).defaultValue = exportButtonHtml;
         
         return form;
     }
@@ -1940,8 +2161,8 @@ function(serverWidget, search, file, encode, log, record) {
         html += 'th, td { border: 1px solid #ddd; padding: 6px; text-align: left; }';
         html += 'th { background-color: #4CAF50; color: white; position: sticky; top: 0; }';
         html += 'tr:nth-child(even) { background-color: #f2f2f2; }';
-        html += '.export-btn { background-color: #4CAF50; color: white; padding: 10px 20px; border: none; cursor: pointer; margin: 10px 0; }';
-        html += '.export-btn:hover { background-color: #45a049; }';
+        html += '.report-btn { display:inline-block; background-color:#4CAF50; color:white; padding:10px 20px; font-size:14px; font-family:Arial,sans-serif; border-radius:4px; border:none; cursor:pointer; text-decoration:none; text-align:center; margin-right:10px; }';
+        html += '.report-btn:hover { background-color:#45a049; }';
         html += '.summary { background-color: #e7f3ff; padding: 15px; margin: 20px 0; border-radius: 5px; }';
         html += '</style>';
         html += '</head><body>';
@@ -1968,16 +2189,17 @@ function(serverWidget, search, file, encode, log, record) {
         html += '<div><label>Artículo:</label><br><input type="text" name="articulo" value="' + (filters.articulo || '') + '" placeholder="ID o nombre" style="width: 100%; padding: 5px;"></div>';
         
         html += '<div style="grid-column: span 3; text-align: right; margin-top: 10px;">';
-        html += '<button type="submit" class="export-btn" style="margin-right: 10px;">Regenerar Reporte</button>';
+        var suiteletUrlHtml = '/app/site/hosting/scriptlet.nl?script=' + scriptId + '&deploy=' + deploymentId;
+        html += '<a href="' + suiteletUrlHtml + '" class="report-btn">Nueva consulta</a>';
         html += '</div>';
         html += '</form>';
         html += '</div>';
         
-        // Botón de exportación
-        html += '<form method="POST" action="/app/site/hosting/scriptlet.nl?script=' + scriptId + '&deploy=' + deploymentId + '" style="margin: 10px 0;">';
+        // Exportar a Excel (mismo estilo que Nueva consulta)
+        html += '<form method="POST" action="/app/site/hosting/scriptlet.nl?script=' + scriptId + '&deploy=' + deploymentId + '" style="display:inline;margin:10px 0;">';
         html += '<input type="hidden" name="action" value="export">';
         html += '<input type="hidden" name="data" value=\'' + JSON.stringify(results).replace(/'/g, "&#39;") + '\'>';
-        html += '<button type="submit" class="export-btn">Exportar a Excel</button>';
+        html += '<button type="submit" class="report-btn">Exportar a Excel</button>';
         html += '</form>';
         
         // Resumen
@@ -2045,19 +2267,21 @@ function(serverWidget, search, file, encode, log, record) {
         html += '<th>Utilidad Bruta</th>';
         html += '<th>Utilidad USD</th>';
         html += '<th>Margen</th>';
-        html += '<th>% Comisión</th>';
-        html += '<th>Comisión</th>';
         html += '<th>Utilidad Después Comisiones</th>';
         html += '<th>Margen Final</th>';
-        // Columnas de porcentajes de comisión por gerente (mostrar tal cual del registro Employee)
-        html += '<th>ROSARIO</th>';
-        html += '<th>ALHELY</th>';
-        html += '<th>GABRIELA</th>';
-        html += '<th>MINERIA</th>';
-        html += '<th>AGRO</th>';
-        html += '<th>PRIETO</th>';
-        html += '<th>OTROS</th>';
-        html += '<th>Comisión Total</th>';
+        // Columnas de comisión por gerente: intercaladas % y compensación
+        html += '<th>ROSARIO %</th><th>ROSARIO compensación</th>';
+        html += '<th>ALHELY %</th><th>ALHELY compensación</th>';
+        html += '<th>GABRIELA %</th><th>GABRIELA compensación</th>';
+        html += '<th>MINERIA %</th><th>MINERIA compensación</th>';
+        html += '<th>AGRO %</th><th>AGRO compensación</th>';
+        html += '<th>PRIETO %</th><th>PRIETO compensación</th>';
+        html += '<th>OTROS %</th><th>OTROS compensación</th>';
+        html += '<th>Comisión Total %</th><th>Comisión Total compensación</th>';
+        html += '<th>UTILIDAD DESPUÉS DE COMISIONES DE GERENCIA</th>';
+        html += '<th>% Margen</th>';
+        html += '<th>% Comisión</th>';
+        html += '<th>Comisión</th>';
         html += '</tr></thead><tbody>';
         
         results.forEach(function(row) {
@@ -2108,19 +2332,29 @@ function(serverWidget, search, file, encode, log, record) {
             html += '<td>$' + formatNumber(row.utilidadBruta || 0) + '</td>';
             html += '<td>$' + formatNumber(row.utilidadUSD || 0) + '</td>';
             html += '<td>' + formatPercent(row.margen || 0) + '</td>';
-            html += '<td>' + formatPercent(row.porcentajeComision || 0) + '</td>';
-            html += '<td>$' + formatNumber(row.comisionTotal || 0) + '</td>';
             html += '<td>$' + formatNumber(row.utilidadDespuesComisiones || 0) + '</td>';
             html += '<td>' + formatPercent(row.margenFinal || 0) + '</td>';
-            // Porcentajes de comisión por gerente (mostrar tal cual del registro Employee)
+            // Comisión por gerente: intercalados % y compensación
             html += '<td>' + formatPercent(row.porcentajeComisionRosario || 0) + '</td>';
+            html += '<td>$' + formatNumber(row.comisionRosario || 0) + '</td>';
             html += '<td>' + formatPercent(row.porcentajeComisionAlhely || 0) + '</td>';
+            html += '<td>$' + formatNumber(row.comisionAlhely || 0) + '</td>';
             html += '<td>' + formatPercent(row.porcentajeComisionGabriela || 0) + '</td>';
+            html += '<td>$' + formatNumber(row.comisionGabriela || 0) + '</td>';
             html += '<td>' + formatPercent(row.porcentajeComisionMineria || 0) + '</td>';
+            html += '<td>$' + formatNumber(row.comisionMineria || 0) + '</td>';
             html += '<td>' + formatPercent(row.porcentajeComisionAgro || 0) + '</td>';
+            html += '<td>$' + formatNumber(row.comisionAgro || 0) + '</td>';
             html += '<td>' + formatPercent(row.porcentajeComisionPrieto || 0) + '</td>';
+            html += '<td>$' + formatNumber(row.comisionPrieto || 0) + '</td>';
             html += '<td>' + formatPercent(row.porcentajeComisionOtros || 0) + '</td>';
+            html += '<td>$' + formatNumber(row.comisionOtros || 0) + '</td>';
             html += '<td>' + formatPercent(row.porcentajeComisionTotal || 0) + '</td>';
+            html += '<td>$' + formatNumber(row.comisionTotalGerentes || 0) + '</td>';
+            html += '<td>$' + formatNumber(row.utilidadDespuesComisionesGerencia || 0) + '</td>';
+            html += '<td>' + formatPercent(row.margenDespuesComisionesGerencia || 0) + '</td>';
+            html += '<td>' + formatPercentComision(row.porcentajeComision) + '</td>';
+            html += '<td>$' + formatNumber(row.comisionTotal || 0) + '</td>';
             html += '</tr>';
         });
         
@@ -2132,81 +2366,143 @@ function(serverWidget, search, file, encode, log, record) {
     }
     
     /**
-     * Exporta los resultados a Excel
+     * Obtiene el ID de carpeta del File Cabinet donde guardar el Excel exportado.
+     * NetSuite requiere folder en file.save(). Busca "SuiteScripts" o "Reports", sino usa -15.
+     */
+    function getReportExportFolderId() {
+        try {
+            var colId = search.createColumn({ name: 'internalid' });
+            var folderSearch = search.create({
+                type: 'folder',
+                filters: [['name', 'is', 'SuiteScripts']],
+                columns: [colId]
+            });
+            var results = folderSearch.run().getRange({ start: 0, end: 1 });
+            if (results.length > 0) {
+                return results[0].getValue(colId);
+            }
+        } catch (e) { }
+        return -15;
+    }
+    
+    /**
+     * Formatea fecha para Excel (row.fecha puede ser objeto Date, string ISO o string ya formateado)
+     */
+    function formatFechaForExport(val) {
+        if (val == null || val === '') return '';
+        var d;
+        if (typeof val === 'string') {
+            if (/^\d{4}-\d{2}-\d{2}/.test(val)) {
+                d = new Date(val);
+                if (isNaN(d.getTime())) return val;
+            } else {
+                return val;
+            }
+        } else if (val instanceof Date) {
+            d = val;
+        } else {
+            return String(val);
+        }
+        var day = ('0' + d.getDate()).slice(-2);
+        var month = ('0' + (d.getMonth() + 1)).slice(-2);
+        var year = d.getFullYear();
+        return day + '/' + month + '/' + year;
+    }
+    
+    /**
+     * Exporta los resultados a Excel. Usa los mismos filtros del POST (no envía datos en el request para evitar error 500 por tamaño).
+     * Vuelve a ejecutar la búsqueda y genera el Excel. Descarga directa.
      */
     function exportToExcel(context) {
+        var headersSent = false;
         try {
             var params = context.request.parameters;
-            var results = JSON.parse(params.data);
-            
-            var xmlStr = '<?xml version="1.0"?><?mso-application progid="Excel.Sheet"?>';
+            var filters = {
+                invoiceId: params.invoice_id || '',
+                fechaDesde: params.fecha_desde,
+                fechaHasta: params.fecha_hasta,
+                periodo: params.periodo || '',
+                tipo: params.tipo || '',
+                clase: params.clase || '',
+                ubicacion: params.ubicacion || '',
+                cliente: params.cliente || '',
+                giroIndustrial: params.giro_industrial || '',
+                representanteVentas: params.representante_ventas || '',
+                articulo: params.articulo || '',
+                tipoCambioInterno: params.tipo_cambio_interno ? parseFloat(params.tipo_cambio_interno) : 18
+            };
+            _t('inicio');
+            loadComisionParams();
+            _t('comisionParams');
+            loadComisionesGerentesCache();
+            _t('comisionGerentes');
+            loadDescuentoProveedorCache();
+            _t('descuentoProveedor');
+            var results = executeInvoiceSearch(filters);
+            _t('invoiceSearch');
+            results.forEach(function(row) {
+                calculateExcelFormulas(row);
+            });
+            _t('formulas');
+            var xmlStr = '<?xml version="1.0" encoding="UTF-8"?><?mso-application progid="Excel.Sheet"?>';
             xmlStr += '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" ';
             xmlStr += 'xmlns:o="urn:schemas-microsoft-com:office:office" ';
             xmlStr += 'xmlns:x="urn:schemas-microsoft-com:office:excel" ';
             xmlStr += 'xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet" ';
             xmlStr += 'xmlns:html="http://www.w3.org/TR/REC-html40">';
+            xmlStr += '<Worksheet ss:Name="Rentabilidad"><Table>';
             
-            xmlStr += '<Worksheet ss:Name="Rentabilidad">';
-            xmlStr += '<Table>';
-            
-            // Encabezados
-            xmlStr += '<Row>';
+            // Encabezados: mismo orden que el Suitelet
             var headers = [
-                'ID Interno', 'Formulario', 'Fecha', 'Período', 'Tipo', 'Clase', 'Ubicación',
-                'FV', 'OV', 'EPA', 'Cliente', 'GIRO INDUSTRIAL', 'Artículo', 'Representante de Ventas',
-                'Cantidad', 'Importe', 'Método de Entrega', 'Costo Transporte',
-                'Tipo de Cambio', 'Moneda', 'Tax Code', 'Objeto de Impuesto', 'COSTO', 'Factor Descuento', 'Nota Crédito Proveedor',
-                'Transporte', 'Costo Total', 'Utilidad Bruta', 'Margen MN',
+                'Formulario', 'Fecha', 'Período', 'Tipo', 'Clase', 'Ubicación', 'FV', 'OV', 'EPA',
+                'Cliente', 'GIRO INDUSTRIAL', 'Representante de Ventas', 'Método de Entrega', 'Artículo',
+                'Cantidad', 'Costo Transporte', 'Código de Impuesto', 'Ingreso', 'Tipo de Cambio', 'Moneda',
+                'Factor Descuento', 'Nota Crédito Proveedor', 'COSTO', 'Transporte', 'Costo Total', 'Utilidad Bruta', 'Margen MN',
                 'INGRESO USD', 'COSTO USD', 'TRANSPORTE USD', 'NOTA CRÉDITO PROVEEDOR USD', 'COSTO TOTAL USD', 'UTILIDAD BRUTA USD', 'Ingreso Casa',
-                'Costo Transporte por Producto', 'Costo por Línea V2',
-                'Costo por Línea', 'Utilidad Bruta por Item', 'Utilidad Est. Item Pesos',
-                'Utilidad Est. Item USD', 'Monto USD', 'Porcentaje',
-                'Términos', 'Fecha Ajustada Vencimiento', 'Proveedor Preferido',
-                'Monto Base', 'Costo Base', 'Monto Base USD', 'Costo Base USD',
-                'Costo Base por Cantidad', 'Costo Transporte Calculado', 'Costo Total',
-                'Utilidad Bruta', 'Costo Base por Cantidad USD', 'Costo Transporte USD',
-                'Costo Total USD', 'Utilidad USD', 'Margen', '% Comisión', 'Comisión Total',
-                '% Comisión Tipo A', 'Comisión Tipo A', '% Comisión Tipo B', 'Comisión Tipo B',
-                '% Comisión Tipo C', 'Comisión Tipo C', '% Comisión Adicional', 'Comisión Adicional',
-                'Suma % Comisiones', 'Comisión Total Porcentajes', 'Utilidad Después Comisiones',
-                'Margen Final',
-                'ROSARIO', 'ALHELY', 'GABRIELA', 'MINERIA', 'AGRO', 'PRIETO', 'OTROS', 'Comisión Total'
+                'ROSARIO %', 'ROSARIO compensación', 'ALHELY %', 'ALHELY compensación', 'GABRIELA %', 'GABRIELA compensación',
+                'MINERIA %', 'MINERIA compensación', 'AGRO %', 'AGRO compensación', 'PRIETO %', 'PRIETO compensación',
+                'OTROS %', 'OTROS compensación', 'Comisión Total %', 'Comisión Total compensación',
+                'UTILIDAD DESPUÉS DE COMISIONES DE GERENCIA', '% Margen', '% Comisión', 'Comisión'
             ];
-            
+            xmlStr += '<Row>';
             headers.forEach(function(header) {
                 xmlStr += '<Cell><Data ss:Type="String">' + escapeXml(header) + '</Data></Cell>';
             });
             xmlStr += '</Row>';
             
-            // Datos
+            // Porcentaje como texto para columnas %
+            function pctToStr(v) {
+                if (v == null || isNaN(v)) return '0.00%';
+                var n = parseFloat(v);
+                return (n < 0.02) ? (n * 100).toFixed(2) + '%' : n.toFixed(2) + '%';
+            }
+            
             results.forEach(function(row) {
                 xmlStr += '<Row>';
                 var values = [
-                    row.internalId || '',
                     row.customForm || '',
-                    row.tranDate || '',
-                    row.period || '',
+                    formatFechaForExport(row.fecha),
+                    row.periodo || '',
                     row.type || '',
-                    row.itemClassification || '',
-                    row.location || '',
+                    row.clase || '',
+                    row.ubicacion || '',
                     row.numeroDocumento || '',
                     row.salesOrderTranId || '',
                     row.fulfillmentTranId || '',
                     row.cliente || '',
                     row.giroIndustrial || '',
-                    row.articulo || '',
                     row.representanteVenta || '',
-                    row.cantidad || 0,
-                    row.importe || 0,
                     row.metodoEntrega || '',
-                    row.costoTransporteCreated || 0,
-                    row.tipoCambio || 0,
-                    row.moneda || '',
+                    row.articulo || '',
+                    row.cantidad != null ? row.cantidad : 0,
+                    row.costoTransporteCreated != null ? row.costoTransporteCreated : 0,
                     row.taxCode || '',
-                    row.taxItem || '',
-                    row.costo || 0,
+                    row.importe != null ? row.importe : 0,
+                    row.tipoCambio != null ? row.tipoCambio : 0,
+                    row.moneda || '',
                     row.factorDescuento != null ? row.factorDescuento : 0,
-                    row.notaCreditoProveedor || 0,
+                    row.notaCreditoProveedor != null ? row.notaCreditoProveedor : 0,
+                    row.costo != null ? row.costo : 0,
                     row.transporte != null ? row.transporte : 0,
                     row.costoTotal != null ? row.costoTotal : 0,
                     row.utilidadBruta != null ? row.utilidadBruta : 0,
@@ -2218,55 +2514,29 @@ function(serverWidget, search, file, encode, log, record) {
                     row.costoTotalUSD != null ? row.costoTotalUSD : 0,
                     row.utilidadBrutaUSD != null ? row.utilidadBrutaUSD : 0,
                     row.ingresoCasa != null ? row.ingresoCasa : 0,
-                    row.costoTransportePorProducto || 0,
-                    row.costoPorLineaV2 || 0,
-                    row.costoPorLinea || 0,
-                    row.utilidadBrutaPorItem || 0,
-                    row.utilidadEstItemPesos || 0,
-                    row.utilidadEstItemUSD || 0,
-                    row.montoUSD || 0,
-                    // El porcentaje viene como decimal, convertir correctamente para Excel
-                    (row.porcentaje || 0) > 1 ? (row.porcentaje / 100) : (row.porcentaje || 0),
-                    row.customerMainTerms || '',
-                    row.fechaAjustadaDeVencimiento || '',
-                    row.itemPreferredVendor || '',
-                    row.montoBase || 0,
-                    row.costoBase || 0,
-                    row.montoBaseUSD || 0,
-                    row.costoBaseUSD || 0,
-                    row.costoBasePorCantidad || 0,
-                    row.costoTransporteCalculado || 0,
-                    row.costoTotal || 0,
-                    row.utilidadBruta || 0,
-                    row.costoBasePorCantidadUSD || 0,
-                    row.costoTransporteUSD || 0,
-                    row.costoTotalUSD || 0,
-                    row.utilidadUSD || 0,
-                    row.margen || 0,
-                    row.porcentajeComision || 0,
-                    row.comisionTotal || 0,
-                    row.porcentajeComisionTipoA || 0,
-                    row.comisionTipoA || 0,
-                    row.porcentajeComisionTipoB || 0,
-                    row.comisionTipoB || 0,
-                    row.porcentajeComisionTipoC || 0,
-                    row.comisionTipoC || 0,
-                    row.porcentajeComisionAdicional || 0,
-                    row.comisionAdicional || 0,
-                    row.sumaPorcentajesComision || 0,
-                    row.comisionTotalPorcentajes || 0,
-                    row.utilidadDespuesComisiones || 0,
-                    row.margenFinal || 0,
-                    row.porcentajeComisionRosario || 0,
-                    row.porcentajeComisionAlhely || 0,
-                    row.porcentajeComisionGabriela || 0,
-                    row.porcentajeComisionMineria || 0,
-                    row.porcentajeComisionAgro || 0,
-                    row.porcentajeComisionPrieto || 0,
-                    row.porcentajeComisionOtros || 0,
-                    row.porcentajeComisionTotal || 0
+                    pctToStr(row.porcentajeComisionRosario),
+                    row.comisionRosario != null ? row.comisionRosario : 0,
+                    pctToStr(row.porcentajeComisionAlhely),
+                    row.comisionAlhely != null ? row.comisionAlhely : 0,
+                    pctToStr(row.porcentajeComisionGabriela),
+                    row.comisionGabriela != null ? row.comisionGabriela : 0,
+                    pctToStr(row.porcentajeComisionMineria),
+                    row.comisionMineria != null ? row.comisionMineria : 0,
+                    pctToStr(row.porcentajeComisionAgro),
+                    row.comisionAgro != null ? row.comisionAgro : 0,
+                    pctToStr(row.porcentajeComisionPrieto),
+                    row.comisionPrieto != null ? row.comisionPrieto : 0,
+                    pctToStr(row.porcentajeComisionOtros),
+                    row.comisionOtros != null ? row.comisionOtros : 0,
+                    pctToStr(row.porcentajeComisionTotal),
+                    row.comisionTotalGerentes != null ? row.comisionTotalGerentes : 0,
+                    row.utilidadDespuesComisionesGerencia != null ? row.utilidadDespuesComisionesGerencia : 0,
+                    (row.margenDespuesComisionesGerencia != null && !isNaN(row.margenDespuesComisionesGerencia))
+                        ? (parseFloat(row.margenDespuesComisionesGerencia) * 100).toFixed(2) + '%'
+                        : '0.00%',
+                    formatPercentComision(row.porcentajeComision),
+                    row.comisionTotal != null ? row.comisionTotal : 0
                 ];
-                
                 values.forEach(function(value) {
                     if (typeof value === 'number') {
                         xmlStr += '<Cell><Data ss:Type="Number">' + value + '</Data></Cell>';
@@ -2279,25 +2549,49 @@ function(serverWidget, search, file, encode, log, record) {
             
             xmlStr += '</Table></Worksheet></Workbook>';
             
+            // Guardar en File Cabinet y redirigir a descarga (evita límites de respuesta y "Error inesperado")
             var strXmlEncoded = encode.convert({
                 string: xmlStr,
                 inputEncoding: encode.Encoding.UTF_8,
                 outputEncoding: encode.Encoding.BASE_64
             });
-            
+            var filename = 'Reporte_Rentabilidad_' + (new Date().getTime()) + '.xls';
             var objXlsFile = file.create({
-                name: 'Reporte_Rentabilidad_' + new Date().getTime() + '.xls',
+                name: filename,
                 fileType: file.Type.EXCEL,
                 contents: strXmlEncoded
             });
-            
-            var intFileId = objXlsFile.save();
-            
-            context.response.write(JSON.stringify({ success: true, fileId: intFileId }));
+            _t('excelBuild');
+            objXlsFile.folder = getReportExportFolderId();
+            var fileId = objXlsFile.save();
+            _t('fileSave');
+            _logTimings('exportToExcel', results.length);
+            headersSent = true;
+            context.response.sendRedirect({
+                type: https.RedirectType.MEDIA_ITEM,
+                identifier: fileId
+            });
             
         } catch (e) {
-            log.error('Error al exportar a Excel', e);
-            context.response.write(JSON.stringify({ success: false, error: e.toString() }));
+            log.error('Export Excel', e.message || e.name || String(e));
+            if (!headersSent) {
+                sendExportErrorPage(context, (e.message || e.toString()) + '. Revise el log de ejecución del script para más detalles.');
+            }
+        }
+    }
+    
+    /**
+     * Escribe una página de error HTML cuando falla la exportación (para que el usuario vea el mensaje y no "Error inesperado").
+     */
+    function sendExportErrorPage(context, message) {
+        try {
+            var safeMsg = String(message || 'Error inesperado.').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+            context.response.setHeader({ name: 'Content-Type', value: 'text/html; charset=UTF-8' });
+            context.response.write('<html><head><meta charset="UTF-8"><title>Error exportación</title></head><body style="font-family:sans-serif;padding:20px;">');
+            context.response.write('<h2>Error al exportar a Excel</h2><p>' + safeMsg + '</p>');
+            context.response.write('<p><a href="javascript:history.back()">Volver al reporte</a></p></body></html>');
+        } catch (err) {
+            log.error('ReporteRentabilidad sendExportErrorPage', err.message || err);
         }
     }
     
@@ -2310,11 +2604,20 @@ function(serverWidget, search, file, encode, log, record) {
     }
     
     /**
-     * Formatea un porcentaje
+     * Formatea un porcentaje (valor decimal 0.05 = 5%)
      */
     function formatPercent(num) {
         if (num == null || isNaN(num)) return '0.00%';
         return (parseFloat(num) * 100).toFixed(2) + '%';
+    }
+    
+    /**
+     * Formatea % Comisión del custom record: puede venir en decimal (0.0075) o en puntos (0.75 = 0.75%). Siempre mostrar como 0.75%.
+     */
+    function formatPercentComision(val) {
+        if (val == null || isNaN(val)) return '0.00%';
+        var n = parseFloat(val);
+        return (n < 0.02) ? (n * 100).toFixed(2) + '%' : n.toFixed(2) + '%';
     }
     
     /**
