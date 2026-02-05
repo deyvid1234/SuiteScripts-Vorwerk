@@ -1172,6 +1172,7 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
             var tiene_kit = false;
             
             // Recorrer todos los items del request
+            var item_financiamiento = "1441"; // Item costo por financiamiento
             for(var x in req_info.items){
                 var item_mine = req_info.items[x];
                 var item_id = String(item_mine.item_id);
@@ -1185,10 +1186,18 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                 } else if(item_id == item_kit){
                     tiene_kit = true;
                     items_getm7_kit.push(item_mine);
+                } else if(item_id == item_financiamiento){
+                    // Item costo por financiamiento se agrega a la orden TM7
+                    items_tm7.push(item_mine);
                 } else {
                     // Otros items que se agregarán a ambas órdenes o según se defina
                     otros_items.push(item_mine);
                 }
+            }
+            
+            // Validar que tenga ambos artículos: TM7 y GETM7
+            if(!tiene_tm7 || !tiene_getm7){
+                return {success: false, mensaje : "Error 400", detalle: "Los artículos seleccionados no corresponden a este servicio"};
             }
             
             log.debug('createSalesOrderv2', 'Items TM7: ' + items_tm7.length + ', Items GETM7/KIT: ' + items_getm7_kit.length + ', Otros items: ' + otros_items.length);
@@ -1227,13 +1236,15 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                     }
                 }
                 
-                // Calcular descuento para GETM7/KIT: monto del kit menos un centavo
+                // Calcular descuento para GETM7/KIT: el mínimo entre el descuento total y el monto del kit menos un centavo
                 if(monto_kit_desgaste > 0){
-                    discountrate_getm7_kit = monto_kit_desgaste - 0.01;
-                    // Calcular descuento para TM7: monto total menos el descuento de GETM7/KIT
+                    var descuento_maximo_getm7 = monto_kit_desgaste;
+                    // Aplicar el mínimo entre el descuento total y el máximo permitido para GETM7/KIT
+                    discountrate_getm7_kit = Math.min(discountrate_total, descuento_maximo_getm7);
+                    // Calcular descuento para TM7: lo que sobra del descuento total
                     discountrate_tm7 = discountrate_total - discountrate_getm7_kit;
                     
-                    log.debug('createSalesOrderv2', 'Descuento total: ' + discountrate_total + ', Monto kit: ' + monto_kit_desgaste + ', Descuento GETM7/KIT: ' + discountrate_getm7_kit + ', Descuento TM7: ' + discountrate_tm7);
+                    log.debug('createSalesOrderv2', 'Descuento total: ' + discountrate_total + ', Monto kit: ' + monto_kit_desgaste + ', Descuento máximo GETM7/KIT: ' + descuento_maximo_getm7 + ', Descuento GETM7/KIT aplicado: ' + discountrate_getm7_kit + ', Descuento TM7: ' + discountrate_tm7);
                 } else {
                     // Si no hay kit, el descuento total va a TM7
                     discountrate_tm7 = discountrate_total;
@@ -1253,17 +1264,13 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
             if(tiene_tm7 && items_tm7.length > 0){
                 var req_info_tm7 = JSON.parse(JSON.stringify(req_info)); // Copia profunda del objeto
                 req_info_tm7.items = items_tm7.concat(otros_items); // Agregar otros items a la primera orden
-                req_info_tm7.tranid = req_info.tranid + "_TM7"; // Agregar sufijo al tranid
+                req_info_tm7.tranid = req_info.tranid; // Sin sufijo para la orden TM7
                 req_info_tm7.custbody_pedido_tm7_getm7 = true; // Marcar check como verdadero
                 
-                // Asignar descuento a la orden TM7
+                // Asignar descuento a la orden TM7 (solo si hay descuento disponible)
                 if(discountrate_tm7 > 0){
                     req_info_tm7.discountrate = discountrate_tm7;
                     log.debug('createSalesOrderv2', 'Asignando descuento TM7: ' + discountrate_tm7);
-                } else if(discountrate_total > 0 && monto_kit_desgaste == 0){
-                    // Si hay descuento pero no hay kit, todo el descuento va a TM7
-                    req_info_tm7.discountrate = discountrate_total;
-                    log.debug('createSalesOrderv2', 'Asignando todo el descuento a TM7: ' + discountrate_total);
                 }
                 
                 log.debug('createSalesOrderv2', 'Creando orden con item TM7 (' + item_tm7 + '), tranid: ' + req_info_tm7.tranid);
@@ -1284,7 +1291,7 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
             if((tiene_getm7 || tiene_kit) && items_getm7_kit.length > 0){
                 var req_info_getm7_kit = JSON.parse(JSON.stringify(req_info)); // Copia profunda del objeto
                 req_info_getm7_kit.items = items_getm7_kit; // Solo items GETM7 y KIT DESGASTE
-                req_info_getm7_kit.tranid = req_info.tranid + "_GETM7_KIT"; // Agregar sufijo al tranid
+                req_info_getm7_kit.tranid = "NS" + req_info.tranid; // Agregar prefijo NS al tranid
                 req_info_getm7_kit.custbody_pedido_tm7_getm7 = true; // Marcar check como verdadero
                 
                 // Asignar descuento a la orden GETM7/KIT (monto del kit menos un centavo)
@@ -1311,16 +1318,28 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                     // Actualizar la orden TM7 con el internal id de la orden GETM7/KIT
                     if(id_orden_tm7){
                         try{
-                            record.submitFields({
+                            // Usar load y save en lugar de submitFields para evitar disparar scripts de usuario problemáticos
+                            var salesOrderRec = record.load({
                                 type: 'salesorder',
                                 id: id_orden_tm7,
-                                values: {
-                                    'custbody_odv_tm7_getm7': id_orden_getm7_kit
-                                }
+                                isDynamic: false
                             });
+                            
+                            salesOrderRec.setValue({
+                                fieldId: 'custbody_odv_tm7_getm7',
+                                value: id_orden_getm7_kit
+                            });
+                            
+                            salesOrderRec.save({
+                                enableSourcing: false,
+                                ignoreMandatoryFields: true
+                            });
+                            
                             log.debug('createSalesOrderv2', 'Orden TM7 actualizada con ID orden GETM7/KIT (' + id_orden_getm7_kit + ') en custbody_odv_tm7_getm7');
                         } catch(err_update){
-                            log.error('createSalesOrderv2', 'Error al actualizar orden TM7: ' + err_update);
+                            log.error('createSalesOrderv2', 'Error al actualizar orden TM7: ' + JSON.stringify(err_update));
+                            // Continuar el proceso aunque falle la actualización del campo
+                            log.debug('createSalesOrderv2', 'El proceso continúa a pesar del error en la actualización del campo custbody_odv_tm7_getm7');
                         }
                     }
                 } else {
