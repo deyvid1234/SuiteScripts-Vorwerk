@@ -3,9 +3,9 @@
  * @NScriptType UserEventScript
  * @NModuleScope SameAccount
  */
-define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N/runtime','N/email','N/search','N/format','N/http','N/https', "N/ui/serverWidget",'SuiteScripts/Vorwerk_project/Vorwerk Utils V2.js'],
+define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N/runtime','N/email','N/search','N/format','N/http','N/https', "N/ui/serverWidget",'N/file','SuiteScripts/Vorwerk_project/Vorwerk Utils V2.js'],
 
-    function(message,error,runtime,config,record,render,runtime,email,search,format,http,https,serverWidget,Utils) {
+    function(message,error,runtime,config,record,render,runtime,email,search,format,http,https,serverWidget,file,Utils) {
         var date = new Date();
         var fdate = format.parse({
             value: date,
@@ -237,7 +237,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                 try{
                     if(type == 'create'){
                         //log.debug('entre garantia extendida tm7',typeEvent)
-                        garantiaExtendidaTm7(rec)
+                        //garantiaExtendidaTm7(rec)
                     }
                 }catch(e){
                     log.debug('error garantia extendida tm7',e)
@@ -494,7 +494,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                                     idTpl = 278;
                                     email_bbc = ''
                                     break; 
-                                 }else{
+                                 }else if(){
                                     idTpl = 264;
                                  }
                             } 
@@ -1253,80 +1253,81 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                     var cuponId = cuponData ? cuponData.id : null;
                     log.debug('Cupón obtenido:', cuponData);
                     
-                    if(!cuponData){
-                        //log.debug('No se encontró cupón disponible');
-                    }
-                    
-                    log.debug('Item 2402 encontrado, enviando email con plantilla 287');
-                    var entity = parseInt(salesorder.getValue('entity'),10);
-                    var idUSer = 344096;
-                    
-                    var myMergeResult = render.mergeEmail({
-                        templateId: 287,
-                        entity: {
-                            type: 'employee',
-                            id: idUSer
-                        },
-                        recipient: {
-                            type: 'customer',
-                            id: entity
-                        },
-                        transactionId: recordid
-                    });
-                    
-                    var senderId = idUSer;
-                    var recipientEmail = entity;
-                    var emailSubject = myMergeResult.subject;
-                    var emailBody = myMergeResult.body;
-                    var fDate = salesorder.getValue('trandate');
-                    //log.debug('fDate',fDate)
-                    //log.debug('emailSubject', emailSubject);
-                    //log.debug('emailBody', emailBody);
-                    emailBody = emailBody.replace(/@cupon/g, cuponName || '');
-                    emailBody = emailBody.replace(/@fechadecompra/g,fechaCompra);
-                    emailBody = emailBody.replace(/@pedido/g,pedido);
-                    
-                    // Obtener el archivo del campo custbody_vw_pdf_warranty para adjuntarlo al email
-                    var warrantyFileId = salesorder.getValue('custbody_vw_pdf_warranty');
-                    var emailAttachments = [];
-                    if(warrantyFileId){
-                        try{
-                            var warrantyFile = file.load({
-                                id: warrantyFileId
-                            });
-                            emailAttachments.push(warrantyFile);
-                            log.debug('Archivo de garantía cargado para adjuntar:', warrantyFileId);
-                        }catch(fileError){
-                            log.error('Error al cargar el archivo de garantía:', fileError);
-                        }
-                    }
-
-                    var emailObj = {
-                        author: senderId,
-                        recipients: recipientEmail,
-                        subject: emailSubject,
-                        body: emailBody,
-                        relatedRecords: {
+                    // Solo enviar el email si se encuentra un cupón disponible
+                    if(cuponData){
+                        log.debug('Item 2402 encontrado, enviando email con plantilla 287');
+                        var entity = parseInt(salesorder.getValue('entity'),10);
+                        var idUSer = 344096;
+                        
+                        var myMergeResult = render.mergeEmail({
+                            templateId: 287,
+                            entity: {
+                                type: 'employee',
+                                id: idUSer
+                            },
+                            recipient: {
+                                type: 'customer',
+                                id: entity
+                            },
                             transactionId: recordid
+                        });
+                        
+                        var senderId = idUSer;
+                        var recipientEmail = entity;
+                        var emailSubject = myMergeResult.subject;
+                        var emailBody = myMergeResult.body;
+                        var fDate = salesorder.getValue('trandate');
+                        //log.debug('fDate',fDate)
+                        //log.debug('emailSubject', emailSubject);
+                        //log.debug('emailBody', emailBody);
+                        emailBody = emailBody.replace(/@cupon/g, cuponName || '');
+                        emailBody = emailBody.replace(/@fechadecompra/g,fechaCompra);
+                        emailBody = emailBody.replace(/@pedido/g,pedido);
+                        
+                        // Obtener el archivo del campo custbody_vw_pdf_warranty para adjuntarlo al email
+                        var warrantyFileId = salesorder.getValue('custbody_vw_pdf_warranty');
+                        var emailAttachments = [];
+                        if(warrantyFileId){
+                            try{
+                                var warrantyFile = file.load({
+                                    id: warrantyFileId
+                                });
+                                emailAttachments.push(warrantyFile);
+                                log.debug('Archivo de garantía cargado para adjuntar:', warrantyFileId);
+                            }catch(fileError){
+                                log.error('Error al cargar el archivo de garantía:', fileError);
+                            }
                         }
-                    };
-                    
-                    // Agregar adjuntos solo si hay archivos
-                    if(emailAttachments.length > 0){
-                        emailObj.attachments = emailAttachments;
-                    }
-                    
-                    email.send(emailObj);
-                    log.debug('Email enviado exitosamente con plantilla 287');
-                    
-                    // Actualizar el cupón a estado usado (status = 2) después de enviar el email
-                    if(cuponId){
-                        var actualizado = Utils.actualizarCupon(cuponId);
-                        if(actualizado){
-                            log.debug('Cupón actualizado exitosamente a estado usado:', 'ID: ' + cuponId);
-                        } else {
-                            log.debug('Error al actualizar el cupón:', 'ID: ' + cuponId);
+
+                        var emailObj = {
+                            author: senderId,
+                            recipients: recipientEmail,
+                            subject: emailSubject,
+                            body: emailBody,
+                            relatedRecords: {
+                                transactionId: recordid
+                            }
+                        };
+                        
+                        // Agregar adjuntos solo si hay archivos
+                        if(emailAttachments.length > 0){
+                            emailObj.attachments = emailAttachments;
                         }
+                        
+                        email.send(emailObj);
+                        log.debug('Email enviado exitosamente con plantilla 287');
+                        
+                        // Actualizar el cupón a estado usado (status = 2) después de enviar el email
+                        if(cuponId){
+                            var actualizado = Utils.actualizarCupon(cuponId);
+                            if(actualizado){
+                                log.debug('Cupón actualizado exitosamente a estado usado:', 'ID: ' + cuponId);
+                            } else {
+                                log.debug('Error al actualizar el cupón:', 'ID: ' + cuponId);
+                            }
+                        }
+                    } else {
+                        log.debug('No se encontró cupón disponible, el email no se enviará');
                     }
                 }
             }catch(e){
