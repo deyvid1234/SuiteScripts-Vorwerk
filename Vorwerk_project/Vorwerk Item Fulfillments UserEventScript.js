@@ -248,7 +248,7 @@ function(runtime,config,record,render,email,search,format,file,log,Utils) {
             var fulfillmentId = rec.id;
             var createdfrom = rec.getValue('createdfrom');
             var entityValue = rec.getValue('entity');
-            var entityName = rec.getText('entityname');
+            var entityName = rec.getText('entity');
             if (!createdfrom) {
                 log.debug('afterSubmit', 'No hay orden de venta asociada (createdfrom)');
                 return;
@@ -275,7 +275,7 @@ function(runtime,config,record,render,email,search,format,file,log,Utils) {
             });
 
             var pedidoTm7Getm7 = salesOrderFields.custbody_pedido_tm7_getm7;
-            var ordenGetm7Id = salesOrderFields.custbody_odv_tm7_getm7;
+            var ordenGetm7Id = salesOrderFields.custbody_odv_tm7_getm7[0].value;
             
 
             log.debug('afterSubmit', 'pedidoTm7Getm7: ' + pedidoTm7Getm7 + ', ordenGetm7Id: ' + ordenGetm7Id + ', customer: ' + entity);
@@ -610,12 +610,18 @@ function(runtime,config,record,render,email,search,format,file,log,Utils) {
                 value: pdfFileId
             });
 
+            // Guardar el ID del fulfillment en el campo custbody_vw_odv_related_warranty
+            ordenGetm7Rec.setValue({
+                fieldId: 'custbody_vw_odv_related_warranty',
+                value: fulfillmentId
+            });
+
             ordenGetm7Rec.save({
                 enableSourcing: false,
                 ignoreMandatoryFields: true
             });
 
-            log.debug('procesarFulfillmentTm7Getm7', 'PDF guardado en custbody_vw_pdf_warranty de la orden GETM7: ' + ordenGetm7IdInt);
+            log.debug('procesarFulfillmentTm7Getm7', 'PDF guardado en custbody_vw_pdf_warranty y fulfillment ID (' + fulfillmentId + ') guardado en custbody_vw_odv_related_warranty de la orden GETM7: ' + ordenGetm7IdInt);
             
         } catch (e) {
             log.error('procesarFulfillmentTm7Getm7 Error', e);

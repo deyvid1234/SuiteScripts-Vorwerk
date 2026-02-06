@@ -75,9 +75,6 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                     res  = createUser(req_info,"employee")
                 break;
                 case "createSalesOrder":
-                    res  = createSalesOrder(req_info)
-                break;
-                case "createSalesOrderv2":
                     res  = createSalesOrderv2(req_info)
                 break;
                 //eventos de modificacion
@@ -1177,27 +1174,35 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                 var item_mine = req_info.items[x];
                 var item_id = String(item_mine.item_id);
                 
-                if(item_id == item_tm7){
-                    tiene_tm7 = true;
-                    items_tm7.push(item_mine);
-                } else if(item_id == item_getm7){
-                    tiene_getm7 = true;
-                    items_getm7_kit.push(item_mine);
-                } else if(item_id == item_kit){
-                    tiene_kit = true;
-                    items_getm7_kit.push(item_mine);
-                } else if(item_id == item_financiamiento){
-                    // Item costo por financiamiento se agrega a la orden TM7
-                    items_tm7.push(item_mine);
-                } else {
-                    // Otros items que se agregarán a ambas órdenes o según se defina
-                    otros_items.push(item_mine);
+                switch(item_id){
+                    case item_tm7:
+                        tiene_tm7 = true;
+                        items_tm7.push(item_mine);
+                        break;
+                    case item_getm7:
+                        tiene_getm7 = true;
+                        items_getm7_kit.push(item_mine);
+                        break;
+                    case item_kit:
+                        tiene_kit = true;
+                        items_getm7_kit.push(item_mine);
+                        break;
+                    case item_financiamiento:
+                        // Item costo por financiamiento se agrega a la orden TM7
+                        items_tm7.push(item_mine);
+                        break;
+                    default:
+                        // Otros items que se agregarán a ambas órdenes o según se defina
+                        otros_items.push(item_mine);
+                        break;
                 }
             }
             
             // Validar que tenga ambos artículos: TM7 y GETM7
+            // Si no tiene ambos, crear orden normal usando createSalesOrder
             if(!tiene_tm7 || !tiene_getm7){
-                return {success: false, mensaje : "Error 400", detalle: "Los artículos seleccionados no corresponden a este servicio"};
+                log.debug('createSalesOrderv2', 'No se tienen ambos items (TM7 y GETM7), creando orden normal');
+                return createSalesOrder(req_info);
             }
             
             log.debug('createSalesOrderv2', 'Items TM7: ' + items_tm7.length + ', Items GETM7/KIT: ' + items_getm7_kit.length + ', Otros items: ' + otros_items.length);
@@ -1252,13 +1257,9 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                 }
             }
             
-            var resultado = {
-                orden_tm7: null,
-                orden_getm7_kit: null
-            };
-            
             var id_orden_tm7 = null;
             var id_orden_getm7_kit = null;
+            var res_tm7 = null;
             
             // Crear PRIMERA orden de venta con item TM7
             if(tiene_tm7 && items_tm7.length > 0){
@@ -1274,8 +1275,7 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                 }
                 
                 log.debug('createSalesOrderv2', 'Creando orden con item TM7 (' + item_tm7 + '), tranid: ' + req_info_tm7.tranid);
-                var res_tm7 = createSalesOrder(req_info_tm7);
-                resultado.orden_tm7 = res_tm7;
+                res_tm7 = createSalesOrder(req_info_tm7);
                 
                 // Obtener el internal id de la orden TM7
                 if(res_tm7 && res_tm7.success){
@@ -1283,7 +1283,7 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                     log.debug('createSalesOrderv2', 'Orden TM7 creada con ID: ' + id_orden_tm7);
                 } else {
                     log.error('createSalesOrderv2', 'Error al crear orden TM7: ' + JSON.stringify(res_tm7));
-                    return {error: "Error al crear orden TM7", detalle: res_tm7};
+                    return res_tm7; // Retornar el error en el mismo formato
                 }
             }
             
@@ -1308,7 +1308,6 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                 
                 log.debug('createSalesOrderv2', 'Creando orden con items GETM7/KIT, tranid: ' + req_info_getm7_kit.tranid);
                 var res_getm7_kit = createSalesOrder(req_info_getm7_kit);
-                resultado.orden_getm7_kit = res_getm7_kit;
                 
                 // Obtener el internal id de la orden GETM7/KIT
                 if(res_getm7_kit && res_getm7_kit.success){
@@ -1344,10 +1343,12 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                     }
                 } else {
                     log.error('createSalesOrderv2', 'Error al crear orden GETM7/KIT: ' + JSON.stringify(res_getm7_kit));
+                    // Continuar y retornar la orden TM7 aunque falle la GETM7/KIT
                 }
             }
             
-            return resultado;
+            // Retornar solo la información de la orden TM7 en el mismo formato que createSalesOrder
+            return res_tm7;
             
         }catch(err){
             log.error("error createSalesOrderv2",err);
