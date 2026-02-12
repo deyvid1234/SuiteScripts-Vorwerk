@@ -320,10 +320,13 @@ function(serverWidget, search, file, encode, log, record, https, runtime) {
     }
     
     /**
-     * Ejecuta la búsqueda principal de Invoice
-     * Esta búsqueda trae Invoice y su createdfrom (Sales Order)
+     * Orden de búsquedas globales (base = facturas por fecha y filtros usuario):
+     * 1. Invoice: filtros de fechas + resto de filtros del Suitelet. Base del reporte; createdfrom = Sales Order ID (no hacemos búsqueda de SO).
+     * 2. Con el arreglo de IDs de órdenes (createdfrom de las facturas), búsqueda de Item Fulfillment filtrada SOLO por createdfrom anyof [ids]. Sin más filtros.
+     * 3. Con los fulfillments en cache, una pasada sobre resultados de factura: lookup fulfillments e impacto contable.
      */
     function executeInvoiceSearch(filters) {
+        // --- Paso 1: Búsqueda de Facturas (base: fechas + filtros usuario) ---
         // Filtros base para Invoice
         var invoiceSearchFilters = [
             ['type', 'anyof', 'CustInvc'],
@@ -409,11 +412,15 @@ function(serverWidget, search, file, encode, log, record, https, runtime) {
         var invoiceSearchColEntity = search.createColumn({ name: 'entity' });
         var invoiceSearchColCustomerMainGIROINDUSTRIAL = search.createColumn({ name: 'category', join: 'customermain' });
         var invoiceSearchColItem = search.createColumn({ name: 'item' });
-        // Nota: preferredvendor no está disponible como columna en búsqueda de transaction; el match de descuento proveedor se hace por Artículo + Cliente + vigencia
         var invoiceSearchColSalesRep = search.createColumn({ name: 'salesrep' });
         var invoiceSearchColQuantity = search.createColumn({ name: 'quantity' });
         var invoiceSearchColAmount = search.createColumn({ name: 'amount' });
         var invoiceSearchColMetodoDeEntrega = search.createColumn({ name: 'custbodykop_metodo_entrega_ov' });
+        // Proveedor preferido (ítem), Términos (cliente), Fecha ajustada vencimiento, Objeto de impuesto
+        var invoiceSearchColTerms = search.createColumn({ name: 'terms', join: 'customermain' });
+        var invoiceSearchColFechaAjustadaVenc = search.createColumn({ name: 'custbody_drt_fecha_ajustada_venc' });
+        var invoiceSearchColVendor = search.createColumn({ name: 'vendor', join: 'item' });
+        var invoiceSearchColTaxObject = search.createColumn({ name: 'custcol_mx_txn_line_sat_tax_object' });
         // Tipo de cambio y moneda del invoice
         var invoiceSearchColTipoCambio = search.createColumn({ name: 'custbody_drt_exchangerate_custom' });
         var invoiceSearchColCurrency = search.createColumn({ name: 'currency' });
@@ -444,6 +451,10 @@ function(serverWidget, search, file, encode, log, record, https, runtime) {
                 invoiceSearchColQuantity,
                 invoiceSearchColAmount,
                 invoiceSearchColMetodoDeEntrega,
+                invoiceSearchColTerms,
+                invoiceSearchColFechaAjustadaVenc,
+                invoiceSearchColVendor,
+                invoiceSearchColTaxObject,
                 invoiceSearchColTipoCambio,
                 invoiceSearchColCurrency,
                 invoiceSearchColTaxCode,
@@ -454,31 +465,44 @@ function(serverWidget, search, file, encode, log, record, https, runtime) {
             ]
         });
         
-        // Cargar cache de comisiones de gerentes una sola vez al inicio
         loadComisionesGerentesCache();
-        // Cuenta 5100 y caches por SO/fulfillment (una búsqueda de cuenta por request; impacto por fulfillment cacheado)
         fulfillmentsBySOCache = {};
         fulfillmentImpactCache = {};
         var account5100Id = getAccount5100Id();
         
-        var results = [];
         var invoiceSearchPagedData = invoiceSearch.runPaged({ pageSize: 1000 });
         
+        // --- Paso 2: Recolectar IDs de Sales Order (createdfrom de facturas); búsqueda global de Fulfillments por esos IDs ---
+        var soIdsMap = {};
+        for (var p = 0; p < invoiceSearchPagedData.pageRanges.length; p++) {
+            var pageSo = invoiceSearchPagedData.fetch({ index: p });
+            pageSo.data.forEach(function(r) {
+                var soId = r.getValue(invoiceSearchColCreatedFrom);
+                if (soId) soIdsMap[soId] = true;
+            });
+        }
+        var soIdList = Object.keys(soIdsMap);
+        log.audit('ReporteRentabilidad', 'Paso 1 Invoice listo; SOs únicos=' + soIdList.length);
+        preloadFulfillmentsBySalesOrders(soIdList);
+        log.audit('ReporteRentabilidad', 'Paso 2 Fulfillments precargados');
+        
+        var results = [];
         for (var i = 0; i < invoiceSearchPagedData.pageRanges.length; i++) {
             var invoiceSearchPage = invoiceSearchPagedData.fetch({ index: i });
             invoiceSearchPage.data.forEach(function(result) {
                 var invoiceId = result.getValue(invoiceSearchColInternalId);
                 var salesOrderId = result.getValue(invoiceSearchColCreatedFrom);
-                
-                // Obtener Item Fulfillments relacionados con el Sales Order (cache por salesOrderId)
+                // Fulfillments ya cargados por búsqueda global; solo lectura del cache
                 var fulfillments = getItemFulfillmentsBySalesOrder(salesOrderId);
                 
                 var costoFulfillment = 0;
                 var fulfillmentTranId = '';
+                var invoiceLineItemId = result.getValue(invoiceSearchColItem) || '';
                 
                 if (fulfillments.length > 0) {
                     var primerFulfillment = fulfillments[0];
-                    costoFulfillment = getFulfillmentAccountingImpact(primerFulfillment.id, invoiceId, account5100Id) || 0;
+                    // Costo por ítem: impacto contable (5100) del fulfillment solo para este ítem, no el total
+                    costoFulfillment = getFulfillmentAccountingImpactByItem(primerFulfillment.id, invoiceLineItemId, account5100Id) || 0;
                     fulfillmentTranId = primerFulfillment.tranid || '';
                 }
                 
@@ -500,6 +524,10 @@ function(serverWidget, search, file, encode, log, record, https, runtime) {
                         cantidad: parseFloat(result.getValue(invoiceSearchColQuantity) || 0),
                         importe: parseFloat(result.getValue(invoiceSearchColAmount) || 0),
                         metodoEntrega: result.getText(invoiceSearchColMetodoDeEntrega) || result.getValue(invoiceSearchColMetodoDeEntrega),
+                        terminos: result.getText(invoiceSearchColTerms) || result.getValue(invoiceSearchColTerms) || '',
+                        fechaAjustadaVencimiento: result.getValue(invoiceSearchColFechaAjustadaVenc) || '',
+                        proveedor: result.getText(invoiceSearchColVendor) || result.getValue(invoiceSearchColVendor) || '',
+                        objetoImpuesto: result.getText(invoiceSearchColTaxObject) || result.getValue(invoiceSearchColTaxObject) || '',
                         tipoCambio: parseFloat(result.getValue(invoiceSearchColTipoCambio) || 0),
                         moneda: result.getText(invoiceSearchColCurrency) || result.getValue(invoiceSearchColCurrency),
                         taxCode: result.getText(invoiceSearchColTaxCode) || result.getValue(invoiceSearchColTaxCode),
@@ -509,10 +537,9 @@ function(serverWidget, search, file, encode, log, record, https, runtime) {
                         fulfillmentTranId: fulfillmentTranId || '',
                         costo: costoFulfillment || 0, // Costo del primer fulfillment (cuenta 5100 Materia Prima)
                         
-                        // IDs para lookup de Nota Crédito Proveedor (proveedorId no disponible en búsqueda transaction; match por Artículo + Cliente + vigencia)
                         articuloId: result.getValue(invoiceSearchColItem) || '',
                         clienteId: result.getValue(invoiceSearchColEntity) || '',
-                        proveedorId: '',
+                        proveedorId: result.getValue(invoiceSearchColVendor) || '',
                         
                         // IDs para referencias
                         invoiceId: invoiceId,
@@ -590,7 +617,7 @@ function(serverWidget, search, file, encode, log, record, https, runtime) {
                     results.push(row);
             });
         }
-        
+        log.audit('ReporteRentabilidad', 'Paso 3 results.length=' + results.length);
         return results;
     }
     
@@ -628,10 +655,46 @@ function(serverWidget, search, file, encode, log, record, https, runtime) {
                 return true;
             });
         } catch (e) {
-            log.error('ReporteRentabilidad fulfillments', salesOrderId, e.message || e);
+            // Sin log por cada fallo; las filas sin fulfillment siguen con costo 0
         }
         fulfillmentsBySOCache[salesOrderId] = fulfillments;
         return fulfillments;
+    }
+    
+    /**
+     * Precarga Item Fulfillments para una lista de Sales Order IDs (una o pocas búsquedas globales).
+     * Filtro único: createdfrom anyof [ids]. Sin filtro de fecha; los IDs vienen de la búsqueda de facturas.
+     */
+    function preloadFulfillmentsBySalesOrders(salesOrderIds) {
+        if (!salesOrderIds || salesOrderIds.length === 0) return;
+        if (!fulfillmentsBySOCache) fulfillmentsBySOCache = {};
+        var BATCH = 500;
+        for (var b = 0; b < salesOrderIds.length; b += BATCH) {
+            var batch = salesOrderIds.slice(b, b + BATCH);
+            try {
+                var fulfillmentSearch = search.create({
+                    type: 'itemfulfillment',
+                    filters: [['createdfrom', 'anyof', batch]],
+                    columns: [
+                        search.createColumn({ name: 'createdfrom' }),
+                        search.createColumn({ name: 'internalid' }),
+                        search.createColumn({ name: 'tranid' })
+                    ]
+                });
+                fulfillmentSearch.run().each(function(res) {
+                    var soId = res.getValue('createdfrom');
+                    if (!soId) return true;
+                    if (!fulfillmentsBySOCache[soId]) fulfillmentsBySOCache[soId] = [];
+                    fulfillmentsBySOCache[soId].push({
+                        id: res.getValue('internalid'),
+                        tranid: res.getValue('tranid')
+                    });
+                    return true;
+                });
+            } catch (e) {
+                // Si falla un lote, ese lote queda sin fulfillments en cache
+            }
+        }
     }
     
     /** Cache del internalid de la cuenta 5100 (una búsqueda por request) */
@@ -666,12 +729,13 @@ function(serverWidget, search, file, encode, log, record, https, runtime) {
     }
     
     /**
-     * Obtiene el impacto contable de un Item Fulfillment por línea (cuenta 5100).
-     * Usa cache de accountId y cache por fulfillmentId para minimizar búsquedas.
+     * Carga y cachea el impacto contable del Item Fulfillment por ítem (cuenta 5100).
+     * Devuelve { byItem: { itemId: sumaMontos }, total: number }.
+     * Así cada línea de factura puede tomar solo el costo del ítem correspondiente.
      */
-    function getFulfillmentAccountingImpact(fulfillmentId, invoiceId, optionalAccountId) {
+    function getFulfillmentAccountingImpact(fulfillmentId, optionalAccountId) {
         if (!fulfillmentId) {
-            return 0;
+            return { byItem: {}, total: 0 };
         }
         if (!fulfillmentImpactCache) {
             fulfillmentImpactCache = {};
@@ -682,7 +746,8 @@ function(serverWidget, search, file, encode, log, record, https, runtime) {
         try {
             var accountId = optionalAccountId || getAccount5100Id();
             if (!accountId) {
-                return 0;
+                fulfillmentImpactCache[fulfillmentId] = { byItem: {}, total: 0 };
+                return fulfillmentImpactCache[fulfillmentId];
             }
             var postingSearch = search.create({
                 type: 'transaction',
@@ -698,18 +763,40 @@ function(serverWidget, search, file, encode, log, record, https, runtime) {
                     search.createColumn({ name: 'quantity' })
                 ]
             });
+            var byItem = {};
             var totalCosto = 0;
             postingSearch.run().each(function(result) {
                 var amount = parseFloat(result.getValue('amount') || 0);
-                totalCosto += Math.abs(amount);
+                var absAmount = Math.abs(amount);
+                var itemId = result.getValue('item');
+                if (itemId != null && itemId !== '') {
+                    var key = String(itemId);
+                    byItem[key] = (byItem[key] || 0) + absAmount;
+                }
+                totalCosto += absAmount;
                 return true;
             });
-            fulfillmentImpactCache[fulfillmentId] = totalCosto;
-            return totalCosto;
+            fulfillmentImpactCache[fulfillmentId] = { byItem: byItem, total: totalCosto };
+            return fulfillmentImpactCache[fulfillmentId];
         } catch (e) {
-            fulfillmentImpactCache[fulfillmentId] = 0;
+            fulfillmentImpactCache[fulfillmentId] = { byItem: {}, total: 0 };
+            return fulfillmentImpactCache[fulfillmentId];
+        }
+    }
+    
+    /**
+     * Devuelve el impacto contable (cuenta 5100) del fulfillment solo para el ítem indicado.
+     * Así cada línea de factura lleva el costo correcto por ítem y no el total del fulfillment.
+     */
+    function getFulfillmentAccountingImpactByItem(fulfillmentId, itemId, optionalAccountId) {
+        if (!fulfillmentId || itemId == null || itemId === '') {
             return 0;
         }
+        var data = getFulfillmentAccountingImpact(fulfillmentId, optionalAccountId);
+        if (!data || !data.byItem) {
+            return 0;
+        }
+        return data.byItem[String(itemId)] || 0;
     }
     
     /**
@@ -730,8 +817,11 @@ function(serverWidget, search, file, encode, log, record, https, runtime) {
         // COSTO = Costo por línea (fulfillment cuenta 5100) o costo por línea de transacción
         row.costoBase = row.costo != null ? row.costo : (row.costoPorLinea || 0);
         
-        // TRANSPORTE = Costo transporte por producto (columna AK)
-        row.costoTransporteCalculado = row.costoTransportePorProducto != null ? row.costoTransportePorProducto : (row.costoTransporteCreated || 0);
+        // TRANSPORTE = total por línea (cantidad × unitario). Si ya viene row.transporte de la búsqueda, usarlo; si no, cantidad × costoTransporteCreated
+        var qty = row.quantity != null ? row.quantity : (row.cantidad != null ? row.cantidad : 0);
+        var unitTransport = row.costoTransportePorProducto != null ? row.costoTransportePorProducto : (row.costoTransporteCreated || 0);
+        row.costoTransporteCalculado = (row.transporte != null && row.transporte !== undefined && !isNaN(row.transporte)) ? Number(row.transporte) : (qty * unitTransport);
+        row.transporte = row.costoTransporteCalculado;
         
         // Nota Crédito Proveedor (descuento simulado): Tipo de Cambio × Cantidad × Factor Descuento
         row.notaCreditoProveedor = row.notaCreditoProveedor != null ? row.notaCreditoProveedor : 0;
@@ -1151,6 +1241,7 @@ function(serverWidget, search, file, encode, log, record, https, runtime) {
         loadDescuentoProveedorCache();
         _t('descuentoProveedor');
         var results = executeInvoiceSearch(filters);
+        log.audit('ReporteRentabilidad', 'showReport executeInvoiceSearch listo results.length=' + (results ? results.length : 0));
         _t('invoiceSearch');
         results.forEach(function(row) {
             calculateExcelFormulas(row);
@@ -1159,16 +1250,125 @@ function(serverWidget, search, file, encode, log, record, https, runtime) {
         var currentScript = runtime.getCurrentScript();
         var scriptId = currentScript.id;
         var deploymentId = currentScript.deploymentId;
-        var form = createReportForm(results, scriptId, deploymentId, filters);
+        log.audit('ReporteRentabilidad', 'showReport vista inicio results.length=' + results.length);
         _t('createForm');
         _logTimings('showReport', results.length);
-        context.response.writePage(form);
+        var vista = (context.request.parameters && context.request.parameters.vista) ? context.request.parameters.vista : 'html';
+        if (vista === 'form') {
+            var form = createReportForm(results, scriptId, deploymentId, filters);
+            log.audit('ReporteRentabilidad', 'showReport createReportForm fin');
+            context.response.writePage(form);
+        } else {
+            var htmlPaginated = buildReportHTMLPaginated(results, scriptId, deploymentId, filters);
+            log.audit('ReporteRentabilidad', 'showReport buildReportHTMLPaginated fin');
+            context.response.write(htmlPaginated);
+        }
     }
     
     /**
-     * Crea un formulario usando serverWidget para mostrar el reporte
+     * Vista HTML del reporte con paginación en el cliente (fluida, sin recargar al cambiar de página).
+     * Los datos se envían una vez; JavaScript pinta solo la página actual (p. ej. 100 filas).
      */
+    function buildReportHTMLPaginated(results, scriptId, deploymentId, filters) {
+        var esc = function(v) { return (v != null && v !== '') ? String(v).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : ''; };
+        var totalRows = results ? results.length : 0;
+        var totalImporte = 0, totalCosto = 0, totalUtilidad = 0, totalComision = 0;
+        results.forEach(function(row) {
+            totalImporte += row.importe || 0;
+            totalCosto += row.costoTotal || 0;
+            totalUtilidad += row.utilidadBruta || 0;
+            totalComision += row.comisionTotal || 0;
+        });
+        var suiteletUrl = '/app/site/hosting/scriptlet.nl?script=' + scriptId + '&deploy=' + deploymentId;
+        var dataForClient = results.map(function(row) {
+            var r = {};
+            for (var key in row) if (row.hasOwnProperty(key)) r[key] = row[key];
+            r.margenPctStr = (row.margenDespuesComisionesGerencia != null && !isNaN(row.margenDespuesComisionesGerencia))
+                ? (parseFloat(row.margenDespuesComisionesGerencia) * 100).toFixed(2) + '%'
+                : '0.00%';
+            var pv = row.porcentajeComision != null ? parseFloat(row.porcentajeComision) : 0;
+            r.pctComisionStr = (pv < 0.02) ? (pv * 100).toFixed(2) + '%' : (isNaN(pv) ? '0.00%' : pv.toFixed(2) + '%');
+            return r;
+        });
+        // Mismo orden y nombres de columnas que el formulario NetSuite (sublist). g=grupo visual, num=celdas en 0 se resaltan
+        var cols = [
+            { k: 'customForm', l: 'Formulario', g: 'base', num: false }, { k: 'fecha', l: 'Fecha', g: 'base', num: false }, { k: 'periodo', l: 'Período', g: 'base', num: false }, { k: 'type', l: 'Tipo', g: 'base', num: false }, { k: 'clase', l: 'Clase', g: 'base', num: false }, { k: 'ubicacion', l: 'Ubicación', g: 'base', num: false },
+            { k: 'numeroDocumento', l: 'FV', g: 'base', num: false }, { k: 'salesOrderTranId', l: 'OV', g: 'base', num: false }, { k: 'fulfillmentTranId', l: 'EPA', g: 'base', num: false }, { k: 'cliente', l: 'Cliente', g: 'base', num: false }, { k: 'giroIndustrial', l: 'GIRO INDUSTRIAL', g: 'base', num: false }, { k: 'representanteVenta', l: 'Representante de Ventas', g: 'base', num: false },
+            { k: 'metodoEntrega', l: 'Método de Entrega', g: 'base', num: false }, { k: 'proveedor', l: 'Proveedor', g: 'base', num: false }, { k: 'terminos', l: 'Términos', g: 'base', num: false }, { k: 'fechaAjustadaVencimiento', l: 'Fecha Ajustada Vencimiento', g: 'base', num: false }, { k: 'objetoImpuesto', l: 'Objeto de Impuesto', g: 'base', num: false }, { k: 'articulo', l: 'Artículo', g: 'base', num: false }, { k: 'cantidad', l: 'Cantidad', g: 'mn', num: true }, { k: 'costoTransporteCreated', l: 'Costo Transporte', g: 'mn', num: true }, { k: 'taxCode', l: 'Código de Impuesto', g: 'base', num: false }, { k: 'importe', l: 'Ingreso', g: 'mn', num: true },
+            { k: 'tipoCambio', l: 'Tipo de Cambio', g: 'mn', num: true }, { k: 'moneda', l: 'Moneda', g: 'base', num: false }, { k: 'factorDescuento', l: 'Factor Descuento', g: 'mn', num: true }, { k: 'notaCreditoProveedor', l: 'Nota Crédito Proveedor', g: 'mn', num: true }, { k: 'costo', l: 'COSTO', g: 'mn', num: true }, { k: 'transporte', l: 'Transporte', g: 'mn', num: true },
+            { k: 'costoTotal', l: 'Costo Total', g: 'mn', num: true }, { k: 'utilidadBruta', l: 'Utilidad Bruta', g: 'mn', num: true }, { k: 'margenMN', l: 'Margen MN', g: 'mn', num: true }, { k: 'ingresoUSD', l: 'INGRESO USD', g: 'usd', num: true }, { k: 'costoUSD', l: 'COSTO USD', g: 'usd', num: true }, { k: 'transporteUSD', l: 'TRANSPORTE USD', g: 'usd', num: true },
+            { k: 'notaCreditoProveedorUSD', l: 'NOTA CRÉDITO PROVEEDOR USD', g: 'usd', num: true }, { k: 'costoTotalUSD', l: 'COSTO TOTAL USD', g: 'usd', num: true }, { k: 'utilidadBrutaUSD', l: 'UTILIDAD BRUTA USD', g: 'usd', num: true }, { k: 'ingresoCasa', l: 'Ingreso Casa', g: 'usd', num: true },
+            { k: 'porcentajeComisionRosario', l: 'ROSARIO %', g: 'comisiones', num: true }, { k: 'comisionRosario', l: 'ROSARIO compensación', g: 'comisiones', num: true }, { k: 'porcentajeComisionAlhely', l: 'ALHELY %', g: 'comisiones', num: true }, { k: 'comisionAlhely', l: 'ALHELY compensación', g: 'comisiones', num: true },
+            { k: 'porcentajeComisionGabriela', l: 'GABRIELA %', g: 'comisiones', num: true }, { k: 'comisionGabriela', l: 'GABRIELA compensación', g: 'comisiones', num: true }, { k: 'porcentajeComisionMineria', l: 'MINERIA %', g: 'comisiones', num: true }, { k: 'comisionMineria', l: 'MINERIA compensación', g: 'comisiones', num: true },
+            { k: 'porcentajeComisionAgro', l: 'AGRO %', g: 'comisiones', num: true }, { k: 'comisionAgro', l: 'AGRO compensación', g: 'comisiones', num: true }, { k: 'porcentajeComisionPrieto', l: 'PRIETO %', g: 'comisiones', num: true }, { k: 'comisionPrieto', l: 'PRIETO compensación', g: 'comisiones', num: true },
+            { k: 'porcentajeComisionOtros', l: 'OTROS %', g: 'comisiones', num: true }, { k: 'comisionOtros', l: 'OTROS compensación', g: 'comisiones', num: true }, { k: 'porcentajeComisionTotal', l: 'Comisión Total %', g: 'comisiones', num: true }, { k: 'comisionTotalGerentes', l: 'Comisión Total compensación', g: 'comisiones', num: true },
+            { k: 'utilidadDespuesComisionesGerencia', l: 'UTILIDAD DESPUÉS DE COMISIONES DE GERENCIA', g: 'final', num: true }, { k: 'margenPctStr', l: '% Margen', g: 'final', num: false }, { k: 'pctComisionStr', l: '% Comisión', g: 'final', num: false }, { k: 'comisionTotal', l: 'Comisión', g: 'final', num: true }
+        ];
+        var jsonStr = JSON.stringify(dataForClient).replace(/<\/script>/gi, '<\\/script>');
+        var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Reporte de Rentabilidad</title><style>';
+        html += 'body{font-family:Arial,sans-serif;margin:16px;background:#fafafa;}';
+        html += 'h1{color:#333;}';
+        html += '.toolbar{margin:16px 0;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}';
+        html += '.toolbar a,.toolbar button{display:inline-block;padding:8px 16px;background:#4CAF50;color:#fff;text-decoration:none;border-radius:4px;border:none;cursor:pointer;font-size:14px;}';
+        html += '.toolbar a:hover,.toolbar button:hover{background:#45a049;}';
+        html += '.summary{background:#e3f2fd;padding:12px 16px;border-radius:6px;margin:16px 0;}';
+        html += '.pagination{margin:12px 0;font-size:14px;}';
+        html += 'table{border-collapse:collapse;width:100%;font-size:11px;background:#fff;}';
+        html += 'th,td{border:1px solid #ddd;padding:4px 6px;text-align:left;}';
+        html += 'th{background:#4CAF50;color:#fff;position:sticky;top:0;}';
+        html += 'tr:nth-child(even){background:#f5f5f5;}';
+        html += '#report-tbody tr:hover{background:#e8f5e9;}';
+        html += 'th.col-g-base{background-color:#607d8b !important;color:#fff;}td.col-g-base{background-color:#eceff1;}tr:nth-child(even) td.col-g-base{background-color:#e2e6e9;}';
+        html += 'th.col-g-mn{background-color:#689f38 !important;color:#fff;}td.col-g-mn{background-color:#f1f8e9;}tr:nth-child(even) td.col-g-mn{background-color:#dcedc8;}';
+        html += 'th.col-g-usd{background-color:#1976d2 !important;color:#fff;}td.col-g-usd{background-color:#e3f2fd;}tr:nth-child(even) td.col-g-usd{background-color:#bbdefb;}';
+        html += 'th.col-g-comisiones{background-color:#f57c00 !important;color:#fff;}td.col-g-comisiones{background-color:#fff3e0;}tr:nth-child(even) td.col-g-comisiones{background-color:#ffe0b2;}';
+        html += 'th.col-g-final{background-color:#7b1fa2 !important;color:#fff;}td.col-g-final{background-color:#f3e5f5;}tr:nth-child(even) td.col-g-final{background-color:#e1bee7;}';
+        html += 'td.cell-zero{background-color:#bdbdbd !important;color:#757575;}';
+        html += 'tr:hover td.cell-zero{background-color:#9e9e9e !important;color:#fff;}';
+        html += '</style></head><body>';
+        html += '<h1>Reporte de Rentabilidad</h1>';
+        html += '<div class="toolbar">';
+        html += '<a href="' + suiteletUrl + '">Nueva consulta</a>';
+        html += '<form method="POST" action="' + suiteletUrl + '" style="display:inline;">';
+        html += '<input type="hidden" name="action" value="export">';
+        html += '<input type="hidden" name="fecha_desde" value="' + esc(filters.fechaDesde) + '"><input type="hidden" name="fecha_hasta" value="' + esc(filters.fechaHasta) + '">';
+        html += '<input type="hidden" name="invoice_id" value="' + esc(filters.invoiceId) + '"><input type="hidden" name="tipo_cambio_interno" value="' + esc(filters.tipoCambioInterno) + '">';
+        html += '<input type="hidden" name="periodo" value="' + esc(filters.periodo) + '"><input type="hidden" name="tipo" value="' + esc(filters.tipo) + '">';
+        html += '<input type="hidden" name="clase" value="' + esc(filters.clase) + '"><input type="hidden" name="ubicacion" value="' + esc(filters.ubicacion) + '">';
+        html += '<input type="hidden" name="cliente" value="' + esc(filters.cliente) + '"><input type="hidden" name="giro_industrial" value="' + esc(filters.giroIndustrial) + '">';
+        html += '<input type="hidden" name="representante_ventas" value="' + esc(filters.representanteVentas) + '"><input type="hidden" name="articulo" value="' + esc(filters.articulo) + '">';
+        html += '<button type="submit">Exportar a Excel</button></form>';
+        html += '<form method="POST" action="' + suiteletUrl + '" style="display:inline;"><input type="hidden" name="action" value="show"><input type="hidden" name="vista" value="form">';
+        html += '<input type="hidden" name="fecha_desde" value="' + esc(filters.fechaDesde) + '"><input type="hidden" name="fecha_hasta" value="' + esc(filters.fechaHasta) + '">';
+        html += '<input type="hidden" name="invoice_id" value="' + esc(filters.invoiceId) + '"><input type="hidden" name="tipo_cambio_interno" value="' + esc(filters.tipoCambioInterno) + '">';
+        html += '<input type="hidden" name="periodo" value="' + esc(filters.periodo) + '"><input type="hidden" name="tipo" value="' + esc(filters.tipo) + '">';
+        html += '<input type="hidden" name="clase" value="' + esc(filters.clase) + '"><input type="hidden" name="ubicacion" value="' + esc(filters.ubicacion) + '">';
+        html += '<input type="hidden" name="cliente" value="' + esc(filters.cliente) + '"><input type="hidden" name="giro_industrial" value="' + esc(filters.giroIndustrial) + '">';
+        html += '<input type="hidden" name="representante_ventas" value="' + esc(filters.representanteVentas) + '"><input type="hidden" name="articulo" value="' + esc(filters.articulo) + '">';
+        html += '<button type="submit">Ver en formulario NetSuite</button></form>';
+        html += '</div>';
+        html += '<div class="summary"><strong>Total registros:</strong> ' + totalRows + ' &nbsp;|&nbsp; <strong>Importe:</strong> ' + formatNumber(totalImporte) + ' &nbsp;|&nbsp; <strong>Costo total:</strong> ' + formatNumber(totalCosto) + ' &nbsp;|&nbsp; <strong>Utilidad bruta:</strong> ' + formatNumber(totalUtilidad) + ' &nbsp;|&nbsp; <strong>Comisión:</strong> ' + formatNumber(totalComision) + '</div>';
+        html += '<div class="pagination">Página <span id="pageInfo">1</span> de <span id="totalPages">1</span> &nbsp; <button type="button" id="prevBtn">Anterior</button> <button type="button" id="nextBtn">Siguiente</button> &nbsp; <select id="pageSizeSelect"><option value="50">50 por página</option><option value="100" selected>100 por página</option><option value="200">200 por página</option><option value="500">500 por página</option></select></div>';
+        html += '<div style="overflow-x:auto;"><table><thead><tr>';
+        for (var c = 0; c < cols.length; c++) html += '<th class="col-g-' + (cols[c].g || 'base') + '">' + esc(cols[c].l) + '</th>';
+        html += '</tr></thead><tbody id="report-tbody"></tbody></table></div>';
+        html += '<script>var reportData=' + jsonStr + ';var cols=' + JSON.stringify(cols) + ';var pageSize=100;var currentPage=1;';
+        html += 'function renderPage(){var tbody=document.getElementById("report-tbody");var totalPages=Math.max(1,Math.ceil(reportData.length/pageSize));document.getElementById("totalPages").textContent=totalPages;currentPage=Math.min(Math.max(1,currentPage),totalPages);document.getElementById("pageInfo").textContent=currentPage;var start=(currentPage-1)*pageSize;var end=Math.min(start+pageSize,reportData.length);tbody.innerHTML="";for(var i=start;i<end;i++){var row=reportData[i];var tr=document.createElement("tr");for(var j=0;j<cols.length;j++){var td=document.createElement("td");var col=cols[j];var grp=col.g||"base";td.className="col-g-"+grp;var val=row[col.k];var valStr=(val===undefined||val===null)?"":String(val);td.textContent=valStr;if(col.num){var n=parseFloat(val);if(valStr===""||(!isNaN(n)&&n===0))td.className+=" cell-zero";}tr.appendChild(td);}tbody.appendChild(tr);}document.getElementById("prevBtn").disabled=currentPage<=1;document.getElementById("nextBtn").disabled=currentPage>=totalPages;}';
+        html += 'document.getElementById("prevBtn").onclick=function(){currentPage--;renderPage();};document.getElementById("nextBtn").onclick=function(){currentPage++;renderPage();};';
+        html += 'document.getElementById("pageSizeSelect").onchange=function(){pageSize=parseInt(this.value,10);currentPage=1;renderPage();};renderPage();<\/script>';
+        html += '</body></html>';
+        return html;
+    }
+    
+    /**
+     * Crea un formulario usando serverWidget para mostrar el reporte (vista=form)
+     */
+    var MAX_ROWS_DISPLAY = 1000;
+    
     function createReportForm(results, scriptId, deploymentId, filters) {
+        log.audit('ReporteRentabilidad', 'createReportForm inicio results.length=' + (results ? results.length : 0));
+        var totalRows = results ? results.length : 0;
+        var displayResults = totalRows > MAX_ROWS_DISPLAY ? results.slice(0, MAX_ROWS_DISPLAY) : results;
         var form = serverWidget.createForm({
             title: 'Reporte de Rentabilidad'
         });
@@ -1202,13 +1402,22 @@ function(serverWidget, search, file, encode, log, record, https, runtime) {
         exportFormHtml += '<input type="hidden" name="representante_ventas" value="' + esc(filters.representanteVentas) + '">';
         exportFormHtml += '<input type="hidden" name="articulo" value="' + esc(filters.articulo) + '">';
         exportFormHtml += '<button type="submit" style="' + exportBtnStyle + '">Exportar a Excel</button></form>';
+        var htmlViewForm = '<form method="POST" action="' + suiteletUrl + '" style="display:inline;margin:0;">';
+        htmlViewForm += '<input type="hidden" name="action" value="show"><input type="hidden" name="vista" value="html">';
+        htmlViewForm += '<input type="hidden" name="invoice_id" value="' + esc(filters.invoiceId) + '">';
+        htmlViewForm += '<input type="hidden" name="fecha_desde" value="' + esc(filters.fechaDesde) + '"><input type="hidden" name="fecha_hasta" value="' + esc(filters.fechaHasta) + '">';
+        htmlViewForm += '<input type="hidden" name="tipo_cambio_interno" value="' + esc(filters.tipoCambioInterno) + '"><input type="hidden" name="periodo" value="' + esc(filters.periodo) + '"><input type="hidden" name="tipo" value="' + esc(filters.tipo) + '">';
+        htmlViewForm += '<input type="hidden" name="clase" value="' + esc(filters.clase) + '"><input type="hidden" name="ubicacion" value="' + esc(filters.ubicacion) + '">';
+        htmlViewForm += '<input type="hidden" name="cliente" value="' + esc(filters.cliente) + '"><input type="hidden" name="giro_industrial" value="' + esc(filters.giroIndustrial) + '">';
+        htmlViewForm += '<input type="hidden" name="representante_ventas" value="' + esc(filters.representanteVentas) + '"><input type="hidden" name="articulo" value="' + esc(filters.articulo) + '">';
+        htmlViewForm += '<button type="submit" style="' + exportBtnStyle + '">Ver en HTML (paginado)</button></form>';
         var accionesGroup = form.addFieldGroup({ id: 'acciones_group', label: 'Acciones' });
         form.addField({
             id: 'custpage_acciones_buttons',
             type: serverWidget.FieldType.INLINEHTML,
             label: 'Acciones',
             container: 'acciones_group'
-        }).defaultValue = '<a href="' + suiteletUrl + '" style="' + btnStyle + '">Nueva consulta</a>' + exportFormHtml;
+        }).defaultValue = '<a href="' + suiteletUrl + '" style="' + btnStyle + '">Nueva consulta</a>' + exportFormHtml + htmlViewForm;
         
         // Grupo de filtros principales (siempre visible)
         var filterGroupMain = form.addFieldGroup({
@@ -1523,6 +1732,11 @@ function(serverWidget, search, file, encode, log, record, https, runtime) {
         });
         field14.updateDisplayType({ displayType: serverWidget.FieldDisplayType.READONLY });
         
+        resultsSublist.addField({ id: 'custpage_proveedor', type: serverWidget.FieldType.TEXT, label: 'Proveedor' }).updateDisplayType({ displayType: serverWidget.FieldDisplayType.READONLY });
+        resultsSublist.addField({ id: 'custpage_terminos', type: serverWidget.FieldType.TEXT, label: 'Términos' }).updateDisplayType({ displayType: serverWidget.FieldDisplayType.READONLY });
+        resultsSublist.addField({ id: 'custpage_fecha_ajustada_venc', type: serverWidget.FieldType.DATE, label: 'Fecha Ajustada Vencimiento' }).updateDisplayType({ displayType: serverWidget.FieldDisplayType.READONLY });
+        resultsSublist.addField({ id: 'custpage_objeto_impuesto', type: serverWidget.FieldType.TEXT, label: 'Objeto de Impuesto' }).updateDisplayType({ displayType: serverWidget.FieldDisplayType.READONLY });
+        
         var field10 = resultsSublist.addField({
             id: 'custpage_articulo',
             type: serverWidget.FieldType.TEXT,
@@ -1801,7 +2015,7 @@ function(serverWidget, search, file, encode, log, record, https, runtime) {
         });
         field55.updateDisplayType({ displayType: serverWidget.FieldDisplayType.READONLY });
         
-        // Llenar la sublist con los resultados (value obligatorio y nunca undefined)
+        // serverWidget.Sublist.setSublistValue en Suitelets solo acepta value tipo STRING
         var safeStr = function(v) {
             if (v === undefined || v === null) return '';
             var s = String(v);
@@ -1812,337 +2026,97 @@ function(serverWidget, search, file, encode, log, record, https, runtime) {
             var n = Number(v);
             return (n !== n) ? 0 : n;
         };
-        results.forEach(function(row, index) {
-            resultsSublist.setSublistValue({
-                id: 'custpage_customform',
-                line: index,
-                value: safeStr(row.customForm)
-            });
+        function setCell(id, line, val, isNum) {
+            var v;
+            if (isNum) {
+                v = (val === undefined || val === null) ? '0' : ('' + (Number(val) || 0));
+            } else {
+                try { v = (val === undefined || val === null) ? '' : ('' + val); } catch (e) { v = ''; }
+                if (v === '' || v === undefined || v === null) v = '\u00A0';
+            }
+            resultsSublist.setSublistValue({ id: id, line: line, value: v });
+        }
+        log.audit('ReporteRentabilidad', 'createReportForm llenando sublist filas=' + results.length);
+        for (var index = 0; index < results.length; index++) {
+            var row = results[index];
+            var lastFieldId = '';
+            try {
+                lastFieldId = 'custpage_customform'; setCell('custpage_customform', index, row.customForm, false);
+                lastFieldId = 'custpage_fecha'; setCell('custpage_fecha', index, row.fecha, false);
+                lastFieldId = 'custpage_periodo'; setCell('custpage_periodo', index, row.periodo, false);
+                lastFieldId = 'custpage_type'; setCell('custpage_type', index, row.type, false);
+                lastFieldId = 'custpage_clase'; setCell('custpage_clase', index, row.clase, false);
+                lastFieldId = 'custpage_ubicacion'; setCell('custpage_ubicacion', index, row.ubicacion, false);
+                lastFieldId = 'custpage_numero_documento'; setCell('custpage_numero_documento', index, row.numeroDocumento, false);
+                lastFieldId = 'custpage_sales_order_tranid'; setCell('custpage_sales_order_tranid', index, row.salesOrderTranId, false);
+                lastFieldId = 'custpage_fulfillment_tranid'; setCell('custpage_fulfillment_tranid', index, row.fulfillmentTranId, false);
+                lastFieldId = 'custpage_cliente'; setCell('custpage_cliente', index, row.cliente, false);
+                lastFieldId = 'custpage_giro_industrial'; setCell('custpage_giro_industrial', index, row.giroIndustrial, false);
+                lastFieldId = 'custpage_representante_venta'; setCell('custpage_representante_venta', index, row.representanteVenta, false);
+                lastFieldId = 'custpage_metodo_entrega'; setCell('custpage_metodo_entrega', index, row.metodoEntrega, false);
+                lastFieldId = 'custpage_proveedor'; setCell('custpage_proveedor', index, row.proveedor, false);
+                lastFieldId = 'custpage_terminos'; setCell('custpage_terminos', index, row.terminos, false);
+                lastFieldId = 'custpage_fecha_ajustada_venc'; setCell('custpage_fecha_ajustada_venc', index, row.fechaAjustadaVencimiento, false);
+                lastFieldId = 'custpage_objeto_impuesto'; setCell('custpage_objeto_impuesto', index, row.objetoImpuesto, false);
+                lastFieldId = 'custpage_articulo'; setCell('custpage_articulo', index, row.articulo, false);
+                var cantidadValue = safeNum(row.cantidad);
+                cantidadValue = Math.round(cantidadValue);
+                if (cantidadValue !== cantidadValue) cantidadValue = 0;
+                lastFieldId = 'custpage_cantidad'; setCell('custpage_cantidad', index, cantidadValue, true);
             
-            resultsSublist.setSublistValue({
-                id: 'custpage_fecha',
-                line: index,
-                value: safeStr(row.fecha)
-            });
+                lastFieldId = 'custpage_costo_transporte'; setCell('custpage_costo_transporte', index, row.costoTransporteCreated, true);
+                lastFieldId = 'custpage_tax_code'; setCell('custpage_tax_code', index, row.taxCode, false);
+                lastFieldId = 'custpage_importe'; setCell('custpage_importe', index, row.importe, true);
+                lastFieldId = 'custpage_tipo_cambio'; setCell('custpage_tipo_cambio', index, row.tipoCambio, true);
+                lastFieldId = 'custpage_moneda'; setCell('custpage_moneda', index, row.moneda, false);
             
-            resultsSublist.setSublistValue({
-                id: 'custpage_periodo',
-                line: index,
-                value: safeStr(row.periodo)
-            });
-            
-            resultsSublist.setSublistValue({
-                id: 'custpage_type',
-                line: index,
-                value: safeStr(row.type)
-            });
-            
-            resultsSublist.setSublistValue({
-                id: 'custpage_clase',
-                line: index,
-                value: safeStr(row.clase)
-            });
-            
-            resultsSublist.setSublistValue({
-                id: 'custpage_ubicacion',
-                line: index,
-                value: safeStr(row.ubicacion)
-            });
-            
-            resultsSublist.setSublistValue({
-                id: 'custpage_numero_documento',
-                line: index,
-                value: safeStr(row.numeroDocumento)
-            });
-            
-            resultsSublist.setSublistValue({
-                id: 'custpage_sales_order_tranid',
-                line: index,
-                value: safeStr(row.salesOrderTranId)
-            });
-            
-            resultsSublist.setSublistValue({
-                id: 'custpage_fulfillment_tranid',
-                line: index,
-                value: safeStr(row.fulfillmentTranId)
-            });
-            
-            resultsSublist.setSublistValue({
-                id: 'custpage_cliente',
-                line: index,
-                value: safeStr(row.cliente)
-            });
-            
-            resultsSublist.setSublistValue({
-                id: 'custpage_giro_industrial',
-                line: index,
-                value: safeStr(row.giroIndustrial)
-            });
-            
-            resultsSublist.setSublistValue({
-                id: 'custpage_representante_venta',
-                line: index,
-                value: safeStr(row.representanteVenta)
-            });
-            
-            resultsSublist.setSublistValue({
-                id: 'custpage_metodo_entrega',
-                line: index,
-                value: safeStr(row.metodoEntrega)
-            });
-            
-            resultsSublist.setSublistValue({
-                id: 'custpage_articulo',
-                line: index,
-                value: safeStr(row.articulo)
-            });
-            
-            var cantidadValue = safeNum(row.cantidad);
-            cantidadValue = Math.round(cantidadValue);
-            if (cantidadValue !== cantidadValue) { cantidadValue = 0; } // NaN -> 0
-            
-            resultsSublist.setSublistValue({
-                id: 'custpage_cantidad',
-                line: index,
-                value: cantidadValue
-            });
-            
-            resultsSublist.setSublistValue({
-                id: 'custpage_costo_transporte',
-                line: index,
-                value: safeNum(row.costoTransporteCreated)
-            });
-            
-            resultsSublist.setSublistValue({
-                id: 'custpage_tax_code',
-                line: index,
-                value: safeStr(row.taxCode)
-            });
-            
-            resultsSublist.setSublistValue({
-                id: 'custpage_importe',
-                line: index,
-                value: safeNum(row.importe)
-            });
-            
-            resultsSublist.setSublistValue({
-                id: 'custpage_tipo_cambio',
-                line: index,
-                value: safeNum(row.tipoCambio)
-            });
-            
-            resultsSublist.setSublistValue({
-                id: 'custpage_moneda',
-                line: index,
-                value: safeStr(row.moneda)
-            });
-            
-            resultsSublist.setSublistValue({
-                id: 'custpage_factor_descuento',
-                line: index,
-                value: safeNum(row.factorDescuento)
-            });
-            
-            resultsSublist.setSublistValue({
-                id: 'custpage_nota_credito_proveedor',
-                line: index,
-                value: safeNum(row.notaCreditoProveedor)
-            });
-            
-            resultsSublist.setSublistValue({
-                id: 'custpage_costo',
-                line: index,
-                value: safeNum(row.costo)
-            });
-            
-            resultsSublist.setSublistValue({
-                id: 'custpage_transporte',
-                line: index,
-                value: safeNum(row.transporte)
-            });
-            
-            resultsSublist.setSublistValue({
-                id: 'custpage_costo_total',
-                line: index,
-                value: safeNum(row.costoTotal)
-            });
-            
-            resultsSublist.setSublistValue({
-                id: 'custpage_utilidad_bruta',
-                line: index,
-                value: safeNum(row.utilidadBruta)
-            });
-            
-            resultsSublist.setSublistValue({
-                id: 'custpage_margen_mn',
-                line: index,
-                value: safeNum(row.margenMN)
-            });
-            
-            resultsSublist.setSublistValue({
-                id: 'custpage_ingreso_usd',
-                line: index,
-                value: safeNum(row.ingresoUSD)
-            });
-            
-            resultsSublist.setSublistValue({
-                id: 'custpage_costo_usd',
-                line: index,
-                value: safeNum(row.costoUSD)
-            });
-            
-            resultsSublist.setSublistValue({
-                id: 'custpage_transporte_usd',
-                line: index,
-                value: safeNum(row.transporteUSD)
-            });
-            
-            resultsSublist.setSublistValue({
-                id: 'custpage_nota_credito_proveedor_usd',
-                line: index,
-                value: safeNum(row.notaCreditoProveedorUSD)
-            });
-            
-            resultsSublist.setSublistValue({
-                id: 'custpage_costo_total_usd',
-                line: index,
-                value: safeNum(row.costoTotalUSD)
-            });
-            
-            resultsSublist.setSublistValue({
-                id: 'custpage_utilidad_bruta_usd',
-                line: index,
-                value: safeNum(row.utilidadBrutaUSD)
-            });
-            
-            resultsSublist.setSublistValue({
-                id: 'custpage_ingreso_casa',
-                line: index,
-                value: safeNum(row.ingresoCasa)
-            });
-            
-            // Porcentajes de comisión por gerente (mostrar tal cual del registro Employee, sin cálculos)
-            // Los porcentajes ya están en formato decimal (0.0018 = 0.18%), pero NetSuite espera valores entre 0 y 1 para campos PERCENT
-            resultsSublist.setSublistValue({
-                id: 'custpage_porcentaje_rosario',
-                line: index,
-                value: safeNum(row.porcentajeComisionRosario)
-            });
-            
-            resultsSublist.setSublistValue({
-                id: 'custpage_porcentaje_alhely',
-                line: index,
-                value: safeNum(row.porcentajeComisionAlhely)
-            });
-            
-            resultsSublist.setSublistValue({
-                id: 'custpage_porcentaje_gabriela',
-                line: index,
-                value: safeNum(row.porcentajeComisionGabriela)
-            });
-            
-            resultsSublist.setSublistValue({
-                id: 'custpage_porcentaje_mineria',
-                line: index,
-                value: safeNum(row.porcentajeComisionMineria)
-            });
-            
-            resultsSublist.setSublistValue({
-                id: 'custpage_porcentaje_agro',
-                line: index,
-                value: safeNum(row.porcentajeComisionAgro)
-            });
-            
-            resultsSublist.setSublistValue({
-                id: 'custpage_porcentaje_prieto',
-                line: index,
-                value: safeNum(row.porcentajeComisionPrieto)
-            });
-            
-            resultsSublist.setSublistValue({
-                id: 'custpage_porcentaje_otros',
-                line: index,
-                value: safeNum(row.porcentajeComisionOtros)
-            });
-            
-            // Comisión Total (porcentaje tal cual del registro Employee)
-            resultsSublist.setSublistValue({
-                id: 'custpage_porcentaje_total',
-                line: index,
-                value: safeNum(row.porcentajeComisionTotal)
-            });
-            
-            // Montos: porcentaje × Ingreso Casa (mismos nombres)
-            resultsSublist.setSublistValue({
-                id: 'custpage_comision_rosario',
-                line: index,
-                value: safeNum(row.comisionRosario)
-            });
-            resultsSublist.setSublistValue({
-                id: 'custpage_comision_alhely',
-                line: index,
-                value: safeNum(row.comisionAlhely)
-            });
-            resultsSublist.setSublistValue({
-                id: 'custpage_comision_gabriela',
-                line: index,
-                value: safeNum(row.comisionGabriela)
-            });
-            resultsSublist.setSublistValue({
-                id: 'custpage_comision_mineria',
-                line: index,
-                value: safeNum(row.comisionMineria)
-            });
-            resultsSublist.setSublistValue({
-                id: 'custpage_comision_agro',
-                line: index,
-                value: safeNum(row.comisionAgro)
-            });
-            resultsSublist.setSublistValue({
-                id: 'custpage_comision_prieto',
-                line: index,
-                value: safeNum(row.comisionPrieto)
-            });
-            resultsSublist.setSublistValue({
-                id: 'custpage_comision_otros',
-                line: index,
-                value: safeNum(row.comisionOtros)
-            });
-            resultsSublist.setSublistValue({
-                id: 'custpage_comision_total_gerentes',
-                line: index,
-                value: safeNum(row.comisionTotalGerentes)
-            });
-            resultsSublist.setSublistValue({
-                id: 'custpage_utilidad_despues_comisiones_gerencia',
-                line: index,
-                value: safeNum(row.utilidadDespuesComisionesGerencia)
-            });
-            // % Margen como texto "8.20%" (value nunca undefined)
-            var margenPctStr = (row.margenDespuesComisionesGerencia != null && !isNaN(row.margenDespuesComisionesGerencia))
-                ? (parseFloat(row.margenDespuesComisionesGerencia) * 100).toFixed(2) + '%'
-                : '0.00%';
-            resultsSublist.setSublistValue({
-                id: 'custpage_margen_despues_comisiones_gerencia',
-                line: index,
-                value: margenPctStr || '0.00%'
-            });
-            // % Comisión (custom record): value nunca undefined
-            var pctVal = row.porcentajeComision != null ? parseFloat(row.porcentajeComision) : 0;
-            var pctComisionStr = (pctVal < 0.02)
-                ? (pctVal * 100).toFixed(2) + '%'
-                : (isNaN(pctVal) ? '0.00%' : pctVal.toFixed(2) + '%');
-            resultsSublist.setSublistValue({
-                id: 'custpage_porcentaje_comision',
-                line: index,
-                value: pctComisionStr || '0.00%'
-            });
-            resultsSublist.setSublistValue({
-                id: 'custpage_comision_total',
-                line: index,
-                value: safeNum(row.comisionTotal)
-            });
-        });
+                lastFieldId = 'custpage_factor_descuento'; setCell('custpage_factor_descuento', index, row.factorDescuento, true);
+                lastFieldId = 'custpage_nota_credito_proveedor'; setCell('custpage_nota_credito_proveedor', index, row.notaCreditoProveedor, true);
+                lastFieldId = 'custpage_costo'; setCell('custpage_costo', index, row.costo, true);
+                lastFieldId = 'custpage_transporte'; setCell('custpage_transporte', index, row.transporte, true);
+                lastFieldId = 'custpage_costo_total'; setCell('custpage_costo_total', index, row.costoTotal, true);
+                lastFieldId = 'custpage_utilidad_bruta'; setCell('custpage_utilidad_bruta', index, row.utilidadBruta, true);
+                lastFieldId = 'custpage_margen_mn'; setCell('custpage_margen_mn', index, row.margenMN, true);
+                lastFieldId = 'custpage_ingreso_usd'; setCell('custpage_ingreso_usd', index, row.ingresoUSD, true);
+                lastFieldId = 'custpage_costo_usd'; setCell('custpage_costo_usd', index, row.costoUSD, true);
+                lastFieldId = 'custpage_transporte_usd'; setCell('custpage_transporte_usd', index, row.transporteUSD, true);
+                lastFieldId = 'custpage_nota_credito_proveedor_usd'; setCell('custpage_nota_credito_proveedor_usd', index, row.notaCreditoProveedorUSD, true);
+                lastFieldId = 'custpage_costo_total_usd'; setCell('custpage_costo_total_usd', index, row.costoTotalUSD, true);
+                lastFieldId = 'custpage_utilidad_bruta_usd'; setCell('custpage_utilidad_bruta_usd', index, row.utilidadBrutaUSD, true);
+                lastFieldId = 'custpage_ingreso_casa'; setCell('custpage_ingreso_casa', index, row.ingresoCasa, true);
+                lastFieldId = 'custpage_porcentaje_rosario'; setCell('custpage_porcentaje_rosario', index, row.porcentajeComisionRosario, true);
+                lastFieldId = 'custpage_porcentaje_alhely'; setCell('custpage_porcentaje_alhely', index, row.porcentajeComisionAlhely, true);
+                lastFieldId = 'custpage_porcentaje_gabriela'; setCell('custpage_porcentaje_gabriela', index, row.porcentajeComisionGabriela, true);
+                lastFieldId = 'custpage_porcentaje_mineria'; setCell('custpage_porcentaje_mineria', index, row.porcentajeComisionMineria, true);
+                lastFieldId = 'custpage_porcentaje_agro'; setCell('custpage_porcentaje_agro', index, row.porcentajeComisionAgro, true);
+                lastFieldId = 'custpage_porcentaje_prieto'; setCell('custpage_porcentaje_prieto', index, row.porcentajeComisionPrieto, true);
+                lastFieldId = 'custpage_porcentaje_otros'; setCell('custpage_porcentaje_otros', index, row.porcentajeComisionOtros, true);
+                lastFieldId = 'custpage_porcentaje_total'; setCell('custpage_porcentaje_total', index, row.porcentajeComisionTotal, true);
+                lastFieldId = 'custpage_comision_rosario'; setCell('custpage_comision_rosario', index, row.comisionRosario, true);
+                lastFieldId = 'custpage_comision_alhely'; setCell('custpage_comision_alhely', index, row.comisionAlhely, true);
+                lastFieldId = 'custpage_comision_gabriela'; setCell('custpage_comision_gabriela', index, row.comisionGabriela, true);
+                lastFieldId = 'custpage_comision_mineria'; setCell('custpage_comision_mineria', index, row.comisionMineria, true);
+                lastFieldId = 'custpage_comision_agro'; setCell('custpage_comision_agro', index, row.comisionAgro, true);
+                lastFieldId = 'custpage_comision_prieto'; setCell('custpage_comision_prieto', index, row.comisionPrieto, true);
+                lastFieldId = 'custpage_comision_otros'; setCell('custpage_comision_otros', index, row.comisionOtros, true);
+                lastFieldId = 'custpage_comision_total_gerentes'; setCell('custpage_comision_total_gerentes', index, row.comisionTotalGerentes, true);
+                lastFieldId = 'custpage_utilidad_despues_comisiones_gerencia'; setCell('custpage_utilidad_despues_comisiones_gerencia', index, row.utilidadDespuesComisionesGerencia, true);
+                var margenPctStr = (row.margenDespuesComisionesGerencia != null && !isNaN(row.margenDespuesComisionesGerencia))
+                    ? (parseFloat(row.margenDespuesComisionesGerencia) * 100).toFixed(2) + '%'
+                    : '0.00%';
+                lastFieldId = 'custpage_margen_despues_comisiones_gerencia'; setCell('custpage_margen_despues_comisiones_gerencia', index, margenPctStr || '0.00%', false);
+                var pctVal = row.porcentajeComision != null ? parseFloat(row.porcentajeComision) : 0;
+                var pctComisionStr = (pctVal < 0.02)
+                    ? (pctVal * 100).toFixed(2) + '%'
+                    : (isNaN(pctVal) ? '0.00%' : pctVal.toFixed(2) + '%');
+                lastFieldId = 'custpage_porcentaje_comision'; setCell('custpage_porcentaje_comision', index, pctComisionStr || '0.00%', false);
+                lastFieldId = 'custpage_comision_total'; setCell('custpage_comision_total', index, row.comisionTotal, true);
+            } catch (e) {
+                log.error('ReporteRentabilidad setSublistValue', 'line=' + index + ' field=' + lastFieldId + ' error=' + (e.message || e.name));
+                throw e;
+            }
+        }
+        log.audit('ReporteRentabilidad', 'createReportForm sublist listo total=' + results.length);
         
         return form;
     }
@@ -2455,7 +2429,7 @@ function(serverWidget, search, file, encode, log, record, https, runtime) {
             // Encabezados: mismo orden que el Suitelet
             var headers = [
                 'Formulario', 'Fecha', 'Período', 'Tipo', 'Clase', 'Ubicación', 'FV', 'OV', 'EPA',
-                'Cliente', 'GIRO INDUSTRIAL', 'Representante de Ventas', 'Método de Entrega', 'Artículo',
+                'Cliente', 'GIRO INDUSTRIAL', 'Representante de Ventas', 'Método de Entrega', 'Proveedor', 'Términos', 'Fecha Ajustada Vencimiento', 'Objeto de Impuesto', 'Artículo',
                 'Cantidad', 'Costo Transporte', 'Código de Impuesto', 'Ingreso', 'Tipo de Cambio', 'Moneda',
                 'Factor Descuento', 'Nota Crédito Proveedor', 'COSTO', 'Transporte', 'Costo Total', 'Utilidad Bruta', 'Margen MN',
                 'INGRESO USD', 'COSTO USD', 'TRANSPORTE USD', 'NOTA CRÉDITO PROVEEDOR USD', 'COSTO TOTAL USD', 'UTILIDAD BRUTA USD', 'Ingreso Casa',
@@ -2493,6 +2467,10 @@ function(serverWidget, search, file, encode, log, record, https, runtime) {
                     row.giroIndustrial || '',
                     row.representanteVenta || '',
                     row.metodoEntrega || '',
+                    row.proveedor || '',
+                    row.terminos || '',
+                    formatFechaForExport(row.fechaAjustadaVencimiento) || '',
+                    row.objetoImpuesto || '',
                     row.articulo || '',
                     row.cantidad != null ? row.cantidad : 0,
                     row.costoTransporteCreated != null ? row.costoTransporteCreated : 0,
