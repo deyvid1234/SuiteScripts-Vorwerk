@@ -422,14 +422,26 @@ function(runtime,config,record,render,email,search,format,file,log,Utils) {
             
             log.debug('procesarFulfillmentTm7Getm7', 'Día: ' + dia + ', Mes: ' + mes + ', Año: ' + anio);
             
-            // 6. Obtener número de pedido/orden de venta (tranid) y fecha de compra (trandate) de la orden TM7
-            var salesOrderFields = search.lookupFields({
+            // 6. Obtener número de pedido/orden de venta (tranid) de la orden GETM7 y fecha de compra (trandate) de la orden TM7
+            var salesOrderFieldsTM7 = search.lookupFields({
                 type: 'salesorder',
                 id: createdfromId,
-                columns: ['tranid', 'trandate']
+                columns: ['trandate']
             });
-            var noContrato = salesOrderFields.tranid || '';
-            log.debug('procesarFulfillmentTm7Getm7', 'Número de contrato: ' + noContrato);
+            
+            // Obtener tranid de la orden GETM7
+            var salesOrderFieldsGETM7 = search.lookupFields({
+                type: 'salesorder',
+                id: ordenGetm7IdInt,
+                columns: ['tranid']
+            });
+            
+            // Extraer solo la parte numérica del tranid de GETM7 y agregar prefijo EW
+            var tranidGetm7 = salesOrderFieldsGETM7.tranid || '';
+            var tranidNumerico = tranidGetm7.replace(/\D/g, ''); // Eliminar todos los caracteres no numéricos
+            var noContrato = 'EW' + tranidNumerico;
+            
+            log.debug('procesarFulfillmentTm7Getm7', 'Tranid GETM7: ' + tranidGetm7 + ', Número de contrato: ' + noContrato);
             
             // Obtener el contenido de la plantilla 288 usando render.mergeEmail() (igual que en el script de referencia)
             var idUSer = 344096;
@@ -525,7 +537,7 @@ function(runtime,config,record,render,email,search,format,file,log,Utils) {
                 log.debug('procesarFulfillmentTm7Getm7', 'Cupón disponible, preparando email con plantilla 287');
                 
                 // Obtener fecha de compra de la orden TM7 y formatearla
-                var fechaCompraRaw = salesOrderFields.trandate || rec.getValue('trandate');
+                var fechaCompraRaw = salesOrderFieldsTM7.trandate || rec.getValue('trandate');
                 var fechaCompra = '';
                 if(fechaCompraRaw){
                     var fechaCompraDate = fechaCompraRaw;

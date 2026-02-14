@@ -240,7 +240,7 @@ function(render,email,file,record,search,format,runtime) {
                 + "<pdf>"
                 + '<head></head>'
                 + '<body footer-height="20pt" padding="0.5in 0.5in 0in 0.5in" margin= "0in 0in 0.5in 0in" size="Letter">'
-                +'<img height="70%" width="70%" align="center" ' + logodURL +'>'
+                +'<table style="border-collapse: collapse; width: 100%; border: none;"><colgroup><col style="width: 100%;" /></colgroup><tbody><tr><td style="border: none; text-align: center;" align="center"><img height="70%" width="70%" ' + logodURL +'></td></tr></tbody></table>'
                 +'<p align="center" style="font-size:14pt; font-weight: bold; font-family: sans-serif;">ORDEN SERVICIO</p>'
                 +'<table border="0" cellpadding="1" cellspacing="1" style="width: 663px;">'
                 +'<tbody>'

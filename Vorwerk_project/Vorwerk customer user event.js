@@ -57,6 +57,11 @@ function(record,search,http,https,encode,runtime,serverWidget,error) {
                    operator: 'is',
                    values: email
                 }));
+                mySearch.filters.push(search.createFilter({
+                    name: 'custentity_creado_desde_presentador',
+                    operator: 'is',
+                    values: false
+                }));
                 var searchEmail = false
                 mySearch.run().each(function(r) {
                     searchEmail = r.getValue('email')
