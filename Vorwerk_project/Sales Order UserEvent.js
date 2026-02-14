@@ -233,9 +233,11 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                 var salesrep = rec.getValue('salesrep')
                 var typeEvent = runtime.executionContext;
                 var type = scriptContext.type;
+                
+                var pedido_tm7_getm7 = rec.getValue('custbody_pedido_tm7_getm7')
                 //Garantia extendida tm7
                 try{
-                    if(type == 'create'){
+                    if(type == 'create'&& pedido_tm7_getm7 == false ){
                         //log.debug('entre garantia extendida tm7',typeEvent)
                         //garantiaExtendidaTm7(rec)
                     }
@@ -494,7 +496,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                                     idTpl = 278;
                                     email_bbc = ''
                                     break; 
-                                 }else if(){
+                                 }else if(tmp_item == 2170){
                                     idTpl = 264;
                                  }
                             } 
