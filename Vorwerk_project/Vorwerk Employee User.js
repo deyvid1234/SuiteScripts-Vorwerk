@@ -23,6 +23,14 @@ define(['N/record','N/search','N/http','N/https','N/encode','N/runtime','N/ui/se
 				var objUser = runtime.getCurrentUser();//extracion de usuario activo
 				var rec = scriptContext.newRecord;//extraccion de registro userevent
 				var assigned = '';
+
+
+	            // Agrega el botón de crear cliente
+	            form.addButton({
+	                id: 'custpage_crear_cliente',
+	                label: 'Crear Cliente',
+	                functionName: 'crearCliente(\"'+idSalesORder+'\")'
+	            });
 				if(scriptContext.type == 'edit'){//validacion de contexto edit 
 					var busqueda = search.create({//creacion de busqueda 
 						  type: 'customrecord_vorwerk_config_permission',//configuracion de permisos 
