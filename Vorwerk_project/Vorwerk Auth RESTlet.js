@@ -1170,31 +1170,41 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
             
             // Recorrer todos los items del request
             var item_financiamiento = "1441"; // Item costo por financiamiento
+            var item_provisional_getm7 = "0000"; // Internal ID provisional para identificar GETM7 en pedidos TM7-GETM7
             for(var x in req_info.items){
                 var item_mine = req_info.items[x];
                 var item_id = String(item_mine.item_id);
                 
-                switch(item_id){
-                    case item_tm7:
+                // Detectar si el item_id es "0000" (GETM7 provisional) y cambiarlo al item_id real
+                if(item_id === item_provisional_getm7){
+                    log.debug('createSalesOrderv2', 'Detectado internal ID provisional "0000" para GETM7, cambiando a item_id real: ' + item_getm7);
+                    item_mine.item_id = item_getm7; // Cambiar el item_id de "0000" al item_id real de GETM7
+                    item_id = String(item_getm7); // Actualizar item_id para el switch
+                    tiene_getm7 = true;
+                    items_getm7_kit.push(item_mine);
+                } else {
+                    switch(item_id){
+                        case item_tm7:
                         tiene_tm7 = true;
                         items_tm7.push(item_mine);
-                        break;
-                    case item_getm7:
+                            break;
+                        case item_getm7:
                         tiene_getm7 = true;
                         items_getm7_kit.push(item_mine);
-                        break;
-                    case item_kit:
+                            break;
+                        case item_kit:
                         tiene_kit = true;
                         items_getm7_kit.push(item_mine);
-                        break;
-                    case item_financiamiento:
+                            break;
+                        case item_financiamiento:
                         // Item costo por financiamiento se agrega a la orden TM7
                         items_tm7.push(item_mine);
-                        break;
-                    default:
+                            break;
+                        default:
                         // Otros items que se agregarán a ambas órdenes o según se defina
                         otros_items.push(item_mine);
-                        break;
+                            break;
+                    }
                 }
             }
             
@@ -1261,17 +1271,24 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
             var id_orden_getm7_kit = null;
             var res_tm7 = null;
             
+            // Guardar multipago antes de eliminarlo del req_info (para procesarlo después)
+            var multipago_original = req_info.multipago || [];
+            
             // Crear PRIMERA orden de venta con item TM7
             if(tiene_tm7 && items_tm7.length > 0){
                 var req_info_tm7 = JSON.parse(JSON.stringify(req_info)); // Copia profunda del objeto
                 req_info_tm7.items = items_tm7.concat(otros_items); // Agregar otros items a la primera orden
                 req_info_tm7.tranid = req_info.tranid; // Sin sufijo para la orden TM7
                 req_info_tm7.custbody_pedido_tm7_getm7 = true; // Marcar check como verdadero
+                delete req_info_tm7.multipago; // Eliminar multipago para que no se procese en createSalesOrder
+                delete req_info_tm7.discountrate; // Eliminar descuento original para evitar que se aplique incorrectamente
                 
                 // Asignar descuento a la orden TM7 (solo si hay descuento disponible)
                 if(discountrate_tm7 > 0){
                     req_info_tm7.discountrate = discountrate_tm7;
                     log.debug('createSalesOrderv2', 'Asignando descuento TM7: ' + discountrate_tm7);
+                } else {
+                    log.debug('createSalesOrderv2', 'No se asigna descuento a TM7 (discountrate_tm7 = 0)');
                 }
                 
                 log.debug('createSalesOrderv2', 'Creando orden con item TM7 (' + item_tm7 + '), tranid: ' + req_info_tm7.tranid);
@@ -1291,13 +1308,23 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
             if((tiene_getm7 || tiene_kit) && items_getm7_kit.length > 0){
                 var req_info_getm7_kit = JSON.parse(JSON.stringify(req_info)); // Copia profunda del objeto
                 req_info_getm7_kit.items = items_getm7_kit; // Solo items GETM7 y KIT DESGASTE
-                req_info_getm7_kit.tranid = "NS" + req_info.tranid; // Agregar prefijo NS al tranid
+                
+                // Extraer solo los números del tranid y agregar prefijo NS
+                var tranid_numerico = req_info.tranid.replace(/\D/g, ''); // Eliminar todos los caracteres no numéricos
+                req_info_getm7_kit.tranid = "NS" + tranid_numerico;
+                
+                log.debug('createSalesOrderv2', 'Tranid original: ' + req_info.tranid + ', Tranid GETM7/KIT: ' + req_info_getm7_kit.tranid);
+                
                 req_info_getm7_kit.custbody_pedido_tm7_getm7 = true; // Marcar check como verdadero
+                delete req_info_getm7_kit.multipago; // Eliminar multipago para que no se procese en createSalesOrder
+                delete req_info_getm7_kit.discountrate; // Eliminar descuento original para evitar que se aplique incorrectamente
                 
                 // Asignar descuento a la orden GETM7/KIT (monto del kit menos un centavo)
                 if(discountrate_getm7_kit > 0){
                     req_info_getm7_kit.discountrate = discountrate_getm7_kit;
                     log.debug('createSalesOrderv2', 'Asignando descuento GETM7/KIT: ' + discountrate_getm7_kit);
+                } else {
+                    log.debug('createSalesOrderv2', 'No se asigna descuento a GETM7/KIT (discountrate_getm7_kit = 0)');
                 }
                 
                 // Asignar el internal id de la orden TM7 en el campo custbody_odv_tm7_getm7
@@ -1347,8 +1374,257 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                 }
             }
             
-            // Retornar solo la información de la orden TM7 en el mismo formato que createSalesOrder
-            return res_tm7;
+            // Variables para almacenar información de pagos creados
+            var id_payment_tm7_final = null;
+            var id_payment_getm7_final = null;
+            
+            // Procesar pagos si existen y ambas órdenes fueron creadas exitosamente
+            if(multipago_original && multipago_original.length > 0 && id_orden_tm7 && id_orden_getm7_kit){
+                try{
+                    log.debug('createSalesOrderv2', 'Procesando distribución de pagos entre órdenes TM7 y GETM7/KIT');
+                    
+                    // Obtener totales de ambas órdenes
+                    var ordenTm7Rec = record.load({
+                        type: 'salesorder',
+                        id: id_orden_tm7,
+                        isDynamic: false
+                    });
+                    var total_tm7 = parseFloat(ordenTm7Rec.getValue('total'));
+                    
+                    var ordenGetm7Rec = record.load({
+                        type: 'salesorder',
+                        id: id_orden_getm7_kit,
+                        isDynamic: false
+                    });
+                    var total_getm7 = parseFloat(ordenGetm7Rec.getValue('total'));
+                    
+                    log.debug('createSalesOrderv2', 'Total orden TM7: ' + total_tm7 + ', Total orden GETM7/KIT: ' + total_getm7);
+                    
+                    // Ordenar pagos por fecha (el primero es el de fecha menor)
+                    var pagos_ordenados = JSON.parse(JSON.stringify(multipago_original));
+                    pagos_ordenados.sort(function(a, b){
+                        var fechaA = parseDate(a.trandate || a.transdate || '');
+                        var fechaB = parseDate(b.trandate || b.transdate || '');
+                        if(!fechaA) fechaA = new Date(0);
+                        if(!fechaB) fechaB = new Date(0);
+                        return fechaA.getTime() - fechaB.getTime();
+                    });
+                    
+                    // Distribuir pagos
+                    var pagos_getm7 = [];
+                    var pagos_tm7 = [];
+                    var saldo_getm7 = total_getm7;
+                    var saldo_tm7 = total_tm7;
+                    
+                    if(pagos_ordenados.length === 1){
+                        // Si solo hay un pago: primero cubrir GETM7, el resto a TM7
+                        var pago = pagos_ordenados[0];
+                        var monto_pago = parseFloat(pago.payment || 0);
+                        
+                        log.debug('createSalesOrderv2', 'Un solo pago detectado. Monto: ' + monto_pago + ', Saldo GETM7: ' + saldo_getm7 + ', Saldo TM7: ' + saldo_tm7);
+                        
+                        if(monto_pago > 0){
+                            if(monto_pago >= saldo_getm7){
+                                // El pago cubre todo GETM7 y sobra para TM7
+                                var pago_getm7 = JSON.parse(JSON.stringify(pago));
+                                pago_getm7.payment = saldo_getm7;
+                                pagos_getm7.push(pago_getm7);
+                                
+                                var resto = monto_pago - saldo_getm7;
+                                log.debug('createSalesOrderv2', 'Pago cubre GETM7 completo (' + saldo_getm7 + '), resto para TM7: ' + resto);
+                                if(resto > 0){
+                                    var pago_tm7 = JSON.parse(JSON.stringify(pago));
+                                    pago_tm7.payment = resto;
+                                    pagos_tm7.push(pago_tm7);
+                                }
+                            } else {
+                                // El pago solo cubre parte de GETM7
+                                var pago_getm7 = JSON.parse(JSON.stringify(pago));
+                                pago_getm7.payment = monto_pago;
+                                pagos_getm7.push(pago_getm7);
+                                log.debug('createSalesOrderv2', 'Pago solo cubre parte de GETM7: ' + monto_pago);
+                            }
+                        }
+                    } else {
+                        // Si hay múltiples pagos: el primer pago (fecha menor) cubre primero GETM7, si sobra va a TM7, y los demás pagos van a TM7
+                        for(var i = 0; i < pagos_ordenados.length; i++){
+                            var pago = pagos_ordenados[i];
+                            var monto_pago = parseFloat(pago.payment || 0);
+                            
+                            if(monto_pago > 0){
+                                if(i === 0){
+                                    // Primer pago: primero GETM7, luego TM7
+                                    if(monto_pago >= saldo_getm7){
+                                        // El pago cubre todo GETM7 y sobra para TM7
+                                        var pago_getm7 = JSON.parse(JSON.stringify(pago));
+                                        pago_getm7.payment = saldo_getm7;
+                                        pagos_getm7.push(pago_getm7);
+                                        
+                                        var resto = monto_pago - saldo_getm7;
+                                        if(resto > 0){
+                                            var pago_tm7 = JSON.parse(JSON.stringify(pago));
+                                            pago_tm7.payment = resto;
+                                            pagos_tm7.push(pago_tm7);
+                                        }
+                                    } else {
+                                        // El pago solo cubre parte de GETM7
+                                        var pago_getm7 = JSON.parse(JSON.stringify(pago));
+                                        pago_getm7.payment = monto_pago;
+                                        pagos_getm7.push(pago_getm7);
+                                    }
+                                } else {
+                                    // Resto de pagos: todos van a TM7
+                                    var pago_tm7 = JSON.parse(JSON.stringify(pago));
+                                    pago_tm7.payment = monto_pago;
+                                    pagos_tm7.push(pago_tm7);
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Crear payments para orden GETM7/KIT
+                    if(pagos_getm7.length > 0){
+                        var total_pago_getm7 = 0;
+                        for(var p in pagos_getm7){
+                            total_pago_getm7 += parseFloat(pagos_getm7[p].payment || 0);
+                        }
+                        log.debug('createSalesOrderv2', 'Creando ' + pagos_getm7.length + ' payment(s) para orden GETM7/KIT. Total: ' + total_pago_getm7);
+                        var id_payment_getm7 = setPaymentMethod(id_orden_getm7_kit, pagos_getm7, req_info.entity);
+                        id_payment_getm7_final = id_payment_getm7;
+                        
+                        if(id_payment_getm7 && typeof id_payment_getm7 === 'object' && id_payment_getm7.id_payment && !id_payment_getm7.error){
+                            try{
+                                record.submitFields({
+                                    type: record.Type.SALES_ORDER,
+                                    id: id_orden_getm7_kit,
+                                    values: {
+                                        'custbody_vorwerk_contratos': id_payment_getm7.contract || '',
+                                        'custbody_total_pagado': id_payment_getm7.total_payment || 0
+                                    }
+                                });
+                                log.debug('createSalesOrderv2', 'Payment GETM7/KIT creado y orden actualizada');
+                            } catch(e){
+                                log.error('createSalesOrderv2', 'Error al actualizar orden GETM7/KIT con payment: ' + JSON.stringify(e));
+                            }
+                        } else {
+                            log.error('createSalesOrderv2', 'Error al crear payment GETM7/KIT: ' + (typeof id_payment_getm7 === 'string' ? id_payment_getm7 : JSON.stringify(id_payment_getm7)));
+                        }
+                    }
+                    
+                    // Crear payments para orden TM7
+                    if(pagos_tm7.length > 0){
+                        var total_pago_tm7 = 0;
+                        for(var p in pagos_tm7){
+                            total_pago_tm7 += parseFloat(pagos_tm7[p].payment || 0);
+                        }
+                        log.debug('createSalesOrderv2', 'Creando ' + pagos_tm7.length + ' payment(s) para orden TM7. Total: ' + total_pago_tm7);
+                        var id_payment_tm7 = setPaymentMethod(id_orden_tm7, pagos_tm7, req_info.entity);
+                        id_payment_tm7_final = id_payment_tm7;
+                        
+                        if(id_payment_tm7 && typeof id_payment_tm7 === 'object' && id_payment_tm7.id_payment && !id_payment_tm7.error){
+                            try{
+                                // Obtener fecha del último pago para TM7
+                                var fecha_pago_tm7 = null;
+                                if(pagos_tm7.length > 0){
+                                    var ultimo_pago_tm7 = pagos_tm7[pagos_tm7.length - 1];
+                                    fecha_pago_tm7 = parseDate(ultimo_pago_tm7.trandate || ultimo_pago_tm7.transdate || '');
+                                }
+                                
+                                var values_to_update = {
+                                    'custbody_vorwerk_contratos': id_payment_tm7.contract || '',
+                                    'custbody_total_pagado': id_payment_tm7.total_payment || 0
+                                };
+                                
+                                if(fecha_pago_tm7){
+                                    values_to_update['trandate'] = fecha_pago_tm7;
+                                }
+                                
+                                record.submitFields({
+                                    type: record.Type.SALES_ORDER,
+                                    id: id_orden_tm7,
+                                    values: values_to_update
+                                });
+                                
+                                if(id_payment_tm7.contract && id_payment_tm7.contract != ''){
+                                    record.submitFields({
+                                        type: record.Type.SALES_ORDER,
+                                        id: id_orden_tm7,
+                                        values: {'custbody_cfdi_formadepago': 3}
+                                    });
+                                }
+                                
+                                log.debug('createSalesOrderv2', 'Payment TM7 creado y orden actualizada');
+                            } catch(e){
+                                log.error('createSalesOrderv2', 'Error al actualizar orden TM7 con payment: ' + JSON.stringify(e));
+                            }
+                        } else {
+                            log.error('createSalesOrderv2', 'Error al crear payment TM7: ' + (typeof id_payment_tm7 === 'string' ? id_payment_tm7 : JSON.stringify(id_payment_tm7)));
+                        }
+                    }
+                    
+                } catch(err_pagos){
+                    log.error('createSalesOrderv2', 'Error al procesar pagos: ' + err_pagos);
+                    // Continuar aunque falle el procesamiento de pagos
+                }
+            }
+            
+            // Construir el response con la información de pagos correcta
+            var response_final = {
+                success: res_tm7.success || id_orden_tm7
+            };
+            
+            // Combinar información de pagos de ambas órdenes
+            if(id_payment_tm7_final || id_payment_getm7_final){
+                var combined_id_payment = [];
+                var combined_contract = [];
+                var combined_total_payment = 0;
+                
+                if(id_payment_tm7_final && id_payment_tm7_final.id_payment && Array.isArray(id_payment_tm7_final.id_payment)){
+                    combined_id_payment = combined_id_payment.concat(id_payment_tm7_final.id_payment);
+                    if(id_payment_tm7_final.contract){
+                        combined_contract.push(id_payment_tm7_final.contract);
+                    }
+                    combined_total_payment += parseFloat(id_payment_tm7_final.total_payment || 0);
+                }
+                
+                if(id_payment_getm7_final && id_payment_getm7_final.id_payment && Array.isArray(id_payment_getm7_final.id_payment)){
+                    combined_id_payment = combined_id_payment.concat(id_payment_getm7_final.id_payment);
+                    if(id_payment_getm7_final.contract){
+                        combined_contract.push(id_payment_getm7_final.contract);
+                    }
+                    combined_total_payment += parseFloat(id_payment_getm7_final.total_payment || 0);
+                }
+                
+                // Redondear a 2 decimales para evitar problemas de precisión de punto flotante
+                combined_total_payment = Math.round(combined_total_payment * 100) / 100;
+                
+                response_final.id_payment = {
+                    id_payment: combined_id_payment,
+                    contract: combined_contract.join(','),
+                    total_payment: combined_total_payment
+                };
+                
+                // Si hay errores en alguno de los pagos, agregarlos
+                var errors = [];
+                if(id_payment_tm7_final && id_payment_tm7_final.error){
+                    errors.push('TM7: ' + id_payment_tm7_final.error);
+                }
+                if(id_payment_getm7_final && id_payment_getm7_final.error){
+                    errors.push('GETM7: ' + id_payment_getm7_final.error);
+                }
+                if(errors.length > 0){
+                    response_final.id_payment.error = errors.join('; ');
+                }
+            } else {
+                // Si no se procesaron pagos, usar el response original
+                response_final.id_payment = res_tm7.id_payment || {
+                    id_payment: [],
+                    contract: '',
+                    total_payment: 0
+                };
+            }
+            
+            return response_final;
             
         }catch(err){
             log.error("error createSalesOrderv2",err);
@@ -1441,12 +1717,29 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
     
     
     function setPaymentMethod(id_transaction, info_payment,customer){
+        // Inicializar variables al inicio para que estén disponibles en el catch
+        var id_payment = [];
+        var num_authorization = [];
+        var total_payment = 0;
+        var contract = '';
+        
         try{
-            if(info_payment.length >0){
-                var id_payment =[];
-                var num_authorization = [];
-                var total_payment = 0
-                for(var x in info_payment){
+            // Validar que info_payment existe y es un array
+            if(!info_payment || !Array.isArray(info_payment) || info_payment.length === 0){
+                log.debug('setPaymentMethod', 'No hay pagos válidos o info_payment no es un array');
+                return {
+                    id_payment: [],
+                    contract: '',
+                    total_payment: 0,
+                    error: "no existe pago"
+                };
+            }
+            for(var x in info_payment){
+                // Validar que el elemento del array existe
+                if(!info_payment[x] || typeof info_payment[x] !== 'object'){
+                    log.error('setPaymentMethod', 'Elemento de pago inválido en índice ' + x);
+                    continue;
+                }
 
                     if(info_payment[x].custbody_forma_tipo_de_pago != 222){
                         var obj_payment = record.create({
@@ -1458,15 +1751,23 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                         obj_payment.setValue('custbody_mp_orden_venta_relacionada',id_transaction);
                         for(var y in info_payment[x]){
                             if(y == "custbody_forma_tipo_de_pago"){
-                                var tmp_tipo_pago = search.lookupFields({
-                                    type: 'customrecord_forma_tipo_de_pago',
-                                    id: info_payment[x][y],
-                                    columns: ['custrecord_ref_pago_cuenta_bancaria']
-                                });
-                                
-                                var id_account = tmp_tipo_pago.custrecord_ref_pago_cuenta_bancaria[0].value;
-                                obj_payment.setValue('account',id_account);
-                                obj_payment.setValue('custbody_forma_tipo_de_pago',info_payment[x][y]);
+                                try{
+                                    var tmp_tipo_pago = search.lookupFields({
+                                        type: 'customrecord_forma_tipo_de_pago',
+                                        id: info_payment[x][y],
+                                        columns: ['custrecord_ref_pago_cuenta_bancaria']
+                                    });
+                                    
+                                    if(tmp_tipo_pago && tmp_tipo_pago.custrecord_ref_pago_cuenta_bancaria && tmp_tipo_pago.custrecord_ref_pago_cuenta_bancaria.length > 0){
+                                        var id_account = tmp_tipo_pago.custrecord_ref_pago_cuenta_bancaria[0].value;
+                                        obj_payment.setValue('account',id_account);
+                                    }
+                                    obj_payment.setValue('custbody_forma_tipo_de_pago',info_payment[x][y]);
+                                } catch(err_lookup){
+                                    log.error('setPaymentMethod', 'Error al buscar tipo de pago: ' + err_lookup);
+                                    // Continuar sin account si falla la búsqueda
+                                    obj_payment.setValue('custbody_forma_tipo_de_pago',info_payment[x][y]);
+                                }
                             }else if(y == "trandate" || y == "transdate"){
                                 // Maneja tanto "trandate" como "transdate" del JSON, pero siempre setea "trandate" en NetSuite
                                 var fecha_pago = parseDate(info_payment[x][y]);
@@ -1482,37 +1783,67 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                                 obj_payment.setValue(y,ccexp)
                             }else{
                                 if (y == 'payment'){
-                                    total_payment = total_payment+parseInt(info_payment[x][y],10)                              
-                                    }
+                                    total_payment = total_payment + parseFloat(info_payment[x][y] || 0);                              
+                                }
                                 log.debug(y,info_payment[x][y]);
                                 obj_payment.setValue(y,info_payment[x][y])
                             }
                         }
-                        id_payment.push(obj_payment.save({ // Guarda el nuevo registro
-                            enableSourcing: true,
-                            ignoreMandatoryFields: true
-                        }));
+                        try{
+                            var payment_id = obj_payment.save({ // Guarda el nuevo registro
+                                enableSourcing: true,
+                                ignoreMandatoryFields: true
+                            });
+                            id_payment.push(payment_id);
+                            log.debug('setPaymentMethod', 'Payment creado con ID: ' + payment_id);
+                        } catch(err_save){
+                            log.error('setPaymentMethod', 'Error al guardar payment: ' + err_save);
+                            // Continuar con el siguiente pago aunque falle uno
+                        }
                     }else{
-                        num_authorization.push(info_payment[x].custbody_numero_autorizacion)
-                        
+                        // Solo agregar si existe el campo
+                        if(info_payment[x].custbody_numero_autorizacion){
+                            num_authorization.push(info_payment[x].custbody_numero_autorizacion);
+                        }
                     }
                 
                 }
-                contract = num_authorization.join(',')
+                
+                // Asegurar que num_authorization es un array antes de hacer join
+                contract = (num_authorization && Array.isArray(num_authorization)) ? num_authorization.join(',') : '';
+                
+                log.debug('setPaymentMethod', 'Payments creados: ' + id_payment.length + ', Contract: ' + contract + ', Total: ' + total_payment);
+                
                 return {
                     id_payment: id_payment,
                     contract: contract,
                     total_payment:total_payment
                 }
-            }else{
-                return "no existe pago";
-            }
-            
 
         }catch(err){
+            log.error("error set Payment", JSON.stringify(err));
+            log.error("error set Payment stack", err.stack || 'No stack trace');
             
-            log.debug("error set Payment",err);
-            return err.message;
+            // Si ya se crearon algunos payments, retornarlos aunque haya error
+            var error_message = 'Error desconocido';
+            try{
+                if(err && err.message){
+                    error_message = err.message;
+                } else if(err && err.toString){
+                    error_message = err.toString();
+                } else if(typeof err === 'string'){
+                    error_message = err;
+                }
+            } catch(e){
+                error_message = 'Error al procesar mensaje de error';
+            }
+            
+            return {
+                id_payment: id_payment || [],
+                contract: contract || '',
+                total_payment: total_payment || 0,
+                error: error_message
+            };
         }
             
     }
