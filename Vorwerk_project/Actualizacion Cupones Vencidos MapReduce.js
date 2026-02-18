@@ -155,7 +155,7 @@ function(email, record, search, runtime, format) {
                 
                 email.send({
                     author: 344096,
-                    recipients: 'griselrdz@gmail.com',
+                    recipients: ['miriam.gomez@thermomix.mx', 'danya.vazquez@thermomix.mx','pilar.torres@thermomix.mx', 'mauricio.cordero@thermomix.mx', 'itsupportmexico@thermomix.mx'],
                     subject: 'Alerta: Cupones Disponibles Bajo Mínimo',
                     body: emailBody
                 });
