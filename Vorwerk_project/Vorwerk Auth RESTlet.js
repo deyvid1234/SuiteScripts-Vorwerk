@@ -669,29 +669,49 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
             var items_especiales = [];
             var discont_base;
             var discont_tm7;
+            var item_tm7;
+            var item_cutter;
             if(runtime.envType == "SANDBOX"){
                 // Items que requieren item de descuento 2692 en sandbox
                 items_especiales = ["2685", "2686"];
                 discont_base = 1876;
                 discont_tm7 = 2692;
+                item_tm7 = "2680";
+                item_cutter = "2693";
             }else{//produccion
                 items_especiales = ["2839", "2841"];//GETM,KIT DESGASTE TM7
                 discont_base = 1876;//descuento G0006
                 discont_tm7 = 2840;//descuento G0008
+                item_tm7 = "2763";
+                item_cutter = "2817";
             }
             var discount_item_id = discont_base; // Item de descuento por defecto
             var tiene_item_2686 = false; // Flag para detectar si hay item 2686 (KIT DE DESGASTE TM7)
+            var tiene_tm7 = false;
+            var tiene_cutter = false;
             
-            // Verificar si alguno de los items recibidos está en la lista de items especiales
+            // Verificar si alguno de los items recibidos está en la lista de items especiales y detectar TM7 y cutter
             for(var x in req_info.items){
-                if(items_especiales.indexOf(req_info.items[x].item_id) !== -1){
+                var item_id_str = String(req_info.items[x].item_id);
+                if(items_especiales.indexOf(item_id_str) !== -1){
                     discount_item_id = discont_tm7;
-                                        
+                    if(item_id_str === items_especiales[1]){
                         tiene_item_2686 = true;
-                        
+                    }
                     break;
                 }
+                if(item_id_str === item_tm7) tiene_tm7 = true;
+                if(item_id_str === item_cutter) tiene_cutter = true;
             }
+            // Si no se detectó TM7 o cutter en el loop anterior, hacer un segundo recorrido solo para ellos
+            if(!tiene_tm7 || !tiene_cutter){
+                for(var y in req_info.items){
+                    var id_y = String(req_info.items[y].item_id);
+                    if(id_y === item_tm7) tiene_tm7 = true;
+                    if(id_y === item_cutter) tiene_cutter = true;
+                }
+            }
+            var es_pedido_cutter = tiene_tm7 && tiene_cutter;
             
             // Calcular descuento solo si NO hay item 2686 (para item 2686 se aplica descuento único al final)
             if("discountrate" in req_info && !tiene_item_2686){
@@ -742,6 +762,13 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                 if(item_tax == 0 ){
                     item_tax = 0.01
                 }
+                // Cutter: en request llega 2999 pero en la ODV debe quedar con amount 3999 (total línea con IVA)
+                
+                if(es_pedido_cutter && String(item_mine.item_id) === item_cutter){
+                    var cantidad_cutter = parseInt(item_mine.quantity, 10) || 1;
+                    item_tax = (3999 / 1.16) / cantidad_cutter;
+                }
+                
                 
                 obj_sales_order.selectNewLine({
                         sublistId : 'item',
@@ -799,6 +826,11 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                 var descuento_unico = parseFloat(req_info['discountrate']) - 0.04;
                 
                 setItemDiscount(obj_sales_order, descuento_unico, discont_tm7, true);
+            }
+
+            // Pedido cutter: TM7 + cutter → agregar descuento fijo de 1000 pesos (item 1876)
+            if(es_pedido_cutter){
+                setItemDiscount(obj_sales_order, 1000, 1876, true);
             }
 
             var  salesorder_payment = req_info.multipago;
@@ -1127,18 +1159,22 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
             var item_kit_sandbox = "2686";
             var item_kit_prod = "2841";
             
-            var item_tm7, item_getm7, item_kit;
+            var item_cutter_sandbox = "2693";
+            var item_cutter_prod = "2817";
+            var item_tm7, item_getm7, item_kit, item_cutter;
             if(runtime.envType == "SANDBOX"){
                 item_tm7 = item_tm7_sandbox;
                 item_getm7 = item_getm7_sandbox;
                 item_kit = item_kit_sandbox;
+                item_cutter = item_cutter_sandbox;
             } else { //produccion
                 item_tm7 = item_tm7_prod;
                 item_getm7 = item_getm7_prod;
                 item_kit = item_kit_prod;
+                item_cutter = item_cutter_prod;
             }
             
-            log.debug('createSalesOrderv2', 'Ambiente: ' + runtime.envType + ', Item TM7: ' + item_tm7 + ', Item GETM7: ' + item_getm7 + ', Item KIT: ' + item_kit);
+            log.debug('createSalesOrderv2', 'Ambiente: ' + runtime.envType + ', Item TM7: ' + item_tm7 + ', Item GETM7: ' + item_getm7 + ', Item KIT: ' + item_kit + ', Item Cutter: ' + item_cutter);
             
             // Separar items en dos grupos
             var items_tm7 = []; // Items para la primera orden (incluye item TM7)
@@ -1148,6 +1184,7 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
             var tiene_tm7 = false;
             var tiene_getm7 = false;
             var tiene_kit = false;
+            var tiene_cutter = false;
             
             // Recorrer todos los items del request
             var item_financiamiento = "1441"; // Item costo por financiamiento
@@ -1181,12 +1218,22 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                         // Item costo por financiamiento se agrega a la orden TM7
                         items_tm7.push(item_mine);
                             break;
+                        case item_cutter:
+                        tiene_cutter = true;
+                        otros_items.push(item_mine);
+                            break;
                         default:
                         // Otros items que se agregarán a ambas órdenes o según se defina
                         otros_items.push(item_mine);
                             break;
                     }
                 }
+            }
+            
+            // Pedido cutter: TM7 + cutter → una sola orden con descuento de 1000 pesos (createSalesOrder lo aplica)
+            if(tiene_tm7 && tiene_cutter){
+                log.debug('createSalesOrderv2', 'Pedido cutter detectado (TM7 + Cutter), creando orden única con descuento cutter');
+                return createSalesOrder(req_info);
             }
             
             // Validar que tenga ambos artículos: TM7 y GETM7
