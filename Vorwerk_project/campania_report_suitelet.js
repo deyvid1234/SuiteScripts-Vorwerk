@@ -1,3 +1,4 @@
+//version estable 5 de marzo
 'use strict';
 /**
  * @NApiVersion 2.x
@@ -127,9 +128,6 @@ define([
                 ]
             });
             requisitionSearch.run().each(function (result) {
-                // Cargar la requisición para obtener el campo de PO relacionada
-                log.debug('result',result)
-                log.debug('requisiciones',requisiciones)
                 var poId = '';
                 try {
                     var rec = record.load({
@@ -191,7 +189,7 @@ define([
                 return true;
             });
 
-            // Buscar Bills
+            // Buscar Bills (incluir exchangerate para evitar record.load posteriores)
             var billSearch = search.create({
                 type: 'vendorbill',
                 filters: [
@@ -206,18 +204,17 @@ define([
                     'trandate',
                     'total',
                     'taxtotal',
-                    'currency'
+                    'currency',
+                    'exchangerate'
                 ]
             });
             billSearch.run().each(function (result) {
                 var total = parseFloat(result.getValue('total')) || 0;
                 var taxtotal = parseFloat(result.getValue('taxtotal')) || 0;
+                var exchangerate = parseFloat(result.getValue('exchangerate')) || 1;
                 log.debug('total', total);
                 log.debug('taxtotal', taxtotal);
                 log.debug('taxtotal raw value', result.getValue('taxtotal'));
-                // El subtotal siempre es total - taxtotal
-                // Si taxtotal es negativo (crédito), esto efectivamente suma el valor absoluto
-                // Si taxtotal es positivo (impuestos), esto resta el valor
                 var subtotal = total + taxtotal;
                 log.debug('subtotal calculated', subtotal);
                 
@@ -228,7 +225,8 @@ define([
                     trandate: result.getValue('trandate'),
                     total: total,
                     subtotal: subtotal,
-                    currency: result.getText('currency') || ''
+                    currency: result.getText('currency') || '',
+                    exchangerate: exchangerate
                 };
                 return true;
             });
@@ -294,21 +292,25 @@ define([
             // Crear grupos de transacciones relacionadas
             var transaccionesProcesadas = {};
 
-            // Función para obtener transacciones relacionadas a una PO
-            function obtenerTransaccionesRelacionadas(poId) {
+            // Cache de PO ya cargadas para no consumir gobernanza con record.load repetidos
+            var poRecordCache = {};
+            // Función para obtener transacciones relacionadas a una PO (poRecOpcional: registro ya cargado para reutilizar)
+            function obtenerTransaccionesRelacionadas(poId, poRecOpcional) {
                 var relacionadas = [];
                 if (purchaseOrders[poId]) {
                     relacionadas.push({
                         tipo: 'Purchase Order',
                         data: purchaseOrders[poId]
                     });
-                    
-                    // Buscar Bills e Item Receipts relacionados
                     try {
-                        var poRec = record.load({
-                            type: 'purchaseorder',
-                            id: poId
-                        });
+                        var poRec = poRecOpcional || poRecordCache[poId];
+                        if (!poRec) {
+                            poRec = record.load({
+                                type: 'purchaseorder',
+                                id: poId
+                            });
+                            poRecordCache[poId] = poRec;
+                        }
                         var linkLineCount = poRec.getLineCount({ sublistId: 'links' });
                         for (var i = 0; i < linkLineCount; i++) {
                             var linkId = poRec.getSublistValue({ sublistId: 'links', fieldId: 'id', line: i });
@@ -329,7 +331,6 @@ define([
                         }
                     } catch (e) {
                         log.error('Error loading purchase order ' + poId + ': ' + e.message);
-                        // Si no se puede cargar la PO, continuar sin los links relacionados
                     }
                 }
                 return relacionadas;
@@ -371,20 +372,20 @@ define([
                 requisicionesPorId[req.internalid] = req;
             });
 
-            // Procesar POs que no están relacionadas a requisiciones
+            // Procesar POs que no están relacionadas a requisiciones (cargar PO una sola vez y reutilizar)
             Object.keys(purchaseOrders).forEach(function (poId) {
                 if (!transaccionesProcesadas['po_' + poId]) {
                     var requisicionEncontrada = null;
-                    
-                    // Revisar el campo linkedorder en la sublista expense de la PO
+                    var poRec = poRecordCache[poId] || null;
                     try {
-                        var poRec = record.load({
-                            type: 'purchaseorder',
-                            id: poId
-                        });
+                        if (!poRec) {
+                            poRec = record.load({
+                                type: 'purchaseorder',
+                                id: poId
+                            });
+                            poRecordCache[poId] = poRec;
+                        }
                         var expenseCount = poRec.getLineCount({ sublistId: 'expense' });
-                        
-                        // Buscar en cada línea de expense por el campo linkedorder
                         for (var i = 0; i < expenseCount; i++) {
                             var linkedOrderId = poRec.getSublistValue({ sublistId: 'expense', fieldId: 'linkedorder', line: i });
                             if (linkedOrderId && requisicionesPorId[linkedOrderId]) {
@@ -397,9 +398,7 @@ define([
                         log.error('Error loading purchase order ' + poId + ' for linkedorder check: ' + e.message);
                     }
                     
-                    // Si se encontró una requisición relacionada, agregar la PO a ese grupo
                     if (requisicionEncontrada) {
-                        // Buscar el grupo de la requisición
                         var grupoRequisicion = null;
                         for (var g = 0; g < grupos.length; g++) {
                             var grupo = grupos[g];
@@ -414,15 +413,14 @@ define([
                         }
                         
                         if (grupoRequisicion) {
-                            var poRelacionadas = obtenerTransaccionesRelacionadas(poId);
+                            var poRelacionadas = obtenerTransaccionesRelacionadas(poId, poRec);
                             grupoRequisicion.transacciones = grupoRequisicion.transacciones.concat(poRelacionadas);
                             grupoRequisicion.nombre += ' + PO ' + purchaseOrders[poId].tranid;
                             transaccionesProcesadas['po_' + poId] = true;
                             log.debug('Added PO ' + purchaseOrders[poId].tranid + ' to existing requisition group ' + grupoRequisicion.idDinamico);
                         }
                     } else {
-                        // Si no se encontró relación, crear un grupo independiente para la PO
-                        var poRelacionadas = obtenerTransaccionesRelacionadas(poId);
+                        var poRelacionadas = obtenerTransaccionesRelacionadas(poId, poRec);
                         if (poRelacionadas.length > 0) {
                             var grupo = {
                                 nombre: 'PO ' + purchaseOrders[poId].tranid,
@@ -483,6 +481,64 @@ define([
                 // Sumar el subtotal (sin impuestos)
                 totalSinImpuestos += bill.subtotal;
             });
+
+            // Si se solicita PDF: construir datos de líneas (una sola carga por Bill) y exportar sin construir el formulario (optimización gobernanza)
+            if (descargar === 'pdf') {
+                var billLineData = {};
+                Object.keys(bills).forEach(function(billId) {
+                    var bill = bills[billId];
+                    if (!bill || !bill.internalid) return;
+                    try {
+                        var billRec = record.load({ type: 'vendorbill', id: billId });
+                        var itemCount = billRec.getLineCount({ sublistId: 'item' });
+                        var expenseCount = billRec.getLineCount({ sublistId: 'expense' });
+                        billLineData[billId] = { items: [], expenses: [] };
+                        for (var i = 0; i < itemCount; i++) {
+                            var itemText = billRec.getSublistText ? billRec.getSublistText({ sublistId: 'item', fieldId: 'item', line: i }) : (billRec.getSublistValue({ sublistId: 'item', fieldId: 'item', line: i }) || '');
+                            billLineData[billId].items.push({
+                                item: itemText || '',
+                                desc: billRec.getSublistValue({ sublistId: 'item', fieldId: 'description', line: i }) || '',
+                                qty: billRec.getSublistValue({ sublistId: 'item', fieldId: 'quantity', line: i }),
+                                rate: billRec.getSublistValue({ sublistId: 'item', fieldId: 'rate', line: i }),
+                                amount: billRec.getSublistValue({ sublistId: 'item', fieldId: 'amount', line: i })
+                            });
+                        }
+                        for (var j = 0; j < expenseCount; j++) {
+                            var accountText = billRec.getSublistText ? billRec.getSublistText({ sublistId: 'expense', fieldId: 'account', line: j }) : '';
+                            billLineData[billId].expenses.push({
+                                account: (accountText !== undefined && accountText !== null) ? accountText.toString() : '',
+                                descExp: (function() {
+                                    var v = billRec.getSublistValue({ sublistId: 'expense', fieldId: 'memo', line: j });
+                                    return (v !== undefined && v !== null && v !== '') ? v.toString() : '-';
+                                })(),
+                                amount: billRec.getSublistValue({ sublistId: 'expense', fieldId: 'amount', line: j }),
+                                grossamt: billRec.getSublistValue({ sublistId: 'expense', fieldId: 'grossamt', line: j }),
+                                tax1amt: billRec.getSublistValue({ sublistId: 'expense', fieldId: 'tax1amt', line: j }),
+                                taxcode: billRec.getSublistValue({ sublistId: 'expense', fieldId: 'taxcode_display', line: j })
+                            });
+                        }
+                    } catch (e) {
+                        log.error('Error loading bill ' + billId + ' for PDF: ' + e.message);
+                    }
+                });
+                exportarPDF({
+                    idCampania: idCampania,
+                    nombreCampania: nombreCampania,
+                    grupos: grupos,
+                    salesOrders: salesOrders,
+                    totalGastado: totalGastado,
+                    totalSinImpuestos: totalSinImpuestos,
+                    presupuesto: presupuesto,
+                    encargado: encargado,
+                    fechaInicio: fechaInicio,
+                    fechaFin: fechaFin,
+                    aprobador: aprobador,
+                    response: response,
+                    bills: bills,
+                    billLineData: billLineData
+                });
+                return;
+            }
 
             // Mostrar datos de la campaña en subtab Detalle
             form.addField({ id: 'custpage_presupuesto', type: serverWidget.FieldType.CURRENCY, label: 'Presupuesto', container: 'custpage_subtab_detalle' }).updateDisplayType({ displayType: serverWidget.FieldDisplayType.INLINE }).defaultValue = presupuesto;
@@ -643,22 +699,9 @@ define([
                 // Procesar cada transacción en el grupo
                 grupo.transacciones.forEach(function(transaccion) {
                     var considerado = transaccion.tipo === 'Bill' ? 'Sí' : 'No';
-                    
-                    // Calcular el total en pesos para Bills usando la tasa de cambio
                     var totalEnPesos = transaccion.data.total;
-                    if (transaccion.tipo === 'Bill') {
-                        try {
-                            var billRec = record.load({
-                                type: 'vendorbill',
-                                id: transaccion.data.internalid
-                            });
-                            var exchangeRate = billRec.getValue('exchangerate') || 1;
-                            totalEnPesos = transaccion.data.total * exchangeRate;
-                        } catch (e) {
-                            log.error('Error loading bill ' + transaccion.data.internalid + ' for exchange rate: ' + e.message);
-                            // Si no se puede cargar el bill, usar el total original
-                            totalEnPesos = transaccion.data.total;
-                        }
+                    if (transaccion.tipo === 'Bill' && (transaccion.data.exchangerate != null && transaccion.data.exchangerate !== undefined)) {
+                        totalEnPesos = transaccion.data.total * (parseFloat(transaccion.data.exchangerate) || 1);
                     }
                     
                     sublist.setSublistValue({ id: 'col_tipo', line: line, value: transaccion.tipo || '' });
@@ -719,24 +762,6 @@ define([
                 });
                 return;
             }
-            // Si se solicita PDF
-            if (descargar === 'pdf') {
-                exportarPDF({
-                    idCampania: idCampania,
-                    nombreCampania: nombreCampania,
-                    grupos: grupos,
-                    salesOrders: salesOrders,
-                    totalGastado: totalGastado,
-                    totalSinImpuestos: totalSinImpuestos,
-                    presupuesto: presupuesto,
-                    encargado: encargado,
-                    fechaInicio: fechaInicio,
-                    fechaFin: fechaFin,
-                    aprobador: aprobador,
-                    response: response
-                });
-                return;
-            }
         }
 
         // Refuerzo: si nombreCampania sigue vacío, usa campaniaId
@@ -781,6 +806,13 @@ define([
             x1 = x1.replace(rgx, '$1' + ',' + '$2');
         }
         return x1 + x2;
+    }
+
+    // --- Escapar caracteres especiales para XML (evita "entity name must immediately follow the '&'" en PDF) ---
+    function escapeXml(s) {
+        if (s === undefined || s === null) return '';
+        s = String(s);
+        return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
     }
 
     // --- Función para obtener la imagen del logo (tomada del script Vorwerk) ---
@@ -908,63 +940,76 @@ define([
         html += '<body>';
         html += '<p align="center"><img width="100%" height="100%" src="' + getImage() + '" style="max-width:440px; height:auto; margin-bottom:8px;" alt="Logo" /></p>';
         html += '<p align="center" font-family="Helvetica" font-size="12"><b>REPORTE DE CAMPAÑA</b></p>';
-        html += '<p align="center" font-family="Helvetica" font-size="12"><b>' + nombreCampania + '</b></p>';
+        html += '<p align="center" font-family="Helvetica" font-size="12"><b>' + escapeXml(nombreCampania) + '</b></p>';
         html += '<p font-family="Helvetica" font-size="10" align="center"><b>DETALLE DE LA CAMPAÑA</b></p>';
         html += '<table border="0" style="margin-bottom:18px; font-size:12pt; width:100%; border:none;"><tr>'
             + '<td style="border:none;"><b>Presupuesto:</b> ' + addCommas(presupuesto.toFixed(2)) + '</td>'
-            + '<td style="border:none;"><b>Encargado:</b> ' + encargado + '</td>'
-            + '<td style="border:none;"><b>Fecha Inicio:</b> ' + fechaInicio + '</td>'
+            + '<td style="border:none;"><b>Encargado:</b> ' + escapeXml(encargado) + '</td>'
+            + '<td style="border:none;"><b>Fecha Inicio:</b> ' + escapeXml(fechaInicio) + '</td>'
             + '</tr><tr>'
-            + '<td style="border:none;"><b>Fecha Fin:</b> ' + fechaFin + '</td>'
-            + '<td style="border:none;"><b>Aprobador/Revisor:</b> ' + aprobador + '</td>'
+            + '<td style="border:none;"><b>Fecha Fin:</b> ' + escapeXml(fechaFin) + '</td>'
+            + '<td style="border:none;"><b>Aprobador/Revisor:</b> ' + escapeXml(aprobador) + '</td>'
             + '</tr></table>';
 
-        // --- Sección Resumen por Bill ---
+        // --- Sección Resumen por Bill (reutilizar params.bills si viene del Suitelet para ahorrar gobernanza) ---
         html += '<p font-family="Helvetica" font-size="10" align="center"><b>Resumen</b></p>';
-        var billSearch = search.create({
-            type: 'vendorbill',
-            filters: [
-                ['custbody_camp', 'anyof', params.idCampania],
-                'AND',
-                ['mainline', 'is', 'T']
-            ],
-            columns: [
-                'internalid', 'tranid', 'entity', 'trandate', 'total', 'currency'
-            ]
-        });
         var billIds = [];
         var billData = {};
-        billSearch.run().each(function(result) {
-            var id = result.getValue('internalid');
-            billIds.push(id);
-            billData[id] = {
-                tranid: result.getValue('tranid'),
-                entity: result.getText('entity'),
-                trandate: result.getValue('trandate'),
-                total: result.getValue('total'),
-                currency: result.getText('currency')
-            };
-            return true;
-        });
+        if (params.bills && typeof params.bills === 'object') {
+            billIds = Object.keys(params.bills);
+            billData = params.bills;
+        } else {
+            var billSearch = search.create({
+                type: 'vendorbill',
+                filters: [
+                    ['custbody_camp', 'anyof', params.idCampania],
+                    'AND',
+                    ['mainline', 'is', 'T']
+                ],
+                columns: [
+                    'internalid', 'tranid', 'entity', 'trandate', 'total', 'currency'
+                ]
+            });
+            billSearch.run().each(function(result) {
+                var id = result.getValue('internalid');
+                billIds.push(id);
+                billData[id] = {
+                    tranid: result.getValue('tranid'),
+                    entity: result.getText('entity'),
+                    trandate: result.getValue('trandate'),
+                    total: result.getValue('total'),
+                    currency: result.getText('currency')
+                };
+                return true;
+            });
+        }
         for (var b = 0; b < billIds.length; b++) {
             var billId = billIds[b];
             var bill = billData[billId];
-            try {
-                var billRec = record.load({ type: 'vendorbill', id: billId });
-                var itemCount = billRec.getLineCount({ sublistId: 'item' });
-                var expenseCount = billRec.getLineCount({ sublistId: 'expense' });
-            } catch (e) {
-                log.error('Error loading bill ' + billId + ' in PDF export: ' + e.message);
-                // Si no se puede cargar el bill, continuar con el siguiente
-                continue;
+            var lineData = params.billLineData && params.billLineData[billId];
+            var itemCount = 0;
+            var expenseCount = 0;
+            var billRec = null;
+            if (lineData) {
+                itemCount = lineData.items ? lineData.items.length : 0;
+                expenseCount = lineData.expenses ? lineData.expenses.length : 0;
+            } else {
+                try {
+                    billRec = record.load({ type: 'vendorbill', id: billId });
+                    itemCount = billRec.getLineCount({ sublistId: 'item' });
+                    expenseCount = billRec.getLineCount({ sublistId: 'expense' });
+                } catch (e) {
+                    log.error('Error loading bill ' + billId + ' in PDF export: ' + e.message);
+                    continue;
+                }
             }
             // Lista de datos generales antes de cada tabla de artículos
             if (itemCount > 0) {
                 html += '<table style="margin-bottom:2px; font-size:12pt; width:100%; border:none;"><tr>'
-                    + '<td style="border:none;"><b>Bill:</b> ' + (bill.tranid || '') + '</td>'
-                    + '<td style="border:none;"><b>Proveedor:</b> ' + (bill.entity || '') + '</td>'
+                    + '<td style="border:none;"><b>Bill:</b> ' + escapeXml(bill.tranid || '') + '</td>'
+                    + '<td style="border:none;"><b>Proveedor:</b> ' + escapeXml(bill.entity || '') + '</td>'
                     + '</tr><tr>'
-                    + '<td style="border:none;"><b>Fecha:</b> ' + (bill.trandate || '') + '</td>'
+                    + '<td style="border:none;"><b>Fecha:</b> ' + escapeXml(bill.trandate || '') + '</td>'
                     + '<td style="border:none;"><b>Total Bill:</b> ' + addCommas((bill.total || 0).toString()) + '</td>'
                     + '</tr></table>';
                 html += '<table width="670px"><tr>';
@@ -978,19 +1023,28 @@ define([
                 html += '<td border="0.5" width="100px" align="left"><b>Total Bill (Pesos)</b></td>';
                 html += '</tr>';
                 for (var i = 0; i < itemCount; i++) {
-                    var item = billRec.getSublistText ? billRec.getSublistText({ sublistId: 'item', fieldId: 'item', line: i }) : '';
-                    var desc = billRec.getSublistValue({ sublistId: 'item', fieldId: 'description', line: i }) || '';
-                    var qty = billRec.getSublistValue({ sublistId: 'item', fieldId: 'quantity', line: i });
-                    var rate = billRec.getSublistValue({ sublistId: 'item', fieldId: 'rate', line: i });
-                    var amount = billRec.getSublistValue({ sublistId: 'item', fieldId: 'amount', line: i });
+                    var item, desc, qty, rate, amount;
+                    if (lineData && lineData.items[i]) {
+                        item = lineData.items[i].item;
+                        desc = lineData.items[i].desc;
+                        qty = lineData.items[i].qty;
+                        rate = lineData.items[i].rate;
+                        amount = lineData.items[i].amount;
+                    } else {
+                        item = billRec.getSublistText ? billRec.getSublistText({ sublistId: 'item', fieldId: 'item', line: i }) : '';
+                        desc = billRec.getSublistValue({ sublistId: 'item', fieldId: 'description', line: i }) || '';
+                        qty = billRec.getSublistValue({ sublistId: 'item', fieldId: 'quantity', line: i });
+                        rate = billRec.getSublistValue({ sublistId: 'item', fieldId: 'rate', line: i });
+                        amount = billRec.getSublistValue({ sublistId: 'item', fieldId: 'amount', line: i });
+                    }
                     html += '<tr>';
-                    html += '<td border="0.5" border-style="dotted-narrow">' + (item || '') + '</td>';
-                    html += '<td border="0.5" border-style="dotted-narrow">' + (desc || '') + '</td>';
-                    html += '<td border="0.5" border-style="dotted-narrow">' + (qty !== undefined && qty !== null ? qty : '') + '</td>';
+                    html += '<td border="0.5" border-style="dotted-narrow">' + escapeXml(item != null ? item : '') + '</td>';
+                    html += '<td border="0.5" border-style="dotted-narrow">' + escapeXml(desc != null ? desc : '') + '</td>';
+                    html += '<td border="0.5" border-style="dotted-narrow">' + escapeXml(qty !== undefined && qty !== null ? qty : '') + '</td>';
                     html += '<td border="0.5" border-style="dotted-narrow" align="right">' + (rate !== undefined && rate !== null ? addCommas(Number(rate).toFixed(2)) : '') + '</td>';
                     html += '<td border="0.5" border-style="dotted-narrow" align="right">' + (amount !== undefined && amount !== null ? addCommas(Number(amount).toFixed(2)) : '') + '</td>';
                     html += '<td border="0.5" border-style="dotted-narrow" align="right">' + addCommas((bill.total || 0).toString()) + '</td>';
-                    html += '<td border="0.5" border-style="dotted-narrow">' + (bill.currency || '') + '</td>';
+                    html += '<td border="0.5" border-style="dotted-narrow">' + escapeXml(bill.currency || '') + '</td>';
                     html += '<td border="0.5" border-style="dotted-narrow" align="right">' + addCommas((bill.total || 0).toString()) + '</td>';
                     html += '</tr>';
                 }
@@ -999,10 +1053,10 @@ define([
             // Lista de datos generales antes de cada tabla de gastos
             if (expenseCount > 0) {
                 html += '<table border="0" style="margin-bottom:2px; font-size:12pt; width:100%; border:none;"><tr>'
-                    + '<td style="border:none;"><b>Bill:</b> ' + (bill.tranid || '') + '</td>'
-                    + '<td style="border:none;"><b>Proveedor:</b> ' + (bill.entity || '') + '</td>'
+                    + '<td style="border:none;"><b>Bill:</b> ' + escapeXml(bill.tranid || '') + '</td>'
+                    + '<td style="border:none;"><b>Proveedor:</b> ' + escapeXml(bill.entity || '') + '</td>'
                     + '</tr><tr>'
-                    + '<td style="border:none;"><b>Fecha:</b> ' + (bill.trandate || '') + '</td>'
+                    + '<td style="border:none;"><b>Fecha:</b> ' + escapeXml(bill.trandate || '') + '</td>'
                     + '<td style="border:none;"><b>Total Bill:</b> ' + addCommas((bill.total || 0).toString()) + '</td>'
                     + '</tr></table>';
                 html += '<table width="670px"><tr>';
@@ -1017,22 +1071,32 @@ define([
                 html += '<td border="0.5" width="90px" align="left"><b>Total Bill (Pesos)</b></td>';
                 html += '</tr>';
                 for (var j = 0; j < expenseCount; j++) {
-                    var account = billRec.getSublistText ? billRec.getSublistText({ sublistId: 'expense', fieldId: 'account', line: j }) : '';
-                    var descExp = billRec.getSublistValue({ sublistId: 'expense', fieldId: 'memo', line: j });
-                    descExp = (descExp !== undefined && descExp !== null && descExp !== '') ? descExp.toString() : '-';
-                    var amount = billRec.getSublistValue({ sublistId: 'expense', fieldId: 'amount', line: j });
-                    var grossamt = billRec.getSublistValue({ sublistId: 'expense', fieldId: 'grossamt', line: j });
-                    var tax1amt = billRec.getSublistValue({ sublistId: 'expense', fieldId: 'tax1amt', line: j });
-                    var taxcode = billRec.getSublistValue({ sublistId: 'expense', fieldId: 'taxcode_display', line: j });
+                    var account, descExp, amount, grossamt, tax1amt, taxcode;
+                    if (lineData && lineData.expenses[j]) {
+                        account = lineData.expenses[j].account;
+                        descExp = lineData.expenses[j].descExp;
+                        amount = lineData.expenses[j].amount;
+                        grossamt = lineData.expenses[j].grossamt;
+                        tax1amt = lineData.expenses[j].tax1amt;
+                        taxcode = lineData.expenses[j].taxcode;
+                    } else {
+                        account = billRec.getSublistText ? billRec.getSublistText({ sublistId: 'expense', fieldId: 'account', line: j }) : '';
+                        descExp = billRec.getSublistValue({ sublistId: 'expense', fieldId: 'memo', line: j });
+                        descExp = (descExp !== undefined && descExp !== null && descExp !== '') ? descExp.toString() : '-';
+                        amount = billRec.getSublistValue({ sublistId: 'expense', fieldId: 'amount', line: j });
+                        grossamt = billRec.getSublistValue({ sublistId: 'expense', fieldId: 'grossamt', line: j });
+                        tax1amt = billRec.getSublistValue({ sublistId: 'expense', fieldId: 'tax1amt', line: j });
+                        taxcode = billRec.getSublistValue({ sublistId: 'expense', fieldId: 'taxcode_display', line: j });
+                    }
                     html += '<tr>';
-                    html += '<td border="0.5" border-style="dotted-narrow">' + (account || '') + '</td>';
-                    html += '<td border="0.5" border-style="dotted-narrow">' + (descExp || '') + '</td>';
+                    html += '<td border="0.5" border-style="dotted-narrow">' + escapeXml(account != null ? account : '') + '</td>';
+                    html += '<td border="0.5" border-style="dotted-narrow">' + escapeXml(descExp != null ? descExp : '') + '</td>';
                     html += '<td border="0.5" border-style="dotted-narrow" align="right">' + (amount !== undefined && amount !== null ? addCommas(Number(amount).toFixed(2)) : '') + '</td>';
                     html += '<td border="0.5" border-style="dotted-narrow" align="right">' + (grossamt !== undefined && grossamt !== null ? addCommas(Number(grossamt).toFixed(2)) : '') + '</td>';
                     html += '<td border="0.5" border-style="dotted-narrow" align="right">' + (tax1amt !== undefined && tax1amt !== null ? addCommas(Number(tax1amt).toFixed(2)) : '') + '</td>';
-                    html += '<td border="0.5" border-style="dotted-narrow">' + (taxcode || '') + '</td>';
+                    html += '<td border="0.5" border-style="dotted-narrow">' + escapeXml(taxcode != null ? taxcode : '') + '</td>';
                     html += '<td border="0.5" border-style="dotted-narrow" align="right">' + addCommas((bill.total || 0).toString()) + '</td>';
-                    html += '<td border="0.5" border-style="dotted-narrow">' + (bill.currency || '') + '</td>';
+                    html += '<td border="0.5" border-style="dotted-narrow">' + escapeXml(bill.currency || '') + '</td>';
                     html += '<td border="0.5" border-style="dotted-narrow" align="right">' + addCommas((bill.total || 0).toString()) + '</td>';
                     html += '</tr>';
                 }
@@ -1044,7 +1108,7 @@ define([
 
         // Exportar cada grupo
         grupos.forEach(function (grupo) {
-            html += '<p font-family="Helvetica" font-size="8" align="center"><b>Grupo: ' + grupo.idDinamico + '</b></p>';
+            html += '<p font-family="Helvetica" font-size="8" align="center"><b>Grupo: ' + escapeXml(grupo.idDinamico) + '</b></p>';
             html += '<table width="670px"><tr>';
             html += '<td border="0.5" width="100px" align="left"><b>Tipo</b></td>';
             html += '<td border="0.5" width="110px" align="left"><b>Transacción</b></td>';
@@ -1059,13 +1123,13 @@ define([
             grupo.transacciones.forEach(function(transaccion) {
                 var considerado = transaccion.tipo === 'Bill' ? 'Sí' : 'No';
                 html += '<tr>';
-                html += '<td border="0.5" border-style="dotted-narrow">' + transaccion.tipo + '</td>';
-                html += '<td border="0.5" border-style="dotted-narrow">' + transaccion.data.tranid + '</td>';
-                html += '<td border="0.5" border-style="dotted-narrow">' + transaccion.data.entity + '</td>';
-                html += '<td border="0.5" border-style="dotted-narrow">' + transaccion.data.trandate + '</td>';
-                html += '<td border="0.5" border-style="dotted-narrow">' + considerado + '</td>';
+                html += '<td border="0.5" border-style="dotted-narrow">' + escapeXml(transaccion.tipo) + '</td>';
+                html += '<td border="0.5" border-style="dotted-narrow">' + escapeXml(transaccion.data.tranid) + '</td>';
+                html += '<td border="0.5" border-style="dotted-narrow">' + escapeXml(transaccion.data.entity) + '</td>';
+                html += '<td border="0.5" border-style="dotted-narrow">' + escapeXml(transaccion.data.trandate) + '</td>';
+                html += '<td border="0.5" border-style="dotted-narrow">' + escapeXml(considerado) + '</td>';
                 html += '<td border="0.5" border-style="dotted-narrow" align="right">' + addCommas(transaccion.data.total.toFixed(2)) + '</td>';
-                html += '<td border="0.5" border-style="dotted-narrow">' + (transaccion.data.currency || '') + '</td>';
+                html += '<td border="0.5" border-style="dotted-narrow">' + escapeXml(transaccion.data.currency || '') + '</td>';
                 html += '<td border="0.5" border-style="dotted-narrow" align="right">' + addCommas(transaccion.data.total.toFixed(2)) + '</td>';
                 html += '</tr>';
             });
@@ -1088,12 +1152,12 @@ define([
             salesOrders.forEach(function(so) {
                 html += '<tr>';
                 html += '<td border="0.5" border-style="dotted-narrow">Sales Order</td>';
-                html += '<td border="0.5" border-style="dotted-narrow">' + so.tranid + '</td>';
-                html += '<td border="0.5" border-style="dotted-narrow">' + so.entity + '</td>';
-                html += '<td border="0.5" border-style="dotted-narrow">' + so.trandate + '</td>';
+                html += '<td border="0.5" border-style="dotted-narrow">' + escapeXml(so.tranid) + '</td>';
+                html += '<td border="0.5" border-style="dotted-narrow">' + escapeXml(so.entity) + '</td>';
+                html += '<td border="0.5" border-style="dotted-narrow">' + escapeXml(so.trandate) + '</td>';
                 html += '<td border="0.5" border-style="dotted-narrow">No</td>';
                 html += '<td border="0.5" border-style="dotted-narrow" align="right">' + addCommas(so.total.toFixed(2)) + '</td>';
-                html += '<td border="0.5" border-style="dotted-narrow">' + (so.currency || '') + '</td>';
+                html += '<td border="0.5" border-style="dotted-narrow">' + escapeXml(so.currency || '') + '</td>';
                 html += '<td border="0.5" border-style="dotted-narrow" align="right">' + addCommas(so.total.toFixed(2)) + '</td>';
                 html += '</tr>';
             });
