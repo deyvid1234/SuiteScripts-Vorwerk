@@ -482,45 +482,89 @@ define([
                 totalSinImpuestos += bill.subtotal;
             });
 
-            // Si se solicita PDF: construir datos de líneas (una sola carga por Bill) y exportar sin construir el formulario (optimización gobernanza)
+            // Obtener líneas de ítems y gastos por Bill mediante búsquedas (sin record.load para ahorrar gobernanza)
+            var billLineData = {};
+            Object.keys(bills).forEach(function(billId) {
+                billLineData[billId] = { items: [], expenses: [] };
+            });
+            if (Object.keys(bills).length > 0) {
+                try {
+                    var itemLineSearch = search.create({
+                        type: 'vendorbill',
+                        filters: [
+                            ['custbody_camp', 'anyof', campaniaId],
+                            'AND',
+                            ['mainline', 'is', 'F'],
+                            'AND',
+                            ['line', 'is', 'T']
+                        ],
+                        columns: [
+                            search.createColumn({ name: 'internalid' }),
+                            search.createColumn({ name: 'item', join: 'line' }),
+                            search.createColumn({ name: 'description', join: 'line' }),
+                            search.createColumn({ name: 'quantity', join: 'line' }),
+                            search.createColumn({ name: 'rate', join: 'line' }),
+                            search.createColumn({ name: 'amount', join: 'line' })
+                        ]
+                    });
+                    itemLineSearch.run().each(function(result) {
+                        var billId = result.getValue({ name: 'internalid' });
+                        if (!billLineData[billId]) billLineData[billId] = { items: [], expenses: [] };
+                        var itemText = result.getText({ name: 'item', join: 'line' }) || result.getValue({ name: 'item', join: 'line' }) || '';
+                        billLineData[billId].items.push({
+                            item: itemText,
+                            desc: result.getValue({ name: 'description', join: 'line' }) || '',
+                            qty: result.getValue({ name: 'quantity', join: 'line' }),
+                            rate: result.getValue({ name: 'rate', join: 'line' }),
+                            amount: result.getValue({ name: 'amount', join: 'line' })
+                        });
+                        return true;
+                    });
+                } catch (e) {
+                    log.error('Error search item lines bills: ' + e.message);
+                }
+                try {
+                    var expenseLineSearch = search.create({
+                        type: 'vendorbill',
+                        filters: [
+                            ['custbody_camp', 'anyof', campaniaId],
+                            'AND',
+                            ['mainline', 'is', 'F'],
+                            'AND',
+                            ['expense', 'is', 'T']
+                        ],
+                        columns: [
+                            search.createColumn({ name: 'internalid' }),
+                            search.createColumn({ name: 'account', join: 'expense' }),
+                            search.createColumn({ name: 'memo', join: 'expense' }),
+                            search.createColumn({ name: 'amount', join: 'expense' }),
+                            search.createColumn({ name: 'grossamt', join: 'expense' }),
+                            search.createColumn({ name: 'tax1amt', join: 'expense' }),
+                            search.createColumn({ name: 'taxcode', join: 'expense' })
+                        ]
+                    });
+                    expenseLineSearch.run().each(function(result) {
+                        var billId = result.getValue({ name: 'internalid' });
+                        if (!billLineData[billId]) billLineData[billId] = { items: [], expenses: [] };
+                        var accountText = result.getText({ name: 'account', join: 'expense' }) || '';
+                        var memoVal = result.getValue({ name: 'memo', join: 'expense' });
+                        billLineData[billId].expenses.push({
+                            account: accountText,
+                            descExp: (memoVal !== undefined && memoVal !== null && memoVal !== '') ? String(memoVal) : '-',
+                            amount: result.getValue({ name: 'amount', join: 'expense' }),
+                            grossamt: result.getValue({ name: 'grossamt', join: 'expense' }),
+                            tax1amt: result.getValue({ name: 'tax1amt', join: 'expense' }),
+                            taxcode: result.getValue({ name: 'taxcode', join: 'expense' })
+                        });
+                        return true;
+                    });
+                } catch (e) {
+                    log.error('Error search expense lines bills: ' + e.message);
+                }
+            }
+
+            // Si se solicita PDF: exportar usando billLineData ya construido (sin record.load)
             if (descargar === 'pdf') {
-                var billLineData = {};
-                Object.keys(bills).forEach(function(billId) {
-                    var bill = bills[billId];
-                    if (!bill || !bill.internalid) return;
-                    try {
-                        var billRec = record.load({ type: 'vendorbill', id: billId });
-                        var itemCount = billRec.getLineCount({ sublistId: 'item' });
-                        var expenseCount = billRec.getLineCount({ sublistId: 'expense' });
-                        billLineData[billId] = { items: [], expenses: [] };
-                        for (var i = 0; i < itemCount; i++) {
-                            var itemText = billRec.getSublistText ? billRec.getSublistText({ sublistId: 'item', fieldId: 'item', line: i }) : (billRec.getSublistValue({ sublistId: 'item', fieldId: 'item', line: i }) || '');
-                            billLineData[billId].items.push({
-                                item: itemText || '',
-                                desc: billRec.getSublistValue({ sublistId: 'item', fieldId: 'description', line: i }) || '',
-                                qty: billRec.getSublistValue({ sublistId: 'item', fieldId: 'quantity', line: i }),
-                                rate: billRec.getSublistValue({ sublistId: 'item', fieldId: 'rate', line: i }),
-                                amount: billRec.getSublistValue({ sublistId: 'item', fieldId: 'amount', line: i })
-                            });
-                        }
-                        for (var j = 0; j < expenseCount; j++) {
-                            var accountText = billRec.getSublistText ? billRec.getSublistText({ sublistId: 'expense', fieldId: 'account', line: j }) : '';
-                            billLineData[billId].expenses.push({
-                                account: (accountText !== undefined && accountText !== null) ? accountText.toString() : '',
-                                descExp: (function() {
-                                    var v = billRec.getSublistValue({ sublistId: 'expense', fieldId: 'memo', line: j });
-                                    return (v !== undefined && v !== null && v !== '') ? v.toString() : '-';
-                                })(),
-                                amount: billRec.getSublistValue({ sublistId: 'expense', fieldId: 'amount', line: j }),
-                                grossamt: billRec.getSublistValue({ sublistId: 'expense', fieldId: 'grossamt', line: j }),
-                                tax1amt: billRec.getSublistValue({ sublistId: 'expense', fieldId: 'tax1amt', line: j }),
-                                taxcode: billRec.getSublistValue({ sublistId: 'expense', fieldId: 'taxcode_display', line: j })
-                            });
-                        }
-                    } catch (e) {
-                        log.error('Error loading bill ' + billId + ' for PDF: ' + e.message);
-                    }
-                });
                 exportarPDF({
                     idCampania: idCampania,
                     nombreCampania: nombreCampania,
@@ -565,22 +609,16 @@ define([
                 .updateLayoutType({ layoutType: serverWidget.FieldLayoutType.OUTSIDEABOVE })
                 .defaultValue = totalGastadoHtml;
 
-            // Mostrar cada Bill con su encabezado y detalles (artículos/gastos) uno debajo del otro en el subtab Resumen
+            // Mostrar cada Bill con su encabezado y detalles (artículos/gastos) desde billLineData (sin record.load)
             var sublistExpenseCounter = 0;
             var sublistItemCounter = 0;
             Object.keys(bills).forEach(function(billId) {
                 var bill = bills[billId];
                 if (!bill || !bill.internalid) return;
-                try {
-                    var billRec = record.load({ type: 'vendorbill', id: billId });
-                    var itemCount = billRec.getLineCount({ sublistId: 'item' });
-                    var expenseCount = billRec.getLineCount({ sublistId: 'expense' });
-                    log.debug('bill', bill);
-                } catch (e) {
-                    log.error('Error loading bill ' + billId + ': ' + e.message);
-                    // Si no se puede cargar el bill, continuar con el siguiente
-                    return;
-                }
+                var lineData = billLineData[billId] || { items: [], expenses: [] };
+                var itemCount = lineData.items ? lineData.items.length : 0;
+                var expenseCount = lineData.expenses ? lineData.expenses.length : 0;
+                log.debug('bill2', bill);
 
                 // Sublista de artículos (si hay)
                 if (itemCount > 0) {
@@ -603,25 +641,24 @@ define([
                     resumenItemSublist.addField({ id: 'col_bill_currency', type: serverWidget.FieldType.TEXT, label: 'Moneda' });
                     resumenItemSublist.addField({ id: 'col_bill_total_line', type: serverWidget.FieldType.CURRENCY, label: 'Total' });
                     resumenItemSublist.addField({ id: 'col_bill_total', type: serverWidget.FieldType.CURRENCY, label: 'Total Bill (Pesos)' });
-                    var resumenItemLine = 0;
                     for (var i = 0; i < itemCount; i++) {
-                        var item = billRec.getSublistValue({ sublistId: 'item', fieldId: 'item', line: i }) || '';
-                        var desc = billRec.getSublistValue({ sublistId: 'item', fieldId: 'description', line: i }) || '';
-                        var qty = billRec.getSublistValue({ sublistId: 'item', fieldId: 'quantity', line: i });
-                        var rate = billRec.getSublistValue({ sublistId: 'item', fieldId: 'rate', line: i });
-                        var amount = billRec.getSublistValue({ sublistId: 'item', fieldId: 'amount', line: i });
-                        resumenItemSublist.setSublistValue({ id: 'col_bill_tranid', line: resumenItemLine, value: bill.tranid || '' });
-                        resumenItemSublist.setSublistValue({ id: 'col_bill_entity', line: resumenItemLine, value: bill.entity || '' });
-                        resumenItemSublist.setSublistValue({ id: 'col_bill_trandate', line: resumenItemLine, value: bill.trandate || '' });
-                        resumenItemSublist.setSublistValue({ id: 'col_bill_item', line: resumenItemLine, value: item });
-                        resumenItemSublist.setSublistValue({ id: 'col_bill_desc', line: resumenItemLine, value: desc });
-                        resumenItemSublist.setSublistValue({ id: 'col_bill_qty', line: resumenItemLine, value: qty ? qty.toString() : '' });
-                        resumenItemSublist.setSublistValue({ id: 'col_bill_rate', line: resumenItemLine, value: rate ? rate.toString() : '' });
-                        resumenItemSublist.setSublistValue({ id: 'col_bill_amount', line: resumenItemLine, value: amount ? amount.toString() : '' });
-                        resumenItemSublist.setSublistValue({ id: 'col_bill_currency', line: resumenItemLine, value: bill.currency || '' });
-                        resumenItemSublist.setSublistValue({ id: 'col_bill_total_line', line: resumenItemLine, value: amount ? amount.toString() : '' });
-                        resumenItemSublist.setSublistValue({ id: 'col_bill_total', line: resumenItemLine, value: bill.total ? bill.total.toString() : '0' });
-                        resumenItemLine++;
+                        var row = lineData.items[i];
+                        var item = (row && row.item) ? String(row.item) : '';
+                        var desc = (row && row.desc != null) ? String(row.desc) : '';
+                        var qty = row && row.qty;
+                        var rate = row && row.rate;
+                        var amount = row && row.amount;
+                        resumenItemSublist.setSublistValue({ id: 'col_bill_tranid', line: i, value: bill.tranid || '' });
+                        resumenItemSublist.setSublistValue({ id: 'col_bill_entity', line: i, value: bill.entity || '' });
+                        resumenItemSublist.setSublistValue({ id: 'col_bill_trandate', line: i, value: bill.trandate || '' });
+                        resumenItemSublist.setSublistValue({ id: 'col_bill_item', line: i, value: item });
+                        resumenItemSublist.setSublistValue({ id: 'col_bill_desc', line: i, value: desc });
+                        resumenItemSublist.setSublistValue({ id: 'col_bill_qty', line: i, value: qty != null ? String(qty) : '' });
+                        resumenItemSublist.setSublistValue({ id: 'col_bill_rate', line: i, value: rate != null ? String(rate) : '' });
+                        resumenItemSublist.setSublistValue({ id: 'col_bill_amount', line: i, value: amount != null ? String(amount) : '' });
+                        resumenItemSublist.setSublistValue({ id: 'col_bill_currency', line: i, value: bill.currency || '' });
+                        resumenItemSublist.setSublistValue({ id: 'col_bill_total_line', line: i, value: amount != null ? String(amount) : '' });
+                        resumenItemSublist.setSublistValue({ id: 'col_bill_total', line: i, value: bill.total ? String(bill.total) : '0' });
                     }
                 }
 
@@ -646,33 +683,25 @@ define([
                     resumenExpenseSublist.addField({ id: 'col_bill_tax1amt', type: serverWidget.FieldType.CURRENCY, label: 'Monto Tax' });
                     resumenExpenseSublist.addField({ id: 'col_bill_taxcode', type: serverWidget.FieldType.TEXT, label: 'Tax Code' });
                     resumenExpenseSublist.addField({ id: 'col_bill_total', type: serverWidget.FieldType.CURRENCY, label: 'Total Bill (Pesos)' });
-                    var resumenExpenseLine = 0;
                     for (var j = 0; j < expenseCount; j++) {
-                        // Mostrar el nombre de la cuenta en vez del internalid
-                        var account = billRec.getSublistText ? billRec.getSublistText({ sublistId: 'expense', fieldId: 'account', line: j }) : '';
-                        account = (account !== undefined && account !== null) ? account.toString() : '';
-                        var amount = billRec.getSublistValue({ sublistId: 'expense', fieldId: 'amount', line: j });
-                        amount = (amount !== undefined && amount !== null) ? amount.toString() : '0';
-                        var grossamt = billRec.getSublistValue({ sublistId: 'expense', fieldId: 'grossamt', line: j });
-                        grossamt = (grossamt !== undefined && grossamt !== null) ? grossamt.toString() : '0';
-                        var tax1amt = billRec.getSublistValue({ sublistId: 'expense', fieldId: 'tax1amt', line: j });
-                        tax1amt = (tax1amt !== undefined && tax1amt !== null) ? tax1amt.toString() : '0';
-                        var taxcode = billRec.getSublistValue({ sublistId: 'expense', fieldId: 'taxcode_display', line: j });
-                        taxcode = (taxcode !== undefined && taxcode !== null) ? taxcode.toString() : '';
-                        var descExp = billRec.getSublistValue({ sublistId: 'expense', fieldId: 'memo', line: j });
-                        descExp = (descExp !== undefined && descExp !== null && descExp !== '') ? descExp.toString() : '-';
-                        resumenExpenseSublist.setSublistValue({ id: 'col_bill_tranid', line: resumenExpenseLine, value: bill.tranid || '' });
-                        resumenExpenseSublist.setSublistValue({ id: 'col_bill_entity', line: resumenExpenseLine, value: bill.entity || '' });
-                        resumenExpenseSublist.setSublistValue({ id: 'col_bill_trandate', line: resumenExpenseLine, value: bill.trandate || '' });
-                        resumenExpenseSublist.setSublistValue({ id: 'col_bill_account', line: resumenExpenseLine, value: account });
-                        resumenExpenseSublist.setSublistValue({ id: 'col_bill_desc', line: resumenExpenseLine, value: descExp });
-                        resumenExpenseSublist.setSublistValue({ id: 'col_bill_amount', line: resumenExpenseLine, value: amount });
-                        resumenExpenseSublist.setSublistValue({ id: 'col_bill_currency', line: resumenExpenseLine, value: bill.currency || '' });
-                        resumenExpenseSublist.setSublistValue({ id: 'col_bill_grossamt', line: resumenExpenseLine, value: grossamt });
-                        resumenExpenseSublist.setSublistValue({ id: 'col_bill_tax1amt', line: resumenExpenseLine, value: tax1amt });
-                        resumenExpenseSublist.setSublistValue({ id: 'col_bill_taxcode', line: resumenExpenseLine, value: taxcode });
-                        resumenExpenseSublist.setSublistValue({ id: 'col_bill_total', line: resumenExpenseLine, value: bill.total ? bill.total.toString() : '0' });
-                        resumenExpenseLine++;
+                        var expRow = lineData.expenses[j];
+                        var account = (expRow && expRow.account != null) ? String(expRow.account) : '';
+                        var amount = (expRow && expRow.amount != null) ? String(expRow.amount) : '0';
+                        var grossamt = (expRow && expRow.grossamt != null) ? String(expRow.grossamt) : '0';
+                        var tax1amt = (expRow && expRow.tax1amt != null) ? String(expRow.tax1amt) : '0';
+                        var taxcode = (expRow && expRow.taxcode != null) ? String(expRow.taxcode) : '';
+                        var descExp = (expRow && expRow.descExp != null && expRow.descExp !== '') ? String(expRow.descExp) : '-';
+                        resumenExpenseSublist.setSublistValue({ id: 'col_bill_tranid', line: j, value: bill.tranid || '' });
+                        resumenExpenseSublist.setSublistValue({ id: 'col_bill_entity', line: j, value: bill.entity || '' });
+                        resumenExpenseSublist.setSublistValue({ id: 'col_bill_trandate', line: j, value: bill.trandate || '' });
+                        resumenExpenseSublist.setSublistValue({ id: 'col_bill_account', line: j, value: account });
+                        resumenExpenseSublist.setSublistValue({ id: 'col_bill_desc', line: j, value: descExp });
+                        resumenExpenseSublist.setSublistValue({ id: 'col_bill_amount', line: j, value: amount });
+                        resumenExpenseSublist.setSublistValue({ id: 'col_bill_currency', line: j, value: bill.currency || '' });
+                        resumenExpenseSublist.setSublistValue({ id: 'col_bill_grossamt', line: j, value: grossamt });
+                        resumenExpenseSublist.setSublistValue({ id: 'col_bill_tax1amt', line: j, value: tax1amt });
+                        resumenExpenseSublist.setSublistValue({ id: 'col_bill_taxcode', line: j, value: taxcode });
+                        resumenExpenseSublist.setSublistValue({ id: 'col_bill_total', line: j, value: bill.total ? String(bill.total) : '0' });
                     }
                 }
             });
