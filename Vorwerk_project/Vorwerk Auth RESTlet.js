@@ -75,13 +75,13 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                     res  = createUser(req_info,"employee")
                 break;
                 case "createSalesOrder":
-                    res  = createSalesOrderv2(req_info)
+                    res  = createSalesOrder(req_info)
                 break;
                 case "createSalesOrderWithItemDiscounts":
                     res  = createSalesOrderWithItemDiscounts(req_info)
                 break;
                 case "createSalesOrderV2":
-                    res  = createSalesOrderWithConfigDiscounts(req_info);
+                    res  = createSalesOrderManager(req_info)
                 break;
                 //eventos de modificacion
                 case "updateCustomer":
@@ -1696,15 +1696,25 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                         descuento_linea_gross = parseFloat(dl);
                     }
                 }else if(config && config.accion === 2){
+                    // Acción 2: precio y monto de descuento fijos desde configuración
                     if(total_amount_aux > 0 && discount_aux > 0){
                         global_part_net = parseFloat(item_mine.amount) * discount_aux * parseInt(item_mine.quantity, 10);
                     }
                     descuento_linea_gross = config.montoDescuento || 0;
                 }else if(config && config.accion === 3){
-                    if(total_amount_aux > 0 && discount_aux > 0){
-                        global_part_net = parseFloat(item_mine.amount) * discount_aux * parseInt(item_mine.quantity, 10);
-                    }
-                    descuento_linea_gross = (config.montoDescuento || 0) - (config.centavos || 0);
+                    // Acción 3: \"Asignar valor del artículo (menos X centavos)\"
+                    // Para este caso:
+                    //  - No se usa el descuento global (global_part_net = 0)
+                    //  - El monto bruto del descuento es: (amount * quantity) - centavos
+                    global_part_net = 0;
+                    var qty3 = parseInt(item_mine.quantity, 10);
+                    if(isNaN(qty3) || qty3 <= 0) qty3 = 1;
+                    var grossItem = parseFloat(item_mine.amount) * qty3;
+                    if(isNaN(grossItem)) grossItem = 0;
+                    // El campo \"centavos\" se captura como número entero de centavos (4 = $0.04)
+                    // Por eso se divide entre 100 para obtener el monto en pesos.
+                    var cents = (config.centavos || 0) / 100;
+                    descuento_linea_gross = grossItem - cents;
                 }else{
                     if(total_amount_aux > 0 && discount_aux > 0){
                         global_part_net = parseFloat(item_mine.amount) * discount_aux * parseInt(item_mine.quantity, 10);
@@ -1861,8 +1871,24 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
     }
 
     //funcion para crear ODV v2 - separa items en dos ordenes: una con item TM7 y otra con items GETM7 y KIT DESGASTE
-    function createSalesOrderv2(req_info){
+    function createSalesOrderManager(req_info){
         try{
+            // Si no hay items o no es caso TM7/GETM7 (sin \"0000\"), delegar a la lógica estándar
+            if (!req_info || !req_info.items || !req_info.items.length) {
+                return createSalesOrderWithConfigDiscounts(req_info);
+            }
+            var hasProvisionalGetm7 = false;
+            for (var iScan = 0; iScan < req_info.items.length; iScan++) {
+                if (String(req_info.items[iScan].item_id) === '0000') {
+                    hasProvisionalGetm7 = true;
+                    break;
+                }
+            }
+            if (!hasProvisionalGetm7) {
+                // No es pedido TM7 + GETM7: crear una sola orden con descuentos por configuración
+                return createSalesOrderWithConfigDiscounts(req_info);
+            }
+
             // Determinar items según el ambiente (sandbox o producción)
             var item_tm7_sandbox = "2680";
             var item_tm7_prod = "2763";
@@ -1886,7 +1912,7 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                 item_cutter = item_cutter_prod;
             }
             
-            log.debug('createSalesOrderv2', 'Ambiente: ' + runtime.envType + ', Item TM7: ' + item_tm7 + ', Item GETM7: ' + item_getm7 + ', Item KIT: ' + item_kit + ', Item Cutter: ' + item_cutter);
+            log.debug('createSalesOrderManager', 'Ambiente: ' + runtime.envType + ', Item TM7: ' + item_tm7 + ', Item GETM7: ' + item_getm7 + ', Item KIT: ' + item_kit + ', Item Cutter: ' + item_cutter);
             
             // Separar items en dos grupos
             var items_tm7 = []; // Items para la primera orden (incluye item TM7)
@@ -1907,7 +1933,7 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                 
                 // Detectar si el item_id es "0000" (GETM7 provisional) y cambiarlo al item_id real
                 if(item_id === item_provisional_getm7){
-                    log.debug('createSalesOrderv2', 'Detectado internal ID provisional "0000" para GETM7, cambiando a item_id real: ' + item_getm7);
+                    log.debug('createSalesOrderManager', 'Detectado internal ID provisional "0000" para GETM7, cambiando a item_id real: ' + item_getm7);
                     item_mine.item_id = item_getm7; // Cambiar el item_id de "0000" al item_id real de GETM7
                     item_id = String(item_getm7); // Actualizar item_id para el switch
                     tiene_getm7 = true;
@@ -1942,20 +1968,20 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                 }
             }
             
-            // Pedido cutter: TM7 + cutter → una sola orden con descuento de 1000 pesos (createSalesOrder lo aplica)
+            // Pedido cutter: TM7 + cutter → una sola orden con descuento de 1000 pesos (flujo estándar)
             if(tiene_tm7 && tiene_cutter){
-                log.debug('createSalesOrderv2', 'Pedido cutter detectado (TM7 + Cutter), creando orden única con descuento cutter');
-                return createSalesOrder(req_info);
+                log.debug('createSalesOrderManager', 'Pedido cutter detectado (TM7 + Cutter), creando orden única con descuento cutter (config/descuentos estándar)');
+                return createSalesOrderWithConfigDiscounts(req_info);
             }
             
             // Validar que tenga ambos artículos: TM7 y GETM7
-            // Si no tiene ambos, crear orden normal usando createSalesOrder
+            // Si no tiene ambos, crear orden normal usando lógica estándar de configuración de descuentos
             if(!tiene_tm7 || !tiene_getm7){
-                log.debug('createSalesOrderv2', 'No se tienen ambos items (TM7 y GETM7), creando orden normal');
-                return createSalesOrder(req_info);
+                log.debug('createSalesOrderManager', 'No se tienen ambos items (TM7 y GETM7), creando orden normal con configuración de descuentos');
+                return createSalesOrderWithConfigDiscounts(req_info);
             }
             
-            log.debug('createSalesOrderv2', 'Items TM7: ' + items_tm7.length + ', Items GETM7/KIT: ' + items_getm7_kit.length + ', Otros items: ' + otros_items.length);
+            log.debug('createSalesOrderManager', 'Items TM7: ' + items_tm7.length + ', Items GETM7/KIT: ' + items_getm7_kit.length + ', Otros items: ' + otros_items.length);
             
             // Calcular división del descuento si existe discountrate
             var discountrate_total = 0;
@@ -1973,7 +1999,7 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                     if(item_id_kit_check == item_kit){
                         // Calcular monto total del kit (amount * quantity)
                         monto_kit_desgaste = parseFloat(item_kit_check.amount) * parseInt(item_kit_check.quantity, 10);
-                        log.debug('createSalesOrderv2', 'Monto kit de desgaste encontrado: ' + monto_kit_desgaste);
+                        log.debug('createSalesOrderManager', 'Monto kit de desgaste encontrado: ' + monto_kit_desgaste);
                         break;
                     }
                 }
@@ -1985,7 +2011,7 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                         var item_id_check = String(item_check.item_id);
                         if(item_id_check == item_kit){
                             monto_kit_desgaste = parseFloat(item_check.amount) * parseInt(item_check.quantity, 10);
-                            log.debug('createSalesOrderv2', 'Monto kit de desgaste encontrado en request original: ' + monto_kit_desgaste);
+                            log.debug('createSalesOrderManager', 'Monto kit de desgaste encontrado en request original: ' + monto_kit_desgaste);
                             break;
                         }
                     }
@@ -1999,11 +2025,11 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                     // Calcular descuento para TM7: lo que sobra del descuento total
                     discountrate_tm7 = discountrate_total - discountrate_getm7_kit;
                     
-                    log.debug('createSalesOrderv2', 'Descuento total: ' + discountrate_total + ', Monto kit: ' + monto_kit_desgaste + ', Descuento máximo GETM7/KIT: ' + descuento_maximo_getm7 + ', Descuento GETM7/KIT aplicado: ' + discountrate_getm7_kit + ', Descuento TM7: ' + discountrate_tm7);
+                    log.debug('createSalesOrderManager', 'Descuento total: ' + discountrate_total + ', Monto kit: ' + monto_kit_desgaste + ', Descuento máximo GETM7/KIT: ' + descuento_maximo_getm7 + ', Descuento GETM7/KIT aplicado: ' + discountrate_getm7_kit + ', Descuento TM7: ' + discountrate_tm7);
                 } else {
                     // Si no hay kit, el descuento total va a TM7
                     discountrate_tm7 = discountrate_total;
-                    log.debug('createSalesOrderv2', 'No se encontró kit de desgaste, todo el descuento va a TM7: ' + discountrate_tm7);
+                    log.debug('createSalesOrderManager', 'No se encontró kit de desgaste, todo el descuento va a TM7: ' + discountrate_tm7);
                 }
             }
             
@@ -2026,20 +2052,20 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                 // Asignar descuento a la orden TM7 (solo si hay descuento disponible)
                 if(discountrate_tm7 > 0){
                     req_info_tm7.discountrate = discountrate_tm7;
-                    log.debug('createSalesOrderv2', 'Asignando descuento TM7: ' + discountrate_tm7);
+                    log.debug('createSalesOrderManager', 'Asignando descuento TM7: ' + discountrate_tm7);
                 } else {
-                    log.debug('createSalesOrderv2', 'No se asigna descuento a TM7 (discountrate_tm7 = 0)');
+                    log.debug('createSalesOrderManager', 'No se asigna descuento a TM7 (discountrate_tm7 = 0)');
                 }
                 
-                log.debug('createSalesOrderv2', 'Creando orden con item TM7 (' + item_tm7 + '), tranid: ' + req_info_tm7.tranid);
-                res_tm7 = createSalesOrder(req_info_tm7);
+                log.debug('createSalesOrderManager', 'Creando orden con item TM7 (' + item_tm7 + '), tranid: ' + req_info_tm7.tranid);
+                res_tm7 = createSalesOrderWithConfigDiscounts(req_info_tm7);
                 
                 // Obtener el internal id de la orden TM7
                 if(res_tm7 && res_tm7.success){
                     id_orden_tm7 = res_tm7.success;
-                    log.debug('createSalesOrderv2', 'Orden TM7 creada con ID: ' + id_orden_tm7);
+                    log.debug('createSalesOrderManager', 'Orden TM7 creada con ID: ' + id_orden_tm7);
                 } else {
-                    log.error('createSalesOrderv2', 'Error al crear orden TM7: ' + JSON.stringify(res_tm7));
+                    log.error('createSalesOrderManager', 'Error al crear orden TM7: ' + JSON.stringify(res_tm7));
                     return res_tm7; // Retornar el error en el mismo formato
                 }
             }
@@ -2053,7 +2079,7 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                 var tranid_numerico = req_info.tranid.replace(/\D/g, ''); // Eliminar todos los caracteres no numéricos
                 req_info_getm7_kit.tranid = "NS" + tranid_numerico;
                 
-                log.debug('createSalesOrderv2', 'Tranid original: ' + req_info.tranid + ', Tranid GETM7/KIT: ' + req_info_getm7_kit.tranid);
+                log.debug('createSalesOrderManager', 'Tranid original: ' + req_info.tranid + ', Tranid GETM7/KIT: ' + req_info_getm7_kit.tranid);
                 
                 req_info_getm7_kit.custbody_pedido_tm7_getm7 = true; // Marcar check como verdadero
                 delete req_info_getm7_kit.multipago; // Eliminar multipago para que no se procese en createSalesOrder
@@ -2062,24 +2088,24 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                 // Asignar descuento a la orden GETM7/KIT (monto del kit menos un centavo)
                 if(discountrate_getm7_kit > 0){
                     req_info_getm7_kit.discountrate = discountrate_getm7_kit;
-                    log.debug('createSalesOrderv2', 'Asignando descuento GETM7/KIT: ' + discountrate_getm7_kit);
+                    log.debug('createSalesOrderManager', 'Asignando descuento GETM7/KIT: ' + discountrate_getm7_kit);
                 } else {
-                    log.debug('createSalesOrderv2', 'No se asigna descuento a GETM7/KIT (discountrate_getm7_kit = 0)');
+                    log.debug('createSalesOrderManager', 'No se asigna descuento a GETM7/KIT (discountrate_getm7_kit = 0)');
                 }
                 
                 // Asignar el internal id de la orden TM7 en el campo custbody_odv_tm7_getm7
                 if(id_orden_tm7){
                     req_info_getm7_kit.custbody_odv_tm7_getm7 = id_orden_tm7;
-                    log.debug('createSalesOrderv2', 'Asignando ID orden TM7 (' + id_orden_tm7 + ') a custbody_odv_tm7_getm7 de orden GETM7/KIT');
+                    log.debug('createSalesOrderManager', 'Asignando ID orden TM7 (' + id_orden_tm7 + ') a custbody_odv_tm7_getm7 de orden GETM7/KIT');
                 }
                 
-                log.debug('createSalesOrderv2', 'Creando orden con items GETM7/KIT, tranid: ' + req_info_getm7_kit.tranid);
-                var res_getm7_kit = createSalesOrder(req_info_getm7_kit);
+                log.debug('createSalesOrderManager', 'Creando orden con items GETM7/KIT, tranid: ' + req_info_getm7_kit.tranid);
+                var res_getm7_kit = createSalesOrderWithConfigDiscounts(req_info_getm7_kit);
                 
                 // Obtener el internal id de la orden GETM7/KIT
                 if(res_getm7_kit && res_getm7_kit.success){
                     id_orden_getm7_kit = res_getm7_kit.success;
-                    log.debug('createSalesOrderv2', 'Orden GETM7/KIT creada con ID: ' + id_orden_getm7_kit);
+                    log.debug('createSalesOrderManager', 'Orden GETM7/KIT creada con ID: ' + id_orden_getm7_kit);
                     
                     // Actualizar la orden TM7 con el internal id de la orden GETM7/KIT
                     if(id_orden_tm7){
@@ -2101,15 +2127,15 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                                 ignoreMandatoryFields: true
                             });
                             
-                            log.debug('createSalesOrderv2', 'Orden TM7 actualizada con ID orden GETM7/KIT (' + id_orden_getm7_kit + ') en custbody_odv_tm7_getm7');
+                            log.debug('createSalesOrderManager', 'Orden TM7 actualizada con ID orden GETM7/KIT (' + id_orden_getm7_kit + ') en custbody_odv_tm7_getm7');
                         } catch(err_update){
-                            log.error('createSalesOrderv2', 'Error al actualizar orden TM7: ' + JSON.stringify(err_update));
+                            log.error('createSalesOrderManager', 'Error al actualizar orden TM7: ' + JSON.stringify(err_update));
                             // Continuar el proceso aunque falle la actualización del campo
-                            log.debug('createSalesOrderv2', 'El proceso continúa a pesar del error en la actualización del campo custbody_odv_tm7_getm7');
+                            log.debug('createSalesOrderManager', 'El proceso continúa a pesar del error en la actualización del campo custbody_odv_tm7_getm7');
                         }
                     }
                 } else {
-                    log.error('createSalesOrderv2', 'Error al crear orden GETM7/KIT: ' + JSON.stringify(res_getm7_kit));
+                    log.error('createSalesOrderManager', 'Error al crear orden GETM7/KIT: ' + JSON.stringify(res_getm7_kit));
                     // Continuar y retornar la orden TM7 aunque falle la GETM7/KIT
                 }
             }
@@ -2121,7 +2147,7 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
             // Procesar pagos si existen y ambas órdenes fueron creadas exitosamente
             if(multipago_original && multipago_original.length > 0 && id_orden_tm7 && id_orden_getm7_kit){
                 try{
-                    log.debug('createSalesOrderv2', 'Procesando distribución de pagos entre órdenes TM7 y GETM7/KIT');
+                    log.debug('createSalesOrderManager', 'Procesando distribución de pagos entre órdenes TM7 y GETM7/KIT');
                     
                     // Obtener totales de ambas órdenes
                     var ordenTm7Rec = record.load({
@@ -2138,7 +2164,7 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                     });
                     var total_getm7 = parseFloat(ordenGetm7Rec.getValue('total'));
                     
-                    log.debug('createSalesOrderv2', 'Total orden TM7: ' + total_tm7 + ', Total orden GETM7/KIT: ' + total_getm7);
+                    log.debug('createSalesOrderManager', 'Total orden TM7: ' + total_tm7 + ', Total orden GETM7/KIT: ' + total_getm7);
                     
                     // Ordenar pagos por fecha (el primero es el de fecha menor)
                     var pagos_ordenados = JSON.parse(JSON.stringify(multipago_original));
@@ -2161,7 +2187,7 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                         var pago = pagos_ordenados[0];
                         var monto_pago = parseFloat(pago.payment || 0);
                         
-                        log.debug('createSalesOrderv2', 'Un solo pago detectado. Monto: ' + monto_pago + ', Saldo GETM7: ' + saldo_getm7 + ', Saldo TM7: ' + saldo_tm7);
+                        log.debug('createSalesOrderManager', 'Un solo pago detectado. Monto: ' + monto_pago + ', Saldo GETM7: ' + saldo_getm7 + ', Saldo TM7: ' + saldo_tm7);
                         
                         if(monto_pago > 0){
                             if(monto_pago >= saldo_getm7){
@@ -2171,7 +2197,7 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                                 pagos_getm7.push(pago_getm7);
                                 
                                 var resto = monto_pago - saldo_getm7;
-                                log.debug('createSalesOrderv2', 'Pago cubre GETM7 completo (' + saldo_getm7 + '), resto para TM7: ' + resto);
+                                log.debug('createSalesOrderManager', 'Pago cubre GETM7 completo (' + saldo_getm7 + '), resto para TM7: ' + resto);
                                 if(resto > 0){
                                     var pago_tm7 = JSON.parse(JSON.stringify(pago));
                                     pago_tm7.payment = resto;
@@ -2182,7 +2208,7 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                                 var pago_getm7 = JSON.parse(JSON.stringify(pago));
                                 pago_getm7.payment = monto_pago;
                                 pagos_getm7.push(pago_getm7);
-                                log.debug('createSalesOrderv2', 'Pago solo cubre parte de GETM7: ' + monto_pago);
+                                log.debug('createSalesOrderManager', 'Pago solo cubre parte de GETM7: ' + monto_pago);
                             }
                         }
                     } else {
@@ -2228,7 +2254,7 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                         for(var p in pagos_getm7){
                             total_pago_getm7 += parseFloat(pagos_getm7[p].payment || 0);
                         }
-                        log.debug('createSalesOrderv2', 'Creando ' + pagos_getm7.length + ' payment(s) para orden GETM7/KIT. Total: ' + total_pago_getm7);
+                        log.debug('createSalesOrderManager', 'Creando ' + pagos_getm7.length + ' payment(s) para orden GETM7/KIT. Total: ' + total_pago_getm7);
                         var id_payment_getm7 = setPaymentMethod(id_orden_getm7_kit, pagos_getm7, req_info.entity);
                         id_payment_getm7_final = id_payment_getm7;
                         
@@ -2242,12 +2268,12 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                                         'custbody_total_pagado': id_payment_getm7.total_payment || 0
                                     }
                                 });
-                                log.debug('createSalesOrderv2', 'Payment GETM7/KIT creado y orden actualizada');
+                                log.debug('createSalesOrderManager', 'Payment GETM7/KIT creado y orden actualizada');
                             } catch(e){
-                                log.error('createSalesOrderv2', 'Error al actualizar orden GETM7/KIT con payment: ' + JSON.stringify(e));
+                                log.error('createSalesOrderManager', 'Error al actualizar orden GETM7/KIT con payment: ' + JSON.stringify(e));
                             }
                         } else {
-                            log.error('createSalesOrderv2', 'Error al crear payment GETM7/KIT: ' + (typeof id_payment_getm7 === 'string' ? id_payment_getm7 : JSON.stringify(id_payment_getm7)));
+                            log.error('createSalesOrderManager', 'Error al crear payment GETM7/KIT: ' + (typeof id_payment_getm7 === 'string' ? id_payment_getm7 : JSON.stringify(id_payment_getm7)));
                         }
                     }
                     
@@ -2257,7 +2283,7 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                         for(var p in pagos_tm7){
                             total_pago_tm7 += parseFloat(pagos_tm7[p].payment || 0);
                         }
-                        log.debug('createSalesOrderv2', 'Creando ' + pagos_tm7.length + ' payment(s) para orden TM7. Total: ' + total_pago_tm7);
+                        log.debug('createSalesOrderManager', 'Creando ' + pagos_tm7.length + ' payment(s) para orden TM7. Total: ' + total_pago_tm7);
                         var id_payment_tm7 = setPaymentMethod(id_orden_tm7, pagos_tm7, req_info.entity);
                         id_payment_tm7_final = id_payment_tm7;
                         
@@ -2293,17 +2319,17 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                                     });
                                 }
                                 
-                                log.debug('createSalesOrderv2', 'Payment TM7 creado y orden actualizada');
+                                log.debug('createSalesOrderManager', 'Payment TM7 creado y orden actualizada');
                             } catch(e){
-                                log.error('createSalesOrderv2', 'Error al actualizar orden TM7 con payment: ' + JSON.stringify(e));
+                                log.error('createSalesOrderManager', 'Error al actualizar orden TM7 con payment: ' + JSON.stringify(e));
                             }
                         } else {
-                            log.error('createSalesOrderv2', 'Error al crear payment TM7: ' + (typeof id_payment_tm7 === 'string' ? id_payment_tm7 : JSON.stringify(id_payment_tm7)));
+                            log.error('createSalesOrderManager', 'Error al crear payment TM7: ' + (typeof id_payment_tm7 === 'string' ? id_payment_tm7 : JSON.stringify(id_payment_tm7)));
                         }
                     }
                     
                 } catch(err_pagos){
-                    log.error('createSalesOrderv2', 'Error al procesar pagos: ' + err_pagos);
+                    log.error('createSalesOrderManager', 'Error al procesar pagos: ' + err_pagos);
                     // Continuar aunque falle el procesamiento de pagos
                 }
             }
@@ -2367,7 +2393,7 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
             return response_final;
             
         }catch(err){
-            log.error("error createSalesOrderv2",err);
+            log.error("error createSalesOrderManager",err);
             return {error:err}
         }
     }
