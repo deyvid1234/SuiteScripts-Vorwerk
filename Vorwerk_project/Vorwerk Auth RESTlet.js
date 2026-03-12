@@ -77,6 +77,12 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                 case "createSalesOrder":
                     res  = createSalesOrderv2(req_info)
                 break;
+                case "createSalesOrderWithItemDiscounts":
+                    res  = createSalesOrderWithItemDiscounts(req_info)
+                break;
+                case "createSalesOrderV2":
+                    res  = createSalesOrderWithConfigDiscounts(req_info);
+                break;
                 //eventos de modificacion
                 case "updateCustomer":
                     res  = updateUser(req_info,"customer")
@@ -496,6 +502,8 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
     
     /*************Fin de funciones de lectura************************/
     
+    
+    
     /***************incio de funciones de creacion**********/
     //funcion para crear Clientes y Empleados
     function createUser(req_info,type_user){
@@ -506,6 +514,9 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                 if("customer_information" in valid_to_create && type_user == "customer"){
                     return {error:"El correo del cliente ya existe"}
                 }
+            }
+            // Validación de correo para employee (presentador) se mantiene como estaba
+            if(Object.keys(valid_to_create).length >= 1 ){
                 if("sales_rep_information" in  valid_to_create && type_user == "employee"){
                     return {error:"El correo del presentador ya existe"}
                 }
@@ -1145,6 +1156,709 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
         }catch(err){
             log.error("error createSalesOrder",err);
             return {error:err}
+        }
+    }
+
+    /**
+     * Crea una orden de venta recibiendo en el detalle de cada ítem el descuento que le corresponde (campo discount por línea).
+     * Sigue aplicando el descuento global (discountrate) de forma proporcional sobre los ítems que NO traen descuento por ítem.
+     * Request: mismo que createSalesOrder, con items[].discount (opcional) = monto de descuento para esa línea.
+     * No modifica createSalesOrder; toda la lógica está contenida aquí para no afectar flujos existentes.
+     */
+    function createSalesOrderWithItemDiscounts(req_info){
+        try{
+            var valid = searchODV(req_info.tranid);
+            if(!valid){
+                return {error:"Sales Order previously created"};
+            }
+            var odv_serial = {};
+            if('serial_number' in req_info){
+                if(req_info.serial_number != "" && req_info.serial_number != null){
+                    odv_serial = searchODVbySerie(req_info.serial_number);
+                    log.debug('odv_serial',odv_serial);
+                    if('internalid' in odv_serial){
+                        req_info['custbody_vw_odv_related_warranty'] = odv_serial.internalid;
+                    }
+                }
+                if('extended_warranty_pdf_file' in req_info){
+                    if(req_info.extended_warranty_pdf_file != "" && req_info.extended_warranty_pdf_file != null){
+                        log.debug("viene con pdf","incicia proceso de transformacion");
+                        var id_pdf = savePDF(req_info.extended_warranty_pdf_file,326098,req_info.tranid);
+                        if(id_pdf){
+                            req_info['custbody_vw_pdf_warranty'] = id_pdf;
+                        }
+                    }
+                }
+            }
+            var discount_aux = 0, total_amount_aux = 0, shipping_cost = {};
+            var obj_sales_order = record.create({
+                type : 'salesorder',
+                isDynamic: true
+            });
+            obj_sales_order.setValue("customform",105);
+            // Mismas reglas que createSalesOrder para el ítem de descuento: si hay GETM7 o KIT DESGASTE (items especiales), usar discont_tm7 (G0008)
+            var items_especiales = [];
+            var discont_base;
+            var discont_tm7;
+            var item_tm7;
+            var item_cutter;
+            if(runtime.envType == "SANDBOX"){
+                items_especiales = ["2685", "2686"];
+                discont_base = 1876;
+                discont_tm7 = 2692;
+                item_tm7 = "2680";
+                item_cutter = "2693";
+            }else{
+                items_especiales = ["2839", "2841"];
+                discont_base = 1876;
+                discont_tm7 = 2840;
+                item_tm7 = "2763";
+                item_cutter = "2817";
+            }
+            var discount_item_id = discont_base;
+            var tiene_tm7 = false;
+            var tiene_cutter = false;
+            // Solo se cambia a G0008 (discont_tm7) si existe kit de desgaste (items_especiales[1]: 2686/2841)
+            var item_kit_desgaste = items_especiales[1];
+            for(var x in req_info.items){
+                var item_id_str = String(req_info.items[x].item_id);
+                if(item_id_str === item_kit_desgaste){
+                    discount_item_id = discont_tm7;
+                    break;
+                }
+                if(item_id_str === item_tm7) tiene_tm7 = true;
+                if(item_id_str === item_cutter) tiene_cutter = true;
+            }
+            if(!tiene_tm7 || !tiene_cutter){
+                for(var y in req_info.items){
+                    var id_y = String(req_info.items[y].item_id);
+                    if(id_y === item_tm7) tiene_tm7 = true;
+                    if(id_y === item_cutter) tiene_cutter = true;
+                }
+            }
+            var es_pedido_cutter = tiene_tm7 && tiene_cutter;
+            // Descuento global: se reparte entre todos los ítems (excepto envío) para aplicar primero; luego se suma el descuento de línea por artículo
+            if("discountrate" in req_info && parseFloat(req_info['discountrate']) > 0){
+                for(var x in req_info.items){
+                    if(req_info.items[x].item_id != "859"){
+                        total_amount_aux += (parseFloat(req_info.items[x].amount) * parseInt(req_info.items[x].quantity, 10));
+                    }else{
+                        shipping_cost = req_info.items[x];
+                    }
+                }
+                if(total_amount_aux > 0){
+                    discount_aux = (parseFloat(req_info['discountrate'])/1.16)/total_amount_aux;
+                }
+            }
+            log.debug('Info SAT',req_info['custbody_cfdi_metododepago']);
+            var locationValidado;
+            for(var x in req_info){
+                if(x != "location" && x != "items" && x != "multipago" && x != "discountrate" && x != "discountitem" && x!= 'custbody_estatus_envio' && x != 'custbody46' && x != 'custbody_url_one_aclogistics' && x != 'custbody_url_two_aclogistics'){
+                    obj_sales_order.setValue(x,req_info[x]);
+                }
+                log.debug(x,req_info[x]);
+                if((x == "location" || x == "Location")&& req_info[x] == 53){
+                    locationValidado = 53;
+                    obj_sales_order.setValue('location',locationValidado);
+                    obj_sales_order.setValue('custbody_so_eshop',true);
+                }
+                if(x == "location" || x == "Location"){
+                    locationValidado = req_info[x];
+                    obj_sales_order.setValue('location',locationValidado);
+                    obj_sales_order.setValue('custbody_so_eshop',true);
+                    if(req_info.custbody46 != ''|| req_info.custbody_estatus_envio != 7){
+                        obj_sales_order.setValue('ordertype',1);
+                    }
+                }
+            }
+            obj_sales_order.setValue('custbody_cfdi_metpago_sat',req_info.custbody_cfdi_metododepago);
+            var salesorder_items = req_info.items;
+            for(var x in salesorder_items){
+                var item_mine = salesorder_items[x];
+                var item_tax  = parseFloat(item_mine.amount)/1.16;
+                if(item_tax == 0 ){
+                    item_tax = 0.01;
+                }
+                if(es_pedido_cutter && String(item_mine.item_id) === item_cutter){
+                    var cantidad_cutter = parseInt(item_mine.quantity, 10) || 1;
+                    item_tax = (3999 / 1.16) / cantidad_cutter;
+                }
+                obj_sales_order.selectNewLine({ sublistId : 'item' });
+                obj_sales_order.setCurrentSublistValue({ sublistId: 'item', fieldId: 'item', value: item_mine.item_id });
+                obj_sales_order.setCurrentSublistValue({ sublistId: 'item', fieldId: 'quantity', value: item_mine.quantity });
+                if (item_mine.item_id == '1441'){
+                    obj_sales_order.setCurrentSublistValue({ sublistId: 'item', fieldId: 'price', value: '-1' });
+                }
+                obj_sales_order.setCurrentSublistValue({ sublistId: 'item', fieldId: 'amount', value: item_tax });
+                obj_sales_order.setCurrentSublistValue({ sublistId: 'item', fieldId: 'rate', value: item_tax.toFixed(2) });
+                obj_sales_order.setCurrentSublistValue({ sublistId: 'item', fieldId: 'location', value: locationValidado });
+                obj_sales_order.commitLine({ sublistId: 'item' });
+                // Descuento: primero global (proporcional), después se suma descuento de línea; un solo ítem de descuento por artículo.
+                // Global se reparte en base neta (discount_aux); item_discountrate es monto final con IVA. Unificar en bruto (con IVA) y luego pasar sin IVA a setItemDiscount.
+                if(item_mine.item_id != "859"){
+                    var global_part_net = 0;
+                    var descuento_linea_gross = 0;
+                    // 1) Parte proporcional del descuento global para esta línea (en neto, porque discount_aux = (discountrate/1.16)/total)
+                    if(total_amount_aux > 0 && discount_aux > 0){
+                        global_part_net = parseFloat(item_mine.amount) * discount_aux * parseInt(item_mine.quantity, 10);
+                    }
+                    // 2) Descuento de línea si existe (monto con IVA)
+                    var descuento_linea = null;
+                    if(item_mine.item_discountrate != null && item_mine.item_discountrate !== '') descuento_linea = item_mine.item_discountrate;
+                    else if(item_mine.discount != null && item_mine.discount !== '') descuento_linea = item_mine.discount;
+                    else if(item_mine.Discount != null && item_mine.Discount !== '') descuento_linea = item_mine.Discount;
+                    else if(item_mine.item_discount != null && item_mine.item_discount !== '') descuento_linea = item_mine.item_discount;
+                    else if(item_mine.line_discount != null && item_mine.line_discount !== '') descuento_linea = item_mine.line_discount;
+                    else if(item_mine.descuento != null && item_mine.descuento !== '') descuento_linea = item_mine.descuento;
+                    if(descuento_linea != null && descuento_linea !== '' && !isNaN(parseFloat(descuento_linea)) && parseFloat(descuento_linea) > 0){
+                        descuento_linea_gross = parseFloat(descuento_linea);
+                    }
+                    // Total bruto (con IVA) = parte global en bruto + descuento de línea (ya bruto)
+                    var discount_item_gross = (global_part_net * 1.16) + descuento_linea_gross;
+                    if(discount_item_gross > 0){
+                        var discount_item_sin_iva = discount_item_gross / 1.16;
+                        setItemDiscount(obj_sales_order, discount_item_sin_iva, discount_item_id);
+                    }
+                }
+            }
+            var salesorder_payment = req_info.multipago;
+            try{
+                var id_sales_order = obj_sales_order.save();
+                if('internalid' in odv_serial){
+                    try{
+                        log.debug('odv_serial'+odv_serial.internalid,'id_sales_order'+id_sales_order);
+                        record.submitFields({
+                            type: 'salesorder',
+                            id: odv_serial.internalid,
+                            values: { 'custbody_vw_odv_warranty' : id_sales_order }
+                        });
+                    }catch(err_serires){
+                        log.error('err_serires',err_serires);
+                    }
+                }
+                try{
+                    var description = getDescription(id_sales_order);
+                    var acLogistic = {
+                        tracking: req_info.custbody46,
+                        tracking_link: req_info.custbody_url_one_aclogistics,
+                        guia: req_info.custbody_url_two_aclogistics,
+                        status: req_info.custbody_estatus_envio
+                    };
+                    var tipoVenta = req_info.custbody_tipo_venta;
+                    var statusEnvio = req_info.custbody_estatus_envio;
+                    var id_traking = createTraking(description,id_sales_order,acLogistic,tipoVenta,statusEnvio);
+                    log.debug("traking_id",id_traking);
+                    try{
+                        var urlOne = req_info.custbody_url_one_aclogistics;
+                        var urlTwo = req_info.custbody_url_two_aclogistics;
+                        if(tipoVenta == 2 && statusEnvio != 7 && urlOne && urlTwo){
+                            var apiKey = "", description_arr = [], description_txt = "", segundaGuia = false;
+                            if(runtime.envType  == "SANDBOX"){
+                                apiKey = "c9df5be32d150aaae2c5f3a2cddacb44";
+                            }else{
+                                apiKey = "c9df5be32d150aaae2c5f3a2cddacb44";
+                            }
+                            var objSO = record.load({
+                                type: record.Type.SALES_ORDER,
+                                id: id_sales_order,
+                                isDynamic: false,
+                            });
+                            var itemLines = objSO.getLineCount({ sublistId : 'item' });
+                            for(var i=0; i < itemLines; i++){
+                                var itemId = objSO.getSublistValue({ sublistId : 'item', fieldId   : 'item', line : i });
+                                if(itemId != 1441 && itemId != 859 && itemId != 2001 && itemId != 2170 && itemId != 2490 && itemId != 2571 && itemId != 2638 && itemId != 2671 && itemId != 2763){
+                                    segundaGuia = true;
+                                    description_arr.push(objSO.getSublistValue({ sublistId : 'item', fieldId : 'description', line : i }));
+                                }
+                            }
+                            description_txt = description_arr.join(',');
+                            var objTracking = search.lookupFields({
+                                type: 'customrecord_vk_traking_information',
+                                id: 3,
+                                columns: ['custrecord_alto_cm','custrecord_ancho_cm','custrecord_largo_cm','name','custrecord_contenido']
+                            });
+                            log.debug('objTracking',objTracking);
+                            var objCustomer = record.load({
+                                type: record.Type.CUSTOMER,
+                                id: objSO.getValue('entity'),
+                                isDynamic: false,
+                            });
+                            var email_customer = objCustomer.getValue('email');
+                            var nameCustomer = objCustomer.getValue('altname');
+                            var addrphone = "", addr1 = "", addr2 = "", zip = "";
+                            var companyCustomer = objCustomer.getValue('custentity_razon_social');
+                            var totalLines = objCustomer.getLineCount({ sublistId  : 'addressbook' });
+                            for(var i=0; i < totalLines; i++){
+                                var defaultshipping = objCustomer.getSublistValue({ sublistId : 'addressbook', fieldId   : 'defaultshipping', line : i });
+                                if(defaultshipping == true){
+                                    var subRecord = objCustomer.getSublistSubrecord({ sublistId : 'addressbook', fieldId   : 'addressbookaddress', line : i });
+                                    addrphone = subRecord.getText({ fieldId: 'addrphone' });
+                                    addr1 = subRecord.getValue({ fieldId: 'addr1' });
+                                    addr2 = subRecord.getValue({ fieldId: 'addr2' });
+                                    zip = subRecord.getValue({ fieldId: 'zip' });
+                                    break;
+                                }
+                            }
+                            var random_num = Math.floor(Math.random() * 100);
+                            var weight = objTracking.name.split(" ")[0];
+                            if (itemLines > 1 && segundaGuia == true){
+                                var objRequest = {
+                                    "api_key": apiKey,
+                                    "referencia": objSO.getValue('tranid')+'-'+random_num,
+                                    "id_courier": "fedex_eco",
+                                    "nombre_remitente": 'VORWERK',
+                                    "telefono_remitente": '01 800 200 11 21',
+                                    "correo_remitente": 'contacto@thermomixmexico.com.mx',
+                                    "direccion_remitente": 'VITO ALESSIO ROBLES 38 COLONIA FLORIDA ÁLVARO OBREGÓN Ciudad de México 01030',
+                                    "empresa_remitente": 'VORWERK MEXICO, S. DE R.L. DE C.V.',
+                                    "nombre_destinatario": nameCustomer,
+                                    "telefono_destinatario": addrphone,
+                                    "correo_destinatario": email_customer,
+                                    "calle_destinatario": addr1,
+                                    "num_exterior_destinatario": "0",
+                                    "num_interior_destinatario": "0",
+                                    "cp_destinatario": zip,
+                                    "colonia_destinatario": addr2,
+                                    "empresa_destinatario": companyCustomer,
+                                    "alto_cm": objTracking.custrecord_alto_cm,
+                                    "ancho_cm": objTracking.custrecord_ancho_cm,
+                                    "largo_cm": objTracking.custrecord_largo_cm,
+                                    "peso_kg": weight,
+                                    "contenido": objTracking.custrecord_contenido,
+                                    "valor":objSO.getValue('total'),
+                                    "seguro": "false"
+                                };
+                                log.audit("Datos a enviar",objRequest);
+                                var responseService = https.post({
+                                    url: 'https://www.smartship.mx/api/documentar/',
+                                    body : JSON.stringify(objRequest),
+                                    headers: { "Content-Type": "application/json" }
+                                }).body;
+                                try{
+                                    log.audit("responseService",responseService);
+                                    if(JSON.parse(responseService).mensaje == 'Exitoso'){
+                                        log.debug("if true",JSON.parse(responseService).mensaje);
+                                    }else{
+                                        log.debug("if false",JSON.parse(responseService).mensaje);
+                                    }
+                                }catch(e){
+                                    log.debug("error log",e);
+                                }
+                                if( JSON.parse(responseService).mensaje == 'Exitoso' ){
+                                    var acLogisticRes = JSON.parse(responseService);
+                                    var obj_traking= record.create({
+                                        type: 'customrecord_guia_envio',
+                                        isDynamic: false,
+                                    });
+                                    obj_traking.setValue({ fieldId: 'custrecord_id_sales_order', value: id_sales_order });
+                                    obj_traking.setValue({ fieldId: 'custrecord_no_guia', value: acLogisticRes.tracking });
+                                    obj_traking.setValue({ fieldId: 'custrecord_url_resp_aclogistics', value: acLogisticRes.tracking_link });
+                                    obj_traking.setValue({ fieldId: 'custrecord_url_pdf_aclogistics', value: acLogisticRes.guia });
+                                    obj_traking.setValue({ fieldId: 'custrecord_estatus_envio', value: 1 });
+                                    obj_traking.setValue({ fieldId: 'custrecord_id_envio', value: acLogisticRes.id_envio });
+                                    obj_traking.setValue({ fieldId: 'custrecord_vw_description', value: description_txt });
+                                    obj_traking.setValue({ fieldId: 'custrecord_peso', value: weight + ' kg' });
+                                    var id_trakingDos = obj_traking.save();
+                                    log.debug('id_trakingDos',id_trakingDos);
+                                }else{
+                                    log.error('Error al generar guia');
+                                }
+                            }
+                        }
+                    }catch(e){
+                        log.error('error segunda guia',e);
+                    }
+                }catch(err_tracking){
+                    log.error('error create traking',err_tracking);
+                }
+            }catch(err_so){
+                log.error("error err_so",err_so);
+                return {error_order:err_so};
+            }
+            var fecha_pago = null;
+            if(salesorder_payment && salesorder_payment.length > 0){
+                var pago_a_usar;
+                if(salesorder_payment.length > 1){
+                    pago_a_usar = salesorder_payment[salesorder_payment.length - 1];
+                }else{
+                    pago_a_usar = salesorder_payment[0];
+                }
+                if(pago_a_usar.transdate){
+                    fecha_pago = parseDate(pago_a_usar.transdate);
+                }else if(pago_a_usar.trandate){
+                    fecha_pago = parseDate(pago_a_usar.trandate);
+                }
+            }
+            var id_payment = setPaymentMethod(id_sales_order, salesorder_payment, req_info.entity);
+            try{
+                var values_to_update = {
+                    'orderstatus':'B',
+                    'custbody_vorwerk_contratos':id_payment.contract,
+                    'custbody_total_pagado':id_payment.total_payment
+                };
+                if(fecha_pago){
+                    values_to_update['trandate'] = fecha_pago;
+                }
+                record.submitFields({
+                    type: record.Type.SALES_ORDER,
+                    id: id_sales_order,
+                    values: values_to_update
+                });
+                if(id_payment.contract && id_payment.contract != ''){
+                    record.submitFields({
+                        type: record.Type.SALES_ORDER,
+                        id: id_sales_order,
+                        values: {'custbody_cfdi_formadepago':3}
+                    });
+                }
+            }catch(e){
+                log.error("error general","send info");
+                return {error_payment:e};
+            }
+            return {success:id_sales_order,id_payment:id_payment};
+        }catch(err){
+            log.error("error createSalesOrderWithItemDiscounts",err);
+            return {error:err};
+        }
+    }
+
+    /**
+     * Busca en customrecord_conf_descuento_tl un registro cuyo SKU Relacionado (custrecord212) contenga el itemId.
+     * @param {string|number} itemId - Internal ID del ítem
+     * @returns {Object|null} { skuDescuento, accion, montoEspecifico, montoDescuento, centavos } o null si no hay configuración
+     */
+    function getConfigDescuentoTL(itemId){
+        try{
+            var itemIdStr = String(itemId);
+            var confSearch = search.create({
+                type: 'customrecord_conf_descuento_tl',
+                filters: [
+                    search.createFilter({ name: 'custrecord212', operator: search.Operator.ANYOF, values: [itemIdStr] })
+                ],
+                columns: [
+                    search.createColumn({ name: 'custrecord_skudescuento' }),
+                    search.createColumn({ name: 'custrecord_accion' }),
+                    search.createColumn({ name: 'custrecord_monto_especifico' }),
+                    search.createColumn({ name: 'custrecord_monto_descuento' }),
+                    search.createColumn({ name: 'custrecord_cent' })
+                ]
+            });
+            function normItemId(val){
+                if(val == null || val === '') return 1876;
+                if(Array.isArray(val) && val.length > 0){ val = val[0]; }
+                if(typeof val === 'object' && val != null && (val.value != null || val.value === 0)) return val.value;
+                if(typeof val === 'number' && !isNaN(val)) return val;
+                if(typeof val === 'string'){ var n = parseInt(val, 10); return isNaN(n) ? 1876 : n; }
+                return 1876;
+            }
+            var result = confSearch.run().getRange({ start: 0, end: 1 });
+            if(result && result.length > 0){
+                var row = result[0];
+                var accionVal = row.getValue({ name: 'custrecord_accion' });
+                var accion = (accionVal != null && accionVal !== '') ? parseInt(accionVal, 10) : null;
+                return {
+                    skuDescuento: normItemId(row.getValue({ name: 'custrecord_skudescuento' })),
+                    accion: isNaN(accion) ? null : accion,
+                    montoEspecifico: parseFloat(row.getValue({ name: 'custrecord_monto_especifico' })) || 0,
+                    montoDescuento: parseFloat(row.getValue({ name: 'custrecord_monto_descuento' })) || 0,
+                    centavos: parseFloat(row.getValue({ name: 'custrecord_cent' })) || 0
+                };
+            }
+            var defaultId = 2;
+            var defaultRec = search.lookupFields({
+                type: 'customrecord_conf_descuento_tl',
+                id: defaultId,
+                columns: ['custrecord_skudescuento', 'custrecord_accion', 'custrecord_monto_especifico', 'custrecord_monto_descuento', 'custrecord_cent']
+            });
+            if(defaultRec){
+                var accionVal = defaultRec.custrecord_accion;
+                if(accionVal != null && typeof accionVal === 'object' && accionVal.value != null) accionVal = accionVal.value;
+                if(Array.isArray(accionVal) && accionVal.length > 0 && accionVal[0].value != null) accionVal = accionVal[0].value;
+                var accion = (accionVal != null && accionVal !== '') ? parseInt(accionVal, 10) : null;
+                var getVal = function(f){ var v = defaultRec[f]; if(Array.isArray(v) && v.length > 0) v = v[0]; return (v != null && typeof v === 'object' && (v.value != null || v.value === 0)) ? v.value : v; };
+                return {
+                    skuDescuento: normItemId(getVal('custrecord_skudescuento')),
+                    accion: isNaN(accion) ? null : accion,
+                    montoEspecifico: parseFloat(getVal('custrecord_monto_especifico')) || 0,
+                    montoDescuento: parseFloat(getVal('custrecord_monto_descuento')) || 0,
+                    centavos: parseFloat(getVal('custrecord_cent')) || 0
+                };
+            }
+            return null;
+        }catch(e){
+            log.error('getConfigDescuentoTL', e);
+            return null;
+        }
+    }
+
+    /**
+     * Crea una orden de venta basada en el registro customrecord_conf_descuento_tl.
+     * Por cada ítem del request se busca una configuración cuyo SKU Relacionado lo contenga.
+     * custrecord_accion 1: datos del request (precio, descuento como vienen).
+     * custrecord_accion 2: precio del ítem = custrecord_monto_especifico; descuento = custrecord_monto_descuento.
+     * custrecord_accion 3: monto de descuento = custrecord_monto_descuento menos custrecord_cent.
+     * Función independiente; no modifica createSalesOrderWithItemDiscounts ni el resto del código.
+     */
+    function createSalesOrderWithConfigDiscounts(req_info){
+        try{
+            var valid = searchODV(req_info.tranid);
+            if(!valid){
+                return { error: 'Sales Order previously created' };
+            }
+            var odv_serial = {};
+            if('serial_number' in req_info && req_info.serial_number != '' && req_info.serial_number != null){
+                odv_serial = searchODVbySerie(req_info.serial_number);
+                if(odv_serial && odv_serial.internalid){
+                    req_info['custbody_vw_odv_related_warranty'] = odv_serial.internalid;
+                }
+            }
+            if('extended_warranty_pdf_file' in req_info && req_info.extended_warranty_pdf_file != '' && req_info.extended_warranty_pdf_file != null){
+                var id_pdf = savePDF(req_info.extended_warranty_pdf_file, 326098, req_info.tranid);
+                if(id_pdf) req_info['custbody_vw_pdf_warranty'] = id_pdf;
+            }
+            var discount_aux = 0, total_amount_aux = 0, shipping_cost = {};
+            var obj_sales_order = record.create({ type: 'salesorder', isDynamic: true });
+            obj_sales_order.setValue('customform', 105);
+
+            if('discountrate' in req_info && parseFloat(req_info['discountrate']) > 0){
+                for(var k in req_info.items){
+                    if(req_info.items[k].item_id != '859'){
+                        total_amount_aux += parseFloat(req_info.items[k].amount) * parseInt(req_info.items[k].quantity, 10);
+                    }else{
+                        shipping_cost = req_info.items[k];
+                    }
+                }
+                if(total_amount_aux > 0){
+                    discount_aux = (parseFloat(req_info['discountrate']) / 1.16) / total_amount_aux;
+                }
+            }
+
+            var campos_excluidos = ['location', 'items', 'multipago', 'discountrate', 'discountitem', 'custbody_estatus_envio', 'custbody46', 'custbody_url_one_aclogistics', 'custbody_url_two_aclogistics'];
+            var locationValidado;
+            for(var x in req_info){
+                if(campos_excluidos.indexOf(x) === -1){
+                    obj_sales_order.setValue(x, req_info[x]);
+                }
+                if((x === 'location' || x === 'Location') && req_info[x] != null){
+                    locationValidado = req_info[x];
+                    obj_sales_order.setValue('location', locationValidado);
+                    obj_sales_order.setValue('custbody_so_eshop', true);
+                    if(req_info.custbody46 != '' || (req_info.custbody_estatus_envio != null && req_info.custbody_estatus_envio != 7)){
+                        obj_sales_order.setValue('ordertype', 1);
+                    }
+                }
+            }
+            obj_sales_order.setValue('custbody_cfdi_metpago_sat', req_info.custbody_cfdi_metododepago);
+
+            var salesorder_items = req_info.items;
+            for(var x in salesorder_items){
+                var item_mine = salesorder_items[x];
+                var item_id_str = String(item_mine.item_id);
+                var config = getConfigDescuentoTL(item_id_str);
+
+                var item_tax = parseFloat(item_mine.amount) / 1.16;
+                if(item_tax == 0) item_tax = 0.01;
+                var rate_from_config = false;
+                if(config && config.accion === 2 && (config.montoEspecifico || 0) > 0){
+                    item_tax = (config.montoEspecifico || 0) / 1.16;
+                    if(item_tax == 0) item_tax = 0.01;
+                    rate_from_config = true;
+                }
+
+                obj_sales_order.selectNewLine({ sublistId: 'item' });
+                obj_sales_order.setCurrentSublistValue({ sublistId: 'item', fieldId: 'item', value: item_mine.item_id });
+                obj_sales_order.setCurrentSublistValue({ sublistId: 'item', fieldId: 'quantity', value: item_mine.quantity });
+                if(item_mine.item_id == '1441'){
+                    obj_sales_order.setCurrentSublistValue({ sublistId: 'item', fieldId: 'price', value: '-1' });
+                }
+                obj_sales_order.setCurrentSublistValue({ sublistId: 'item', fieldId: 'amount', value: item_tax });
+                obj_sales_order.setCurrentSublistValue({ sublistId: 'item', fieldId: 'rate', value: rate_from_config ? item_tax.toFixed(6) : item_tax.toFixed(2) });
+                obj_sales_order.setCurrentSublistValue({ sublistId: 'item', fieldId: 'location', value: locationValidado });
+                obj_sales_order.commitLine({ sublistId: 'item' });
+
+                if(item_mine.item_id == '859') continue;
+
+                var discount_item_id = 1876;
+                if(config && config.skuDescuento != null && config.skuDescuento !== ''){
+                    var sid = config.skuDescuento;
+                    if(typeof sid === 'object' && sid != null && (sid.value != null || sid.value === 0)) sid = sid.value;
+                    if(Array.isArray(sid) && sid.length > 0) sid = sid[0].value != null ? sid[0].value : sid[0];
+                    if(typeof sid === 'number' && !isNaN(sid)) discount_item_id = sid;
+                    else if(typeof sid === 'string'){ var n = parseInt(sid, 10); if(!isNaN(n)) discount_item_id = n; }
+                }
+                var global_part_net = 0;
+                var descuento_linea_gross = 0;
+
+                if(config && config.accion === 1){
+                    if(total_amount_aux > 0 && discount_aux > 0){
+                        global_part_net = parseFloat(item_mine.amount) * discount_aux * parseInt(item_mine.quantity, 10);
+                    }
+                    var dl = item_mine.item_discountrate != null && item_mine.item_discountrate !== '' ? item_mine.item_discountrate : (item_mine.discount != null && item_mine.discount !== '' ? item_mine.discount : (item_mine.item_discount != null ? item_mine.item_discount : item_mine.descuento));
+                    if(dl != null && dl !== '' && !isNaN(parseFloat(dl)) && parseFloat(dl) > 0){
+                        descuento_linea_gross = parseFloat(dl);
+                    }
+                }else if(config && config.accion === 2){
+                    if(total_amount_aux > 0 && discount_aux > 0){
+                        global_part_net = parseFloat(item_mine.amount) * discount_aux * parseInt(item_mine.quantity, 10);
+                    }
+                    descuento_linea_gross = config.montoDescuento || 0;
+                }else if(config && config.accion === 3){
+                    if(total_amount_aux > 0 && discount_aux > 0){
+                        global_part_net = parseFloat(item_mine.amount) * discount_aux * parseInt(item_mine.quantity, 10);
+                    }
+                    descuento_linea_gross = (config.montoDescuento || 0) - (config.centavos || 0);
+                }else{
+                    if(total_amount_aux > 0 && discount_aux > 0){
+                        global_part_net = parseFloat(item_mine.amount) * discount_aux * parseInt(item_mine.quantity, 10);
+                    }
+                    var dl = item_mine.item_discountrate != null && item_mine.item_discountrate !== '' ? item_mine.item_discountrate : (item_mine.discount != null && item_mine.discount !== '' ? item_mine.discount : (item_mine.item_discount != null ? item_mine.item_discount : item_mine.descuento));
+                    if(dl != null && dl !== '' && !isNaN(parseFloat(dl)) && parseFloat(dl) > 0){
+                        descuento_linea_gross = parseFloat(dl);
+                    }
+                }
+
+                var discount_item_gross = (global_part_net * 1.16) + descuento_linea_gross;
+                if(discount_item_gross > 0){
+                    var id_descuento = discount_item_id;
+                    if(id_descuento == null || id_descuento === '' || (typeof id_descuento === 'object' && !Array.isArray(id_descuento))) id_descuento = 1876;
+                    if(typeof id_descuento === 'string'){ var n = parseInt(id_descuento, 10); id_descuento = isNaN(n) ? 1876 : n; }
+                    var solo_descuento_config = (global_part_net === 0 && config && (config.accion === 2 || config.accion === 3));
+                    if(solo_descuento_config){
+                        var rate_sin_iva = (discount_item_gross / 1.16).toFixed(6);
+                        var gross_neg = -discount_item_gross;
+                        obj_sales_order.selectNewLine({ sublistId: 'item' });
+                        obj_sales_order.setCurrentSublistValue({ sublistId: 'item', fieldId: 'item', value: id_descuento });
+                        obj_sales_order.setCurrentSublistValue({ sublistId: 'item', fieldId: 'price', value: -1 });
+                        obj_sales_order.setCurrentSublistValue({ sublistId: 'item', fieldId: 'rate', value: parseFloat(rate_sin_iva) * -1 });
+                        obj_sales_order.setCurrentSublistValue({ sublistId: 'item', fieldId: 'amount', value: gross_neg });
+                        obj_sales_order.setCurrentSublistValue({ sublistId: 'item', fieldId: 'grossamt', value: gross_neg });
+                        obj_sales_order.commitLine({ sublistId: 'item' });
+                    }else{
+                        var discount_item_sin_iva = discount_item_gross / 1.16;
+                        setItemDiscount(obj_sales_order, discount_item_sin_iva, id_descuento);
+                    }
+                }
+            }
+
+            var salesorder_payment = req_info.multipago;
+            var id_sales_order;
+            try{
+                id_sales_order = obj_sales_order.save();
+                if(odv_serial && odv_serial.internalid){
+                    try{
+                        record.submitFields({ type: 'salesorder', id: odv_serial.internalid, values: { 'custbody_vw_odv_warranty': id_sales_order } });
+                    }catch(err_serires){
+                        log.error('err_serires', err_serires);
+                    }
+                }
+                var description = getDescription(id_sales_order);
+                var acLogistic = { tracking: req_info.custbody46, tracking_link: req_info.custbody_url_one_aclogistics, guia: req_info.custbody_url_two_aclogistics, status: req_info.custbody_estatus_envio };
+                var id_traking = createTraking(description, id_sales_order, acLogistic, req_info.custbody_tipo_venta, req_info.custbody_estatus_envio);
+                if(req_info.custbody_tipo_venta == 2 && req_info.custbody_estatus_envio != 7 && req_info.custbody_url_one_aclogistics && req_info.custbody_url_two_aclogistics){
+                    var objSO = record.load({ type: record.Type.SALES_ORDER, id: id_sales_order, isDynamic: false });
+                    var itemLines = objSO.getLineCount({ sublistId: 'item' });
+                    var description_arr = [], segundaGuia = false;
+                    for(var i = 0; i < itemLines; i++){
+                        var itemId = objSO.getSublistValue({ sublistId: 'item', fieldId: 'item', line: i });
+                        if(itemId != 1441 && itemId != 859 && itemId != 2001 && itemId != 2170 && itemId != 2490 && itemId != 2571 && itemId != 2638 && itemId != 2671 && itemId != 2763){
+                            segundaGuia = true;
+                            description_arr.push(objSO.getSublistValue({ sublistId: 'item', fieldId: 'description', line: i }));
+                        }
+                    }
+                    var description_txt = description_arr.join(',');
+                    var objTracking = search.lookupFields({ type: 'customrecord_vk_traking_information', id: 3, columns: ['custrecord_alto_cm', 'custrecord_ancho_cm', 'custrecord_largo_cm', 'name', 'custrecord_contenido'] });
+                    var objCustomer = record.load({ type: record.Type.CUSTOMER, id: objSO.getValue('entity'), isDynamic: false });
+                    var email_customer = objCustomer.getValue('email');
+                    var nameCustomer = objCustomer.getValue('altname');
+                    var addrphone = '', addr1 = '', addr2 = '', zip = '';
+                    var companyCustomer = objCustomer.getValue('custentity_razon_social');
+                    var totalLines = objCustomer.getLineCount({ sublistId: 'addressbook' });
+                    for(var i = 0; i < totalLines; i++){
+                        if(objCustomer.getSublistValue({ sublistId: 'addressbook', fieldId: 'defaultshipping', line: i }) == true){
+                            var subRecord = objCustomer.getSublistSubrecord({ sublistId: 'addressbook', fieldId: 'addressbookaddress', line: i });
+                            addrphone = subRecord.getText({ fieldId: 'addrphone' });
+                            addr1 = subRecord.getValue({ fieldId: 'addr1' });
+                            addr2 = subRecord.getValue({ fieldId: 'addr2' });
+                            zip = subRecord.getValue({ fieldId: 'zip' });
+                            break;
+                        }
+                    }
+                    var random_num = Math.floor(Math.random() * 100);
+                    var weight = objTracking.name ? String(objTracking.name).split(' ')[0] : '';
+                    if(itemLines > 1 && segundaGuia){
+                        var objRequest = {
+                            api_key: 'c9df5be32d150aaae2c5f3a2cddacb44',
+                            referencia: objSO.getValue('tranid') + '-' + random_num,
+                            id_courier: 'fedex_eco',
+                            nombre_remitente: 'VORWERK',
+                            telefono_remitente: '01 800 200 11 21',
+                            correo_remitente: 'contacto@thermomixmexico.com.mx',
+                            direccion_remitente: 'VITO ALESSIO ROBLES 38 COLONIA FLORIDA ÁLVARO OBREGÓN Ciudad de México 01030',
+                            empresa_remitente: 'VORWERK MEXICO, S. DE R.L. DE C.V.',
+                            nombre_destinatario: nameCustomer,
+                            telefono_destinatario: addrphone,
+                            correo_destinatario: email_customer,
+                            calle_destinatario: addr1,
+                            num_exterior_destinatario: '0',
+                            num_interior_destinatario: '0',
+                            cp_destinatario: zip,
+                            colonia_destinatario: addr2,
+                            empresa_destinatario: companyCustomer,
+                            alto_cm: objTracking.custrecord_alto_cm,
+                            ancho_cm: objTracking.custrecord_ancho_cm,
+                            largo_cm: objTracking.custrecord_largo_cm,
+                            peso_kg: weight,
+                            contenido: objTracking.custrecord_contenido,
+                            valor: objSO.getValue('total'),
+                            seguro: 'false'
+                        };
+                        var responseService = https.post({ url: 'https://www.smartship.mx/api/documentar/', body: JSON.stringify(objRequest), headers: { 'Content-Type': 'application/json' } }).body;
+                        if(responseService){
+                            try{
+                                var parsed = JSON.parse(responseService);
+                                if(parsed.mensaje == 'Exitoso'){
+                                    var obj_traking = record.create({ type: 'customrecord_guia_envio', isDynamic: false });
+                                    obj_traking.setValue({ fieldId: 'custrecord_id_sales_order', value: id_sales_order });
+                                    obj_traking.setValue({ fieldId: 'custrecord_no_guia', value: parsed.tracking });
+                                    obj_traking.setValue({ fieldId: 'custrecord_url_resp_aclogistics', value: parsed.tracking_link });
+                                    obj_traking.setValue({ fieldId: 'custrecord_url_pdf_aclogistics', value: parsed.guia });
+                                    obj_traking.setValue({ fieldId: 'custrecord_estatus_envio', value: 1 });
+                                    obj_traking.setValue({ fieldId: 'custrecord_id_envio', value: parsed.id_envio });
+                                    obj_traking.setValue({ fieldId: 'custrecord_vw_description', value: description_txt });
+                                    obj_traking.setValue({ fieldId: 'custrecord_peso', value: weight + ' kg' });
+                                    obj_traking.save();
+                                }
+                            }catch(e){ log.error('error segunda guia', e); }
+                        }
+                    }
+                }
+            }catch(err_so){
+                log.error('error createSalesOrderWithConfigDiscounts save', err_so);
+                return { error_order: err_so };
+            }
+
+            var fecha_pago = null;
+            if(salesorder_payment && salesorder_payment.length > 0){
+                var pago_a_usar = salesorder_payment.length > 1 ? salesorder_payment[salesorder_payment.length - 1] : salesorder_payment[0];
+                if(pago_a_usar.transdate) fecha_pago = parseDate(pago_a_usar.transdate);
+                else if(pago_a_usar.trandate) fecha_pago = parseDate(pago_a_usar.trandate);
+            }
+            var id_payment = setPaymentMethod(id_sales_order, salesorder_payment, req_info.entity);
+            try{
+                var values_to_update = { 'orderstatus': 'B', 'custbody_vorwerk_contratos': id_payment.contract, 'custbody_total_pagado': id_payment.total_payment };
+                if(fecha_pago) values_to_update['trandate'] = fecha_pago;
+                record.submitFields({ type: record.Type.SALES_ORDER, id: id_sales_order, values: values_to_update });
+                if(id_payment.contract && id_payment.contract != ''){
+                    record.submitFields({ type: record.Type.SALES_ORDER, id: id_sales_order, values: { 'custbody_cfdi_formadepago': 3 } });
+                }
+            }catch(e){
+                log.error('error general payment', e);
+                return { error_payment: e };
+            }
+            return { success: id_sales_order, id_payment: id_payment };
+        }catch(err){
+            log.error('error createSalesOrderWithConfigDiscounts', err);
+            return { error: err };
         }
     }
 
