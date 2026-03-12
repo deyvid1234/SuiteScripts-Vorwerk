@@ -514,9 +514,7 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                 if("customer_information" in valid_to_create && type_user == "customer"){
                     return {error:"El correo del cliente ya existe"}
                 }
-            }
-            // Validación de correo para employee (presentador) se mantiene como estaba
-            if(Object.keys(valid_to_create).length >= 1 ){
+            
                 if("sales_rep_information" in  valid_to_create && type_user == "employee"){
                     return {error:"El correo del presentador ya existe"}
                 }
