@@ -1521,7 +1521,7 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
     }
 
     /**
-     * Busca en customrecord_conf_descuento_tl un registro cuyo SKU Relacionado (custrecord212) contenga el itemId.
+     * Busca en customrecord_conf_descuento_tl un registro cuyo SKU Relacionado (custrecord_sku_rel; en prod internal id) contenga el itemId.
      * @param {string|number} itemId - Internal ID del ítem
      * @returns {Object|null} { skuDescuento, accion, montoEspecifico, montoDescuento, centavos } o null si no hay configuración
      */
@@ -1531,7 +1531,7 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
             var confSearch = search.create({
                 type: 'customrecord_conf_descuento_tl',
                 filters: [
-                    search.createFilter({ name: 'custrecord212', operator: search.Operator.ANYOF, values: [itemIdStr] })
+                    search.createFilter({ name: 'custrecord_sku_rel', operator: search.Operator.ANYOF, values: [itemIdStr] })
                 ],
                 columns: [
                     search.createColumn({ name: 'custrecord_skudescuento' }),
@@ -1562,7 +1562,8 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                     centavos: parseFloat(row.getValue({ name: 'custrecord_cent' })) || 0
                 };
             }
-            var defaultId = 2;
+            // Configuración de descuento por defecto: sandbox = 2, producción = 1
+            var defaultId = (runtime.envType === 'SANDBOX') ? 2 : 1;
             var defaultRec = search.lookupFields({
                 type: 'customrecord_conf_descuento_tl',
                 id: defaultId,
