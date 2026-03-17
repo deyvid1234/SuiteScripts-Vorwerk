@@ -3,6 +3,12 @@
  * @NScriptType Suitelet
  * @NModuleScope SameAccount
  * @description Suitelet para generar reporte de rentabilidad con cálculos de ganancias, comisiones, etc.
+ *
+ * --- VERSION ESTABLE 2026-03-11 ---
+ * Incluye: facturas/NC, costos por línea (EPA + cuenta 5100), match por cantidad cuando OV tiene varias EPAs
+ * (precarga cantidades EPA en Paso 2a, una búsqueda por EPA), comisiones gerentes y Otros, export Excel.
+ * Logs EPA filtrables por OV (EPA_LOG_SO_FILTER). Sin SuiteQL; sin record.load para EPA.
+ * ---
  * 
  * CONFIGURACIÓN REQUERIDA:
  * 
@@ -47,14 +53,23 @@
  *      * custentity_comision_mineria - Porcentaje de comisión para MINERIA
  *      * custentity_comision_agro - Porcentaje de comisión para AGRO
  *      * custentity_comision_prieto - Porcentaje de comisión para PRIETO
- *      * custentity_comision_otros - Porcentaje de comisión para OTROS
+ *      * custentity_comision_otros - NO se usa para % Otros; ver punto 5.
  *      * custentity_comision_total - Suma de todos los porcentajes (para validación, debe ser 100%)
  *    - Lógica: Por cada línea del reporte se obtiene el Representante de Ventas (salesrep) y se
  *      leen los porcentajes de comisión de ese Employee. Se calcula: Comisión Gerente = Comisión Total × Porcentaje del Gerente.
  *      Las comisiones se muestran en columnas separadas por cada gerente en el reporte.
+ *
+ * 5. Custom Record Type: "Compensación Cliente-Artículo" (determina % Otros por línea)
+ *    - ID interno: customrecord_compensacion_cliente_articulo (ajustar RECORD_TYPE_OTROS si en tu cuenta es otro, ej. customrecord_comisiones_otros)
+ *    - Campos: custrecord_comisionista (Employee), custrecord_cliente (Customer), custrecord_articulo (Item, multi-select),
+ *      custrecord_porcentajecomision (Percent), custrecord_fecha_desde, custrecord_fecha_hasta
+ *    - Lógica: Por cada línea del reporte se busca un registro donde comisionista = Representante de Ventas, cliente = Cliente de la línea,
+ *      el ítem de la línea esté en custrecord_articulo, y la fecha de la transacción esté entre fecha_desde y fecha_hasta.
+ *      Se toma custrecord_porcentajecomision como % Otros. El monto Otros = (% Otros / 100) × Ingreso Casa.
+ *      % Otros participa en Comisión Total y Utilidad después de comisiones de gerencia igual que el resto de gerentes.
  */
-define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/record', 'N/https', 'N/runtime'],
-    function(serverWidget, search, file, encode, log, record, https, runtime) {
+define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/record', 'N/https', 'N/format', 'N/runtime'],
+    function(serverWidget, search, file, encode, log, record, https, format, runtime) {
     
         /**
          * Suitelet que solo recibe datos y genera el CSV. Use la misma URL que en el deploy:
@@ -623,7 +638,8 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
                 ]
             });
             
-            loadComisionesGerentesCache();
+            loadComisionesGerentesCache(filters.fechaDesde, filters.fechaHasta);
+            loadOtrosCompensacionCache();
             fulfillmentsBySOCache = {};
             fulfillmentImpactCache = {};
             raToItemReceiptCache = {};
@@ -747,6 +763,7 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
             log.audit('ReporteRentabilidad', 'Paso 1 SOs únicos=' + soIdList.length);
             preloadFulfillmentsBySalesOrders(soIdList);
             log.audit('ReporteRentabilidad', 'Paso 2 Fulfillments precargados');
+            preloadFulfillmentLineQtyForMultiEPA();
             preloadFulfillmentAccountingImpact(account5100Id);
             log.audit('ReporteRentabilidad', 'Paso 2b Impacto 5100 precargado');
             
@@ -756,6 +773,83 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
             // --- Filas de Facturas ---
             if (invoiceSearchPagedData) {
                 var maxPageIndex = (cappedForView ? Math.min(startPage + MAX_PAGES_VIEW, totalPages) : totalPages);
+                // Pre-pass: agrupar líneas por (factura, EPA) para repartir costo cuando hay varias líneas del mismo ítem (reparto proporcional por cantidad).
+                var invFulfillLines = {};
+                var invFulfillCost = {};
+                var invFulfillCostIndex = {};
+                for (var iPre = startPage; iPre < maxPageIndex; iPre++) {
+                    var invoiceSearchPagePre = invoiceSearchPagedData.fetch({ index: iPre });
+                    for (var dPre = 0; dPre < invoiceSearchPagePre.data.length; dPre++) {
+                        var resultPre = invoiceSearchPagePre.data[dPre];
+                        var invIdPre = resultPre.getValue(invoiceSearchColInternalId);
+                        var salesOrderIdPre = resultPre.getValue(invoiceSearchColCreatedFrom);
+                        var fulfillmentsPre = getItemFulfillmentsBySalesOrder(salesOrderIdPre);
+                        var fulfillmentIdPre = '';
+                        var itemIdPre = resultPre.getValue(invoiceSearchColItem) || '';
+                        var qtyPre = Math.abs(parseFloat(resultPre.getValue(invoiceSearchColQuantity) || 0));
+                        if (fulfillmentsPre && fulfillmentsPre.length > 1 && itemIdPre && qtyPre > 0) {
+                            var fIdsPre = [];
+                            var fIdsSeenPre = {};
+                            for (var fxPre = 0; fxPre < fulfillmentsPre.length; fxPre++) {
+                                var eidPre = fulfillmentsPre[fxPre].id;
+                                if (eidPre && !fIdsSeenPre[eidPre]) { fIdsSeenPre[eidPre] = true; fIdsPre.push(eidPre); }
+                            }
+                            ensureFulfillmentLineQtyCache(fIdsPre, salesOrderIdPre);
+                            var invQtyRoundedPre = Math.round(qtyPre * 1e4) / 1e4;
+                            for (var fiPre = 0; fiPre < fulfillmentsPre.length; fiPre++) {
+                                var fPre = fulfillmentsPre[fiPre];
+                                var qtyFulfPre = getFulfillmentLineQtyByItem(fPre.id, itemIdPre);
+                                var qtyFulfRoundedPre = Math.round(qtyFulfPre * 1e4) / 1e4;
+                                if (qtyFulfRoundedPre > 0 && Math.abs(qtyFulfRoundedPre - invQtyRoundedPre) < 0.0001) {
+                                    if ((getFulfillmentAccountingImpactByItem(fPre.id, itemIdPre, account5100Id) || 0) > 0) {
+                                        fulfillmentIdPre = fPre.id || '';
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        if (!fulfillmentIdPre && fulfillmentsPre && fulfillmentsPre.length > 0 && itemIdPre) {
+                            for (var fiPre2 = 0; fiPre2 < fulfillmentsPre.length; fiPre2++) {
+                                if ((getFulfillmentAccountingImpactByItem(fulfillmentsPre[fiPre2].id, itemIdPre, account5100Id) || 0) > 0) {
+                                    fulfillmentIdPre = fulfillmentsPre[fiPre2].id || '';
+                                    break;
+                                }
+                            }
+                        }
+                        if (!fulfillmentIdPre && fulfillmentsPre && fulfillmentsPre.length > 0) fulfillmentIdPre = fulfillmentsPre[0].id || '';
+                        var keyPre = String(invIdPre) + '_' + String(fulfillmentIdPre);
+                        if (!invFulfillLines[keyPre]) invFulfillLines[keyPre] = [];
+                        invFulfillLines[keyPre].push({ itemId: itemIdPre, qty: qtyPre, amount: parseFloat(resultPre.getValue(invoiceSearchColAmount) || 0) });
+                    }
+                }
+                for (var keyBuild in invFulfillLines) {
+                    var linesBuild = invFulfillLines[keyBuild];
+                    var partsBuild = keyBuild.split('_');
+                    var fulfillmentIdBuild = partsBuild.length > 1 ? partsBuild.slice(1).join('_') : '';
+                    var dataBuild = getFulfillmentAccountingImpact(fulfillmentIdBuild, account5100Id);
+                    var totalQtyByItemBuild = {};
+                    for (var lb = 0; lb < linesBuild.length; lb++) {
+                        var itemKeyBuild = String(linesBuild[lb].itemId || '');
+                        if (itemKeyBuild) totalQtyByItemBuild[itemKeyBuild] = (totalQtyByItemBuild[itemKeyBuild] || 0) + (linesBuild[lb].qty || 0);
+                    }
+                    var costArrBuild = [];
+                    for (var lb2 = 0; lb2 < linesBuild.length; lb2++) {
+                        var lineBuild = linesBuild[lb2];
+                        var itemKeyBuild2 = String(lineBuild.itemId || '');
+                        var totalCostItemBuild = (dataBuild && dataBuild.byItem && dataBuild.byItem[itemKeyBuild2]) ? dataBuild.byItem[itemKeyBuild2] : 0;
+                        var totalQtyItemBuild = totalQtyByItemBuild[itemKeyBuild2] || 0;
+                        var qtyBuild = lineBuild.qty || 0;
+                        var costBuild = 0;
+                        if (totalCostItemBuild && totalQtyItemBuild > 0 && qtyBuild > 0) {
+                            costBuild = totalCostItemBuild * (qtyBuild / totalQtyItemBuild);
+                        } else if (totalCostItemBuild) {
+                            costBuild = totalCostItemBuild;
+                        }
+                        costArrBuild.push(costBuild);
+                    }
+                    invFulfillCost[keyBuild] = costArrBuild;
+                    invFulfillCostIndex[keyBuild] = 0;
+                }
                 for (var i = startPage; i < maxPageIndex && !hitMaxRows; i++) {
                     var invoiceSearchPage = invoiceSearchPagedData.fetch({ index: i });
                 for (var d = 0; d < invoiceSearchPage.data.length; d++) {
@@ -770,16 +864,63 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
                     var fulfillmentTranId = '';
                     var fulfillmentIdUsed = '';
                     var invoiceLineItemId = result.getValue(invoiceSearchColItem) || '';
+                    var invoiceQty = Math.abs(parseFloat(result.getValue(invoiceSearchColQuantity) || 0));
                     
-                    // Varias ejecuciones (EPA) por OV: buscar en cada EPA el costo del ítem de esta línea de factura
-                    for (var fi = 0; fi < fulfillments.length; fi++) {
-                        var costForItem = getFulfillmentAccountingImpactByItem(fulfillments[fi].id, invoiceLineItemId, account5100Id) || 0;
-                        if (costForItem > 0) {
-                            costoFulfillment = costForItem;
-                            fulfillmentTranId = fulfillments[fi].tranid || '';
-                            fulfillmentIdUsed = fulfillments[fi].id || '';
-                            break;
+                    // Solo cuando hay más de una EPA: match por cantidad factura = cantidad en la EPA (sublist item, quantity), no impacto
+                    if (fulfillments && fulfillments.length > 1 && invoiceLineItemId && invoiceQty > 0) {
+                        var fIds = [];
+                        var fIdsSeen = {};
+                        for (var fx = 0; fx < fulfillments.length; fx++) {
+                            var eid = fulfillments[fx].id;
+                            if (eid && !fIdsSeen[eid]) { fIdsSeen[eid] = true; fIds.push(eid); }
                         }
+                        ensureFulfillmentLineQtyCache(fIds, salesOrderId);
+                        var invQtyRounded = Math.round(invoiceQty * 1e4) / 1e4;
+                        var logThisSO = !EPA_LOG_SO_FILTER || String(salesOrderId) === EPA_LOG_SO_FILTER;
+                        for (var fiMatch = 0; fiMatch < fulfillments.length; fiMatch++) {
+                            var fMatch = fulfillments[fiMatch];
+                            var qtyFulfill = getFulfillmentLineQtyByItem(fMatch.id, invoiceLineItemId);
+                            var qtyFulfillRounded = Math.round(qtyFulfill * 1e4) / 1e4;
+                            if (qtyFulfillRounded > 0 && Math.abs(qtyFulfillRounded - invQtyRounded) < 0.0001) {
+                                var costMatch = getFulfillmentAccountingImpactByItem(fMatch.id, invoiceLineItemId, account5100Id) || 0;
+                                if (costMatch > 0) {
+                                    costoFulfillment = costMatch;
+                                    fulfillmentTranId = fMatch.tranid || '';
+                                    fulfillmentIdUsed = fMatch.id || '';
+                                    if (logThisSO && _epaLogCount < _epaLogLimit) {
+                                        log.audit('ReporteRentabilidad EPA', 'Match cantidad SO=' + salesOrderId + ' item=' + invoiceLineItemId + ' qty=' + invQtyRounded + ' -> EPA id=' + fMatch.id + ' tranid=' + (fMatch.tranid || '') + ' cost=' + costMatch);
+                                        _epaLogCount++;
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+                        if (!costoFulfillment && logThisSO && _epaLogCount < _epaLogLimit) {
+                            log.audit('ReporteRentabilidad EPA', 'Sin match por cantidad SO=' + salesOrderId + ' item=' + invoiceLineItemId + ' qtyInv=' + invQtyRounded + ' (qtys EPA: ' + fIds.map(function(id) { return id + '=' + getFulfillmentLineQtyByItem(id, invoiceLineItemId); }).join(', ') + ')');
+                            _epaLogCount++;
+                        }
+                    }
+                    
+                    // Si no hubo match por cantidad (o solo hay una EPA), usar el flujo original: primer EPA con costo para ese ítem
+                    if (!costoFulfillment && fulfillments && fulfillments.length > 0 && invoiceLineItemId) {
+                        for (var fi = 0; fi < fulfillments.length; fi++) {
+                            var costForItem = getFulfillmentAccountingImpactByItem(fulfillments[fi].id, invoiceLineItemId, account5100Id) || 0;
+                            if (costForItem > 0) {
+                                costoFulfillment = costForItem;
+                                fulfillmentTranId = fulfillments[fi].tranid || '';
+                                fulfillmentIdUsed = fulfillments[fi].id || '';
+                                if (fulfillments.length > 1 && (!EPA_LOG_SO_FILTER || String(salesOrderId) === EPA_LOG_SO_FILTER) && _epaLogCount < _epaLogLimit) {
+                                    log.audit('ReporteRentabilidad EPA', 'Fallback primer EPA con costo SO=' + salesOrderId + ' item=' + invoiceLineItemId + ' -> EPA id=' + fulfillments[fi].id + ' tranid=' + (fulfillments[fi].tranid || '') + ' cost=' + costForItem);
+                                    _epaLogCount++;
+                                }
+                                break;
+                            }
+                        }
+                    }
+                    if (!fulfillmentIdUsed && fulfillments && fulfillments.length > 0) fulfillmentIdUsed = fulfillments[0].id || '';
+                    var invFulfillKey = String(invoiceId) + '_' + String(fulfillmentIdUsed);
+                    if (invFulfillCost[invFulfillKey] && invFulfillCostIndex[invFulfillKey] !== undefined && invFulfillCostIndex[invFulfillKey] < invFulfillCost[invFulfillKey].length) {
+                        costoFulfillment = invFulfillCost[invFulfillKey][invFulfillCostIndex[invFulfillKey]++];
                     }
                     
                     // Crear una sola línea por línea de invoice
@@ -791,6 +932,7 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
                             type: mapTransactionTypeToSpanish(result.getValue(invoiceSearchColType), result.getText(invoiceSearchColType)),
                             clase: result.getText(invoiceSearchColItemClassification) || result.getValue(invoiceSearchColItemClassification),
                             ubicacion: result.getText(invoiceSearchColLocation) || result.getValue(invoiceSearchColLocation),
+                            ubicacionId: result.getValue(invoiceSearchColLocation) || '',
                             numeroDocumento: result.getValue(invoiceSearchColTranId),
                             notaCreditoNumero: '',
                             returnAuthorizationTranId: '',
@@ -838,26 +980,28 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
                         var employeeIdStr = String(row.representanteVentaId || '');
                         var comisionesGerentes = getComisionesGerentes(employeeIdStr);
                         if (comisionesGerentes) {
-                            // Asignar valores TAL CUAL del registro Employee, sin conversiones
+                            // Asignar valores TAL CUAL del registro Employee (rosario, alhely, ..., prieto)
                             row.porcentajeComisionRosario = comisionesGerentes.rosario || 0;
                             row.porcentajeComisionAlhely = comisionesGerentes.alhely || 0;
                             row.porcentajeComisionGabriela = comisionesGerentes.gabriela || 0;
                             row.porcentajeComisionMineria = comisionesGerentes.mineria || 0;
                             row.porcentajeComisionAgro = comisionesGerentes.agro || 0;
                             row.porcentajeComisionPrieto = comisionesGerentes.prieto || 0;
-                            row.porcentajeComisionOtros = comisionesGerentes.otros || 0;
-                            row.porcentajeComisionTotal = comisionesGerentes.total || 0;
-                            
+                            var otrosResult = getPorcentajeOtrosCompensacionClienteArticulo(row);
+                            row.porcentajeComisionOtros = (otrosResult.tipo === 'porcentaje') ? otrosResult.valor : 0;
+                            row.otrosCostoFijoTon = (otrosResult.tipo === 'costo_fijo') ? otrosResult.valor : null;
+                            row.porcentajeComisionTotal = (row.porcentajeComisionRosario || 0) + (row.porcentajeComisionAlhely || 0) + (row.porcentajeComisionGabriela || 0) + (row.porcentajeComisionMineria || 0) + (row.porcentajeComisionAgro || 0) + (row.porcentajeComisionPrieto || 0) + (row.porcentajeComisionOtros || 0);
                         } else {
-                            // Si no existe el Employee en el cache, todos los porcentajes son 0
                             row.porcentajeComisionRosario = 0;
                             row.porcentajeComisionAlhely = 0;
                             row.porcentajeComisionGabriela = 0;
                             row.porcentajeComisionMineria = 0;
                             row.porcentajeComisionAgro = 0;
                             row.porcentajeComisionPrieto = 0;
-                            row.porcentajeComisionOtros = 0;
-                            row.porcentajeComisionTotal = 0;
+                            var otrosResultElse = getPorcentajeOtrosCompensacionClienteArticulo(row);
+                            row.porcentajeComisionOtros = (otrosResultElse.tipo === 'porcentaje') ? otrosResultElse.valor : 0;
+                            row.otrosCostoFijoTon = (otrosResultElse.tipo === 'costo_fijo') ? otrosResultElse.valor : null;
+                            row.porcentajeComisionTotal = row.porcentajeComisionOtros || 0;
                         }
                         // Nota Crédito Proveedor = Tipo de Cambio × Cantidad × Factor Descuento
                         row.notaCreditoProveedor = (row.tipoCambio || 0) * (row.cantidad || 0) * (row.factorDescuento || 0);
@@ -901,6 +1045,31 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
             // --- Filas de Notas de Crédito (NC → RA → Item Receipt; costo = impacto contable del IR, sin filtro cuenta) ---
             if (ncSearchPagedData && ncCols) {
                 var ncMaxPage = ncCappedForView ? Math.min(MAX_PAGES_VIEW, ncTotalPages) : ncTotalPages;
+                // Pre-pass: suma cantidades por (IR, ítem). Cuando la RA tiene dos o más líneas del mismo ítem,
+                // todas suman al mismo key para poder repartir el costo del IR proporcionalmente por cantidad.
+                var totalQtyByIrItem = {};
+                for (var niPre = 0; niPre < ncMaxPage; niPre++) {
+                    var ncPagePre = ncSearchPagedData.fetch({ index: niPre });
+                    for (var ndPre = 0; ndPre < ncPagePre.data.length; ndPre++) {
+                        var rPre = ncPagePre.data[ndPre];
+                        var raIdPre = rPre.getValue(ncCols.colCreatedFrom);
+                        var irInfoPre = (raToItemReceiptCache && raIdPre) ? raToItemReceiptCache[raIdPre] : null;
+                        var irIdPre = (irInfoPre && irInfoPre.id) ? String(irInfoPre.id) : '';
+                        var itemIdPre = rPre.getValue(ncCols.colItem) || '';
+                        var qtyPre = Math.abs(parseFloat(rPre.getValue(ncCols.colQuantity) || 0));
+                        if (irIdPre && itemIdPre !== '') {
+                            var keyPre = irIdPre + '_' + String(itemIdPre);
+                            totalQtyByIrItem[keyPre] = (totalQtyByIrItem[keyPre] || 0) + qtyPre;
+                        }
+                    }
+                }
+                if (NC_LOG_RA_FILTER && raToItemReceiptCache && raToItemReceiptCache[NC_LOG_RA_FILTER]) {
+                    var irIdLog = raToItemReceiptCache[NC_LOG_RA_FILTER].id;
+                    var prefix = String(irIdLog) + '_';
+                    var parts = [];
+                    for (var k in totalQtyByIrItem) { if (k.indexOf(prefix) === 0) parts.push(k.replace(prefix, 'item=') + ' totalQty=' + totalQtyByIrItem[k]); }
+                    if (parts.length) log.audit('ReporteRentabilidad NC', 'RA=' + NC_LOG_RA_FILTER + ' IR=' + irIdLog + ' totalQty por item: ' + parts.join(', '));
+                }
                 for (var ni = 0; ni < ncMaxPage && !hitMaxRows; ni++) {
                     var ncPage = ncSearchPagedData.fetch({ index: ni });
                     for (var nd = 0; nd < ncPage.data.length; nd++) {
@@ -914,9 +1083,38 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
                         var irTranId = (irInfo && irInfo.tranid) ? irInfo.tranid : '';
                         var irId = (irInfo && irInfo.id) ? irInfo.id : null;
                         var ncLineItemId = ncResult.getValue(ncCols.colItem) || '';
+                        var ncLineQty = Math.abs(parseFloat(ncResult.getValue(ncCols.colQuantity) || 0));
                         var costoIr = 0;
-                        if (irId && itemReceiptImpactCache && itemReceiptImpactCache[irId] && itemReceiptImpactCache[irId].byItem && ncLineItemId) {
-                            costoIr = itemReceiptImpactCache[irId].byItem[String(ncLineItemId)] || 0;
+                        var costoMetodo = '';
+                        if (irId && itemReceiptImpactCache && itemReceiptImpactCache[irId] && ncLineItemId) {
+                            var irData = itemReceiptImpactCache[irId];
+                            var itemKey = String(ncLineItemId);
+                            var qtyKey = String(Math.round(ncLineQty * 1e4) / 1e4);
+                            if (irData.byItemQty && irData.byItemQty[itemKey] && irData.byItemQty[itemKey][qtyKey] != null) {
+                                costoIr = irData.byItemQty[itemKey][qtyKey] || 0;
+                                costoMetodo = 'byItemQty';
+                            } else if (irData.byItem && irData.byItem[itemKey] != null) {
+                                var totalCostItem = irData.byItem[itemKey] || 0;
+                                var keyIrItem = String(irId) + '_' + itemKey;
+                                var totalQtyItem = totalQtyByIrItem[keyIrItem] || 0;
+                                // Reparto proporcional: cuando la RA tiene varias líneas del mismo ítem, cada línea
+                                // recibe (totalCostItem * ncLineQty / totalQtyItem) para que los costos no se dupliquen.
+                                if (totalQtyItem > 0 && ncLineQty > 0) {
+                                    costoIr = totalCostItem * (ncLineQty / totalQtyItem);
+                                    costoMetodo = 'proporcional';
+                                } else {
+                                    costoIr = totalCostItem;
+                                    costoMetodo = 'byItem';
+                                }
+                            }
+                        }
+                        var logNcCost = (!NC_LOG_RA_FILTER || String(raId) === NC_LOG_RA_FILTER) && _ncCostLogCount < _ncCostLogLimit;
+                        if (logNcCost && (irId || costoIr)) {
+                            var irDataLog = (itemReceiptImpactCache && irId && itemReceiptImpactCache[irId]) ? itemReceiptImpactCache[irId] : null;
+                            var totalCostItemLog = (irDataLog && irDataLog.byItem) ? (irDataLog.byItem[String(ncLineItemId)] || 0) : 0;
+                            var totalQtyItemLog = totalQtyByIrItem[String(irId) + '_' + String(ncLineItemId)] || 0;
+                            log.audit('ReporteRentabilidad NC', 'Costo NC raId=' + raId + ' irId=' + (irId || '') + ' item=' + ncLineItemId + ' ncLineQty=' + ncLineQty + ' totalQtyItem=' + totalQtyItemLog + ' totalCostItem=' + totalCostItemLog + ' metodo=' + (costoMetodo || '-') + ' costoIr=' + costoIr);
+                            _ncCostLogCount++;
                         }
                         if (filters.creditMemoId && (String(ncId) === String(filters.creditMemoId) || results.length < 3)) {
                             log.audit('ReporteRentabilidad', 'NC fila ncId=' + ncId + ' raId=' + raId + ' raTranId=' + raTranId + ' irId=' + (irId || '') + ' irTranId=' + irTranId + ' itemId=' + ncLineItemId + ' costoIr=' + costoIr);
@@ -928,6 +1126,7 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
                             type: 'Nota de crédito',
                             clase: ncResult.getText(ncCols.colItemClassification) || ncResult.getValue(ncCols.colItemClassification),
                             ubicacion: ncResult.getText(ncCols.colLocation) || ncResult.getValue(ncCols.colLocation),
+                            ubicacionId: ncResult.getValue(ncCols.colLocation) || '',
                             numeroDocumento: '',
                             notaCreditoNumero: ncResult.getValue(ncCols.colTranId) || '',
                             returnAuthorizationTranId: raTranId,
@@ -970,9 +1169,10 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
                             rowNc.porcentajeComisionGabriela = comGerNc.gabriela || 0;
                             rowNc.porcentajeComisionMineria = comGerNc.mineria || 0;
                             rowNc.porcentajeComisionAgro = comGerNc.agro || 0;
-                            rowNc.porcentajeComisionPrieto = comGerNc.prieto || 0;
-                            rowNc.porcentajeComisionOtros = comGerNc.otros || 0;
-                            rowNc.porcentajeComisionTotal = comGerNc.total || 0;
+                            var otrosResultNc = getPorcentajeOtrosCompensacionClienteArticulo(rowNc);
+                            rowNc.porcentajeComisionOtros = (otrosResultNc.tipo === 'porcentaje') ? otrosResultNc.valor : 0;
+                            rowNc.otrosCostoFijoTon = (otrosResultNc.tipo === 'costo_fijo') ? otrosResultNc.valor : null;
+                            rowNc.porcentajeComisionTotal = (rowNc.porcentajeComisionRosario || 0) + (rowNc.porcentajeComisionAlhely || 0) + (rowNc.porcentajeComisionGabriela || 0) + (rowNc.porcentajeComisionMineria || 0) + (rowNc.porcentajeComisionAgro || 0) + (rowNc.porcentajeComisionPrieto || 0) + (rowNc.porcentajeComisionOtros || 0);
                         } else {
                             rowNc.porcentajeComisionRosario = 0;
                             rowNc.porcentajeComisionAlhely = 0;
@@ -980,8 +1180,10 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
                             rowNc.porcentajeComisionMineria = 0;
                             rowNc.porcentajeComisionAgro = 0;
                             rowNc.porcentajeComisionPrieto = 0;
-                            rowNc.porcentajeComisionOtros = 0;
-                            rowNc.porcentajeComisionTotal = 0;
+                            var otrosResultNcElse = getPorcentajeOtrosCompensacionClienteArticulo(rowNc);
+                            rowNc.porcentajeComisionOtros = (otrosResultNcElse.tipo === 'porcentaje') ? otrosResultNcElse.valor : 0;
+                            rowNc.otrosCostoFijoTon = (otrosResultNcElse.tipo === 'costo_fijo') ? otrosResultNcElse.valor : null;
+                            rowNc.porcentajeComisionTotal = rowNc.porcentajeComisionOtros || 0;
                         }
                         rowNc.notaCreditoProveedor = (rowNc.tipoCambio || 0) * (rowNc.cantidad || 0) * (rowNc.factorDescuento || 0);
                         rowNc.transporte = (rowNc.cantidad || 0) * (rowNc.costoTransporteCreated || 0);
@@ -1190,6 +1392,68 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
             }
         }
         
+        /**
+         * Precarga cantidades por ítem (sublist) solo para EPAs de OVs que tienen más de una EPA.
+         * Una búsqueda por EPA (internalid = ese EPA) para que las filas pertenezcan a ese documento.
+         */
+        function preloadFulfillmentLineQtyForMultiEPA() {
+            if (!fulfillmentsBySOCache || !fulfillmentLineQtyCache) return;
+            var fulfillmentIds = [];
+            Object.keys(fulfillmentsBySOCache).forEach(function(soId) {
+                var list = fulfillmentsBySOCache[soId];
+                if (list && list.length > 1) {
+                    list.forEach(function(f) {
+                        if (f && f.id && fulfillmentLineQtyCache[f.id] === undefined) fulfillmentIds.push(f.id);
+                    });
+                }
+            });
+            var seen = {};
+            fulfillmentIds = fulfillmentIds.filter(function(id) {
+                var s = String(id);
+                if (seen[s]) return false;
+                seen[s] = true;
+                return true;
+            });
+            if (fulfillmentIds.length === 0) return;
+            log.audit('ReporteRentabilidad', 'Paso 2a precarga cantidades EPA (OV con 2+ EPAs): ' + fulfillmentIds.length + ' EPA(s)');
+            var colItem = search.createColumn({ name: 'item' });
+            var colQty = search.createColumn({ name: 'quantity' });
+            for (var i = 0; i < fulfillmentIds.length; i++) {
+                var fid = String(fulfillmentIds[i]);
+                fulfillmentLineQtyCache[fid] = { byItemQty: {} };
+                var seenKey = {};
+                function runForFid(filters) {
+                    var s = search.create({ type: 'transaction', filters: filters, columns: [colItem, colQty] });
+                    s.run().each(function(r) {
+                        var it = r.getValue(colItem);
+                        var q = parseFloat(r.getValue(colQty) || 0);
+                        if (it == null || it === '' || isNaN(q)) return true;
+                        var k = String(it);
+                        var absQ = Math.abs(q);
+                        var dedupKey = k + '_' + absQ;
+                        if (seenKey[dedupKey]) return true;
+                        seenKey[dedupKey] = true;
+                        fulfillmentLineQtyCache[fid].byItemQty[k] = (fulfillmentLineQtyCache[fid].byItemQty[k] || 0) + absQ;
+                        return true;
+                    });
+                }
+                try {
+                    runForFid([
+                        ['internalid', 'anyof', fid],
+                        'AND', ['mainline', 'is', 'F']
+                    ]);
+                } catch (e) {
+                    fulfillmentLineQtyCache[fid] = { byItemQty: {} };
+                }
+            }
+            var withData = 0;
+            for (var j = 0; j < fulfillmentIds.length; j++) {
+                var fid2 = String(fulfillmentIds[j]);
+                if (fulfillmentLineQtyCache[fid2] && Object.keys(fulfillmentLineQtyCache[fid2].byItemQty || {}).length > 0) withData++;
+            }
+            log.audit('ReporteRentabilidad', 'Paso 2a cantidades EPA precargadas: ' + withData + '/' + fulfillmentIds.length + ' EPAs con datos');
+        }
+        
         /** Cache del internalid de la cuenta 5100 (una búsqueda por request) */
         var account5100IdCache = null;
         /** Cache de costo por fulfillment (evita repetir búsqueda de posting para el mismo fulfillment) */
@@ -1304,34 +1568,40 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
                     irFilters.push(['account', 'anyof', account5100Id]);
                 }
                 try {
+                    var colIrId = search.createColumn({ name: 'internalid' });
+                    var colAmount = search.createColumn({ name: 'amount' });
+                    var colItem = search.createColumn({ name: 'item' });
+                    var colQty = search.createColumn({ name: 'quantity' });
                     var postingSearch = search.create({
                         type: 'transaction',
                         filters: irFilters,
-                        columns: [
-                            search.createColumn({ name: 'internalid' }),
-                            search.createColumn({ name: 'amount' }),
-                            search.createColumn({ name: 'item' })
-                        ]
+                        columns: [colIrId, colAmount, colItem, colQty]
                     });
                     var byIr = {};
                     batch.forEach(function(irId) {
-                        byIr[String(irId)] = { byItem: {}, total: 0 };
+                        byIr[String(irId)] = { byItem: {}, byItemQty: {}, total: 0 };
                     });
                     var paged = postingSearch.runPaged({ pageSize: 1000 });
                     var pagesToProcess = Math.min(paged.pageRanges.length, MAX_FULFILLMENT_PAGES_PER_BATCH);
                     for (var pi = 0; pi < pagesToProcess; pi++) {
                         var page = paged.fetch({ index: pi });
                         page.data.forEach(function(result) {
-                            var irId = result.getValue('internalid');
-                            var amount = parseFloat(result.getValue('amount') || 0);
+                            var irId = result.getValue(colIrId);
+                            var amount = parseFloat(result.getValue(colAmount) || 0);
                             var absAmount = Math.abs(amount);
-                            var itemId = result.getValue('item');
+                            var itemId = result.getValue(colItem);
+                            var qty = parseFloat(result.getValue(colQty) || 0);
                             var key = irId != null && irId !== '' ? String(irId) : null;
                             if (!key || !byIr[key]) return;
                             byIr[key].total += absAmount;
                             if (itemId != null && itemId !== '') {
                                 var itemKey = String(itemId);
                                 byIr[key].byItem[itemKey] = (byIr[key].byItem[itemKey] || 0) + absAmount;
+                                var qtyKey = isNaN(qty) ? '' : String(Math.round(qty * 1e4) / 1e4);
+                                if (qtyKey !== '') {
+                                    if (!byIr[key].byItemQty[itemKey]) byIr[key].byItemQty[itemKey] = {};
+                                    byIr[key].byItemQty[itemKey][qtyKey] = (byIr[key].byItemQty[itemKey][qtyKey] || 0) + absAmount;
+                                }
                             }
                         });
                     }
@@ -1406,6 +1676,7 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
                     ]
                 });
                 var byItem = {};
+                var byItemQty = {};
                 var totalCosto = 0;
                 var paged = postingSearch.runPaged({ pageSize: 1000 });
                 for (var pi = 0; pi < paged.pageRanges.length; pi++) {
@@ -1417,11 +1688,13 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
                         if (itemId != null && itemId !== '') {
                             var key = String(itemId);
                             byItem[key] = (byItem[key] || 0) + absAmount;
+                            var qty = Math.abs(parseFloat(result.getValue('quantity') || 0));
+                            byItemQty[key] = (byItemQty[key] || 0) + (isNaN(qty) ? 0 : qty);
                         }
                         totalCosto += absAmount;
                     });
                 }
-                fulfillmentImpactCache[fulfillmentId] = { byItem: byItem, total: totalCosto };
+                fulfillmentImpactCache[fulfillmentId] = { byItem: byItem, byItemQty: byItemQty, total: totalCosto };
                 return fulfillmentImpactCache[fulfillmentId];
             } catch (e) {
                 // No cachear fallo: evita que un error (p. ej. gobierno) deje 0 en todas las filas que usan este fulfillment
@@ -1443,7 +1716,125 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
             }
             return data.byItem[String(itemId)] || 0;
         }
-        
+
+        /** Devuelve la cantidad total del ítem en el fulfillment (usando el mismo cache del impacto contable). */
+        function getFulfillmentQtyByItem(fulfillmentId, itemId, optionalAccountId) {
+            if (!fulfillmentId || itemId == null || itemId === '') {
+                return 0;
+            }
+            var data = getFulfillmentAccountingImpact(fulfillmentId, optionalAccountId);
+            if (!data || !data.byItemQty) {
+                return 0;
+            }
+            return data.byItemQty[String(itemId)] || 0;
+        }
+
+        /** Cache: por fulfillmentId, { byItemQty: { itemId: qty } }. Sublist item, campo quantity (igual que en factura). */
+        var fulfillmentLineQtyCache = {};
+        /** Contador para limitar logs EPA por ejecución (evitar saturar) */
+        var _epaLogLimit = 50;
+        var _epaLogCount = 0;
+        /** Si está definido, solo se escriben logs EPA para esta orden de venta (ej: '1534167'). Dejar '' para loguear todas. */
+        var EPA_LOG_SO_FILTER = '1534167';
+        /** Si está definido, solo se escriben logs de costo NC para esta RA (ej: '1583900'). Dejar '' para loguear todas. */
+        var NC_LOG_RA_FILTER = '1583900';
+        var _ncCostLogCount = 0;
+        var _ncCostLogLimit = 50;
+        /**
+         * Precarga cantidades por ítem desde la EPA (sublist item, quantity). Una búsqueda por EPA.
+         * optionalSalesOrderId: si EPA_LOG_SO_FILTER está definido, solo se loguea cuando SO coincide.
+         */
+        function ensureFulfillmentLineQtyCache(fulfillmentIds, optionalSalesOrderId) {
+            if (!fulfillmentIds || fulfillmentIds.length === 0) return;
+            var missing = [];
+            var seen = {};
+            for (var m = 0; m < fulfillmentIds.length; m++) {
+                var fid = String(fulfillmentIds[m]);
+                if (fid && !seen[fid] && fulfillmentLineQtyCache[fid] === undefined) {
+                    seen[fid] = true;
+                    missing.push(fid);
+                }
+            }
+            if (missing.length === 0) return;
+            var logThisSO = !EPA_LOG_SO_FILTER || String(optionalSalesOrderId || '') === EPA_LOG_SO_FILTER;
+            if (logThisSO) log.audit('ReporteRentabilidad EPA', 'Cargando cache cantidades EPA para SO=' + (optionalSalesOrderId || '') + ' ' + missing.length + ' EPA(s): ' + missing.join(', '));
+            var idx;
+            for (idx = 0; idx < missing.length; idx++) {
+                fulfillmentLineQtyCache[missing[idx]] = { byItemQty: {} };
+            }
+            var colDocId = search.createColumn({ name: 'internalid' });
+            var colItem = search.createColumn({ name: 'item' });
+            var colQty = search.createColumn({ name: 'quantity' });
+            var seenByDocItemQty = {};
+            function runOneSearch(filters) {
+                var s = search.create({ type: 'transaction', filters: filters, columns: [colDocId, colItem, colQty] });
+                s.run().each(function(r) {
+                    var docId = String(r.getValue(colDocId) || '');
+                    if (!fulfillmentLineQtyCache[docId]) return true;
+                    var it = r.getValue(colItem);
+                    var q = parseFloat(r.getValue(colQty) || 0);
+                    if (it == null || it === '' || isNaN(q)) return true;
+                    var k = String(it);
+                    var absQ = Math.abs(q);
+                    var dedupKey = docId + '_' + k + '_' + absQ;
+                    if (seenByDocItemQty[dedupKey]) return true;
+                    seenByDocItemQty[dedupKey] = true;
+                    fulfillmentLineQtyCache[docId].byItemQty[k] = (fulfillmentLineQtyCache[docId].byItemQty[k] || 0) + absQ;
+                    return true;
+                });
+            }
+            try {
+                runOneSearch([
+                    ['type', 'anyof', 'ItemFulfill'],
+                    'AND', ['internalid', 'anyof', missing],
+                    'AND', ['mainline', 'is', 'F']
+                ]);
+                var anyHasData = false;
+                for (idx = 0; idx < missing.length; idx++) {
+                    var byItem = fulfillmentLineQtyCache[missing[idx]].byItemQty;
+                    if (Object.keys(byItem).length > 0) anyHasData = true;
+                }
+                if (!anyHasData) {
+                    seenByDocItemQty = {};
+                    runOneSearch([
+                        ['internalid', 'anyof', missing],
+                        'AND', ['mainline', 'is', 'F']
+                    ]);
+                }
+            } catch (e) {
+                try {
+                    for (idx = 0; idx < missing.length; idx++) fulfillmentLineQtyCache[missing[idx]] = { byItemQty: {} };
+                    seenByDocItemQty = {};
+                    runOneSearch([
+                        ['internalid', 'anyof', missing],
+                        'AND', ['mainline', 'is', 'F']
+                    ]);
+                } catch (e2) {
+                    for (idx = 0; idx < missing.length; idx++) fulfillmentLineQtyCache[missing[idx]] = { byItemQty: {} };
+                    if (logThisSO && _epaLogCount < _epaLogLimit) log.audit('ReporteRentabilidad EPA', 'Error cargando EPAs ' + missing.join(',') + ': ' + (e.message || e2.message));
+                }
+            }
+            for (idx = 0; idx < missing.length; idx++) {
+                var fid = missing[idx];
+                var byItem = fulfillmentLineQtyCache[fid].byItemQty;
+                var itemCount = Object.keys(byItem).length;
+                var totalQty = 0;
+                var sample = [];
+                for (var k in byItem) { totalQty += byItem[k]; sample.push(k + ':' + byItem[k]); if (sample.length >= 3) break; }
+                if (logThisSO) log.audit('ReporteRentabilidad EPA', 'EPA id=' + fid + ' items=' + itemCount + ' totalQty=' + totalQty + (sample.length ? ' muestra=' + sample.join(', ') : ''));
+            }
+        }
+        /**
+         * Cantidad del ítem en el EPA (desde cache). El cache debe haberse llenado antes con ensureFulfillmentLineQtyCache.
+         * Solo se usa cuando hay más de una EPA para matchear factura-EPA por cantidad.
+         */
+        function getFulfillmentLineQtyByItem(fulfillmentId, itemId) {
+            if (!fulfillmentId || itemId == null || itemId === '') return 0;
+            var data = fulfillmentLineQtyCache[String(fulfillmentId)];
+            if (!data || !data.byItemQty) return 0;
+            return data.byItemQty[String(itemId)] || 0;
+        }
+
         /**
          * Calcula todas las fórmulas del Excel para cada fila
          */
@@ -1562,8 +1953,14 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
             row.comisionMineria = (pct(row.porcentajeComisionMineria) / 100) * ingresoCasa;
             row.comisionAgro = (pct(row.porcentajeComisionAgro) / 100) * ingresoCasa;
             row.comisionPrieto = (pct(row.porcentajeComisionPrieto) / 100) * ingresoCasa;
-            row.comisionOtros = (pct(row.porcentajeComisionOtros) / 100) * ingresoCasa;
-            row.comisionTotalGerentes = (pct(row.porcentajeComisionTotal) / 100) * ingresoCasa;
+            var costoFijoOtros = Number(row.otrosCostoFijoTon);
+            if (costoFijoOtros > 0 && !isNaN(costoFijoOtros)) {
+                row.comisionOtros = (Number(row.cantidad) || 0) * costoFijoOtros;
+            } else {
+                row.comisionOtros = (pct(row.porcentajeComisionOtros) / 100) * ingresoCasa;
+            }
+            // Total compensación = suma de las 7 comisiones (cuando Otros es costo fijo no está en porcentajeComisionTotal)
+            row.comisionTotalGerentes = (row.comisionRosario || 0) + (row.comisionAlhely || 0) + (row.comisionGabriela || 0) + (row.comisionMineria || 0) + (row.comisionAgro || 0) + (row.comisionPrieto || 0) + (row.comisionOtros || 0);
             
             // Utilidad después de comisiones de gerencia = Utilidad Bruta - Comisión Total compensación
             row.utilidadDespuesComisionesGerencia = (row.utilidadBruta || 0) - (row.comisionTotalGerentes || 0);
@@ -1651,12 +2048,33 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
          */
         var descuentoProveedorCache = null;
         
+        /** Convierte valor a fecha solo (sin hora) en ms para comparar vigencia. */
+        function toDateOnlyMs(value) {
+            if (value == null || value === '') return null;
+            var d = null;
+            if (value instanceof Date) {
+                d = value;
+            } else if (typeof value === 'string') {
+                try {
+                    d = format.parse({ value: value, type: format.Type.DATE });
+                } catch (e) {
+                    d = new Date(value);
+                }
+            } else {
+                d = new Date(value);
+            }
+            if (!d || isNaN(d.getTime())) return null;
+            return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+        }
+        
         /**
          * Cache global de comisiones de gerentes por Employee (Representante de Ventas).
          * Estructura: { employeeId: { rosario: 0.18, alhely: 0.25, ... } }
          * Se carga una vez al generar el reporte.
          */
         var comisionesGerentesCache = null;
+        /** Periodo (fechaDesde|fechaHasta) con el que se construyó el cache; si cambia, se reconstruye. */
+        var comisionesGerentesCachePeriodKey = null;
         
         /**
          * Carga todos los registros del Custom Record "Descuento Proveedor" para consulta por línea.
@@ -1668,11 +2086,13 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
             }
             descuentoProveedorCache = [];
             try {
+                //log.audit('ReporteRentabilidad', 'DescuentoProveedor: iniciando búsqueda customrecord_descuento_proveedor');
+                var colDpArticulo = search.createColumn({ name: 'custrecord_dp_articulo' });
                 var descuentoSearch = search.create({
                     type: 'customrecord_descuento_proveedor',
                     filters: [],
                     columns: [
-                        search.createColumn({ name: 'custrecord_dp_articulo' }),
+                        colDpArticulo,
                         search.createColumn({ name: 'custrecord_dp_cliente' }),
                         search.createColumn({ name: 'custrecord_dp_proveedor' }),
                         search.createColumn({ name: 'custrecord_dp_factor' }),
@@ -1681,7 +2101,8 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
                     ]
                 });
                 descuentoSearch.run().each(function(r) {
-                    var articuloVal = r.getValue('custrecord_dp_articulo');
+                    // search.Result en NetSuite solo tiene getValue(), no getValues(). Multiselect devuelve el primer valor o a veces string con comas.
+                    var articuloVal = r.getValue(colDpArticulo);
                     var articulos = [];
                     if (articuloVal != null && articuloVal !== '') {
                         if (Array.isArray(articuloVal)) {
@@ -1694,15 +2115,25 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
                     }
                     descuentoProveedorCache.push({
                         articulos: articulos,
-                        cliente: r.getValue('custrecord_dp_cliente'),
-                        proveedor: r.getValue('custrecord_dp_proveedor'),
+                        cliente: r.getValue('custrecord_dp_cliente') != null ? String(r.getValue('custrecord_dp_cliente')) : '',
+                        proveedor: r.getValue('custrecord_dp_proveedor') != null ? String(r.getValue('custrecord_dp_proveedor')) : '',
                         factor: parseFloat(r.getValue('custrecord_dp_factor') || 0),
                         fechaInicio: r.getValue('custrecord_dp_fecha_inicio'),
                         fechaFin: r.getValue('custrecord_dp_fecha_fin')
                     });
                     return true;
                 });
-            } catch (e) { /* Descuento Proveedor no configurado */ }
+                // Log de lo cargado para revisar datos del Descuento Proveedor (mismo título para ver en la misma lista)
+                //log.audit('ReporteRentabilidad', 'DescuentoProveedor: registros cargados=' + descuentoProveedorCache.length);
+                for (var idx = 0; idx < descuentoProveedorCache.length; idx++) {
+                    var reg = descuentoProveedorCache[idx];
+                    //log.audit('ReporteRentabilidad', 'DescuentoProveedor [' + (idx + 1) + '] articulos=' + JSON.stringify(reg.articulos) +
+                       // ' | cliente=' + (reg.cliente || '') + ' | proveedor=' + (reg.proveedor || '') +
+                       // ' | factor=' + reg.factor + ' | fechaInicio=' + (reg.fechaInicio || '') + ' | fechaFin=' + (reg.fechaFin || ''));
+                }
+            } catch (e) {
+                log.audit('ReporteRentabilidad', 'DescuentoProveedor error: ' + (e.message || String(e)));
+            }
             return descuentoProveedorCache;
         }
         
@@ -1713,16 +2144,33 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
          * @param {Object} row - Fila con articuloId, clienteId, proveedorId, fecha
          * @returns {number} Factor (ej. 0.05) o 0 si no hay coincidencia
          */
+        var _logFactorDescuentoCount = 0;
         function getFactorDescuentoProveedor(row) {
             if (!row || !descuentoProveedorCache || descuentoProveedorCache.length === 0) {
                 return 0;
             }
             var articuloId = row.articuloId != null ? String(row.articuloId) : '';
-            var clienteId = row.clienteId || '';
-            var proveedorId = row.proveedorId || '';
+            var clienteId = (row.clienteId != null && row.clienteId !== '') ? String(row.clienteId) : '';
+            var proveedorId = (row.proveedorId != null && row.proveedorId !== '') ? String(row.proveedorId) : '';
             var fecha = row.fecha || '';
             if (!articuloId || !clienteId || !fecha) {
+                if (_logFactorDescuentoCount < 3) {
+                    //log.audit('ReporteRentabilidad', 'DescuentoProveedor fila sin match (falta dato): articuloId=' + articuloId + ' clienteId=' + clienteId + ' fecha=' + (fecha || '(vacío)'));
+                    _logFactorDescuentoCount++;
+                }
                 return 0;
+            }
+            var fTime = toDateOnlyMs(fecha);
+            if (fTime == null) {
+                if (_logFactorDescuentoCount < 3) {
+                  //  log.audit('ReporteRentabilidad', 'DescuentoProveedor fila sin match (fecha no parseable): fecha=' + (fecha || '') + ' articuloId=' + articuloId);
+                    _logFactorDescuentoCount++;
+                }
+                return 0;
+            }
+            if (_logFactorDescuentoCount < 5) {
+                //log.audit('ReporteRentabilidad', 'DescuentoProveedor fila a buscar: articuloId=' + articuloId + ' clienteId=' + clienteId + ' proveedorId=' + proveedorId + ' fecha=' + fecha + ' fTime=' + fTime);
+                _logFactorDescuentoCount++;
             }
             for (var i = 0; i < descuentoProveedorCache.length; i++) {
                 var reg = descuentoProveedorCache[i];
@@ -1730,16 +2178,16 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
                 if (articulos.indexOf(articuloId) === -1) {
                     continue;
                 }
-                if (reg.cliente !== clienteId) {
+                if (String(reg.cliente || '') !== clienteId) {
                     continue;
                 }
-                if (proveedorId && reg.proveedor !== proveedorId) {
+                if (proveedorId && String(reg.proveedor || '') !== proveedorId) {
                     continue;
                 }
                 var inicio = reg.fechaInicio ? new Date(reg.fechaInicio).getTime() : 0;
                 var fin = reg.fechaFin ? new Date(reg.fechaFin).getTime() : 9999999999999;
-                var f = fecha ? new Date(fecha).getTime() : 0;
-                if (f >= inicio && f <= fin) {
+                if (fTime >= inicio && fTime <= fin) {
+                   //log.audit('ReporteRentabilidad', 'DescuentoProveedor MATCH: articuloId=' + articuloId + ' registro[' + (i + 1) + '] factor=' + reg.factor);
                     return reg.factor;
                 }
             }
@@ -1747,94 +2195,112 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
         }
         
         /**
-         * Carga todos los Employees que tengan al menos uno de los campos de comisión configurado.
-         * Crea un objeto cache donde la clave es el ID del Employee y el valor es un objeto con los porcentajes.
-         * Se carga una vez al generar el reporte.
+         * Carga comisiones desde el custom record customrecord_comisiones_empleado.
+         * Solo se incluyen registros cuya vigencia se solapa con el periodo del reporte:
+         * fecha_inicio <= fechaHasta del reporte Y (sin fecha_fin O fecha_fin >= fechaDesde del reporte).
+         * Para cada empleado se toma el registro con fecha_inicio más reciente entre los que cumplen vigencia.
+         * @param {string} [fechaDesde] - Inicio periodo reporte (YYYY-MM-DD)
+         * @param {string} [fechaHasta] - Fin periodo reporte (YYYY-MM-DD)
          */
-        function loadComisionesGerentesCache() {
-            if (comisionesGerentesCache) {
+        function loadComisionesGerentesCache(fechaDesde, fechaHasta) {
+            var periodKey = (fechaDesde || '') + '|' + (fechaHasta || '');
+            if (comisionesGerentesCache && comisionesGerentesCachePeriodKey === periodKey) {
                 return comisionesGerentesCache;
             }
             comisionesGerentesCache = {};
+            comisionesGerentesCachePeriodKey = periodKey;
             try {
-                // Buscar Employees que tengan al menos uno de los campos de comisión configurado
-                // Usamos OR para encontrar cualquier Employee con al menos un campo
-                // Nota: 'isnotempty' funciona con campos que tienen valor (no null, no vacío, no 0)
+                log.audit('ReporteRentabilidad', 'ComisionesGerentes: iniciando búsqueda customrecord_comisiones_empleado periodo=' + periodKey);
+                var searchFilters = [];
+                if (fechaHasta) {
+                    searchFilters.push(['custrecord_fecha_inicio', 'onorbefore', fechaHasta]);
+                }
                 var employeeSearch = search.create({
-                    type: 'employee',
-                    filters: [
-                        ['custentity_comision_rosario', 'isnotempty', ''],
-                        'OR',
-                        ['custentity_comision_alhely', 'isnotempty', ''],
-                        'OR',
-                        ['custentity_comision_gabriela', 'isnotempty', ''],
-                        'OR',
-                        ['custentity_comision_mineria', 'isnotempty', ''],
-                        'OR',
-                        ['custentity_comision_agro', 'isnotempty', ''],
-                        'OR',
-                        ['custentity_comision_prieto', 'isnotempty', ''],
-                        'OR',
-                        ['custentity_comision_otros', 'isnotempty', '']
-                    ],
+                    type: 'customrecord_comisiones_empleado',
+                    filters: searchFilters,
                     columns: [
-                        search.createColumn({ name: 'internalid' }),
-                        search.createColumn({ name: 'custentity_comision_rosario' }),
-                        search.createColumn({ name: 'custentity_comision_alhely' }),
-                        search.createColumn({ name: 'custentity_comision_gabriela' }),
-                        search.createColumn({ name: 'custentity_comision_mineria' }),
-                        search.createColumn({ name: 'custentity_comision_agro' }),
-                        search.createColumn({ name: 'custentity_comision_prieto' }),
-                        search.createColumn({ name: 'custentity_comision_otros' }),
-                        search.createColumn({ name: 'custentity_comision_total' })
+                        search.createColumn({ name: 'custrecord_nombre_empleado' }),
+                        search.createColumn({ name: 'custrecord_fecha_inicio', sort: search.Sort.DESC }),
+                        search.createColumn({ name: 'custrecord_fecha_fin' }),
+                        search.createColumn({ name: 'custrecord_comision_rosario' }),
+                        search.createColumn({ name: 'custrecord_comision_alhely' }),
+                        search.createColumn({ name: 'custrecord_comision_gabriela' }),
+                        search.createColumn({ name: 'custrecord_comision_mineria' }),
+                        search.createColumn({ name: 'custrecord_comision_agro' }),
+                        search.createColumn({ name: 'custrecord_comision_prieto' }),
+                        search.createColumn({ name: 'custrecord_comision_total' })
                     ]
                 });
-                
+                var desdeMs = fechaDesde ? toDateOnlyMs(fechaDesde) : null;
+                var hastaMs = fechaHasta ? toDateOnlyMs(fechaHasta) : null;
+                var rawByEmployee = {};
                 employeeSearch.run().each(function(result) {
-                    // Convertir el ID a string para asegurar consistencia en las claves del cache
-                    var employeeId = String(result.getValue('internalid') || '');
-                    
-                    // Obtener valores TAL CUAL del registro Employee, sin conversiones
-                    // Para campos Percent en NetSuite:
-                    // - getValue() retorna el valor como decimal (0.0018 para 0.18%, 0.007 para 0.7%)
-                    // - getText() retorna el valor como string con formato ("0.18%", "0.7%")
-                    // IMPORTANTE: Los campos Percent en serverWidget esperan valores entre 0 y 1 (decimal)
-                    // donde 0.0018 representa 0.18% y 0.007 representa 0.7%
-                    // Por lo tanto, usamos getValue() directamente sin conversiones
+                    var employeeId = String(result.getValue('custrecord_nombre_empleado') || '');
+                    if (!employeeId) return true;
+                    var fechaFinVal = result.getValue('custrecord_fecha_fin');
+                    var fechaFinMs = fechaFinVal ? toDateOnlyMs(fechaFinVal) : null;
+                    if (desdeMs != null && fechaFinMs != null && fechaFinMs < desdeMs) return true;
                     function getPercentValue(columnName) {
                         var value = result.getValue(columnName);
-                        if (value === null || value === undefined || value === '') {
-                            return 0;
-                        }
-                        // Retornar el valor tal cual de getValue()
-                        // Para campos Percent: 0.18% se almacena como 0.0018, 0.7% se almacena como 0.007
+                        if (value === null || value === undefined || value === '') return 0;
                         var num = parseFloat(value);
                         return isNaN(num) ? 0 : num;
                     }
-                    
-                    var rosario = getPercentValue('custentity_comision_rosario');
-                    var alhely = getPercentValue('custentity_comision_alhely');
-                    var gabriela = getPercentValue('custentity_comision_gabriela');
-                    var mineria = getPercentValue('custentity_comision_mineria');
-                    var agro = getPercentValue('custentity_comision_agro');
-                    var prieto = getPercentValue('custentity_comision_prieto');
-                    var otros = getPercentValue('custentity_comision_otros');
-                    var total = getPercentValue('custentity_comision_total');
-                    
-                    comisionesGerentesCache[employeeId] = {
-                        rosario: rosario,
-                        alhely: alhely,
-                        gabriela: gabriela,
-                        mineria: mineria,
-                        agro: agro,
-                        prieto: prieto,
-                        otros: otros,
-                        total: total
-                    };
+                    var fechaInicioVal = result.getValue('custrecord_fecha_inicio');
+                    var fechaInicioMs = toDateOnlyMs(fechaInicioVal);
+                    if (!rawByEmployee[employeeId] || (fechaInicioMs != null && (rawByEmployee[employeeId].fechaInicioMs == null || fechaInicioMs > rawByEmployee[employeeId].fechaInicioMs))) {
+                        var rosario = getPercentValue('custrecord_comision_rosario');
+                        var alhely = getPercentValue('custrecord_comision_alhely');
+                        var gabriela = getPercentValue('custrecord_comision_gabriela');
+                        var mineria = getPercentValue('custrecord_comision_mineria');
+                        var agro = getPercentValue('custrecord_comision_agro');
+                        var prieto = getPercentValue('custrecord_comision_prieto');
+                        var totalVal = getPercentValue('custrecord_comision_total');
+                        var total = totalVal > 0 ? totalVal : (rosario + alhely + gabriela + mineria + agro + prieto);
+                        rawByEmployee[employeeId] = {
+                            fechaInicioMs: fechaInicioMs,
+                            rosario: rosario,
+                            alhely: alhely,
+                            gabriela: gabriela,
+                            mineria: mineria,
+                            agro: agro,
+                            prieto: prieto,
+                            otros: 0,
+                            total: total
+                        };
+                    }
                     return true;
                 });
+                Object.keys(rawByEmployee).forEach(function(employeeId) {
+                    var r = rawByEmployee[employeeId];
+                    comisionesGerentesCache[employeeId] = {
+                        rosario: r.rosario,
+                        alhely: r.alhely,
+                        gabriela: r.gabriela,
+                        mineria: r.mineria,
+                        agro: r.agro,
+                        prieto: r.prieto,
+                        otros: r.otros,
+                        total: r.total
+                    };
+                });
+                var count = Object.keys(comisionesGerentesCache).length;
+                log.audit('ReporteRentabilidad', 'ComisionesGerentes: registros cargados=' + count + ' (periodo ' + (fechaDesde || '') + ' a ' + (fechaHasta || '') + ')');
+                if (count === 0) {
+                    log.audit('ReporteRentabilidad', 'ComisionesGerentes: cache vacío. Revise customrecord_comisiones_empleado, custrecord_nombre_empleado y vigencia custrecord_fecha_inicio/fin.');
+                } else {
+                    var keys = Object.keys(comisionesGerentesCache);
+                    for (var k = 0; k < Math.min(keys.length, 15); k++) {
+                        var eid = keys[k];
+                        var c = comisionesGerentesCache[eid];
+                        log.audit('ReporteRentabilidad', 'ComisionesGerentes [' + (k + 1) + '] employeeId=' + eid +
+                            ' | rosario=' + c.rosario + ' alhely=' + c.alhely + ' gabriela=' + c.gabriela +
+                            ' | mineria=' + c.mineria + ' agro=' + c.agro + ' prieto=' + c.prieto + ' otros=' + c.otros + ' total=' + c.total);
+                    }
+                    if (keys.length > 15) log.audit('ReporteRentabilidad', 'ComisionesGerentes: ... y ' + (keys.length - 15) + ' más.');
+                }
             } catch (e) {
-                /* comisiones gerentes: usar valores por defecto en silencio */
+                log.error('ReporteRentabilidad loadComisionesGerentesCache', (e.message || String(e)));
             }
             return comisionesGerentesCache;
         }
@@ -1848,10 +2314,163 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
             if (!employeeId) {
                 return null;
             }
-            var cache = loadComisionesGerentesCache();
-            return cache[employeeId] || null;
+            // Usar el cache ya cargado para el periodo del reporte.
+            // No volver a llamar loadComisionesGerentesCache sin fechas, para no perder el filtro por vigencia.
+            if (!comisionesGerentesCache) {
+                return null;
+            }
+            return comisionesGerentesCache[employeeId] || null;
         }
-        
+
+        /**
+         * Record type "Compensación Cliente-Artículo": determina % Otros por coincidencia cliente + ítem + vigencia.
+         * Campos: custrecord_cliente (Customer), custrecord_articulo (Item multi-select),
+         * custrecord_porcentajecomision, custrecord_fecha_desde, custrecord_fecha_hasta.
+         * Ajustar RECORD_TYPE_OTROS si en tu cuenta el ID es distinto (ej. customrecord_comisiones_otros).
+         */
+        // IMPORTANTE: usar el ID REAL del custom record de compensación Cliente-Artículo.
+        // En tu cuenta el tipo es customrecord_comisiones_otros (según los logs y la captura),
+        // por eso ajustamos aquí el ID del record.
+        var RECORD_TYPE_OTROS = 'customrecord_comisiones_otros';
+        /** Cache por cliente: [ { articuloIds[], ubicacionIds[], desdeMs, hastaMs, pct, costoFijoTon }, ... ]. Solo registros con cliente y (pct>0 o costoFijoTon>0). Multiselect normalizado a array. */
+        var otrosCompensacionPorClienteCache = null;
+        /** Cache de lookup por fila: key = "clienteId|articuloId|ubicacionId|fechaStr", value = { tipo, valor } */
+        var porcentajeOtrosClienteArticuloCache = {};
+
+        /**
+         * Precarga registros de Compensación Cliente-Artículo (custrecord_comisiones_otros).
+         * Flujo: solo registros que tengan cliente y al menos uno de (Monto fijo por tonelada o % comisión); si no tiene ninguno se omite.
+         * Índice por cliente. Cada ítem guarda articuloId y ubicacionId (vacío = aplica a todos los ítems / todas las ubicaciones).
+         */
+        function loadOtrosCompensacionCache() {
+            if (otrosCompensacionPorClienteCache !== null) return otrosCompensacionPorClienteCache;
+            otrosCompensacionPorClienteCache = {};
+            try {
+                var searchOtros = search.create({
+                    type: RECORD_TYPE_OTROS,
+                    filters: [],
+                    columns: [
+                        search.createColumn({ name: 'custrecord_cliente' }),
+                        search.createColumn({ name: 'custrecord_articulo' }),
+                        search.createColumn({ name: 'custrecord_ubicacion' }),
+                        search.createColumn({ name: 'custrecord_fecha_desde' }),
+                        search.createColumn({ name: 'custrecord_fecha_hasta' }),
+                        search.createColumn({ name: 'custrecord_porcentajecomision' }),
+                        search.createColumn({ name: 'custrecord_costo_fijo_ton' })
+                    ]
+                });
+                var start = 0;
+                var pageSize = 500;
+                var chunk;
+                do {
+                    chunk = searchOtros.run().getRange({ start: start, end: start + pageSize });
+                    for (var i = 0; i < chunk.length; i++) {
+                        var r = chunk[i];
+                        var clienteId = String(r.getValue('custrecord_cliente') || '');
+                        if (!clienteId) continue;
+                        var articuloVal = r.getValue('custrecord_articulo');
+                        var articuloIds = _normalizeMultiselectToArray(articuloVal);
+                        var ubicacionVal = r.getValue('custrecord_ubicacion');
+                        var ubicacionIds = _normalizeMultiselectToArray(ubicacionVal);
+                        var desdeVal = r.getValue('custrecord_fecha_desde');
+                        var hastaVal = r.getValue('custrecord_fecha_hasta');
+                        var desdeMs = toDateOnlyMs(desdeVal);
+                        var hastaMs = hastaVal ? toDateOnlyMs(hastaVal) : null;
+                        var pctVal = r.getValue('custrecord_porcentajecomision');
+                        var pct = (pctVal != null && pctVal !== '') ? (parseFloat(pctVal) || 0) : 0;
+                        var costoFijoVal = r.getValue('custrecord_costo_fijo_ton');
+                        var costoFijoTon = (costoFijoVal != null && costoFijoVal !== '') ? (parseFloat(costoFijoVal) || 0) : 0;
+                        if (pct <= 0 && costoFijoTon <= 0) continue;
+                        var item = { articuloIds: articuloIds, ubicacionIds: ubicacionIds, desdeMs: desdeMs, hastaMs: hastaMs, pct: pct, costoFijoTon: costoFijoTon };
+                        if (!otrosCompensacionPorClienteCache[clienteId]) otrosCompensacionPorClienteCache[clienteId] = [];
+                        otrosCompensacionPorClienteCache[clienteId].push(item);
+                    }
+                    start += pageSize;
+                } while (chunk.length === pageSize);
+                var nClientes = Object.keys(otrosCompensacionPorClienteCache).length;
+                var nRegs = 0;
+                for (var cid in otrosCompensacionPorClienteCache) { nRegs += otrosCompensacionPorClienteCache[cid].length; }
+                log.audit('ReporteRentabilidad', 'Otros compensación: precarga OK clientes=' + nClientes + ' totalRegistros=' + nRegs);
+            } catch (e) {
+                log.error('ReporteRentabilidad loadOtrosCompensacionCache', (e.message || String(e)));
+            }
+            return otrosCompensacionPorClienteCache;
+        }
+
+        /** Normaliza valor de campo multiselect de búsqueda: puede ser array, string con comas o un solo valor. Devuelve array de strings (vacío = aplica a todos). */
+        function _normalizeMultiselectToArray(val) {
+            if (val == null || val === '') return [];
+            if (Array.isArray(val)) return val.map(function(id) { return String(id).trim(); }).filter(Boolean);
+            if (typeof val === 'string' && val.indexOf(',') >= 0) return val.split(',').map(function(s) { return String(s).trim(); }).filter(Boolean);
+            return [String(val).trim()].filter(Boolean);
+        }
+
+        /**
+         * De una lista de registros Otros del mismo cliente, devuelve el que aplica a la línea.
+         * Regla: si el registro tiene artículo → la línea debe tener ese artículo; si no tiene artículo, basta con que coincida el cliente.
+         * Igual con ubicación: si el registro tiene ubicación → debe coincidir; si no tiene, basta el cliente.
+         * Vigencia obligatoria (fecha de la línea entre fecha_desde y fecha_hasta).
+         * Si varios coinciden, se toma el de fecha_desde más reciente.
+         */
+        function _eligeOtrosPorCliente(list, fechaMs, articuloIdLinea, ubicacionIdLinea) {
+            if (!list || list.length === 0) return null;
+            var best = null;
+            var bestDesdeMs = null;
+            for (var j = 0; j < list.length; j++) {
+                var item = list[j];
+                if (fechaMs != null && item.desdeMs != null && fechaMs < item.desdeMs) continue;
+                if (fechaMs != null && item.hastaMs != null && fechaMs > item.hastaMs) continue;
+                if (item.articuloIds && item.articuloIds.length > 0 && (articuloIdLinea === '' || item.articuloIds.indexOf(articuloIdLinea) === -1)) continue;
+                if (item.ubicacionIds && item.ubicacionIds.length > 0 && (ubicacionIdLinea === '' || item.ubicacionIds.indexOf(ubicacionIdLinea) === -1)) continue;
+                if (best === null || (item.desdeMs != null && (bestDesdeMs == null || item.desdeMs > bestDesdeMs))) {
+                    best = item;
+                    bestDesdeMs = item.desdeMs;
+                }
+            }
+            return best;
+        }
+
+        /**
+         * Obtiene el valor Otros para una línea según el flujo:
+         * 1) Solo registros con el cliente de la línea y que tengan Monto fijo por tonelada o % comisión (al menos uno).
+         * 2) Si el registro tiene ítem → validar por ítem; si tiene ubicación → validar por ubicación; si tiene ambos, debe cumplir ambos.
+         * 3) Si no tiene ítem aplica a todos los ítems; si no tiene ubicación aplica a todas las ubicaciones.
+         * @returns {{ tipo: 'porcentaje'|'costo_fijo', valor: number }}
+         */
+        function getPorcentajeOtrosCompensacionClienteArticulo(row) {
+            var clienteId = row.clienteId != null && row.clienteId !== '' ? String(row.clienteId) : '';
+            var articuloId = row.articuloId != null && row.articuloId !== '' ? String(row.articuloId) : '';
+            var ubicacionId = (row.ubicacionId != null && row.ubicacionId !== '') ? String(row.ubicacionId) : ((row.ubicacion != null && row.ubicacion !== '') ? String(row.ubicacion) : '');
+            var fecha = row.fecha || null;
+            var cero = { tipo: 'porcentaje', valor: 0 };
+            if (!clienteId || !fecha) return cero;
+            var fechaStr = (fecha && (fecha instanceof Date)) ? format.format({ value: fecha, type: format.Type.DATE }) : (typeof fecha === 'string' ? String(fecha).substring(0, 10) : '');
+            if (!fechaStr) return cero;
+            var cacheKey = clienteId + '|' + articuloId + '|' + ubicacionId + '|' + fechaStr;
+            if (porcentajeOtrosClienteArticuloCache.hasOwnProperty(cacheKey)) {
+                return porcentajeOtrosClienteArticuloCache[cacheKey];
+            }
+            if (otrosCompensacionPorClienteCache === null) loadOtrosCompensacionCache();
+            var fechaMs = toDateOnlyMs(fechaStr);
+            var list = otrosCompensacionPorClienteCache && otrosCompensacionPorClienteCache[clienteId];
+            var listLen = list ? list.length : 0;
+            var result = _eligeOtrosPorCliente(list, fechaMs, articuloId, ubicacionId);
+            var out;
+            if (result) {
+                if (result.pct != null && result.pct !== '' && parseFloat(result.pct) > 0) {
+                    out = { tipo: 'porcentaje', valor: parseFloat(result.pct) };
+                } else if (result.costoFijoTon != null && result.costoFijoTon > 0) {
+                    out = { tipo: 'costo_fijo', valor: result.costoFijoTon };
+                } else {
+                    out = cero;
+                }
+            } else {
+                out = cero;
+            }
+            porcentajeOtrosClienteArticuloCache[cacheKey] = out;
+            return out;
+        }
+
         /**
          * Obtiene el % Comisión según el margen, consultando el arreglo de parámetros (customrecord_parametros_comision).
          * Regla: margen (ej. 8.85%) se valida contra margen_minimo y margen_maximo; si min <= margen <= max, se usa ese porcentaje.
@@ -1902,7 +2521,7 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
             _t('inicio');
             loadComisionParams();
             _t('comisionParams');
-            loadComisionesGerentesCache();
+            loadComisionesGerentesCache(filters.fechaDesde, filters.fechaHasta);
             _t('comisionGerentes');
             loadDescuentoProveedorCache();
             _t('descuentoProveedor');
@@ -1914,6 +2533,16 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
             results.forEach(function(row) {
                 calculateExcelFormulas(row);
             });
+            var nConCostoFijoOtros = 0;
+            var nConPctOtros = 0;
+            for (var ri = 0; ri < results.length; ri++) {
+                var r = results[ri];
+                if (Number(r.otrosCostoFijoTon) > 0 && Number(r.comisionOtros) > 0) nConCostoFijoOtros++;
+                else if (Number(r.porcentajeComisionOtros) > 0 && Number(r.comisionOtros) > 0) nConPctOtros++;
+            }
+            if (nConCostoFijoOtros > 0 || nConPctOtros > 0) {
+                log.audit('ReporteRentabilidad', 'Otros: ' + nConCostoFijoOtros + ' filas costo fijo, ' + nConPctOtros + ' filas porcentaje (de ' + results.length + ' total). Revisar todas las páginas del reporte.');
+            }
             _t('formulas');
             var currentScript = runtime.getCurrentScript();
             var scriptId = currentScript.id;
