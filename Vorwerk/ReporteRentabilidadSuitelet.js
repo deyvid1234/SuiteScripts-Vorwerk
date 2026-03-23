@@ -40,8 +40,10 @@
  *      * custrecord_dp_factor (Decimal) - Factor Descuento (ej. 0.05 = 5% sobre el costo)
  *      * custrecord_dp_fecha_inicio (Date) - Fecha Inicio Vigencia
  *      * custrecord_dp_fecha_fin (Date) - Fecha Fin Vigencia
- *    - Lógica: Por cada línea del reporte se busca un registro donde Artículo, Cliente y Proveedor
- *      coincidan y la fecha de la factura esté entre Fecha Inicio y Fecha Fin. Si existe, se aplica
+ *    - Lógica: Por cada línea se buscan registros donde Artículo, Cliente y Proveedor coincidan y la
+ *      fecha de la factura esté entre Fecha Inicio y Fecha Fin (excepción: clientes en
+ *      FACTOR_DESCUENTO_SIN_MATCH_PROVEEDOR_CLIENTES no exigen proveedor). Si hay varios válidos,
+ *      gana el de fecha inicio más reciente. Si existe, se aplica
  *      Nota Crédito Proveedor = Tipo de Cambio × Cantidad × Factor Descuento; si no, 0.
  * 
  * 4. Campos Custom en Employee: "Comisiones de Gerentes"
@@ -82,6 +84,69 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
                 return '/app/site/hosting/scriptlet.nl?script=' + EXPORT_SUITELET_SCRIPT_ID + '&deploy=' + EXPORT_SUITELET_DEPLOY_ID;
             }
             return null;
+        }
+
+        // --- Links generales (listas de custom records) ---
+        var _netsuiteBaseUrlCache = null;
+        function getNetsuiteBaseUrl() {
+            if (_netsuiteBaseUrlCache !== null) return _netsuiteBaseUrlCache;
+            try {
+                _netsuiteBaseUrlCache = https.resolveDomain({ hostType: https.HostType.APPLICATION }) || '';
+            } catch (e) {
+                _netsuiteBaseUrlCache = '';
+            }
+            return _netsuiteBaseUrlCache;
+        }
+
+        var _customRecordTypeInternalIdCache = {};
+        function getCustomRecordTypeInternalId(rectypeScriptId) {
+            if (!rectypeScriptId) return '';
+            if (_customRecordTypeInternalIdCache[rectypeScriptId]) return _customRecordTypeInternalIdCache[rectypeScriptId];
+            // Fallback seguro: si la cuenta usa internal ids numéricos para rectype,
+            // mantenemos un mapeo explícito (evita que el lookup falle y termine pasando el scriptid como rectype).
+            // Valores proporcionados por el usuario/URL compartida:
+            // - Descuento proveedor: rectype=1508
+            // - Comisiones cliente-articulo/ubicacion: rectype=1511
+            // - Comisiones por empleado: rectype=1510
+            var rectypeByScript = {
+                'customrecord_descuento_proveedor': '1508',
+                'customrecord_comisiones_otros': '1511',
+                'customrecord_comisiones_empleado': '1510',
+                'customrecord_parametros_comision': '1507'
+            };
+            if (rectypeByScript.hasOwnProperty(rectypeScriptId)) {
+                _customRecordTypeInternalIdCache[rectypeScriptId] = rectypeByScript[rectypeScriptId];
+                return _customRecordTypeInternalIdCache[rectypeScriptId];
+            }
+            var out = '';
+            try {
+                // En la URL de NetSuite el parámetro "rectype" normalmente usa el internal id (entero) del Record Type.
+                // Si el lookup falla, regresamos el script id para no romper el link.
+                var s = search.create({
+                    type: 'customrecordtype',
+                    filters: [['scriptid', 'is', rectypeScriptId]],
+                    columns: [search.createColumn({ name: 'internalid' })]
+                });
+                s.run().each(function(r) {
+                    out = r.getValue({ name: 'internalid' }) || r.getValue('internalid') || '';
+                    return false;
+                });
+            } catch (e) {
+                out = '';
+            }
+            if (!out) out = rectypeScriptId;
+            _customRecordTypeInternalIdCache[rectypeScriptId] = String(out);
+            return _customRecordTypeInternalIdCache[rectypeScriptId];
+        }
+
+        function buildCustomRecordListUrl(rectypeScriptId) {
+            var rectypeId = getCustomRecordTypeInternalId(rectypeScriptId);
+            // Ruta correcta para la lista de registros de un Custom Record en NetSuite:
+            // /app/common/custom/custrecordentrylist.nl?rectype=<id>
+            // (la ruta varía vs "customrecordlist.nl", por eso antes regresaba "No se encuentra la página").
+            var rel = '/app/common/custom/custrecordentrylist.nl?rectype=' + encodeURIComponent(String(rectypeId)) + '&whence=';
+            var base = getNetsuiteBaseUrl();
+            return base ? (base.replace(/\/$/, '') + rel) : rel;
         }
     
         /** Filas por archivo al guardar por trozos (evita memoria/gobierno en periodos largos). */
@@ -2047,6 +2112,8 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
          * Se carga una vez al generar el reporte.
          */
         var descuentoProveedorCache = null;
+        /** Clientes (internal id) donde el factor descuento no exige que coincida el proveedor de la línea con custrecord_dp_proveedor. */
+        var FACTOR_DESCUENTO_SIN_MATCH_PROVEEDOR_CLIENTES = { '10524': true, '8972': true, '3606': true, '21783': true };
         
         /** Convierte valor a fecha solo (sin hora) en ms para comparar vigencia. */
         function toDateOnlyMs(value) {
@@ -2139,8 +2206,11 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
         
         /**
          * Obtiene el factor de descuento (nota crédito proveedor) para una línea.
-         * Busca en el cache un registro que coincida: Artículo, Cliente, Proveedor y que la fecha
-         * de la factura esté dentro de la vigencia (fechaInicio <= fecha <= fechaFin).
+         * Busca en el cache registros que coincidan: Artículo, Cliente, Proveedor (salvo clientes
+         * en FACTOR_DESCUENTO_SIN_MATCH_PROVEEDOR_CLIENTES) y que la fecha de la factura esté
+         * dentro de la vigencia (fechaInicio <= fecha <= fechaFin; fecha fin vacía = abierta).
+         * Si hay más de uno (p. ej. periodos solapados o un registro antiguo sin fecha fin),
+         * se usa el registro con fecha inicio más reciente (misma idea que comisiones de gerentes).
          * @param {Object} row - Fila con articuloId, clienteId, proveedorId, fecha
          * @returns {number} Factor (ej. 0.05) o 0 si no hay coincidencia
          */
@@ -2152,6 +2222,7 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
             var articuloId = row.articuloId != null ? String(row.articuloId) : '';
             var clienteId = (row.clienteId != null && row.clienteId !== '') ? String(row.clienteId) : '';
             var proveedorId = (row.proveedorId != null && row.proveedorId !== '') ? String(row.proveedorId) : '';
+            var sinMatchProveedorCliente = FACTOR_DESCUENTO_SIN_MATCH_PROVEEDOR_CLIENTES[clienteId] === true;
             var fecha = row.fecha || '';
             if (!articuloId || !clienteId || !fecha) {
                 if (_logFactorDescuentoCount < 3) {
@@ -2172,6 +2243,10 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
                 //log.audit('ReporteRentabilidad', 'DescuentoProveedor fila a buscar: articuloId=' + articuloId + ' clienteId=' + clienteId + ' proveedorId=' + proveedorId + ' fecha=' + fecha + ' fTime=' + fTime);
                 _logFactorDescuentoCount++;
             }
+            /** Si varios registros cubren la fecha, usar el de fecha inicio más reciente. */
+            var DP_FIN_ABIERTO_MS = 9999999999999;
+            var mejorFactor = 0;
+            var mejorInicioMs = null;
             for (var i = 0; i < descuentoProveedorCache.length; i++) {
                 var reg = descuentoProveedorCache[i];
                 var articulos = reg.articulos || [];
@@ -2181,17 +2256,31 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
                 if (String(reg.cliente || '') !== clienteId) {
                     continue;
                 }
-                if (proveedorId && String(reg.proveedor || '') !== proveedorId) {
+                if (!sinMatchProveedorCliente && proveedorId && String(reg.proveedor || '') !== proveedorId) {
                     continue;
                 }
-                var inicio = reg.fechaInicio ? new Date(reg.fechaInicio).getTime() : 0;
-                var fin = reg.fechaFin ? new Date(reg.fechaFin).getTime() : 9999999999999;
-                if (fTime >= inicio && fTime <= fin) {
-                   //log.audit('ReporteRentabilidad', 'DescuentoProveedor MATCH: articuloId=' + articuloId + ' registro[' + (i + 1) + '] factor=' + reg.factor);
-                    return reg.factor;
+                var inicioMs = (reg.fechaInicio != null && reg.fechaInicio !== '') ? toDateOnlyMs(reg.fechaInicio) : 0;
+                if (inicioMs == null) {
+                    inicioMs = 0;
+                }
+                var finMs;
+                if (reg.fechaFin != null && reg.fechaFin !== '') {
+                    finMs = toDateOnlyMs(reg.fechaFin);
+                    if (finMs == null) {
+                        finMs = DP_FIN_ABIERTO_MS;
+                    }
+                } else {
+                    finMs = DP_FIN_ABIERTO_MS;
+                }
+                if (fTime < inicioMs || fTime > finMs) {
+                    continue;
+                }
+                if (mejorInicioMs === null || inicioMs > mejorInicioMs) {
+                    mejorInicioMs = inicioMs;
+                    mejorFactor = reg.factor;
                 }
             }
-            return 0;
+            return mejorFactor;
         }
         
         /**
@@ -2643,6 +2732,21 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
             html += '<input type="hidden" name="representante_ventas" value="' + esc(filters.representanteVentas) + '"><input type="hidden" name="articulo" value="' + esc(filters.articulo) + '">';
             html += '<button type="submit">Ver en formulario NetSuite</button></form>';
             html += '</div>';
+
+            // Links generales para consultar los registros usados por el cálculo
+            // (debajo de botones y arriba de la sección azul de totales).
+            var urlDesc = buildCustomRecordListUrl('customrecord_descuento_proveedor');
+            var urlEmp = buildCustomRecordListUrl('customrecord_comisiones_empleado');
+            var urlOtros = buildCustomRecordListUrl('customrecord_comisiones_otros');
+            var urlParams = buildCustomRecordListUrl('customrecord_parametros_comision');
+            html += '<div class="links-panel" style="background:#ffffff;border:1px solid #bbdefb;border-radius:6px;padding:12px 16px;margin:16px 0;display:flex;gap:12px;flex-wrap:wrap;align-items:center;">';
+            html += '<strong>Consultar:</strong>';
+            html += '<a href="' + urlDesc + '" target="_blank" style="background:#e3f2fd;color:#0d47a1;text-decoration:none;padding:6px 10px;border-radius:4px;">Descuento Proveedor</a>';
+            html += '<a href="' + urlEmp + '" target="_blank" style="background:#e3f2fd;color:#0d47a1;text-decoration:none;padding:6px 10px;border-radius:4px;">Comisión Empleado</a>';
+            html += '<a href="' + urlOtros + '" target="_blank" style="background:#e3f2fd;color:#0d47a1;text-decoration:none;padding:6px 10px;border-radius:4px;">Comisión Artículo/Cliente/Ubicación</a>';
+            html += '<a href="' + urlParams + '" target="_blank" style="background:#e3f2fd;color:#0d47a1;text-decoration:none;padding:6px 10px;border-radius:4px;">Parámetros de Comisión</a>';
+            html += '</div>';
+
             if (partialMessage) {
                 html += '<div class="summary" style="background:#fff3e0;border:1px solid #ff9800;"><strong>⚠ ' + esc(partialMessage) + '</strong></div>';
             }
@@ -2868,6 +2972,29 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
             if (filters.articulo) {
                 articuloField.defaultValue = filters.articulo;
             }
+
+            // Links generales (debajo de botones, arriba de la sección azul de totales)
+            var linksGroup = form.addFieldGroup({
+                id: 'links_group',
+                label: 'Consultar registros del cálculo'
+            });
+            var urlDescForm = buildCustomRecordListUrl('customrecord_descuento_proveedor');
+            var urlEmpForm = buildCustomRecordListUrl('customrecord_comisiones_empleado');
+            var urlOtrosForm = buildCustomRecordListUrl('customrecord_comisiones_otros');
+            var urlParamsForm = buildCustomRecordListUrl('customrecord_parametros_comision');
+            form.addField({
+                id: 'custpage_url_links_general',
+                type: serverWidget.FieldType.INLINEHTML,
+                label: ' ' ,
+                container: 'links_group'
+            }).defaultValue =
+                '<div style="background:#ffffff;border:1px solid #bbdefb;border-radius:6px;padding:12px 16px;margin-top:8px;display:flex;gap:12px;flex-wrap:wrap;align-items:center;">' +
+                '<strong>Consultar:</strong>' +
+                '<a href="' + urlDescForm + '" target="_blank" style="background:#e3f2fd;color:#0d47a1;text-decoration:none;padding:6px 10px;border-radius:4px;">Descuento Proveedor</a>' +
+                '<a href="' + urlEmpForm + '" target="_blank" style="background:#e3f2fd;color:#0d47a1;text-decoration:none;padding:6px 10px;border-radius:4px;">Comisión Empleado</a>' +
+                '<a href="' + urlOtrosForm + '" target="_blank" style="background:#e3f2fd;color:#0d47a1;text-decoration:none;padding:6px 10px;border-radius:4px;">Comisión Artículo/Cliente/Ubicación</a>' +
+                '<a href="' + urlParamsForm + '" target="_blank" style="background:#e3f2fd;color:#0d47a1;text-decoration:none;padding:6px 10px;border-radius:4px;">Parámetros de Comisión</a>' +
+                '</div>';
             
             // Grupo de resumen (totales de interés)
             var totalIngreso = 0, totalCosto = 0, totalUtilidad = 0, totalComision = 0, totalImporte = 0;
@@ -3704,4 +3831,4 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
         };
     });
     
-    
+    //estable antes de ov43727
