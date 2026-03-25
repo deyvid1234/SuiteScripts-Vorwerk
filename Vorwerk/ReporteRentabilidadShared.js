@@ -36,13 +36,14 @@
  *    - Campos requeridos:
  *      * custrecord_dp_articulo (List/Record - Item, multi-select) - Artículos aplicables
  *      * custrecord_dp_cliente (List/Record - Customer) - Cliente
- *      * custrecord_dp_proveedor (List/Record - Vendor) - Proveedor
+ *      * custrecord_dp_proveedor (List/Record - Vendor, opcional) - Proveedor; vacío = factor aplica a todos los proveedores
  *      * custrecord_dp_factor (Decimal) - Factor Descuento (ej. 0.05 = 5% sobre el costo)
  *      * custrecord_dp_fecha_inicio (Date) - Fecha Inicio Vigencia
  *      * custrecord_dp_fecha_fin (Date) - Fecha Fin Vigencia
- *    - Lógica: Por cada línea se buscan registros donde Artículo, Cliente y Proveedor coincidan y la
- *      fecha de la factura esté entre Fecha Inicio y Fecha Fin (excepción: clientes en
- *      FACTOR_DESCUENTO_SIN_MATCH_PROVEEDOR_CLIENTES no exigen proveedor). Si hay varios válidos,
+ *    - Lógica: Por cada línea se buscan registros donde Artículo y Cliente coincidan, la fecha de la
+ *      factura esté entre Fecha Inicio y Fecha Fin, y además: si el registro tiene proveedor, debe
+ *      coincidir con el proveedor de la línea; si el registro deja proveedor vacío, aplica a cualquier
+ *      proveedor (misma idea que artículos en compensación Otros). Si hay varios válidos,
  *      gana el de fecha inicio más reciente. Si existe, se aplica
  *      Nota Crédito Proveedor = Tipo de Cambio × Cantidad × Factor Descuento; si no, 0.
  * 
@@ -68,6 +69,8 @@
  *    - Lógica: Por cada línea del reporte se busca un registro donde comisionista = Representante de Ventas, cliente = Cliente de la línea,
  *      el ítem de la línea esté en custrecord_articulo, y la fecha de la transacción esté entre fecha_desde y fecha_hasta.
  *      Se toma custrecord_porcentajecomision como % Otros. El monto Otros = (% Otros / 100) × Ingreso Casa.
+ *      Si aplica custrecord_costo_fijo_ton (monto por tonelada): Otros = (cantidad en kg / 1000) × costo fijo por tonelada × tipo de cambio interno
+ *      (el costo fijo se guarda/ingresa en USD y el reporte trabaja en "moneda casa").
  *      % Otros participa en Comisión Total y Utilidad después de comisiones de gerencia igual que el resto de gerentes.
  *
  * 6. Map/Reduce de precarga (ReporteRentabilidadPrecacheMR.js)
@@ -93,12 +96,12 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
         var REPORT_PRECACHE_LEGACY_FILE = 'ReporteRentabilidad_precache.json';
         /**
          * Script ID y deployment ID del Map/Reduce de precarga (enteros o script ids).
-         * Rellenar tras crear el script en NetSuite para el botón "Encolar actualización caché".
+         * Rellenar tras crear el script en NetSuite; la ejecución suele ser por programación o MR manual.
          */
         var MR_PRECACHE_SCRIPT_ID = 'customscript_reporte_rentabilidad_mr';
         /**
-         * Deployment Manual del MR: es el único que usa este archivo (submitPrecacheMrTask) al encolar desde el Suitelet.
-         * El deployment Agendado no se “llama” desde código: lo ejecuta la programación de NetSuite sobre ese deploy.
+         * Deployment Manual del MR: usado por submitPrecacheMrTask si se invoca (p. ej. POST con action=refresh_precache).
+         * El deployment agendado lo ejecuta la programación de NetSuite sobre ese deploy.
          */
         var MR_PRECACHE_DEPLOY_ID = 'customdeploy_reporte_rentabilidad_map';
         /** Solo referencia (documentación): ID del deployment con programación nocturna; no se usa en task.create del Suitelet. */
@@ -451,7 +454,6 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
             form.addSubmitButton({
                 label: 'Generar Reporte'
             });
-
             var scriptSl = runtime.getCurrentScript();
             var suiteletUrlEnc = '/app/site/hosting/scriptlet.nl?script=' + scriptSl.id + '&deploy=' + scriptSl.deploymentId;
             var refreshHtml = '<p style="margin-top:16px;padding:10px;background:#f5f5f5;border-radius:4px;font-size:12px;">';
@@ -466,7 +468,6 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
                 label: ' ',
                 container: 'filtergroup_main'
             }).defaultValue = refreshHtml;
-
             context.response.writePage(form);
         }
         
@@ -1161,6 +1162,7 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
                         
                         // Ingreso Casa = INGRESO USD × Tipo de cambio Interno
                         var tipoCambioInterno = filters.tipoCambioInterno || 18;
+                        row.tipoCambioInterno = tipoCambioInterno;
                         row.ingresoCasa = (row.ingresoUSD || 0) * tipoCambioInterno;
                         
                         results.push(row);
@@ -1336,6 +1338,7 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
                             rowNc.utilidadBrutaUSD = 0;
                         }
                         var tipoCambioInternoNc = filters.tipoCambioInterno || 18;
+                        rowNc.tipoCambioInterno = tipoCambioInternoNc;
                         rowNc.ingresoCasa = (rowNc.ingresoUSD || 0) * tipoCambioInternoNc;
                         results.push(rowNc);
                     }
@@ -2099,7 +2102,11 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
             row.comisionPrieto = (pct(row.porcentajeComisionPrieto) / 100) * ingresoCasa;
             var costoFijoOtros = Number(row.otrosCostoFijoTon);
             if (costoFijoOtros > 0 && !isNaN(costoFijoOtros)) {
-                row.comisionOtros = (Number(row.cantidad) || 0) * costoFijoOtros;
+                // custrecord_costo_fijo_ton viene en USD; convertir a "moneda casa" del reporte
+                // usando el mismo tipo de cambio interno con el que se calcula Ingreso Casa.
+                var tipoCambioInternoOtros = Number(row.tipoCambioInterno || 0);
+                var tcFactor = tipoCambioInternoOtros > 0 ? tipoCambioInternoOtros : 1;
+                row.comisionOtros = ((Number(row.cantidad) || 0) / 1000) * costoFijoOtros * tcFactor;
             } else {
                 row.comisionOtros = (pct(row.porcentajeComisionOtros) / 100) * ingresoCasa;
             }
@@ -2191,8 +2198,6 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
          * Se carga una vez al generar el reporte.
          */
         var descuentoProveedorCache = null;
-        /** Clientes (internal id) donde el factor descuento no exige que coincida el proveedor de la línea con custrecord_dp_proveedor. */
-        var FACTOR_DESCUENTO_SIN_MATCH_PROVEEDOR_CLIENTES = { '10524': true, '8972': true, '3606': true, '21783': true };
         
         /** Convierte valor a fecha solo (sin hora) en ms para comparar vigencia. */
         function toDateOnlyMs(value) {
@@ -2262,7 +2267,7 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
                     descuentoProveedorCache.push({
                         articulos: articulos,
                         cliente: r.getValue('custrecord_dp_cliente') != null ? String(r.getValue('custrecord_dp_cliente')) : '',
-                        proveedor: r.getValue('custrecord_dp_proveedor') != null ? String(r.getValue('custrecord_dp_proveedor')) : '',
+                        proveedor: r.getValue('custrecord_dp_proveedor') != null ? String(r.getValue('custrecord_dp_proveedor')).trim() : '',
                         factor: parseFloat(r.getValue('custrecord_dp_factor') || 0),
                         fechaInicio: r.getValue('custrecord_dp_fecha_inicio'),
                         fechaFin: r.getValue('custrecord_dp_fecha_fin')
@@ -2285,9 +2290,9 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
         
         /**
          * Obtiene el factor de descuento (nota crédito proveedor) para una línea.
-         * Busca en el cache registros que coincidan: Artículo, Cliente, Proveedor (salvo clientes
-         * en FACTOR_DESCUENTO_SIN_MATCH_PROVEEDOR_CLIENTES) y que la fecha de la factura esté
-         * dentro de la vigencia (fechaInicio <= fecha <= fechaFin; fecha fin vacía = abierta).
+         * Busca en el cache registros que coincidan: Artículo, Cliente y vigencia de fechas; si el
+         * registro tiene proveedor, debe coincidir con el de la línea; si custrecord_dp_proveedor
+         * está vacío en el registro, no se filtra por proveedor (aplica a todos).
          * Si hay más de uno (p. ej. periodos solapados o un registro antiguo sin fecha fin),
          * se usa el registro con fecha inicio más reciente (misma idea que comisiones de gerentes).
          * @param {Object} row - Fila con articuloId, clienteId, proveedorId, fecha
@@ -2300,8 +2305,7 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
             }
             var articuloId = row.articuloId != null ? String(row.articuloId) : '';
             var clienteId = (row.clienteId != null && row.clienteId !== '') ? String(row.clienteId) : '';
-            var proveedorId = (row.proveedorId != null && row.proveedorId !== '') ? String(row.proveedorId) : '';
-            var sinMatchProveedorCliente = FACTOR_DESCUENTO_SIN_MATCH_PROVEEDOR_CLIENTES[clienteId] === true;
+            var proveedorId = (row.proveedorId != null && row.proveedorId !== '') ? String(row.proveedorId).trim() : '';
             var fecha = row.fecha || '';
             if (!articuloId || !clienteId || !fecha) {
                 if (_logFactorDescuentoCount < 3) {
@@ -2335,7 +2339,8 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
                 if (String(reg.cliente || '') !== clienteId) {
                     continue;
                 }
-                if (!sinMatchProveedorCliente && proveedorId && String(reg.proveedor || '') !== proveedorId) {
+                var regProveedor = String(reg.proveedor || '').trim();
+                if (regProveedor !== '' && (proveedorId === '' || regProveedor !== proveedorId)) {
                     continue;
                 }
                 var inicioMs = (reg.fechaInicio != null && reg.fechaInicio !== '') ? toDateOnlyMs(reg.fechaInicio) : 0;
@@ -3003,6 +3008,7 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
                 row.utilidadBrutaUSD = 0;
             }
             var tipoCambioInterno = filters.tipoCambioInterno || 18;
+            row.tipoCambioInterno = tipoCambioInterno;
             row.ingresoCasa = (row.ingresoUSD || 0) * tipoCambioInterno;
             calculateExcelFormulas(row);
         }
@@ -3131,15 +3137,13 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
                 _t('descuentoProveedor');
                 loadOtrosCompensacionCache();
                 results = filterPrecacheRows(precacheData.rows, filters);
-                var metaStr = '';
                 if (precacheData.meta && precacheData.meta.length) {
-                    metaStr = precacheData.meta.map(function(m) { return (m.periodKey || '') + '(' + (m.n || 0) + ')'; }).join(', ');
+                    log.audit('ReporteRentabilidad', 'showReport desde caché filtrado meta=' +
+                        precacheData.meta.map(function(m) { return (m.periodKey || '') + '(' + (m.n || 0) + ')'; }).join(', ') +
+                        ' results.length=' + results.length);
+                } else {
+                    log.audit('ReporteRentabilidad', 'showReport desde caché filtrado results.length=' + results.length);
                 }
-                partialMessage = 'Caché por mes: ' + (metaStr || 'sin detalle') + '.';
-                if (precacheData.usedLegacy) {
-                    partialMessage += ' (archivo legado ' + REPORT_PRECACHE_LEGACY_FILE + ').';
-                }
-                log.audit('ReporteRentabilidad', 'showReport desde caché filtrado results.length=' + results.length);
                 _t('invoiceSearch');
                 results.forEach(function(row) {
                     refreshRowForUserFilters(row, filters);
@@ -3166,9 +3170,9 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
             if (params.action === 'refresh_precache' || params.refresh_precache === '1') {
                 var tidMr = submitPrecacheMrTask();
                 if (tidMr) {
-                    partialMessage += ' Actualización de caché encolada (Map/Reduce, id ' + tidMr + '). Los datos mostrados son los disponibles en este momento; no dependen de que termine la tarea (puede programarse también por la noche).';
+                    log.audit('ReporteRentabilidad', 'Precache MR encolado taskId=' + tidMr);
                 } else {
-                    partialMessage += ' (No se pudo encolar Map/Reduce: revise MR_PRECACHE_SCRIPT_ID y MR_PRECACHE_DEPLOY_ID en el script.)';
+                    log.error('ReporteRentabilidad', 'No se pudo encolar Map/Reduce de precache; revise MR_PRECACHE_SCRIPT_ID y MR_PRECACHE_DEPLOY_ID.');
                 }
             }
             var nConCostoFijoOtros = 0;
@@ -4382,4 +4386,4 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
         };
     });
     
-    //estable antes de ov43727
+    //estable antes de inventory detail
