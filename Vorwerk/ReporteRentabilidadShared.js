@@ -68,9 +68,8 @@
  *      custrecord_porcentajecomision (Percent), custrecord_fecha_desde, custrecord_fecha_hasta
  *    - Lógica: Por cada línea del reporte se busca un registro donde comisionista = Representante de Ventas, cliente = Cliente de la línea,
  *      el ítem de la línea esté en custrecord_articulo, y la fecha de la transacción esté entre fecha_desde y fecha_hasta.
- *      Se toma custrecord_porcentajecomision como % Otros. El monto Otros = (% Otros / 100) × Ingreso Casa.
- *      Si aplica custrecord_costo_fijo_ton (monto por tonelada): Otros = (cantidad en kg / 1000) × costo fijo por tonelada × tipo de cambio interno
- *      (el costo fijo se guarda/ingresa en USD y el reporte trabaja en "moneda casa").
+ *      Se toma custrecord_porcentajecomision como % Otros. El monto Otros = (% Otros / 100) × importe de la línea de factura (no Ingreso Casa).
+ *      Si aplica custrecord_costo_fijo_ton (USD/ton): Otros = (cantidad/1000) × costo fijo × tipo de cambio de la factura (custbody_drt_exchangerate_custom).
  *      % Otros participa en Comisión Total y Utilidad después de comisiones de gerencia igual que el resto de gerentes.
  *
  * 6. Map/Reduce de precarga (ReporteRentabilidadPrecacheMR.js)
@@ -710,8 +709,9 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
             var invoiceSearchColCustomerMainGIROINDUSTRIAL = search.createColumn({ name: 'category', join: 'customermain' });
             var invoiceSearchColItem = search.createColumn({ name: 'item' });
             var invoiceSearchColSalesRep = search.createColumn({ name: 'salesrep' });
-            var invoiceSearchColQuantity = search.createColumn({ name: 'quantity' });
-            var invoiceSearchColAmount = search.createColumn({ name: 'amount' });
+        var invoiceSearchColQuantity = search.createColumn({ name: 'quantity' });
+        var invoiceSearchColLine = search.createColumn({ name: 'line' });
+        var invoiceSearchColAmount = search.createColumn({ name: 'amount' });
             var invoiceSearchColMetodoDeEntrega = search.createColumn({ name: 'custbodykop_metodo_entrega_ov' });
             // Proveedor preferido (ítem), Términos (cliente), Fecha ajustada vencimiento, Objeto de impuesto
             var invoiceSearchColTerms = search.createColumn({ name: 'terms', join: 'customermain' });
@@ -746,6 +746,7 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
                     invoiceSearchColItem,
                     invoiceSearchColSalesRep,
                     invoiceSearchColQuantity,
+                    invoiceSearchColLine,
                     invoiceSearchColAmount,
                     invoiceSearchColMetodoDeEntrega,
                     invoiceSearchColTerms,
@@ -768,9 +769,11 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
             fulfillmentImpactCache = {};
             raToItemReceiptCache = {};
             itemReceiptImpactCache = {};
+            serialInvLineToFulfillmentCache = {};
             var account5100Id = getAccount5100Id();
             var MAX_PAGES_VIEW = 12;
             var soIdsMap = {};
+            var invoiceIdsSeen = {};
             var invoiceSearchPagedData = null;
             var totalPages = 0;
             var cappedForView = false;
@@ -813,6 +816,8 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
                     pageSo.data.forEach(function(r) {
                         var soId = r.getValue(invoiceSearchColCreatedFrom);
                         if (soId) soIdsMap[soId] = true;
+                        var invIdForSerial = r.getValue(invoiceSearchColInternalId);
+                        if (invIdForSerial) invoiceIdsSeen[String(invIdForSerial)] = true;
                     });
                 }
             }
@@ -887,6 +892,9 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
             log.audit('ReporteRentabilidad', 'Paso 1 SOs únicos=' + soIdList.length);
             preloadFulfillmentsBySalesOrders(soIdList);
             log.audit('ReporteRentabilidad', 'Paso 2 Fulfillments precargados');
+            if (USE_INVENTORY_SERIAL_FOR_EPA_LINK && Object.keys(invoiceIdsSeen).length > 0) {
+                preloadInventorySerialInvoiceToFulfillment(Object.keys(invoiceIdsSeen));
+            }
             preloadFulfillmentLineQtyForMultiEPA();
             preloadFulfillmentAccountingImpact(account5100Id);
             log.audit('ReporteRentabilidad', 'Paso 2b Impacto 5100 precargado');
@@ -911,7 +919,11 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
                         var fulfillmentIdPre = '';
                         var itemIdPre = resultPre.getValue(invoiceSearchColItem) || '';
                         var qtyPre = Math.abs(parseFloat(resultPre.getValue(invoiceSearchColQuantity) || 0));
-                        if (fulfillmentsPre && fulfillmentsPre.length > 1 && itemIdPre && qtyPre > 0) {
+                        var linePre = resultPre.getValue(invoiceSearchColLine);
+                        var serialPre = USE_INVENTORY_SERIAL_FOR_EPA_LINK ? getFulfillmentFromSerialLink(invIdPre, linePre) : null;
+                        if (serialPre && serialPre.id) {
+                            fulfillmentIdPre = serialPre.id || '';
+                        } else if (fulfillmentsPre && fulfillmentsPre.length > 1 && itemIdPre && qtyPre > 0) {
                             var fIdsPre = [];
                             var fIdsSeenPre = {};
                             for (var fxPre = 0; fxPre < fulfillmentsPre.length; fxPre++) {
@@ -989,9 +1001,16 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
                     var fulfillmentIdUsed = '';
                     var invoiceLineItemId = result.getValue(invoiceSearchColItem) || '';
                     var invoiceQty = Math.abs(parseFloat(result.getValue(invoiceSearchColQuantity) || 0));
+                    var invoiceLineNum = result.getValue(invoiceSearchColLine);
+                    var serialLinkRow = USE_INVENTORY_SERIAL_FOR_EPA_LINK ? getFulfillmentFromSerialLink(invoiceId, invoiceLineNum) : null;
+                    if (serialLinkRow && serialLinkRow.id) {
+                        fulfillmentIdUsed = serialLinkRow.id;
+                        fulfillmentTranId = serialLinkRow.tranid || '';
+                        costoFulfillment = getFulfillmentAccountingImpactByItem(fulfillmentIdUsed, invoiceLineItemId, account5100Id) || 0;
+                    }
                     
                     // Solo cuando hay más de una EPA: match por cantidad factura = cantidad en la EPA (sublist item, quantity), no impacto
-                    if (fulfillments && fulfillments.length > 1 && invoiceLineItemId && invoiceQty > 0) {
+                    if (!fulfillmentIdUsed && fulfillments && fulfillments.length > 1 && invoiceLineItemId && invoiceQty > 0) {
                         var fIds = [];
                         var fIdsSeen = {};
                         for (var fx = 0; fx < fulfillments.length; fx++) {
@@ -1026,7 +1045,7 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
                     }
                     
                     // Si no hubo match por cantidad (o solo hay una EPA), usar el flujo original: primer EPA con costo para ese ítem
-                    if (!costoFulfillment && fulfillments && fulfillments.length > 0 && invoiceLineItemId) {
+                    if (!fulfillmentIdUsed && fulfillments && fulfillments.length > 0 && invoiceLineItemId) {
                         for (var fi = 0; fi < fulfillments.length; fi++) {
                             var costForItem = getFulfillmentAccountingImpactByItem(fulfillments[fi].id, invoiceLineItemId, account5100Id) || 0;
                             if (costForItem > 0) {
@@ -1042,7 +1061,7 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
                         }
                     }
                     if (!fulfillmentIdUsed && fulfillments && fulfillments.length > 0) fulfillmentIdUsed = fulfillments[0].id || '';
-                    var invFulfillKey = String(invoiceId) + '_' + String(fulfillmentIdUsed);
+                    var invFulfillKey = String(invoiceId) + '_' + String(fulfillmentIdUsed || '');
                     if (invFulfillCost[invFulfillKey] && invFulfillCostIndex[invFulfillKey] !== undefined && invFulfillCostIndex[invFulfillKey] < invFulfillCost[invFulfillKey].length) {
                         costoFulfillment = invFulfillCost[invFulfillKey][invFulfillCostIndex[invFulfillKey]++];
                     }
@@ -1357,9 +1376,139 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
             return { results: results, partialView: false, partialMessage: '' };
         }
         
+        /**
+         * Si true: enlazar línea de factura ↔ EPA por inventorydetail (mismo número de serie en factura y en Item Fulfillment).
+         * Si no hay fila de detalle de inventario o no hay match, se usa la lógica anterior (SO + cantidad/5100).
+         */
+        var USE_INVENTORY_SERIAL_FOR_EPA_LINK = true;
         /** Cache por Sales Order para no repetir búsqueda de fulfillments (mismo SO en muchas líneas) */
         var fulfillmentsBySOCache = null;
+        /** Clave "invoiceInternalId|lineId" → { id: EPA internal id, tranid: EPA tranid } */
+        var serialInvLineToFulfillmentCache = null;
         
+        function getAllFulfillmentIdsFromCache() {
+            var ids = [];
+            var seen = {};
+            if (!fulfillmentsBySOCache) return ids;
+            Object.keys(fulfillmentsBySOCache).forEach(function(soId) {
+                var list = fulfillmentsBySOCache[soId];
+                if (!list) return;
+                list.forEach(function(f) {
+                    var fid = f && f.id;
+                    if (fid && !seen[fid]) {
+                        seen[fid] = true;
+                        ids.push(fid);
+                    }
+                });
+            });
+            return ids;
+        }
+
+        function normalizeInvLineKey(lineVal) {
+            if (lineVal == null || lineVal === '') return '';
+            var n = parseFloat(String(lineVal));
+            return isNaN(n) ? String(lineVal) : String(Math.round(n));
+        }
+
+        /**
+         * Precarga mapa factura (línea) → EPA usando búsqueda inventorydetail: mismo número de serie en CustInvc e ItemShip.
+         */
+        function preloadInventorySerialInvoiceToFulfillment(invoiceIds) {
+            if (!invoiceIds || invoiceIds.length === 0) return;
+            if (!serialInvLineToFulfillmentCache) serialInvLineToFulfillmentCache = {};
+            var fulfillIds = getAllFulfillmentIdsFromCache();
+            var allIds = [];
+            var seen = {};
+            invoiceIds.forEach(function(id) {
+                if (id && !seen[id]) { seen[id] = true; allIds.push(id); }
+            });
+            fulfillIds.forEach(function(id) {
+                if (id && !seen[id]) { seen[id] = true; allIds.push(id); }
+            });
+            if (allIds.length === 0) return;
+            var colInvNum = search.createColumn({ name: 'inventorynumber' });
+            var colLineId = search.createColumn({ name: 'lineid' });
+            var colItem = search.createColumn({ name: 'item' });
+            var colTranId = search.createColumn({ name: 'internalid', join: 'transaction' });
+            var colTranType = search.createColumn({ name: 'type', join: 'transaction' });
+            var colTranTranid = search.createColumn({ name: 'tranid', join: 'transaction' });
+            var BATCH = 50;
+            var bySerial = {};
+            for (var b = 0; b < allIds.length; b += BATCH) {
+                var batch = allIds.slice(b, b + BATCH);
+                try {
+                    var invDetSearch = search.create({
+                        type: 'inventorydetail',
+                        filters: [['transaction.internalid', 'anyof', batch]],
+                        columns: [colInvNum, colLineId, colItem, colTranId, colTranType, colTranTranid]
+                    });
+                    invDetSearch.run().each(function(r) {
+                        var serial = String(r.getValue(colInvNum) || '').trim();
+                        if (!serial) return true;
+                        var type = String(r.getValue(colTranType) || '').trim();
+                        var tranInternal = String(r.getValue(colTranId) || '').trim();
+                        var lineRef = (r.getValue(colLineId) != null && r.getValue(colLineId) !== '') ? String(r.getValue(colLineId)) : '';
+                        var itemId = r.getValue(colItem);
+                        var epaTranid = r.getValue(colTranTranid) || '';
+                        if (!bySerial[serial]) bySerial[serial] = { inv: [], iff: [] };
+                        var row = { tranId: tranInternal, lineId: lineRef, itemId: itemId, tranid: epaTranid };
+                        if (type === 'CustInvc' || type === 'Invoice') {
+                            bySerial[serial].inv.push(row);
+                        } else if (type === 'ItemShip') {
+                            bySerial[serial].iff.push(row);
+                        }
+                        return true;
+                    });
+                } catch (e) {
+                    log.error('ReporteRentabilidad preloadInventorySerial', (e.message || e) + ' batch=' + b);
+                }
+            }
+            var linked = 0;
+            Object.keys(bySerial).forEach(function(serial) {
+                var g = bySerial[serial];
+                if (!g.inv.length || !g.iff.length) return;
+                function pairRows(invRows, iffRows) {
+                    var i;
+                    var j;
+                    if (invRows.length === 1 && iffRows.length === 1) {
+                        var inv0 = invRows[0];
+                        var iff0 = iffRows[0];
+                        var lk = inv0.tranId + '|' + normalizeInvLineKey(inv0.lineId);
+                        serialInvLineToFulfillmentCache[lk] = { id: iff0.tranId, tranid: iff0.tranid || '' };
+                        linked++;
+                        return;
+                    }
+                    for (i = 0; i < invRows.length; i++) {
+                        var inv = invRows[i];
+                        for (j = 0; j < iffRows.length; j++) {
+                            var iff = iffRows[j];
+                            if (String(inv.itemId || '') === String(iff.itemId || '')) {
+                                var lk2 = inv.tranId + '|' + normalizeInvLineKey(inv.lineId);
+                                if (!serialInvLineToFulfillmentCache[lk2]) {
+                                    serialInvLineToFulfillmentCache[lk2] = { id: iff.tranId, tranid: iff.tranid || '' };
+                                    linked++;
+                                }
+                                break;
+                            }
+                        }
+                    }
+                }
+                pairRows(g.inv, g.iff);
+            });
+            log.audit('ReporteRentabilidad', 'Paso 2b serial→EPA enlaces=' + linked + ' facturas únicas=' + invoiceIds.length);
+        }
+
+        function getFulfillmentFromSerialLink(invoiceInternalId, lineVal) {
+            if (!serialInvLineToFulfillmentCache || !invoiceInternalId) return null;
+            var base = String(invoiceInternalId) + '|' + normalizeInvLineKey(lineVal);
+            if (serialInvLineToFulfillmentCache[base]) return serialInvLineToFulfillmentCache[base];
+            var lineStr = String(lineVal);
+            if (serialInvLineToFulfillmentCache[String(invoiceInternalId) + '|' + lineStr]) {
+                return serialInvLineToFulfillmentCache[String(invoiceInternalId) + '|' + lineStr];
+            }
+            return null;
+        }
+
         /**
          * Obtiene los Item Fulfillments relacionados con un Sales Order (usa cache por request)
          */
@@ -2102,13 +2251,15 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
             row.comisionPrieto = (pct(row.porcentajeComisionPrieto) / 100) * ingresoCasa;
             var costoFijoOtros = Number(row.otrosCostoFijoTon);
             if (costoFijoOtros > 0 && !isNaN(costoFijoOtros)) {
-                // custrecord_costo_fijo_ton viene en USD; convertir a "moneda casa" del reporte
-                // usando el mismo tipo de cambio interno con el que se calcula Ingreso Casa.
-                var tipoCambioInternoOtros = Number(row.tipoCambioInterno || 0);
-                var tcFactor = tipoCambioInternoOtros > 0 ? tipoCambioInternoOtros : 1;
-                row.comisionOtros = ((Number(row.cantidad) || 0) / 1000) * costoFijoOtros * tcFactor;
+                // custrecord_costo_fijo_ton en USD/ton; × tipo de cambio de la factura (importe en moneda transacción)
+                var tcFacturaOtros = Number(row.tipoCambio || 0);
+                var tcFactorOtros = tcFacturaOtros > 0 ? tcFacturaOtros : 1;
+                row.comisionOtros = ((Number(row.cantidad) || 0) / 1000) * costoFijoOtros * tcFactorOtros;
             } else {
-                row.comisionOtros = (pct(row.porcentajeComisionOtros) / 100) * ingresoCasa;
+                // % Otros sobre importe de línea de factura, no sobre Ingreso Casa (USD×TC interno)
+                var ingresoFacturaLinea = Number(row.importe != null ? row.importe : 0);
+                if (!ingresoFacturaLinea && row.montoBase != null) ingresoFacturaLinea = Number(row.montoBase) || 0;
+                row.comisionOtros = (pct(row.porcentajeComisionOtros) / 100) * ingresoFacturaLinea;
             }
             // Total compensación = suma de las 7 comisiones (cuando Otros es costo fijo no está en porcentajeComisionTotal)
             row.comisionTotalGerentes = (row.comisionRosario || 0) + (row.comisionAlhely || 0) + (row.comisionGabriela || 0) + (row.comisionMineria || 0) + (row.comisionAgro || 0) + (row.comisionPrieto || 0) + (row.comisionOtros || 0);
@@ -4385,5 +4536,3 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
             runPrecacheJobForPeriod: runPrecacheJobForPeriod
         };
     });
-    
-    //estable antes de inventory detail
