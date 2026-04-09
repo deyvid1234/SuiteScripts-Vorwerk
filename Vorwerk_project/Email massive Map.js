@@ -3,9 +3,9 @@
  * @NScriptType MapReduceScript
  * @NModuleScope SameAccount
  */
-define(['N/email','N/record','N/render', 'N/file','N/search', 'N/https', 'N/runtime','N/format','./Vorwerk Dictionary Script.js','./Vorwerk Send Reporte Suitelet.js'],
+define(['N/email','N/record','N/render', 'N/file','N/search', 'N/https', 'N/runtime','N/format','./Vorwerk Dictionary Script.js','./Vorwerk Send Reporte Suitelet.js','./Utils/awsS3SigV4_v2.js'],
 
-function(email,record,render, file, search, https, runtime,format,Dictionary,EmailLib) {
+function(email,record,render, file, search, https, runtime,format,Dictionary,EmailLib,S3) {
     var config_fields = Dictionary.getDictionayFields();
    
     /**
@@ -114,6 +114,46 @@ function(email,record,render, file, search, https, runtime,format,Dictionary,Ema
 //            });
             var files = [objReport]
             EmailLib.sendEmail(email_emp,files,registeInfo.idReg,type_to_add);
+
+            // Subida a S3 SOLO en el envío inicial (este Map/Reduce).
+            // No se envía CFDI aquí; únicamente el PDF del reporte de compensaciones.
+            try{
+                var scriptObj = runtime.getCurrentScript();
+                // En este Map/Reduce los parámetros NO llevan sufijo "2".
+                // (El sufijo "2" solo aplica al Suitelet de validación en tu cuenta.)
+                var s3Enabled = scriptObj.getParameter({ name: 'custscript_vw_s3_enabled' });
+                if (s3Enabled === true || s3Enabled === 'T' || s3Enabled === 'true') {
+                    var bucket = scriptObj.getParameter({ name: 'custscript_vw_s3_bucket' });
+                    var region = scriptObj.getParameter({ name: 'custscript_vw_s3_region' });
+                    var accessKeyId = scriptObj.getParameter({ name: 'custscript_vw_s3_access_key' });
+                    var secretAccessKey = scriptObj.getParameter({ name: 'custscript_vw_s3_secret_key' });
+                    var prefix = scriptObj.getParameter({ name: 'custscript_vw_s3_prefix' }) || 'compensaciones';
+
+                    var safePeriod = (periodText || String(period || '')).replace(/[^\w\-./]/g,'_');
+                    var safeLevel = (levelText || String(type_rec || '')).replace(/[^\w\-./]/g,'_');
+                    var empIdVal = idemp && idemp[config_fields.empleado[type_rec]] && idemp[config_fields.empleado[type_rec]][0] ? idemp[config_fields.empleado[type_rec]][0]['value'] : '';
+
+                    var objectKey = [
+                        prefix,
+                        safePeriod,
+                        safeLevel,
+                        'emp_' + empIdVal,
+                        'reg_' + idReg + '.pdf'
+                    ].join('/');
+
+                    S3.putObject({
+                        bucket: bucket,
+                        region: region,
+                        accessKeyId: accessKeyId,
+                        secretAccessKey: secretAccessKey,
+                        objectKey: objectKey,
+                        contentType: 'application/pdf',
+                        body: objReport.getContents()
+                    });
+                }
+            }catch(s3Err){
+                log.error('Error upload S3 compensaciones', s3Err);
+            }
         }catch(err){
             log.error("Error map",err);
         }
