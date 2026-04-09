@@ -22,6 +22,13 @@ define(['N/runtime','N/url','N/https','N/record','N/log'],
                 var form = scriptContext.
                 form;
                 form.clientScriptFileId = (runtime.envType != 'PRODUCTION') ? '1585973' : '1585973';
+                if(scriptContext.type === 'view'){
+                    form.addButton({
+                        id: 'custpage_btn_generate_tracking',
+                        label: 'Generar guia',
+                        functionName: 'requestTrakingOpp()'
+                    });
+                }
                     form.addButton({
                     id: 'custpage_btn_order_repar',
                     label: 'Imprimir Orden',
