@@ -234,6 +234,17 @@ function(render,email,file,record,search,format,runtime) {
           }  
       }
     }
+    /** Escapa texto para atributos XML (p. ej. value del &lt;barcode/&gt;). */
+    function escapeXmlAttr(val) {
+        if (val === null || val === undefined) {
+            return '';
+        }
+        return String(val)
+            .replace(/&/g, '&amp;')
+            .replace(/"/g, '&quot;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+    }
     function createXML(logodURL,emailBody,date,order){
         try{
             var xml = "<?xml version='1.0' encoding='UTF-8'?>\n<!DOCTYPE pdf PUBLIC '-//big.faceless.org//report' 'report-1.1.dtd'>\n"
@@ -245,22 +256,18 @@ function(render,email,file,record,search,format,runtime) {
                 +'<table border="0" cellpadding="1" cellspacing="1" style="width: 663px;">'
                 +'<tbody>'
                 +'<tr>'
-                +'<td rowspan="3" style="width: 367px; font-size: 12px; font-family: sans-serif; ">Vorwerk M&eacute;xico, S. de R.L. de C.V.<br />'
+                +'<td rowspan="4" style="width: 367px; font-size: 12px; font-family: sans-serif; vertical-align: top;">Vorwerk M&eacute;xico, S. de R.L. de C.V.<br />'
                 +'Vito Alessio Robles 38 Col. Florida, Del. &Aacute;lvaro Obreg&oacute;n<br />'
                 +'Cd. de M&eacute;xico, C.P.01030 Teléfono: 800 200 1121<br />'
                 +'Lunes a Jueves de 9:00 a 18:00hrs<br />'
                 +'Viernes de 9:00 a 15:00hrs<br />'
                 +'www.thermomix.mx</td>'
-                +'<td style="width: 171px;"> </td>'
-                +'<td style="width: 107px;"> </td>'
-                +'</tr>'
-                +'<tr>'
-                +'<td Colspan="1" style="width: 120px; font-size: 12px; font-family: sans-serif;"><b>Orden de Servicio:</b></td>'
-                +'<td colspan="2"  style="width: 107px; font-size: 12px; font-family: sans-serif;"><b>'+order+'</b></td>'
-                +'</tr>'
-                +'<tr>'
-                +'<td style="width: 120px; font-size: 12px; font-family: sans-serif;"><b>Fecha:</b></td>'
-                +'<td style="width: 107px; font-size: 12px; font-family: sans-serif;"><b>'+date+'</b></td>'
+                +'<td colspan="2" rowspan="4" align="center" style="text-align: center; vertical-align: top; font-family: sans-serif;">'
+                +'<p style="margin: 0 0 4pt 0; font-size: 12px;"><b>Orden de Servicio:</b></p>'
+                +'<p style="margin: 0 0 6pt 0; font-size: 14pt;"><b>'+order+'</b></p>'
+                +'<p style="margin: 0 0 8pt 0; text-align: center;"><barcode codetype="code128" value="'+escapeXmlAttr(order)+'" showtext="true"/></p>'
+                +'<p style="margin: 0; font-size: 12px;"><b>Fecha:</b> '+date+'</p>'
+                +'</td>'
                 +'</tr>'
                 +'</tbody>'
                 +'</table>'
@@ -305,26 +312,18 @@ function(render,email,file,record,search,format,runtime) {
                 +'<table border="0" cellpadding="1" cellspacing="1" style="width: 1000px;">'
                 +'<tbody>'
                 +'<tr>'
-                +'<td rowspan="3" style="width: 750px;"><span style="text-decoration: none; color: rgb(0, 0, 0);">Vorwerk M&eacute;xico, S. de R.L. de C.V.<br />'
+                +'<td rowspan="4" style="width: 750px; vertical-align: top;"><span style="text-decoration: none; color: rgb(0, 0, 0);">Vorwerk M&eacute;xico, S. de R.L. de C.V.<br />'
                 +'Vito Alessio Robles 38 Col. Florida, Del. &Aacute;lvaro Obreg&oacute;n<br />'
                 +'Cd. de M&eacute;xico, C.P.01030 Tel&eacute;fono: 800 200 1121<br />'
                 +'Lunes a Jueves de 9:00 a 18:00hrs<br />'
                 +'Viernes de 9:00 a 15:00hrs<br />'
                 +'www.thermomix.mx</span></td>'
-                +'<td style="width: 171px;"> </td>'
-                +'<td style="width: 107px;"> </td>'
-                +'</tr>'
-                +'<tr>'
-                +'<td Colspan="1" style="width: 120px; padding-left: 80px; text-align: right;"><span style="text-decoration: none; color: rgb(0, 0, 0);">Orden de Servicio</span></td>'
-                +'<td  colspan="2" class="linea" style="width: 107px; text-align: right;"><span style="text-decoration: none; color: rgb(0, 0, 0);">'+order+'</span></td>'
-                +'</tr>'
-                +'<tr>'
-                +'<td style="width: 120px; padding-left: 90px; text-align: right;"><span style="text-decoration: none; color: rgb(0, 0, 0);">Fecha</span></td>'
-                +'<td  style="width: 107px; text-align: right;"><span style="text-decoration: none; color: rgb(0, 0, 0);">'+date+'</span></td>'
-                +'</tr>'
-                +'<tr>'
-                +'<td style="width: 120px;"></td>'
-                +'<td style="width: 107px;"></td>'
+                +'<td colspan="2" rowspan="4" align="center" style="text-align: center; vertical-align: top;">'
+                +'<p style="margin: 0 0 6px 0; color: rgb(0, 0, 0);">Orden de Servicio</p>'
+                +'<p style="margin: 0 0 8px 0; color: rgb(0, 0, 0); font-size: 22px; font-weight: bold;">'+order+'</p>'
+                +'<p style="margin: 0 0 10px 0; text-align: center;"><img src="https://bwipjs-api.metafloor.com/?bcid=code128&amp;scale=2&amp;includetext&amp;text='+encodeURIComponent(String(order))+'" alt="" style="display: inline-block; height: 48px; width: auto; max-width: 100%;" /></p>'
+                +'<p style="margin: 0; color: rgb(0, 0, 0);"><b>Fecha:</b> '+date+'</p>'
+                +'</td>'
                 +'</tr>'
                 +'</tbody>'
                 +'</table>'
