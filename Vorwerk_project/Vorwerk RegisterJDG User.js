@@ -62,6 +62,11 @@ function(serverWidget,search,record,runtime,redirect,url) {
                 functionName: 'emailSend()'
             });
             form.addButton({
+                id : 'custpage_aws_resend',
+                label : 'Reenviar reporte a AWS',
+                functionName: 'awsResend()'
+            });
+            form.addButton({
                 id : 'custpage_policy_create',
                 label : 'Crear Poliza',
                 functionName: 'policycreate(\"'+period+'\")'

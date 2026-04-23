@@ -135,6 +135,15 @@ define(['N/https'], function (https) {
     return bytesToHex(sha256Bytes(utf8ToBytes(str)));
   }
 
+  function sha256HexUint8Array(u8) {
+    if (!u8 || u8.length === 0) return sha256Hex('');
+    var bytes = [];
+    for (var i = 0; i < u8.length; i++) {
+      bytes.push(u8[i] & 0xff);
+    }
+    return bytesToHex(sha256Bytes(bytes));
+  }
+
   function hmacSha256Bytes(keyBytes, msgBytes) {
     var blockSize = 64;
     if (keyBytes.length > blockSize) keyBytes = sha256Bytes(keyBytes);
@@ -167,94 +176,32 @@ define(['N/https'], function (https) {
     return key;
   }
 
-  function putObject(params) {
-    var bucket = params.bucket;
-    var region = params.region || 'us-east-1';
-    var accessKeyId = params.accessKeyId;
-    var secretAccessKey = params.secretAccessKey;
-    var objectKey = normalizeS3Key(params.objectKey);
-    var body = ensureString(params.body);
-    var contentType = params.contentType || 'application/octet-stream';
-
-    if (!bucket) throw new Error('S3 bucket requerido');
-    if (!accessKeyId) throw new Error('S3 accessKeyId requerido');
-    if (!secretAccessKey) throw new Error('S3 secretAccessKey requerido');
-    if (!objectKey) throw new Error('S3 objectKey requerido');
-
-    var service = 's3';
-    var now = params.now || new Date();
-    var dates = amzDates(now);
-    var host = region === 'us-east-1' ? bucket + '.s3.amazonaws.com' : bucket + '.s3.' + region + '.amazonaws.com';
-    var canonicalUri = '/' + encodeURI(objectKey).replace(/%2F/g, '/');
-
-    var payloadHash = sha256Hex(body);
-    var canonicalHeaders =
-      'content-type:' +
-      contentType +
-      '\n' +
-      'host:' +
-      host +
-      '\n' +
-      'x-amz-content-sha256:' +
-      payloadHash +
-      '\n' +
-      'x-amz-date:' +
-      dates.amzDate +
-      '\n';
-    var signedHeaders = 'content-type;host;x-amz-content-sha256;x-amz-date';
-
-    var canonicalRequest = ['PUT', canonicalUri, '', canonicalHeaders, signedHeaders, payloadHash].join('\n');
-    var credentialScope = dates.dateStamp + '/' + region + '/' + service + '/aws4_request';
-    var stringToSign =
-      'AWS4-HMAC-SHA256\n' + dates.amzDate + '\n' + credentialScope + '\n' + sha256Hex(canonicalRequest);
-
-    var signingKeyBytes = getSignatureKeyBytes(secretAccessKey, dates.dateStamp, region, service);
-    var signature = bytesToHex(hmacSha256Bytes(signingKeyBytes, utf8ToBytes(stringToSign)));
-
-    var authorizationHeader =
-      'AWS4-HMAC-SHA256 ' +
-      'Credential=' +
-      accessKeyId +
-      '/' +
-      credentialScope +
-      ', ' +
-      'SignedHeaders=' +
-      signedHeaders +
-      ', ' +
-      'Signature=' +
-      signature;
-
-    var url = 'https://' + host + canonicalUri;
-    var headers = {
-      'Content-Type': contentType,
-      Host: host,
-      'x-amz-date': dates.amzDate,
-      'x-amz-content-sha256': payloadHash,
-      Authorization: authorizationHeader,
-    };
-
-    return https.put({ url: url, headers: headers, body: body });
+  function s3Host(bucket, region) {
+    // Para este proyecto fijamos región por defecto us-east-2.
+    region = region || 'us-east-2';
+    return bucket + '.s3.' + region + '.amazonaws.com';
   }
 
-  function getBucketLocation(params) {
+  function canonicalizeUri(path) {
+    // Mantener "/" sin escapar; encodeURI deja "/" intacto y escapa espacios, etc.
+    return '/' + encodeURI(normalizeS3Key(path)).replace(/%2F/g, '/');
+  }
+
+  function signHeaders(params) {
     var bucket = params.bucket;
-    var region = params.region || 'us-east-1';
+    var region = params.region || 'us-east-2';
     var accessKeyId = params.accessKeyId;
     var secretAccessKey = params.secretAccessKey;
-
-    if (!bucket) throw new Error('S3 bucket requerido');
-    if (!accessKeyId) throw new Error('S3 accessKeyId requerido');
-    if (!secretAccessKey) throw new Error('S3 secretAccessKey requerido');
+    var method = params.method;
+    var canonicalUri = params.canonicalUri;
+    var canonicalQueryString = params.canonicalQueryString || '';
+    var payloadHash = params.payloadHash;
 
     var service = 's3';
     var now = params.now || new Date();
     var dates = amzDates(now);
-    var host = region === 'us-east-1' ? bucket + '.s3.amazonaws.com' : bucket + '.s3.' + region + '.amazonaws.com';
 
-    var canonicalUri = '/';
-    var canonicalQueryString = 'location=';
-    var payloadHash = sha256Hex('');
-
+    var host = s3Host(bucket, region);
     var canonicalHeaders =
       'host:' +
       host +
@@ -267,7 +214,7 @@ define(['N/https'], function (https) {
       '\n';
     var signedHeaders = 'host;x-amz-content-sha256;x-amz-date';
 
-    var canonicalRequest = ['GET', canonicalUri, canonicalQueryString, canonicalHeaders, signedHeaders, payloadHash].join('\n');
+    var canonicalRequest = [method, canonicalUri, canonicalQueryString, canonicalHeaders, signedHeaders, payloadHash].join('\n');
     var credentialScope = dates.dateStamp + '/' + region + '/' + service + '/aws4_request';
     var stringToSign =
       'AWS4-HMAC-SHA256\n' + dates.amzDate + '\n' + credentialScope + '\n' + sha256Hex(canonicalRequest);
@@ -288,20 +235,188 @@ define(['N/https'], function (https) {
       'Signature=' +
       signature;
 
+    return {
+      host: host,
+      amzDate: dates.amzDate,
+      authorization: authorizationHeader,
+      payloadHash: payloadHash,
+    };
+  }
+
+  function putObject(params) {
+    var bucket = params.bucket;
+    var region = params.region || 'us-east-2';
+    var accessKeyId = params.accessKeyId;
+    var secretAccessKey = params.secretAccessKey;
+    var objectKey = normalizeS3Key(params.objectKey);
+    var bodyU8 = params.bodyUint8Array;
+    var body = params.body;
+    var contentType = params.contentType || 'application/octet-stream';
+
+    if (!bucket) throw new Error('S3 bucket requerido');
+    if (!accessKeyId) throw new Error('S3 accessKeyId requerido');
+    if (!secretAccessKey) throw new Error('S3 secretAccessKey requerido');
+    if (!objectKey) throw new Error('S3 objectKey requerido');
+
+    var host = s3Host(bucket, region);
+    var canonicalUri = canonicalizeUri(objectKey);
+
+    // PDF/binario: usar bodyUint8Array + SuiteScript 2.1 https.put para bytes crudos.
+    // Un string en el body se envía como UTF-8 y rompe bytes >127 → PDF en blanco en S3.
+    var payloadHash;
+    var bodyForHttps;
+    if (bodyU8 && typeof bodyU8.length === 'number' && bodyU8.length >= 0) {
+      payloadHash = sha256HexUint8Array(bodyU8);
+      bodyForHttps = bodyU8;
+    } else {
+      bodyForHttps = ensureString(body);
+      payloadHash = sha256Hex(bodyForHttps);
+    }
+
+    var sig = signHeaders({
+      bucket: bucket,
+      region: region,
+      accessKeyId: accessKeyId,
+      secretAccessKey: secretAccessKey,
+      method: 'PUT',
+      canonicalUri: canonicalUri,
+      canonicalQueryString: '',
+      payloadHash: payloadHash,
+      now: params.now,
+    });
+
+    var url = 'https://' + host + canonicalUri;
+    var headers = {
+      'Content-Type': contentType,
+      Host: host,
+      'x-amz-date': sig.amzDate,
+      'x-amz-content-sha256': sig.payloadHash,
+      Authorization: sig.authorization,
+    };
+
+    return https.put({ url: url, headers: headers, body: bodyForHttps });
+  }
+
+  function getBucketLocation(params) {
+    var bucket = params.bucket;
+    var region = params.region || 'us-east-2';
+    var accessKeyId = params.accessKeyId;
+    var secretAccessKey = params.secretAccessKey;
+
+    if (!bucket) throw new Error('S3 bucket requerido');
+    if (!accessKeyId) throw new Error('S3 accessKeyId requerido');
+    if (!secretAccessKey) throw new Error('S3 secretAccessKey requerido');
+
+    var host = s3Host(bucket, region);
+    var canonicalUri = '/';
+    var canonicalQueryString = 'location=';
+    var payloadHash = sha256Hex('');
+    var sig = signHeaders({
+      bucket: bucket,
+      region: region,
+      accessKeyId: accessKeyId,
+      secretAccessKey: secretAccessKey,
+      method: 'GET',
+      canonicalUri: canonicalUri,
+      canonicalQueryString: canonicalQueryString,
+      payloadHash: payloadHash,
+      now: params.now,
+    });
+
     var url = 'https://' + host + '/?' + canonicalQueryString;
     var headers = {
       Host: host,
-      'x-amz-date': dates.amzDate,
-      'x-amz-content-sha256': payloadHash,
-      Authorization: authorizationHeader,
+      'x-amz-date': sig.amzDate,
+      'x-amz-content-sha256': sig.payloadHash,
+      Authorization: sig.authorization,
     };
 
     return https.get({ url: url, headers: headers });
   }
 
+  function headObject(params) {
+    var bucket = params.bucket;
+    var region = params.region || 'us-east-2';
+    var accessKeyId = params.accessKeyId;
+    var secretAccessKey = params.secretAccessKey;
+    var objectKey = normalizeS3Key(params.objectKey);
+
+    if (!bucket) throw new Error('S3 bucket requerido');
+    if (!accessKeyId) throw new Error('S3 accessKeyId requerido');
+    if (!secretAccessKey) throw new Error('S3 secretAccessKey requerido');
+    if (!objectKey) throw new Error('S3 objectKey requerido');
+
+    var host = s3Host(bucket, region);
+    var canonicalUri = canonicalizeUri(objectKey);
+    var payloadHash = sha256Hex('');
+    var sig = signHeaders({
+      bucket: bucket,
+      region: region,
+      accessKeyId: accessKeyId,
+      secretAccessKey: secretAccessKey,
+      method: 'HEAD',
+      canonicalUri: canonicalUri,
+      canonicalQueryString: '',
+      payloadHash: payloadHash,
+      now: params.now,
+    });
+
+    return https.request({
+      method: https.Method.HEAD,
+      url: 'https://' + host + canonicalUri,
+      headers: {
+        Host: host,
+        'x-amz-date': sig.amzDate,
+        'x-amz-content-sha256': sig.payloadHash,
+        Authorization: sig.authorization,
+      },
+    });
+  }
+
+  function deleteObject(params) {
+    var bucket = params.bucket;
+    var region = params.region || 'us-east-2';
+    var accessKeyId = params.accessKeyId;
+    var secretAccessKey = params.secretAccessKey;
+    var objectKey = normalizeS3Key(params.objectKey);
+
+    if (!bucket) throw new Error('S3 bucket requerido');
+    if (!accessKeyId) throw new Error('S3 accessKeyId requerido');
+    if (!secretAccessKey) throw new Error('S3 secretAccessKey requerido');
+    if (!objectKey) throw new Error('S3 objectKey requerido');
+
+    var host = s3Host(bucket, region);
+    var canonicalUri = canonicalizeUri(objectKey);
+    var payloadHash = sha256Hex('');
+    var sig = signHeaders({
+      bucket: bucket,
+      region: region,
+      accessKeyId: accessKeyId,
+      secretAccessKey: secretAccessKey,
+      method: 'DELETE',
+      canonicalUri: canonicalUri,
+      canonicalQueryString: '',
+      payloadHash: payloadHash,
+      now: params.now,
+    });
+
+    return https.request({
+      method: https.Method.DELETE,
+      url: 'https://' + host + canonicalUri,
+      headers: {
+        Host: host,
+        'x-amz-date': sig.amzDate,
+        'x-amz-content-sha256': sig.payloadHash,
+        Authorization: sig.authorization,
+      },
+    });
+  }
+
   return {
     putObject: putObject,
     getBucketLocation: getBucketLocation,
+    headObject: headObject,
+    deleteObject: deleteObject,
   };
 });
 

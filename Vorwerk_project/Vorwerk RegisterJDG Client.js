@@ -549,6 +549,43 @@ function marcarCheck(object_fill) {
            
 //        console.log('res',res);
     }
+
+    function awsResend(){
+        try{
+            var url_aux_status = ""
+            if(runtime.envType != 'PRODUCTION'){ 
+                url_aux_status = "https://3367613-sb1.app.netsuite.com/app/common/scripting/mapreducescriptstatus.nl?daterange=TODAY&datefrom=3%2F9%2F2020&dateto=3%2F9%2F2020&scripttype=568&primarykey=&jobstatefilterselect=&sortcol=dateCreated&sortdir=DESC&csv=HTML&OfficeXML=F&pdf=&size=50&datemodi=WITHIN&date=TODAY&showall=F"
+            }else{
+                url_aux_status ='https://3367613.app.netsuite.com/app/common/scripting/mapreducescriptstatus.nl?whence=';
+            };
+
+            var myMsg = message.create({
+                title: "Reenvío a AWS",
+                message: "Para ver el progreso del reenvío a AWS da click al siguiente enlace: <a href='"+url_aux_status+"'>Ver Progreso<a>",
+                type: message.Type.CONFIRMATION
+            });
+            myMsg.show({
+                duration: 5000
+            });
+
+            var url_aux = ""
+            if(runtime.envType != 'PRODUCTION'){ 
+                url_aux ='https://3367613-sb1.app.netsuite.com/app/site/hosting/scriptlet.nl?script=569&deploy=1';
+            }else{
+                url_aux ='https://3367613.app.netsuite.com/app/site/hosting/scriptlet.nl?script=569&deploy=1';
+            };
+
+            var headers = {"Content-Type": "application/json"};
+            var obj = getSelectedData();
+            https.put({
+                url: url_aux,
+                headers: headers,
+                body: JSON.stringify({obj:obj,type_req:"awsResend"})
+            });
+        }catch(err){
+            log.error("Error awsResend",err);
+        }
+    }
     function massivepdf(period){
         try{
             var url_aux = ""
@@ -921,6 +958,7 @@ function marcarCheck(object_fill) {
         nomina:nomina,
         cfdiReporteSend:cfdiReporteSend,
         emailSend:emailSend,
+        awsResend:awsResend,
         policycreate:policycreate,
         massivepdf:massivepdf,
         layout_HSBC:layout_HSBC

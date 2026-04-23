@@ -41,6 +41,17 @@ function(message,task, serverWidget, search, runtime) {
                           scriptId: 'customscript_vorwerk_email_massive_map',
                           params: {
                         	  custscript_register_info: JSON.stringify(body.obj),
+                              custscript_vw_aws_only: 'F',
+                          }
+                    }).submit(); 
+                  }
+                  if(body.type_req == "awsResend"){
+                	  var mapTask = task.create({
+                          taskType: task.TaskType.MAP_REDUCE,
+                          scriptId: 'customscript_vorwerk_email_massive_map',
+                          params: {
+                        	  custscript_register_info: JSON.stringify(body.obj),
+                              custscript_vw_aws_only: 'T',
                           }
                     }).submit(); 
                   }
