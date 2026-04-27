@@ -67,6 +67,11 @@ function(serverWidget,search,record,runtime,redirect,url) {
                 functionName: 'awsResend()'
             });
             form.addButton({
+                id : 'custpage_aws_remove',
+                label : 'Eliminar registro de AWS',
+                functionName: 'awsRemove()'
+            });
+            form.addButton({
                 id : 'custpage_policy_create',
                 label : 'Crear Poliza',
                 functionName: 'policycreate(\"'+period+'\")'

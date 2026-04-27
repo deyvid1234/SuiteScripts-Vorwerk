@@ -69,13 +69,6 @@ define(['N/email','N/record','N/render', 'N/file','N/search', 'N/https', 'N/runt
             var clean = String(contentsB64 || '').replace(/\s/g, '');
             if (!clean.length) return null;
             try {
-                if (typeof Uint8Array !== 'undefined' && typeof Uint8Array.fromBase64 === 'function') {
-                    return Uint8Array.fromBase64(clean);
-                }
-            } catch (e0) {
-                log.debug('Uint8Array.fromBase64', String(e0));
-            }
-            try {
                 var bin = base64ToBinaryString(clean);
                 var u8 = new Uint8Array(bin.length);
                 for (var i = 0; i < bin.length; i++) {
@@ -87,6 +80,20 @@ define(['N/email','N/record','N/render', 'N/file','N/search', 'N/https', 'N/runt
                 return null;
             }
         }
+
+    // Para el flujo "Imprimir" (PDF binario en el body HTTP).
+    function pdfUint8FromHttpBody(body) {
+        if (body === null || body === undefined) return null;
+        var s = String(body).replace(/^\uFEFF/, '');
+        // Si ya viene binario (%PDF...) lo convertimos directo a bytes.
+        if (s.length >= 4 && s.substring(0, 4) === '%PDF') {
+            var u8 = new Uint8Array(s.length);
+            for (var i = 0; i < s.length; i++) u8[i] = s.charCodeAt(i) & 0xff;
+            return u8;
+        }
+        // Si por alguna razón vino Base64, reutilizamos el mismo decoder.
+        return pdfUint8FromFileContents(s);
+    }
        
         /**
          * Marks the beginning of the Map/Reduce process and generates input data.
@@ -143,7 +150,7 @@ define(['N/email','N/record','N/render', 'N/file','N/search', 'N/https', 'N/runt
                 var email_emp = EmailLib.getEmployee(idEmp);
                 //var objReport = EmailLib.getpdf(idEmp,registeInfo.comision_id,objRecord.id,email_emp)
     //Parche
-                var registeInfo = JSON.parse(context.value);
+            var registeInfo = JSON.parse(context.value);
                 var type_rec= parseInt(registeInfo.level,10);
                 var idReg= parseInt(registeInfo.idReg,10);
                 var period = parseInt(registeInfo.comision_id,10);
@@ -168,17 +175,40 @@ define(['N/email','N/record','N/render', 'N/file','N/search', 'N/https', 'N/runt
                 }else{
                     print_url_base = 'https://3367613.extforms.netsuite.com/app/site/hosting/scriptlet.nl?script=1408&deploy=1&compid=3367613&ns-at=AAEJ7tMQyq7jwkS4stiuYtzuLkRmJPspJNtkQcWSrkNFaJUOmXM';
                 }
-                // Flujo original: `massive=true` guarda en FileCabinet y regresa el internal id del archivo PDF.
-                var url = print_url_base+'&employee='+idemp[config_fields.empleado[type_rec]][0]['value']+'&periodo='+period+'&comp='+idReg+'&level='+type_rec+'&massive=true';
+                var mrScriptObj = runtime.getCurrentScript();
+                var awsOnly = mrScriptObj.getParameter({ name: 'custscript_vw_aws_only' });
+                var shouldSendEmail = !(awsOnly === true || awsOnly === 'T' || awsOnly === 'true');
+                // Preferimos el proceso embebido en cada registro (lo setea el Loader).
+                var forcedProcess = registeInfo && registeInfo.notifyProcess ? String(registeInfo.notifyProcess) : '';
+                if (!forcedProcess) {
+                    // Fallback (si existiera en deployment)
+                    forcedProcess = mrScriptObj.getParameter({ name: 'custscript_vw_notify_process' });
+                    forcedProcess = forcedProcess ? String(forcedProcess) : '';
+                }
+                var process = forcedProcess ? forcedProcess : (shouldSendEmail ? 'add' : 'update');
+
                 var headers = {'Content-Type': 'application/json'};
-                var response = https.get({
-                    url: url,
-                    headers: headers
-                }).body;
-                log.debug('response',response)
-                var objReport = file.load({
-                    id: response
-                });
+                var objReport = null;
+                var files = [];
+
+                // Temporal: awsResend usa el PDF "en vivo" (mismo flujo que Imprimir)
+                // y el Process debe ser "add".
+                var useLivePdfForAws = (!shouldSendEmail && process === 'add');
+
+                // Para "remove" no generamos/cargamos PDF, solo notificamos.
+                if (process !== 'remove' && !useLivePdfForAws) {
+                    // Flujo original: `massive=true` guarda en FileCabinet y regresa el internal id del archivo PDF.
+                    var url = print_url_base+'&employee='+idemp[config_fields.empleado[type_rec]][0]['value']+'&periodo='+period+'&comp='+idReg+'&level='+type_rec+'&massive=true';
+                    var response = https.get({
+                        url: url,
+                        headers: headers
+                    }).body;
+                    log.debug('response',response)
+                    objReport = file.load({
+                        id: response
+                    });
+                    files = [objReport];
+                }
                 /*var my_file = file.create({
                     name: email_emp.name+'.pdf',
                     fileType: file.Type.PDF,
@@ -193,22 +223,15 @@ define(['N/email','N/record','N/render', 'N/file','N/search', 'N/https', 'N/runt
     //            var xmlObj = file.load({
     //                id: xml
     //            });
-                var files = [objReport]
                 // Envío de email solo cuando NO sea reenvío AWS-only
-                var mrScriptObj = runtime.getCurrentScript();
-                var awsOnly = mrScriptObj.getParameter({ name: 'custscript_vw_aws_only' });
-                var shouldSendEmail = !(awsOnly === true || awsOnly === 'T' || awsOnly === 'true');
-                var process
-                if (shouldSendEmail) {
+                if (process !== 'remove' && shouldSendEmail) {
                     EmailLib.sendEmail(email_emp,files,registeInfo.idReg,type_to_add);
-                    process = 'add';
-                } else {
+                } else if (process !== 'remove') {
                     log.debug('AWS-only: se omite envío de email', { idReg: registeInfo.idReg, level: registeInfo.level });
-                    process = 'update';
                 }
     
-                // Subida a S3 SOLO en el envío inicial (este Map/Reduce).
-                // No se envía CFDI aquí; únicamente el PDF del reporte de compensaciones.
+                // Subida a S3 SOLO cuando process != remove.
+                // En remove: NO se envía nada a AWS, solo se notifica al endpoint con Process=remove.
                 try{
                     var scriptObj = runtime.getCurrentScript();
                     // En este Map/Reduce los parámetros NO llevan sufijo "2".
@@ -254,66 +277,112 @@ define(['N/email','N/record','N/render', 'N/file','N/search', 'N/https', 'N/runt
                             pad2(month) + '_' +
                             '.pdf';
     
-                        // Mismo PDF que el email: File Cabinet (`massive=true` → file id → load).
-                        var pdfU8 = pdfUint8FromFileContents(objReport.getContents());
-                        if (!pdfU8 || pdfU8.length < 5 || pdfU8[0] !== 0x25 || pdfU8[1] !== 0x50 || pdfU8[2] !== 0x44 || pdfU8[3] !== 0x46) {
-                            log.error('S3 PDF inválido (cabecera distinta de %PDF)', {
-                                len: pdfU8 ? pdfU8.length : 0
-                            });
+                        if (process !== 'remove') {
+                            var pdfU8 = null;
+                            if (useLivePdfForAws) {
+                                // Flujo "Imprimir" (PDF al momento) pero usando URL EXTERNA (extforms).
+                                // La URL interna app.netsuite.com requiere sesión y desde MR puede regresar login/HTML.
+                                var urlPrintNow = print_url_base
+                                    + '&employee=' + idemp[config_fields.empleado[type_rec]][0]['value']
+                                    + '&periodo=' + period
+                                    + '&comp=' + idReg
+                                    + '&level=' + type_rec;
+                                var pdfBodyNow = https.get({ url: urlPrintNow, headers: headers }).body;
+                                pdfU8 = pdfUint8FromHttpBody(pdfBodyNow);
+                                log.debug('AWS resend (live PDF) url', urlPrintNow);
+                            } else {
+                                // Mismo PDF que el email: File Cabinet (`massive=true` → file id → load).
+                                pdfU8 = pdfUint8FromFileContents(objReport.getContents());
+                            }
+                            if (!pdfU8 || pdfU8.length < 5 || pdfU8[0] !== 0x25 || pdfU8[1] !== 0x50 || pdfU8[2] !== 0x44 || pdfU8[3] !== 0x46) {
+                                log.error('S3 PDF inválido (cabecera distinta de %PDF)', {
+                                    len: pdfU8 ? pdfU8.length : 0,
+                                    head: (useLivePdfForAws && pdfBodyNow) ? String(pdfBodyNow).substring(0, 200) : ''
+                                });
+                            } else {
+                                var s3Resp = S3.putObject({
+                                    bucket: bucket,
+                                    region: region,
+                                    accessKeyId: accessKeyId,
+                                    secretAccessKey: secretAccessKey,
+                                    objectKey: objectKey,
+                                    contentType: 'application/pdf',
+                                    bodyUint8Array: pdfU8
+                                });
+                                try {
+                                    var sc = s3Resp && s3Resp.code;
+                                    if (sc && sc !== 200 && sc !== 204) {
+                                        log.error('S3 putObject respuesta inesperada', {
+                                            code: sc,
+                                            body: s3Resp.body ? String(s3Resp.body).substring(0, 800) : ''
+                                        });
+                                    }
+                                } catch (checkErr) { /* ignore */ }
+                            }
                         } else {
-                            var s3Resp = S3.putObject({
-                                bucket: bucket,
-                                region: region,
-                                accessKeyId: accessKeyId,
-                                secretAccessKey: secretAccessKey,
-                                objectKey: objectKey,
-                                contentType: 'application/pdf',
-                                bodyUint8Array: pdfU8
-                            });
-                            try {
-                                var sc = s3Resp && s3Resp.code;
-                                if (sc && sc !== 200 && sc !== 204) {
-                                    log.error('S3 putObject respuesta inesperada', {
-                                        code: sc,
-                                        body: s3Resp.body ? String(s3Resp.body).substring(0, 800) : ''
-                                    });
-                                }
-                            } catch (checkErr) { /* ignore */ }
+                            log.debug('Remove: se omite upload a S3', { idReg: idReg, objectKey: objectKey });
                         }
     
                         // (Opcional) Notificación JSON a endpoint externo (endpoint por definir).
                         // Se omite si no hay endpoint configurado.
                         try{
-                            var notifyEnabled = scriptObj.getParameter({ name: 'custscript_vw_s3_notify_enabled' });
+                            var notifyEnabled = scriptObj.getParameter({ name: 'custscript_vw_s3_notify_enable' });
                             var endpoint = scriptObj.getParameter({ name: 'custscript_vw_s3_notify_endpoint' });
+                        log.debug('S3 notify config', {
+                            notifyEnabled: notifyEnabled,
+                            endpoint: endpoint,
+                            envType: String(runtime.envType || '')
+                        });
                             if ((notifyEnabled === true || notifyEnabled === 'T' || notifyEnabled === 'true') && endpoint) {
                                 
                                 var token = scriptObj.getParameter({ name: 'custscript_vw_s3_notify_token' });
-                                var payload = {
-                                    Process: process,
-                                    IDU: String(empIdVal),
-                                    Year: String(year),
-                                    Month: String(month),
-                                    FilePath: 's3://' + bucket + '/' + objectKey
-                                };
+                                var filePathUri = 's3://' + bucket + '/' + objectKey;
+                                var payload = (process === 'remove')
+                                    ? {
+                                        Process: 'remove',
+                                        InternalID: String(idReg),
+                                        FilePath: filePathUri
+                                      }
+                                    : {
+                                        Process: process,
+                                        IDU: String(empIdVal),
+                                        Year: String(year),
+                                        Month: String(month),
+                                        InternalID: String(idReg),
+                                        FilePath: filePathUri
+                                      };
                                 log.debug('S3 notify payload (preview)', payload);
                                 var reqHeaders = { 'Content-Type': 'application/json' };
                                 if (token) reqHeaders.Authorization = token;
-                                https.post({
+                                var notifyRes = https.post({ 
                                     url: endpoint,
                                     headers: reqHeaders,
                                     body: JSON.stringify(payload)
                                 });
+                                try{
+                                    log.debug('S3 notify response', {
+                                        code: notifyRes && notifyRes.code,
+                                        body: notifyRes && notifyRes.body ? String(notifyRes.body).substring(0, 4000) : ''
+                                    });
+                                }catch(respLogErr){}
                             } else {
                                 // Vista previa del JSON aunque todavía no se envíe
                                 
-                                var payloadPreview = {
-                                    Process: process,
-                                    IDU: String(empIdVal),
-                                    Year: String(year),
-                                    Month: String(month),
-                                    FilePath: 's3://' + bucket + '/' + objectKey
-                                };
+                                var filePathUriPrev = 's3://' + bucket + '/' + objectKey;
+                                var payloadPreview = (process === 'remove')
+                                    ? {
+                                        Process: 'remove',
+                                        InternalID: String(idReg),
+                                        FilePath: filePathUriPrev
+                                      }
+                                    : {
+                                        Process: process,
+                                        IDU: String(empIdVal),
+                                        Year: String(year),
+                                        Month: String(month),
+                                        InternalID: String(idReg),
+                                        FilePath: filePathUriPrev
+                                      };
                                 log.debug('S3 notify payload (preview, not sent)', payloadPreview);
                             }
                         }catch(notifyErr){

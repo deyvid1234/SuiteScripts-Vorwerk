@@ -46,6 +46,32 @@ function(message,task, serverWidget, search, runtime) {
                     }).submit(); 
                   }
                   if(body.type_req == "awsResend"){
+                      // Marcar proceso a nivel registro (no depende de parámetros de deployment)
+                      try{
+                        if(body && body.obj && body.obj.length){
+                          for (var i = 0; i < body.obj.length; i++){
+                            if(body.obj[i]) body.obj[i].notifyProcess = 'add';
+                          }
+                        }
+                      }catch(eMark1){}
+                	  var mapTask = task.create({
+                          taskType: task.TaskType.MAP_REDUCE,
+                          scriptId: 'customscript_vorwerk_email_massive_map',
+                          params: {
+                        	  custscript_register_info: JSON.stringify(body.obj),
+                              custscript_vw_aws_only: 'T',
+                          }
+                    }).submit(); 
+                  }
+                  if(body.type_req == "awsRemove"){
+                      // Marcar proceso a nivel registro (no depende de parámetros de deployment)
+                      try{
+                        if(body && body.obj && body.obj.length){
+                          for (var j = 0; j < body.obj.length; j++){
+                            if(body.obj[j]) body.obj[j].notifyProcess = 'remove';
+                          }
+                        }
+                      }catch(eMark2){}
                 	  var mapTask = task.create({
                           taskType: task.TaskType.MAP_REDUCE,
                           scriptId: 'customscript_vorwerk_email_massive_map',
