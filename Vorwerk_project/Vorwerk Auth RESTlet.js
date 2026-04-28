@@ -168,7 +168,8 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                 { name: 'custentity_rfc'},
                 { name: 'custentity_curp'},
                 { name: 'isinactive'},
-                { name: 'custentity_presentadora_referido'}
+                { name: 'custentity_presentadora_referido'},
+                { name: 'custentity_creado_desde_presentador'}
 
             ];
 
@@ -184,6 +185,11 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
             pagedResults.pageRanges.forEach(function (pageRange){
                 var currentPage = pagedResults.fetch({index: pageRange.index});
                 currentPage.data.forEach(function (r) {
+                    // Si el customer fue creado desde presentador, se ignora para permitir crear uno nuevo
+                    var creadoDesdePresentador = r.getValue('custentity_creado_desde_presentador');
+                    if (creadoDesdePresentador === true || creadoDesdePresentador === 'T') {
+                        return true;
+                    }
                     if( (r.getValue("custentity_presentadora_referido") || presentadorReferidoAnterior == '') && cust != false ){
                         cust.user_id= r.getValue("internalid");
                         cust.name= r.getValue("companyname");
