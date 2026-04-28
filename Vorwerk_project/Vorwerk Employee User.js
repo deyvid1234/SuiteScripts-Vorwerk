@@ -3,9 +3,9 @@
  * @NScriptType UserEventScript
  * @NModuleScope SameAccount
  */
-define(['N/record','N/search','N/http','N/https','N/encode','N/runtime','N/ui/serverWidget','N/format'],
+define(['N/record','N/search','N/http','N/https','N/encode','N/runtime','N/ui/serverWidget','N/format','N/log'],
 
-	function(record,search,http,https,encode,runtime,serverWidget,format) {
+	function(record,search,http,https,encode,runtime,serverWidget,format,log) {
 	   
 		/**
 		 * Function definition to be triggered before record is loaded.
@@ -22,15 +22,32 @@ define(['N/record','N/search','N/http','N/https','N/encode','N/runtime','N/ui/se
 				var form = scriptContext.form;//formulario de registro
 				var objUser = runtime.getCurrentUser();//extracion de usuario activo
 				var rec = scriptContext.newRecord;//extraccion de registro userevent
+				var entityId = rec.getValue('entityid');
+				
+				// Configurar Client Script
+				form.clientScriptModulePath = '/SuiteScripts/Vorwerk_project/Vorwerk Employee Client.js';
+				
+				// Agregar botón "Crear Cliente" - disponible en todos los contextos excepto create
+				log.debug('beforeLoad - Tipo de contexto', scriptContext.type);
+				log.debug('beforeLoad - ID del registro', rec.id);
+				
+				if(scriptContext.type != 'create'){
+					try {
+						log.debug('Agregando botón Crear Cliente', 'Tipo: ' + scriptContext.type);
+						form.addButton({
+							id: 'custpage_btn_crear_cliente',
+							label: 'Crear Cliente desde Presentador',
+							functionName: 'crearClienteDesdeEmployee()'
+						});
+						log.debug('Botón agregado exitosamente', 'ID: custpage_btn_crear_cliente');
+					} catch(btnErr) {
+						log.error('Error al agregar botón', btnErr);
+					}
+				} else {
+					log.debug('No se agrega botón', 'Contexto es create');
+				}
+				
 				var assigned = '';
-
-
-	            // Agrega el botón de crear cliente
-	            form.addButton({
-	                id: 'custpage_crear_cliente',
-	                label: 'Crear Cliente',
-	                functionName: 'crearCliente(\"'+idSalesORder+'\")'
-	            });
 				if(scriptContext.type == 'edit'){//validacion de contexto edit 
 					var busqueda = search.create({//creacion de busqueda 
 						  type: 'customrecord_vorwerk_config_permission',//configuracion de permisos 
@@ -72,7 +89,210 @@ define(['N/record','N/search','N/http','N/https','N/encode','N/runtime','N/ui/se
 		 * @Since 2015.2
 		 */
 		function beforeSubmit(scriptContext) {
-			
+			try {
+				if (scriptContext.type === 'edit' || scriptContext.type === 'xedit') {
+					syncClienteRelacionadoConPresentador(scriptContext.newRecord, scriptContext.oldRecord);
+				}
+			} catch (e) {
+				log.error('beforeSubmit - syncClienteRelacionadoConPresentador', e);
+			}
+		}
+
+		/**
+		 * Obtiene la dirección por defecto (default shipping) del addressbook de un registro employee.
+		 * Incluye attention, addr2 y addr3 (en MX la colonia suele ir en addr2).
+		 * @param {Record} empRecord - Registro employee (o record con sublist addressbook)
+		 * @returns {Object|null} { attention, addr1, addr2, addr3, city, state, zip, country } o null si no hay dirección
+		 */
+		function getDefaultAddressFromEmployee(empRecord) {
+			try {
+				var lineCount = empRecord.getLineCount({ sublistId: 'addressbook' });
+				if (lineCount === 0) return null;
+				var defaultIndex = 0;
+				for (var i = 0; i < lineCount; i++) {
+					var isDefault = empRecord.getSublistValue({
+						sublistId: 'addressbook',
+						fieldId: 'defaultshipping',
+						line: i
+					});
+					if (isDefault) {
+						defaultIndex = i;
+						break;
+					}
+				}
+				var addrSubrec = empRecord.getSublistSubrecord({
+					sublistId: 'addressbook',
+					fieldId: 'addressbookaddress',
+					line: defaultIndex
+				});
+				if (!addrSubrec) return null;
+				return {
+					attention: addrSubrec.getValue({ fieldId: 'attention' }) || '',
+					addr1: addrSubrec.getValue({ fieldId: 'addr1' }) || '',
+					addr2: addrSubrec.getValue({ fieldId: 'addr2' }) || '',
+					addr3: addrSubrec.getValue({ fieldId: 'addr3' }) || '',
+					city: addrSubrec.getValue({ fieldId: 'city' }) || '',
+					state: addrSubrec.getValue({ fieldId: 'state' }) || '',
+					zip: addrSubrec.getValue({ fieldId: 'zip' }) || '',
+					country: addrSubrec.getValue({ fieldId: 'country' }) || ''
+				};
+			} catch (e) {
+				log.debug('getDefaultAddressFromEmployee', e.message || e);
+				return null;
+			}
+		}
+
+		/**
+		 * Etiqueta de línea addressbook alineada con la calle (evita que quede "DIR 1..." cuando addr1 ya cambió).
+		 */
+		function etiquetaDireccionDesdePresentador(addr) {
+			if (!addr) return 'Principal';
+			var a1 = (addr.addr1 && String(addr.addr1).trim()) ? String(addr.addr1).trim() : '';
+			var label = a1 !== '' ? a1 : 'Principal';
+			// Límite típico del campo Label en addressbook (evita fallo al guardar).
+			if (label.length > 50) label = label.substring(0, 50);
+			return label;
+		}
+
+		/**
+		 * Copia todos los campos relevantes del presentador al subrecord de dirección del cliente.
+		 */
+		function aplicarDireccionPresentadorEnSubrecord(addrSub, newAddr) {
+			if (!addrSub || !newAddr) return;
+			try {
+				if (newAddr.country !== '') addrSub.setValue({ fieldId: 'country', value: newAddr.country });
+				addrSub.setValue({ fieldId: 'attention', value: newAddr.attention || '' });
+				addrSub.setValue({ fieldId: 'addr1', value: newAddr.addr1 || '' });
+				addrSub.setValue({ fieldId: 'addr2', value: newAddr.addr2 || '' });
+				addrSub.setValue({ fieldId: 'addr3', value: newAddr.addr3 || '' });
+				addrSub.setValue({ fieldId: 'city', value: newAddr.city || '' });
+				addrSub.setValue({ fieldId: 'state', value: newAddr.state || '' });
+				addrSub.setValue({ fieldId: 'zip', value: newAddr.zip || '' });
+			} catch (e) {
+				log.debug('aplicarDireccionPresentadorEnSubrecord', e.message || e);
+			}
+		}
+
+		/**
+		 * Compara dos objetos de dirección (incl. colonia addr2 y addressee).
+		 */
+		function direccionesIguales(a, b) {
+			if (!a && !b) return true;
+			if (!a || !b) return false;
+			return (a.attention || '') === (b.attention || '') &&
+				(a.addr1 || '') === (b.addr1 || '') &&
+				(a.addr2 || '') === (b.addr2 || '') &&
+				(a.addr3 || '') === (b.addr3 || '') &&
+				(a.city || '') === (b.city || '') &&
+				(a.state || '') === (b.state || '') &&
+				(a.zip || '') === (b.zip || '') &&
+				(a.country || '') === (b.country || '');
+		}
+
+		/**
+		 * Si el presentador (employee) tiene un cliente relacionado (custentity_cliente_relacionado),
+		 * y se editaron email, phone o la dirección por defecto, actualiza el registro del cliente
+		 * con esos valores.
+		 * @param {Record} newRecord - Registro nuevo (valores editados)
+		 * @param {Record} oldRecord - Registro anterior
+		 */
+		function syncClienteRelacionadoConPresentador(newRecord, oldRecord) {
+			try {
+				var customerId = newRecord.getValue('custentity_cliente_relacionado');
+				if (!customerId || customerId === '' || customerId === null) return;
+
+				var oldEmail = (oldRecord && oldRecord.getValue) ? (oldRecord.getValue('email') || '') : '';
+				var newEmail = newRecord.getValue('email') || '';
+				var oldPhone = (oldRecord && oldRecord.getValue) ? (oldRecord.getValue('phone') || '') : '';
+				var newPhone = newRecord.getValue('phone') || '';
+				var oldMobile = (oldRecord && oldRecord.getValue) ? (oldRecord.getValue('mobilephone') || '') : '';
+				var newMobile = newRecord.getValue('mobilephone') || '';
+				var oldAddr = (oldRecord && oldRecord.getLineCount) ? getDefaultAddressFromEmployee(oldRecord) : null;
+				var newAddr = getDefaultAddressFromEmployee(newRecord);
+
+				var emailCambio = oldEmail !== newEmail;
+				var phoneCambio = (oldPhone !== newPhone) || (oldMobile !== newMobile);
+				var addressCambio = !direccionesIguales(oldAddr, newAddr);
+
+				if (!emailCambio && !phoneCambio && !addressCambio) return;
+
+				var custRec = record.load({
+					type: record.Type.CUSTOMER,
+					id: customerId,
+					isDynamic: true
+				});
+
+				if (emailCambio) {
+					custRec.setValue({ fieldId: 'email', value: newEmail });
+					if (newEmail !== '') custRec.setValue({ fieldId: 'custentity_fe_sf_se_destinatario', value: newEmail });
+					log.debug('syncClienteRelacionado - email actualizado', newEmail);
+				}
+				if (phoneCambio) {
+					var telefonoCliente = (newPhone !== '') ? newPhone : newMobile;
+					custRec.setValue({ fieldId: 'mobilephone', value: telefonoCliente });
+					log.debug('syncClienteRelacionado - mobilephone actualizado', telefonoCliente);
+				}
+				var direccionTieneDatos = newAddr && (
+					(newAddr.attention || '') !== '' ||
+					(newAddr.addr1 || '') !== '' ||
+					(newAddr.addr2 || '') !== '' ||
+					(newAddr.addr3 || '') !== '' ||
+					(newAddr.city || '') !== '' ||
+					(newAddr.state || '') !== '' ||
+					(newAddr.zip || '') !== '' ||
+					(newAddr.country || '') !== ''
+				);
+				if (addressCambio && direccionTieneDatos) {
+					var lineCount = custRec.getLineCount({ sublistId: 'addressbook' });
+					if (lineCount > 0) {
+						var shipIdx = -1;
+						var billIdx = -1;
+						for (var j = 0; j < lineCount; j++) {
+							if (custRec.getSublistValue({ sublistId: 'addressbook', fieldId: 'defaultshipping', line: j })) shipIdx = j;
+							if (custRec.getSublistValue({ sublistId: 'addressbook', fieldId: 'defaultbilling', line: j })) billIdx = j;
+						}
+						if (shipIdx < 0) shipIdx = 0;
+						if (billIdx < 0) billIdx = shipIdx;
+						var indicesSync = [];
+						if (shipIdx >= 0) indicesSync.push(shipIdx);
+						if (billIdx >= 0 && billIdx !== shipIdx) indicesSync.push(billIdx);
+						var labelLinea = etiquetaDireccionDesdePresentador(newAddr);
+						for (var s = 0; s < indicesSync.length; s++) {
+							var lineIdx = indicesSync[s];
+							custRec.selectLine({ sublistId: 'addressbook', line: lineIdx });
+							custRec.setCurrentSublistValue({ sublistId: 'addressbook', fieldId: 'label', value: labelLinea });
+							var addrSub = custRec.getCurrentSublistSubrecord({
+								sublistId: 'addressbook',
+								fieldId: 'addressbookaddress'
+							});
+							aplicarDireccionPresentadorEnSubrecord(addrSub, newAddr);
+							log.debug('syncClienteRelacionado - dirección actualizada línea', { line: lineIdx, label: labelLinea });
+							custRec.commitLine({ sublistId: 'addressbook' });
+						}
+					} else {
+						custRec.selectNewLine({ sublistId: 'addressbook' });
+						custRec.setCurrentSublistValue({ sublistId: 'addressbook', fieldId: 'label', value: etiquetaDireccionDesdePresentador(newAddr) });
+						custRec.setCurrentSublistValue({ sublistId: 'addressbook', fieldId: 'defaultbilling', value: true });
+						custRec.setCurrentSublistValue({ sublistId: 'addressbook', fieldId: 'defaultshipping', value: true });
+						var newAddrSub = custRec.getCurrentSublistSubrecord({
+							sublistId: 'addressbook',
+							fieldId: 'addressbookaddress'
+						});
+						aplicarDireccionPresentadorEnSubrecord(newAddrSub, newAddr);
+						custRec.commitLine({ sublistId: 'addressbook' });
+						log.debug('syncClienteRelacionado - nueva línea de dirección agregada');
+					}
+				}
+
+				custRec.save({
+					enableSourcing: false,
+					ignoreMandatoryFields: false
+				});
+				log.audit('syncClienteRelacionado - Cliente relacionado actualizado', { customerId: customerId });
+			} catch (e) {
+				log.error('syncClienteRelacionadoConPresentador', e);
+				throw e;
+			}
 		}
 	
 		/**
