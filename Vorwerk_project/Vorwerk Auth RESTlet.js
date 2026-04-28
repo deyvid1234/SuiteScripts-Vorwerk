@@ -568,8 +568,10 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
               
               
               //imagen comprobante de domicilio 
-              id_img_domicilio = saveItemImage(req_info["custentity_foto_comprobante_dom"],30745,req_info["custentity_ce_rfc"]+"_presentador_domicilio");
-              req_info["custentity_foto_comprobante_dom"] = id_img_domicilio;
+              if(req_info["custentity_foto_comprobante_dom"]){
+                id_img_domicilio = saveItemImage(req_info["custentity_foto_comprobante_dom"],30745,req_info["custentity_ce_rfc"]+"_presentador_domicilio");
+                req_info["custentity_foto_comprobante_dom"] = id_img_domicilio;
+            }
               
               
               //imagen comprobante bancario
