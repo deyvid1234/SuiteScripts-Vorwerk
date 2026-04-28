@@ -479,7 +479,7 @@ define(['N/record','N/search','N/http','N/https','N/encode','N/runtime','N/ui/se
 							log.debug('responseService AD del estatus inactivo',responseService)
 	
 	
-							try{//ENVIO LMS
+							/*try{//ENVIO LMS
 								log.debug('envío a lms del estatus de inactivo',search_obj_detailLMS)
 								if(runtime.envType != 'PRODUCTION'){ 
 									urlLMS = 'https://api-referidos-thrmx.lms-la.com/api/fuerzaVentas'
@@ -674,7 +674,7 @@ define(['N/record','N/search','N/http','N/https','N/encode','N/runtime','N/ui/se
 									});
 								});
 	
-							}
+							}*/
 	
 						
 						
