@@ -187,7 +187,18 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                 currentPage.data.forEach(function (r) {
                     // Si el customer fue creado desde presentador, se ignora para permitir crear uno nuevo
                     var creadoDesdePresentador = r.getValue('custentity_creado_desde_presentador');
-                    if (creadoDesdePresentador === true || creadoDesdePresentador === 'T') {
+                    // Normalizar valores posibles (checkbox puede venir como boolean o string)
+                    var creadoDesdePresentadorNorm = (creadoDesdePresentador === true) ||
+                        (creadoDesdePresentador === 'T') ||
+                        (creadoDesdePresentador === 'true') ||
+                        (creadoDesdePresentador === 1) ||
+                        (creadoDesdePresentador === '1');
+                    log.debug('getInformationUser - customer encontrado', {
+                        internalid: r.getValue('internalid'),
+                        email: r.getValue('email'),
+                        creadoDesdePresentador: creadoDesdePresentador
+                    });
+                    if (creadoDesdePresentadorNorm) {
                         return true;
                     }
                     if( (r.getValue("custentity_presentadora_referido") || presentadorReferidoAnterior == '') && cust != false ){
