@@ -2095,7 +2095,7 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                 
                 // Extraer solo los números del tranid y agregar prefijo NS
                 var tranid_numerico = req_info.tranid.replace(/\D/g, ''); // Eliminar todos los caracteres no numéricos
-                req_info_getm7_kit.tranid = "NS" + tranid_numerico;
+                req_info_getm7_kit.tranid = "EW" + tranid_numerico;
                 
                 log.debug('createSalesOrderManager', 'Tranid original: ' + req_info.tranid + ', Tranid GETM7/KIT: ' + req_info_getm7_kit.tranid);
                 
