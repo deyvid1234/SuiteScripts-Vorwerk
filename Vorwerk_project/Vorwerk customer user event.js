@@ -42,9 +42,15 @@ function(record,search,http,https,encode,runtime,serverWidget,error) {
             var newRec = scriptContext.newRecord;
             var oldRec = scriptContext.oldRecord;
             var contextType = scriptContext.type;
-
+            var creadoDesdePresentador = newRec.getValue('custentity_creado_desde_presentador');
+            var creadoDesdePresentadorNorm = (creadoDesdePresentador === true) ||
+                (creadoDesdePresentador === 'T') ||
+                (creadoDesdePresentador === 'true') ||
+                (creadoDesdePresentador === 1) ||
+                (creadoDesdePresentador === '1');
            
-            if (contextType == 'create' ) { 
+            // Si el customer viene del flujo "Crear Cliente desde Presentador", NO se bloquea por correo duplicado.
+            if (contextType == 'create' && !creadoDesdePresentadorNorm) { 
                 var email = newRec.getValue('email');
                 //log.debug('email',email)
 
@@ -57,6 +63,7 @@ function(record,search,http,https,encode,runtime,serverWidget,error) {
                    operator: 'is',
                    values: email
                 }));
+                
                 mySearch.filters.push(search.createFilter({
                     name: 'custentity_creado_desde_presentador',
                     operator: 'is',
