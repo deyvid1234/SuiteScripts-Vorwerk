@@ -906,7 +906,7 @@ define(['N/currentRecord', 'N/url', 'N/ui/dialog','N/format', 'N/runtime', 'N/re
 
                 // NOTA: Token/API Key pendiente (se definirá después).
                 // Por ahora solo construimos e imprimimos el JSON para validación.
-                var apiKeyPendiente = '';
+                var apiKeyPendiente = 'da568344e5000cf7c620fe7c21720b93';
 
                 // Datos Opportunity
                 var opp = record.load({
