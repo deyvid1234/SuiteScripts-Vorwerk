@@ -124,8 +124,9 @@ define(['N/record', 'N/search', 'N/log', 'N/url'],
                 if (altName && altName !== '') newCustomer.setValue({ fieldId: 'custentity_razon_social', value: altName });
                 newCustomer.setValue({ fieldId: 'custentity_regimenfiscal_ce', value: 11 });
                 if (email !== '') newCustomer.setValue({ fieldId: 'custentity_fe_sf_se_destinatario', value: email });
-                // RFC: se copia del presentador al cliente (mismo internal id del campo en ambos registros)
-                if (rfc !== '') newCustomer.setValue({ fieldId: 'custentity_rfc', value: rfc });
+                // RFC del cliente: forzar RFC genérico (flujo cliente presentador)
+                newCustomer.setValue({ fieldId: 'custentity_rfc', value: 'XAXX010101000' });
+                newCustomer.setValue({ fieldId: 'vatregnumber', value: 'XAXX010101000' });
 
                 var tieneDireccion = (attention !== '') || (addr1 !== '') || (addr2 !== '') || (addr3 !== '') || (city !== '') || (zip !== '');
                 if (tieneDireccion) {
