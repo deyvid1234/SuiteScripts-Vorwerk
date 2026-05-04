@@ -7,6 +7,20 @@ define(['N/email','N/record', 'N/file','N/search', 'N/https', 'N/runtime','N/for
 
 function(email,record, file, search, https, runtime,format,Dictionary) {
 	var config_fields = Dictionary.getDictionayFields();
+
+    function asText(v) {
+        if (v === null || v === undefined) {
+            return '';
+        }
+        if (typeof v === 'string') {
+            return v;
+        }
+        try {
+            return JSON.stringify(v);
+        } catch (e) {
+            return String(v);
+        }
+    }
     /**
      * Marks the beginning of the Map/Reduce process and generates input data.
      *
@@ -213,6 +227,47 @@ function(email,record, file, search, https, runtime,format,Dictionary) {
                 registerEmp.setValue({
                     fieldId: 'custrecordno_pre_activos',
                     value: comissionInfo.noActividad    
+                });
+
+                // Nuevos bonos (registro compensación): monto + detalle, formato similar al resto (texto para detalle)
+                // Pool Talent
+                registerEmp.setValue({
+                    fieldId: 'custrecord_monto_pool_talent',
+                    value: comissionInfo.bono_pool_talent || 0
+                });
+                registerEmp.setValue({
+                    fieldId: 'custrecord_detalle_pool_talent',
+                    value: asText(comissionInfo.bono_pool_talent_det)
+                });
+
+                // Calificación JTL (antes nombramiento JTL)
+                registerEmp.setValue({
+                    fieldId: 'custrecord_monto_calidicacion_jtl',
+                    value: comissionInfo.bono_jtl_nombramiento || 0
+                });
+                registerEmp.setValue({
+                    fieldId: 'custrecord_detalle_calificacion_jtl',
+                    value: asText(comissionInfo.bono_jtl_nombramiento_det)
+                });
+
+                // Maestría JTL
+                registerEmp.setValue({
+                    fieldId: 'custrecord_monto_maestria',
+                    value: comissionInfo.bono_jtl_maestria || 0
+                });
+                registerEmp.setValue({
+                    fieldId: 'custrecord_detalle_maestria',
+                    value: asText(comissionInfo.bono_jtl_maestria_det)
+                });
+
+                // 3+2 líder (monto + detalle)
+                registerEmp.setValue({
+                    fieldId: 'custrecord_monto_tres_dos',
+                    value: comissionInfo.bono_tres_dos || 0
+                });
+                registerEmp.setValue({
+                    fieldId: 'custrecord_detalle_tres_dos',
+                    value: asText(comissionInfo.odv_rec_del_periodo || comissionInfo.rec_con_ventas || '')
                 });
                 //bono Joya
                 registerEmp.setValue({
