@@ -1229,7 +1229,7 @@ function table_b_Permanente (data){
 	    strTable += "</tr>";
 	    strTable += "</table>";
 	    //fin bonos permanentes
-	    
+
 	    return {strTable:strTable, bPermanenteTotal:obj_bonos.bonoTotal}
   	}catch(e){
   		log.error('error bonos permanentes',e)
@@ -1673,6 +1673,12 @@ function search_crecord(id_jdg,type_emp,promocion){
         data.ordenesExtraordinariasList =  r.getValue(config_fields.ordenes_extaordinarias[type_emp])
         data.montoVentaPropiaExtra =  r.getValue(config_fields.monto_ventapropia_extra[type_emp])
         data.montoProdExtra =  r.getValue(config_fields.monto_prod_extra[type_emp])
+        // Nuevos bonos (monto) para imprimir en PDF (sin detalle)
+        data.monto_pool_talent = r.getValue(config_fields.monto_pool_talent[type_emp])
+        data.monto_calificacion_jtl = r.getValue(config_fields.monto_calificacion_jtl[type_emp])
+        data.monto_maestria = r.getValue(config_fields.monto_maestria[type_emp])
+        data.monto_tres_dos = r.getValue(config_fields.monto_tres_dos[type_emp])
+        data.monto_dos_uno = r.getValue(config_fields.monto_dos_uno[type_emp])
         /*data.odv_tres_dos = r.getValue(config_fields.tres_dos[type_emp]);
         data.sc = r.getValue(config_fields.sc[type_emp]);
         
