@@ -3,6 +3,58 @@ define([],
 function() {
 	function getDictionayFields(){
 		return {
+			// Nuevos bonos (monto + detalle) por tipo de reporte
+			monto_pool_talent:{
+				1:'',
+				2:'',
+				3:'custrecord_monto_pool_talent',
+			},
+			detalle_pool_talent:{
+				1:'',
+				2:'',
+				3:'custrecord_detalle_pool_talent',
+			},
+			monto_calificacion_jtl:{
+				1:'custrecord_monto_calidicacion_jtl_pre',
+				2:'',
+				3:'custrecord_monto_calidicacion_jtl',
+			},
+			detalle_calificacion_jtl:{
+				1:'custrecord_detalle_calificacion_jtl_pre',
+				2:'',
+				3:'custrecord_detalle_calificacion_jtl',
+			},
+			monto_maestria:{
+				1:'custrecord_monto_maestria_pre',
+				2:'',
+				3:'custrecord_monto_maestria',
+			},
+			detalle_maestria:{
+				1:'custrecord_detalle_maestria_pre',
+				2:'',
+				3:'custrecord_detalle_maestria',
+			},
+			monto_tres_dos:{
+				1:'',
+				2:'',
+				3:'custrecord_monto_tres_dos',
+			},
+			detalle_tres_dos:{
+				1:'',
+				2:'',
+				3:'custrecord_detalle_tres_dos',
+			},
+			// Bono 2+1 JTL (presentadoras)
+			monto_dos_uno:{
+				1:'custrecord_monto_dos_uno',
+				2:'',
+				3:'',
+			},
+			detalle_dos_uno:{
+				1:'custrecord_detalle_dos_uno',
+				2:'',
+				3:'',
+			},
 			equipo:{
 				1:'custrecord_c_pre_odv_equipo',
 				2:'custrecord_c_gtm_odv_equipo',
