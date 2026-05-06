@@ -143,6 +143,7 @@ define(['N/record', 'N/search', 'N/log', 'N/url'],
                         });
                         if (addressSubrec) {
                             if (country !== '') addressSubrec.setValue({ fieldId: 'country', value: country });
+                            if (addrphone !== '') addressSubrec.setValue({ fieldId: 'addrphone', value: addrphone });
                             if (attention !== '') addressSubrec.setValue({ fieldId: 'attention', value: attention });
                             if (addr1 !== '') addressSubrec.setValue({ fieldId: 'addr1', value: addr1 });
                             if (addr2 !== '') addressSubrec.setValue({ fieldId: 'addr2', value: addr2 });

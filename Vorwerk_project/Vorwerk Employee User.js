@@ -102,7 +102,7 @@ define(['N/record','N/search','N/http','N/https','N/encode','N/runtime','N/ui/se
 		 * Obtiene la dirección por defecto (default shipping) del addressbook de un registro employee.
 		 * Incluye attention, addr2 y addr3 (en MX la colonia suele ir en addr2).
 		 * @param {Record} empRecord - Registro employee (o record con sublist addressbook)
-		 * @returns {Object|null} { attention, addr1, addr2, addr3, city, state, zip, country } o null si no hay dirección
+		 * @returns {Object|null} { attention, addr1, addr2, addr3, city, state, zip, country, addrphone } o null si no hay dirección
 		 */
 		function getDefaultAddressFromEmployee(empRecord) {
 			try {
@@ -134,7 +134,8 @@ define(['N/record','N/search','N/http','N/https','N/encode','N/runtime','N/ui/se
 					city: addrSubrec.getValue({ fieldId: 'city' }) || '',
 					state: addrSubrec.getValue({ fieldId: 'state' }) || '',
 					zip: addrSubrec.getValue({ fieldId: 'zip' }) || '',
-					country: addrSubrec.getValue({ fieldId: 'country' }) || ''
+					country: addrSubrec.getValue({ fieldId: 'country' }) || '',
+					addrphone: addrSubrec.getValue({ fieldId: 'addrphone' }) || ''
 				};
 			} catch (e) {
 				log.debug('getDefaultAddressFromEmployee', e.message || e);
@@ -161,6 +162,7 @@ define(['N/record','N/search','N/http','N/https','N/encode','N/runtime','N/ui/se
 			if (!addrSub || !newAddr) return;
 			try {
 				if (newAddr.country !== '') addrSub.setValue({ fieldId: 'country', value: newAddr.country });
+				if ((newAddr.addrphone || '') !== '') addrSub.setValue({ fieldId: 'addrphone', value: newAddr.addrphone });
 				addrSub.setValue({ fieldId: 'attention', value: newAddr.attention || '' });
 				addrSub.setValue({ fieldId: 'addr1', value: newAddr.addr1 || '' });
 				addrSub.setValue({ fieldId: 'addr2', value: newAddr.addr2 || '' });
