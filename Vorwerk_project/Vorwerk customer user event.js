@@ -6,7 +6,15 @@
 define(['N/record','N/search','N/http','N/https','N/encode','N/runtime','N/ui/serverWidget', 'N/error'],
 
 function(record,search,http,https,encode,runtime,serverWidget,error) {
-   
+
+    /** Rol que no puede editar customers cuyo entityid inicia con IDU */
+    var ROL_NO_EDITA_CLIENTE_PRESENTADOR = '1061';
+
+    function startsWithIDU(val) {
+        var s = (val || '').toString().trim().toUpperCase();
+        return s.indexOf('IDU') === 0;
+    }
+
     /**
      * Function definition to be triggered before record is loaded.
      *
@@ -18,9 +26,18 @@ function(record,search,http,https,encode,runtime,serverWidget,error) {
      */
     function beforeLoad(scriptContext) {
         try{
-            
-          
-           
+            var rec = scriptContext.newRecord;
+            var form = scriptContext.form;
+            var contextType = scriptContext.type;
+
+            // Quitar botón Editar para rol 1061 cuando el entityid inicia con IDU
+            var currentRole = String(runtime.getCurrentUser().role || '');
+            if (contextType === 'view' && currentRole === ROL_NO_EDITA_CLIENTE_PRESENTADOR) {
+                var entityId = rec.getValue('entityid');
+                if (startsWithIDU(entityId)) {
+                    try { form.removeButton('edit'); } catch (e) {}
+                }
+            }
         }catch(err){
             log.error('errorbeforeload',err);
         }
@@ -42,6 +59,7 @@ function(record,search,http,https,encode,runtime,serverWidget,error) {
             var newRec = scriptContext.newRecord;
             var oldRec = scriptContext.oldRecord;
             var contextType = scriptContext.type;
+
             var creadoDesdePresentador = newRec.getValue('custentity_creado_desde_presentador');
             var creadoDesdePresentadorNorm = (creadoDesdePresentador === true) ||
                 (creadoDesdePresentador === 'T') ||
