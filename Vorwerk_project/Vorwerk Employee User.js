@@ -233,6 +233,37 @@ define(['N/record','N/search','N/http','N/https','N/encode','N/runtime','N/ui/se
 					var telefonoCliente = (newPhone !== '') ? newPhone : newMobile;
 					custRec.setValue({ fieldId: 'mobilephone', value: telefonoCliente });
 					log.debug('syncClienteRelacionado - mobilephone actualizado', telefonoCliente);
+					try {
+						var lcPhone = custRec.getLineCount({ sublistId: 'addressbook' });
+						if (lcPhone > 0 && telefonoCliente !== '') {
+							var shipIdxP = -1;
+							var billIdxP = -1;
+							for (var jp = 0; jp < lcPhone; jp++) {
+								if (custRec.getSublistValue({ sublistId: 'addressbook', fieldId: 'defaultshipping', line: jp })) shipIdxP = jp;
+								if (custRec.getSublistValue({ sublistId: 'addressbook', fieldId: 'defaultbilling', line: jp })) billIdxP = jp;
+							}
+							if (shipIdxP < 0) shipIdxP = 0;
+							if (billIdxP < 0) billIdxP = shipIdxP;
+							var indicesPhone = [];
+							if (shipIdxP >= 0) indicesPhone.push(shipIdxP);
+							if (billIdxP >= 0 && billIdxP !== shipIdxP) indicesPhone.push(billIdxP);
+							for (var pp = 0; pp < indicesPhone.length; pp++) {
+								var linePhone = indicesPhone[pp];
+								custRec.selectLine({ sublistId: 'addressbook', line: linePhone });
+								var addrSubPhone = custRec.getCurrentSublistSubrecord({
+									sublistId: 'addressbook',
+									fieldId: 'addressbookaddress'
+								});
+								if (addrSubPhone) {
+									addrSubPhone.setValue({ fieldId: 'addrphone', value: telefonoCliente });
+								}
+								custRec.commitLine({ sublistId: 'addressbook' });
+							}
+							log.debug('syncClienteRelacionado - addrphone actualizado en addressbook', telefonoCliente);
+						}
+					} catch (ePhoneAddr) {
+						log.debug('syncClienteRelacionado - addrphone error', ePhoneAddr.message || ePhoneAddr);
+					}
 				}
 				var direccionTieneDatos = newAddr && (
 					(newAddr.attention || '') !== '' ||
