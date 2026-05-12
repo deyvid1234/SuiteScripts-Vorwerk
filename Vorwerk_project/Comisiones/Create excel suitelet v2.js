@@ -94,11 +94,11 @@
                             + '<Cell><Data ss:Type="String">IDS DEL EQUIPO</Data></Cell>'
                             + '<Cell><Data ss:Type="String">%</Data></Cell>'
                             + '<Cell><Data ss:Type="String">VENTA EQUIPO</Data></Cell>'
+                            + '<Cell><Data ss:Type="String">ODV / equipo (detalle 3+2 líder)</Data></Cell>'
+                            + '<Cell><Data ss:Type="String">Reclutas con ventas (3+2 líder)</Data></Cell>'
+                            + '<Cell><Data ss:Type="String">Bono 3 + 2 (líder)</Data></Cell>'
                             + '<Cell><Data ss:Type="String">NLE</Data></Cell>'
                             + '<Cell><Data ss:Type="String">BONO NLE</Data></Cell>'
-                            + '<Cell><Data ss:Type="String">X+2 NLE</Data></Cell>'
-                            + '<Cell><Data ss:Type="String">BONO 3+2 NLE</Data></Cell>'
-                            + '<Cell><Data ss:Type="String">BONO 5+2 NLE</Data></Cell>'
                            // + '<Cell><Data ss:Type="String">ODV DEL PERIODO MISMO EQUIPO</Data></Cell>'
                             //+ '<Cell><Data ss:Type="String">RECLUTAS Y ODV POR RECLUTA DEL LE DEL PERIODO</Data></Cell>'
                             + '<Cell><Data ss:Type="String">BONO NUEVO RECLUTA</Data></Cell>'
@@ -107,6 +107,18 @@
                             + '<Cell><Data ss:Type="String">BONO ACTIVIDAD</Data></Cell>'
                             + '<Cell><Data ss:Type="String">No. INTGRANTES ACTIVOS</Data></Cell>'
                             + '<Cell><Data ss:Type="String">INTEGRANTES ACTIVOS</Data></Cell>'
+                            + '<Cell><Data ss:Type="String">BONO POOL TALENT</Data></Cell>'
+                            + '<Cell><Data ss:Type="String">DETALLE POOL TALENT</Data></Cell>'
+                            + '<Cell><Data ss:Type="String">BONO CALIFICACIÓN JTL</Data></Cell>'
+                            + '<Cell><Data ss:Type="String">DETALLE CALIFICACIÓN JTL</Data></Cell>'
+                            + '<Cell><Data ss:Type="String">BONO JTL 2+1</Data></Cell>'
+                            + '<Cell><Data ss:Type="String">DETALLE JTL 2+1</Data></Cell>'
+                            + '<Cell><Data ss:Type="String">BONO JTL MAESTRÍA</Data></Cell>'
+                            + '<Cell><Data ss:Type="String">DETALLE JTL MAESTRÍA</Data></Cell>'
+                            + '<Cell><Data ss:Type="String">BONO LE MAESTRÍA</Data></Cell>'
+                            + '<Cell><Data ss:Type="String">DETALLE LE MAESTRÍA</Data></Cell>'
+                            + '<Cell><Data ss:Type="String">BONO LE CALIFICACIÓN JTL</Data></Cell>'
+                            + '<Cell><Data ss:Type="String">DETALLE LE CALIFICACIÓN JTL</Data></Cell>'
                             //+ '<Cell><Data ss:Type="String">RETENCION</Data></Cell>'
                                 //+ '<Cell><Data ss:Type="String">AJUSTE</Data></Cell>'
                                 //+ '<Cell><Data ss:Type="String">SUBTOTAL</Data></Cell>'
@@ -159,9 +171,7 @@
                          var bono_sc = typeof data[x].bono_sc === 'undefined'?"0":data[x].bono_sc;
                          var nle = typeof data[x].nle === 'undefined'?"0":data[x].nle;
                          var bono_nle = typeof data[x].bono_nle === 'undefined'?"0":data[x].bono_nle;
-                         var xdos_nle = typeof data[x].xdos_nle === 'undefined'?"0":data[x].xdos_nle;
-                         var tresdos_nle = typeof data[x].tresdos_nle === 'undefined'?"0":data[x].tresdos_nle;
-                         var cincodos_nle = typeof data[x].cincodos_nle === 'undefined'?"0":data[x].cincodos_nle;
+                         // var xdos_nle = typeof data[x].xdos_nle === 'undefined'?"0":data[x].xdos_nle;
                          var montoNR = typeof data[x].montoNR === 'undefined'?"0":data[x].montoNR;
                          var noNR = typeof data[x].noNR === 'undefined'?"0":data[x].noNR;
                          var dataNR = typeof data[x].dataNR === 'undefined'?"0":data[x].dataNR;
@@ -175,6 +185,18 @@
                          var dataGUTM = typeof data[x].ordenes_extaordinarias === 'undefined'?"0":data[x].ordenes_extaordinarias;
                          var ventaPropiaGUTM = typeof data[x].monto_ventapropia_extra === 'undefined'?"0":data[x].monto_ventapropia_extra;
                          var productividadGUTM = typeof data[x].monto_prod_extra === 'undefined'?"0":data[x].monto_prod_extra;
+                         var bonoPoolTalent = typeof data[x].bono_pool_talent === 'undefined'?"0":data[x].bono_pool_talent;
+                         var bonoPoolTalentDet = typeof data[x].bono_pool_talent_det === 'undefined'?"0":data[x].bono_pool_talent_det;
+                         var bonoJtlNom = typeof data[x].bono_jtl_nombramiento === 'undefined'?"0":data[x].bono_jtl_nombramiento;
+                         var bonoJtlNomDet = typeof data[x].bono_jtl_nombramiento_det === 'undefined'?"0":data[x].bono_jtl_nombramiento_det;
+                         var bonoJtl2mas1 = typeof data[x].bono_jtl_2mas1 === 'undefined'?"0":data[x].bono_jtl_2mas1;
+                         var bonoJtl2mas1Det = typeof data[x].bono_jtl_2mas1_det === 'undefined'?"0":data[x].bono_jtl_2mas1_det;
+                         var bonoJtlMae = typeof data[x].bono_jtl_maestria === 'undefined'?"0":data[x].bono_jtl_maestria;
+                         var bonoJtlMaeDet = typeof data[x].bono_jtl_maestria_det === 'undefined'?"0":data[x].bono_jtl_maestria_det;
+                         var bonoLeMae = typeof data[x].bono_le_maestria === 'undefined'?"0":data[x].bono_le_maestria;
+                         var bonoLeMaeDet = typeof data[x].bono_le_maestria_det === 'undefined'?"0":data[x].bono_le_maestria_det;
+                         var bonoLeNomJtl = typeof data[x].bono_le_nombramiento_jtl === 'undefined'?"0":data[x].bono_le_nombramiento_jtl;
+                         var bonoLeNomJtlDet = typeof data[x].bono_le_nombramiento_jtl_det === 'undefined'?"0":data[x].bono_le_nombramiento_jtl_det;
                          //var dataExtendido = typeof data[x].rec_extendido === 'undefined'?"0":data[x].rec_extendido;
                          //var dataExtendidoODV = typeof data[x].rec_extendidoODV === 'undefined'?"0":data[x].rec_extendidoODV;
                          xmlStr += '<Row>'
@@ -215,12 +237,11 @@
                                + '<Cell><Data ss:Type="String">'+odv_equipo+'</Data></Cell>'
                                + '<Cell><Data ss:Type="String">'+porcentaje+'</Data></Cell>'
                                + '<Cell><Data ss:Type="String">'+ventas_present_total+'</Data></Cell>'
+                               + '<Cell><Data ss:Type="String">'+odv_rec_del_periodo+'</Data></Cell>'
+                               + '<Cell><Data ss:Type="String">'+rec_con_ventas+'</Data></Cell>'
+                               + '<Cell><Data ss:Type="String">'+bono_tres_dos+'</Data></Cell>'
                                + '<Cell><Data ss:Type="String">'+nle+'</Data></Cell>'
                                + '<Cell><Data ss:Type="String">'+bono_nle+'</Data></Cell>'
-                               + '<Cell><Data ss:Type="String">'+xdos_nle+'</Data></Cell>'
-                               + '<Cell><Data ss:Type="String">'+tresdos_nle+'</Data></Cell>'
-                               + '<Cell><Data ss:Type="String">'+cincodos_nle+'</Data></Cell>'
-                               //+ '<Cell><Data ss:Type="String">'+odv_rec_del_periodo+'</Data></Cell>'
                                //+ '<Cell><Data ss:Type="String">'+rec_period_le+'</Data></Cell>'
                                + '<Cell><Data ss:Type="String">'+montoNR+'</Data></Cell>'
                                + '<Cell><Data ss:Type="String">'+noNR+'</Data></Cell>'
@@ -228,6 +249,18 @@
                                + '<Cell><Data ss:Type="String">'+montoActividad+'</Data></Cell>'
                                + '<Cell><Data ss:Type="String">'+noActividad+'</Data></Cell>'
                                + '<Cell><Data ss:Type="String">'+dataActividad+'</Data></Cell>'
+                               + '<Cell><Data ss:Type="String">'+bonoPoolTalent+'</Data></Cell>'
+                               + '<Cell><Data ss:Type="String">'+bonoPoolTalentDet+'</Data></Cell>'
+                               + '<Cell><Data ss:Type="String">'+bonoJtlNom+'</Data></Cell>'
+                               + '<Cell><Data ss:Type="String">'+bonoJtlNomDet+'</Data></Cell>'
+                               + '<Cell><Data ss:Type="String">'+bonoJtl2mas1+'</Data></Cell>'
+                               + '<Cell><Data ss:Type="String">'+bonoJtl2mas1Det+'</Data></Cell>'
+                               + '<Cell><Data ss:Type="String">'+bonoJtlMae+'</Data></Cell>'
+                               + '<Cell><Data ss:Type="String">'+bonoJtlMaeDet+'</Data></Cell>'
+                               + '<Cell><Data ss:Type="String">'+bonoLeMae+'</Data></Cell>'
+                               + '<Cell><Data ss:Type="String">'+bonoLeMaeDet+'</Data></Cell>'
+                               + '<Cell><Data ss:Type="String">'+bonoLeNomJtl+'</Data></Cell>'
+                               + '<Cell><Data ss:Type="String">'+bonoLeNomJtlDet+'</Data></Cell>'
                                //+ '<Cell><Data ss:Type="String">'+retencion+'</Data></Cell>'
                                //+ '<Cell><Data ss:Type="String">'+ajuste+'</Data></Cell>'
                                //+ '<Cell><Data ss:Type="String">'+subtotal+'</Data></Cell>'

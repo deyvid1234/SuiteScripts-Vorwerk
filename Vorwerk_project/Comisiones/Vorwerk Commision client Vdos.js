@@ -375,48 +375,30 @@ function(record,https,currentRecord,runtime,file,search,message) {
                         fieldId: "custentity_odv_entrega",
                         line: i
                     });*/
-                    //3 + 2 y 5 + 2 
-                    /*var odv_rec_del_periodo = record.getSublistValue({
+                    // 3 + 2 líder (detalle + reclutas con ventas + monto)
+                    var odv_rec_del_periodo = record.getSublistValue({
                         sublistId: "sublist",
                         fieldId: "custentity_odv_rec_del_periodo",
-                        line: i
-                    });
-                    var rec_period_le = record.getSublistValue({
-                        sublistId: "sublist",
-                        fieldId: "custentity_odv_rec_de_le_del_periodo",
                         line: i
                     });
                     var rec_con_ventas = record.getSublistValue({
                         sublistId: "sublist",
                         fieldId: "custentity_rec_con_ventas",
                         line: i
-                    });*/
-                    /*var bono_tres_dos = record.getSublistValue({
+                    });
+                    var bono_tres_dos = record.getSublistValue({
                         sublistId: "sublist",
                         fieldId: "custentity_bono_tres_dos",
                         line: i
                     });
-                    var bono_cinco_dos = record.getSublistValue({
-                        sublistId: "sublist",
-                        fieldId: "custentity_bono_cinco_dos",
-                        line: i
-                    });
-
-                    var odv_pre_supercomision = record.getSublistValue({
-                        sublistId: "sublist",
-                        fieldId: "custentity_odv_pre_supercomision",
-                        line: i
-                    });
-                    var ventas_sc = record.getSublistValue({
-                        sublistId: "sublist",
-                        fieldId: "custentity_ventas_sc",
-                        line: i
-                    });
-                    var bono_sc = record.getSublistValue({
-                        sublistId: "sublist",
-                        fieldId: "custentity_bono_sc",
-                        line: i
-                    });*/
+                    var detalle_tres_dos = '';
+                    try {
+                        detalle_tres_dos = record.getSublistValue({
+                            sublistId: "sublist",
+                            fieldId: "custentity_detalle_bono_tres_dos",
+                            line: i
+                        }) || '';
+                    } catch (ignoreDetTres) {}
                     //NLE
                     var nle = record.getSublistValue({
                         sublistId: "sublist",
@@ -503,6 +485,68 @@ function(record,https,currentRecord,runtime,file,search,message) {
                         fieldId: "custpage_monto_prod_extra",
                         line: i
                     });
+
+                    // Nuevos bonos / columnas (monto + detalle)
+                    var bono_pool_talent = record.getSublistValue({
+                        sublistId: "sublist",
+                        fieldId: "custentity_bono_pool_talent",
+                        line: i
+                    });
+                    var bono_pool_talent_det = record.getSublistValue({
+                        sublistId: "sublist",
+                        fieldId: "custentity_bono_pool_talent_det",
+                        line: i
+                    });
+                    var bono_jtl_nombramiento = record.getSublistValue({
+                        sublistId: "sublist",
+                        fieldId: "custentity_bono_nombramiento_jtl",
+                        line: i
+                    });
+                    var bono_jtl_nombramiento_det = record.getSublistValue({
+                        sublistId: "sublist",
+                        fieldId: "custentity_bono_nombramiento_jtl_det",
+                        line: i
+                    });
+                    var bono_jtl_2mas1 = record.getSublistValue({
+                        sublistId: "sublist",
+                        fieldId: "custentity_bono_jtl_2mas1",
+                        line: i
+                    });
+                    var bono_jtl_2mas1_det = record.getSublistValue({
+                        sublistId: "sublist",
+                        fieldId: "custentity_bono_jtl_2mas1_det",
+                        line: i
+                    });
+                    var bono_jtl_maestria = record.getSublistValue({
+                        sublistId: "sublist",
+                        fieldId: "custentity_bono_jtl_maestria",
+                        line: i
+                    });
+                    var bono_jtl_maestria_det = record.getSublistValue({
+                        sublistId: "sublist",
+                        fieldId: "custentity_bono_jtl_maestria_det",
+                        line: i
+                    });
+                    var bono_le_maestria = record.getSublistValue({
+                        sublistId: "sublist",
+                        fieldId: "custentity_bono_le_maestria",
+                        line: i
+                    });
+                    var bono_le_maestria_det = record.getSublistValue({
+                        sublistId: "sublist",
+                        fieldId: "custentity_bono_le_maestria_det",
+                        line: i
+                    });
+                    var bono_le_nombramiento_jtl = record.getSublistValue({
+                        sublistId: "sublist",
+                        fieldId: "custentity_bono_le_nombramiento_jtl",
+                        line: i
+                    });
+                    var bono_le_nombramiento_jtl_det = record.getSublistValue({
+                        sublistId: "sublist",
+                        fieldId: "custentity_bono_le_nombramiento_jtl_det",
+                        line: i
+                    });
                     /*var rec_extendido = record.getSublistValue({
                         sublistId: "sublist",
                         fieldId: "custentity_bono_rec4a_venta",
@@ -550,9 +594,10 @@ function(record,https,currentRecord,runtime,file,search,message) {
                             num_garantia          :num_garantia,
                             monto_garantia        :monto_garantia,
                             ids_garantia          :ids_garantia,
-                            //odv_rec_del_periodo   :odv_rec_del_periodo,
-                            //rec_con_ventas        :rec_con_ventas,
-                            //bono_tres_dos         :bono_tres_dos,
+                            odv_rec_del_periodo   :odv_rec_del_periodo,
+                            rec_con_ventas        :rec_con_ventas,
+                            bono_tres_dos         :bono_tres_dos,
+                            detalle_tres_dos      :detalle_tres_dos,
                             //rec_period_le         :rec_period_le,
                             //bono_cinco_dos        :bono_cinco_dos,
                             //odv_pre_supercomision :odv_pre_supercomision,
@@ -577,6 +622,18 @@ function(record,https,currentRecord,runtime,file,search,message) {
                             monto_prod_extra       : monto_prod_extra,
                             //rec_extendido         : rec_extendido,
                             //rec_extendidoODV      : rec_extendidoODV
+                            bono_pool_talent      : bono_pool_talent,
+                            bono_pool_talent_det  : bono_pool_talent_det,
+                            bono_jtl_nombramiento : bono_jtl_nombramiento,
+                            bono_jtl_nombramiento_det : bono_jtl_nombramiento_det,
+                            bono_jtl_2mas1        : bono_jtl_2mas1,
+                            bono_jtl_2mas1_det    : bono_jtl_2mas1_det,
+                            bono_jtl_maestria     : bono_jtl_maestria,
+                            bono_jtl_maestria_det : bono_jtl_maestria_det,
+                            bono_le_maestria      : bono_le_maestria,
+                            bono_le_maestria_det  : bono_le_maestria_det,
+                            bono_le_nombramiento_jtl : bono_le_nombramiento_jtl,
+                            bono_le_nombramiento_jtl_det : bono_le_nombramiento_jtl_det
 
 
                     })  

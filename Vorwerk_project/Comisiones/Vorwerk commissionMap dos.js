@@ -21,6 +21,118 @@ function(email,record, file, search, https, runtime,format,Dictionary) {
             return String(v);
         }
     }
+
+    function safeSetValue(rec, fieldId, value) {
+        if (!fieldId) {
+            return;
+        }
+        try {
+            rec.setValue({ fieldId: fieldId, value: value });
+        } catch (e) {
+            log.debug('safeSetValue: no se pudo setear campo', fieldId + ' | ' + String(e));
+        }
+    }
+
+    function asNumber(v) {
+        if (v === null || v === undefined || v === '') {
+            return 0;
+        }
+        var n = Number(v);
+        return isNaN(n) ? 0 : n;
+    }
+
+    function pickFirstNumber() {
+        var i;
+        for (i = 0; i < arguments.length; i++) {
+            var n = asNumber(arguments[i]);
+            if (n) {
+                return n;
+            }
+        }
+        return 0;
+    }
+
+    function pickFirstText() {
+        var i;
+        for (i = 0; i < arguments.length; i++) {
+            var v = arguments[i];
+            if (v !== null && v !== undefined && String(v) !== '') {
+                return v;
+            }
+        }
+        return '';
+    }
+
+    /** Cache en memoria del proceso: evita repetir la búsqueda de periodos en cada fila del map. */
+    var periodosOrdenadosCache = null;
+
+    function parseInicioPeriodo(val) {
+        if (!val) {
+            return null;
+        }
+        if (val instanceof Date) {
+            return val;
+        }
+        var s = String(val).trim();
+        var parts = s.split('/');
+        if (parts.length === 3) {
+            var d = parseInt(parts[0], 10);
+            var m = parseInt(parts[1], 10) - 1;
+            var y = parseInt(parts[2], 10);
+            if (!isNaN(d) && !isNaN(m) && !isNaN(y)) {
+                return new Date(y, m, d);
+            }
+        }
+        try {
+            return format.parse({ value: s, type: format.Type.DATE });
+        } catch (e1) {
+            return null;
+        }
+    }
+
+    function getPeriodosComercialesOrdenados() {
+        if (periodosOrdenadosCache) {
+            return periodosOrdenadosCache;
+        }
+        var sorted = [];
+        var periodSearch = search.create({
+            type: 'customrecord_periods',
+            columns: ['custrecord_inicio', 'internalid']
+        });
+        var searchResult = periodSearch.run().getRange({ start: 0, end: 1000 });
+        var i;
+        for (i = 0; i < searchResult.length; i++) {
+            var r = searchResult[i];
+            var pid = r.id;
+            var ini = parseInicioPeriodo(r.getValue('custrecord_inicio'));
+            sorted.push({
+                id: String(pid),
+                inicio: ini || new Date(0)
+            });
+        }
+        sorted.sort(function (a, b) {
+            return a.inicio - b.inicio;
+        });
+        periodosOrdenadosCache = sorted;
+        return sorted;
+    }
+
+    /** Siguiente periodo comercial después de periodIdActual (orden por custrecord_inicio). */
+    function siguientePeriodoComercialId(periodIdActual) {
+        var sorted = getPeriodosComercialesOrdenados();
+        var idx;
+        var target = String(periodIdActual);
+        for (idx = 0; idx < sorted.length; idx++) {
+            if (sorted[idx].id === target) {
+                if (idx + 1 < sorted.length) {
+                    return sorted[idx + 1].id;
+                }
+                return null;
+            }
+        }
+        return null;
+    }
+
     /**
      * Marks the beginning of the Map/Reduce process and generates input data.
      *
@@ -232,43 +344,45 @@ function(email,record, file, search, https, runtime,format,Dictionary) {
                 // Nuevos bonos (registro compensación): monto + detalle, formato similar al resto (texto para detalle)
                 // Pool Talent
                 registerEmp.setValue({
-                    fieldId: 'custrecord_monto_pool_talent',
-                    value: comissionInfo.bono_pool_talent || 0
+                    fieldId: config_fields.monto_pool_talent[config.type],
+                    value: asNumber(comissionInfo.bono_pool_talent)
                 });
                 registerEmp.setValue({
-                    fieldId: 'custrecord_detalle_pool_talent',
+                    fieldId: config_fields.detalle_pool_talent[config.type],
                     value: asText(comissionInfo.bono_pool_talent_det)
                 });
 
                 // Calificación JTL (antes nombramiento JTL)
                 registerEmp.setValue({
-                    fieldId: 'custrecord_monto_calidicacion_jtl',
-                    value: comissionInfo.bono_jtl_nombramiento || 0
+                    fieldId: config_fields.monto_calificacion_jtl[config.type],
+                    value: pickFirstNumber(comissionInfo.bono_jtl_nombramiento, comissionInfo.bono_le_nombramiento_jtl)
                 });
                 registerEmp.setValue({
-                    fieldId: 'custrecord_detalle_calificacion_jtl',
-                    value: asText(comissionInfo.bono_jtl_nombramiento_det)
+                    fieldId: config_fields.detalle_calificacion_jtl[config.type],
+                    value: asText(pickFirstText(comissionInfo.bono_jtl_nombramiento_det, comissionInfo.bono_le_nombramiento_jtl_det))
                 });
 
                 // Maestría JTL
                 registerEmp.setValue({
-                    fieldId: 'custrecord_monto_maestria',
-                    value: comissionInfo.bono_jtl_maestria || 0
+                    fieldId: config_fields.monto_maestria[config.type],
+                    value: pickFirstNumber(comissionInfo.bono_jtl_maestria, comissionInfo.bono_le_maestria)
                 });
                 registerEmp.setValue({
-                    fieldId: 'custrecord_detalle_maestria',
-                    value: asText(comissionInfo.bono_jtl_maestria_det)
+                    fieldId: config_fields.detalle_maestria[config.type],
+                    value: asText(pickFirstText(comissionInfo.bono_jtl_maestria_det, comissionInfo.bono_le_maestria_det))
                 });
 
-                // 3+2 líder (monto + detalle)
-                registerEmp.setValue({
-                    fieldId: 'custrecord_monto_tres_dos',
-                    value: comissionInfo.bono_tres_dos || 0
-                });
-                registerEmp.setValue({
-                    fieldId: 'custrecord_detalle_tres_dos',
-                    value: asText(comissionInfo.odv_rec_del_periodo || comissionInfo.rec_con_ventas || '')
-                });
+                // 3+2 líder (monto + detalle JSON unificado periodo; fallback a columnas legacy)
+                safeSetValue(registerEmp, config_fields.monto_tres_dos[config.type], comissionInfo.bono_tres_dos || 0);
+                var detalleTresDosVal = pickFirstText(comissionInfo.detalle_tres_dos);
+                if (!detalleTresDosVal) {
+                    detalleTresDosVal = asText(comissionInfo.odv_rec_del_periodo || comissionInfo.rec_con_ventas || '');
+                }
+                safeSetValue(registerEmp, config_fields.detalle_tres_dos[config.type], detalleTresDosVal);
+
+                // 2+1 JTL (presentadoras): monto + detalle
+                safeSetValue(registerEmp, config_fields.monto_dos_uno[config.type], comissionInfo.bono_jtl_2mas1 || 0);
+                safeSetValue(registerEmp, config_fields.detalle_dos_uno[config.type], asText(comissionInfo.bono_jtl_2mas1_det));
                 //bono Joya
                 registerEmp.setValue({
                     fieldId: config_fields.bp1[config.type],
@@ -336,6 +450,56 @@ function(email,record, file, search, https, runtime,format,Dictionary) {
                     fieldId: config_fields.bp5_monto[config.type],
                     value: comissionInfo.cincodos_nle    
                 });
+
+                // Bonos permanentes 6-9: usar para nuevos bonos (solo se imprimirán si el monto > 0 en PDF)
+                // bp6: Presentadora = 2+1 (318). Líder = 3+2 (301).
+                if (parseInt(config.type, 10) === 1) {
+                    safeSetValue(registerEmp, config_fields.bp6[config.type], 318);
+                    safeSetValue(registerEmp, config_fields.bp6_monto[config.type], asNumber(comissionInfo.bono_jtl_2mas1));
+                } else if (parseInt(config.type, 10) === 3) {
+                    safeSetValue(registerEmp, config_fields.bp6[config.type], 301);
+                    safeSetValue(registerEmp, config_fields.bp6_monto[config.type], asNumber(comissionInfo.bono_tres_dos));
+                }
+
+                // bp7: Pool Talent (301)
+                if (parseInt(config.type, 10) === 1 || parseInt(config.type, 10) === 3) {
+                    safeSetValue(registerEmp, config_fields.bp7[config.type], 301);
+                    safeSetValue(registerEmp, config_fields.bp7_monto[config.type], asNumber(comissionInfo.bono_pool_talent));
+                }
+
+                // bp8: Calificación JTL (líderes 308 / presentadoras 309)
+                if (parseInt(config.type, 10) === 1) {
+                    safeSetValue(registerEmp, config_fields.bp8[config.type], 309);
+                    safeSetValue(
+                        registerEmp,
+                        config_fields.bp8_monto[config.type],
+                        pickFirstNumber(comissionInfo.bono_jtl_nombramiento, comissionInfo.bono_le_nombramiento_jtl)
+                    );
+                } else if (parseInt(config.type, 10) === 3) {
+                    safeSetValue(registerEmp, config_fields.bp8[config.type], 308);
+                    safeSetValue(
+                        registerEmp,
+                        config_fields.bp8_monto[config.type],
+                        pickFirstNumber(comissionInfo.bono_jtl_nombramiento, comissionInfo.bono_le_nombramiento_jtl)
+                    );
+                }
+
+                // bp9: Maestría (líderes 313 / presentadoras 319)
+                if (parseInt(config.type, 10) === 1) {
+                    safeSetValue(registerEmp, config_fields.bp9[config.type], 319);
+                    safeSetValue(
+                        registerEmp,
+                        config_fields.bp9_monto[config.type],
+                        pickFirstNumber(comissionInfo.bono_jtl_maestria, comissionInfo.bono_le_maestria)
+                    );
+                } else if (parseInt(config.type, 10) === 3) {
+                    safeSetValue(registerEmp, config_fields.bp9[config.type], 313);
+                    safeSetValue(
+                        registerEmp,
+                        config_fields.bp9_monto[config.type],
+                        pickFirstNumber(comissionInfo.bono_jtl_maestria, comissionInfo.bono_le_maestria)
+                    );
+                }
                 //sc
                 /*registerEmp.setValue({
                     fieldId: config_fields.sc[config.type],
@@ -452,6 +616,32 @@ function(email,record, file, search, https, runtime,format,Dictionary) {
                         log.error("Error actualizando customrecord_gana_tm", errorGanaTm);
                     }
                 }
+                var montoMaestriaMap = pickFirstNumber(comissionInfo.bono_jtl_maestria, comissionInfo.bono_le_maestria);
+                if (montoMaestriaMap > 0) {
+                    var siguientePeriodoMaestria = siguientePeriodoComercialId(config.period);
+                    var valoresMaestriaEmp = {
+                        custentity_maestria_ultimo_pago_periodo: config.period
+                    };
+                    if (siguientePeriodoMaestria) {
+                        valoresMaestriaEmp.custentity_inicio_maestria = siguientePeriodoMaestria;
+                    } else {
+                        log.debug('siguientePeriodoMaestria no encontrado tras periodo', config.period);
+                    }
+                    record.submitFields({
+                        type: 'employee',
+                        id: comissionInfo.idEmp,
+                        values: valoresMaestriaEmp
+                    });
+                    log.debug(
+                        'empleado actualizado maestría (último pago / inicio siguiente)',
+                        comissionInfo.idEmp +
+                            ' ultimoPagoPeriodo=' +
+                            config.period +
+                            ' inicioMaestria=' +
+                            (siguientePeriodoMaestria || '')
+                    );
+                }
+
             }catch(errRE){
                 log.error('error al crear registro por empleado',errRE)
             }
