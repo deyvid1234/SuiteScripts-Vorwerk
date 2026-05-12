@@ -11,7 +11,7 @@ function(search,record,format,Utils) {
      * Recuperación: fechas en las que sí crear copia + PO (mismo formato que Utils.dateToString: d/m/yyyy).
      * Dejar [] para el comportamiento normal: solo el día de ejecución del MR (fecha == hoy).
      */
-    var FECHAS_RECUPERACION_CREAR = ['8/5/2026', '12/5/2026'];
+    var FECHAS_RECUPERACION_CREAR = [];
 
     function normalizarFechaDMY(s) {
         if (s == null || s === '') {
@@ -113,11 +113,11 @@ function(search,record,format,Utils) {
                             if(debeEjecutarEnFecha(fechaFormato, today)){
                                 log.debug('hacer copia y transform')
 
-                              /* var idCopy = makeCopy(solicitante,idRequisitionPrincipal,campaña)
+                               var idCopy = makeCopy(solicitante,idRequisitionPrincipal,campaña)
                                 log.debug('idCopy periodos mes',idCopy)
 
                                 var idPO = transformPO(solicitante,idCopy,estimatedtotal)
-                                log.debug('idPO periodos mes',idPO)*/
+                                log.debug('idPO periodos mes',idPO)
                                 
                             }else{
                                 log.debug('n hay que ejecutar hoy')
@@ -140,11 +140,11 @@ function(search,record,format,Utils) {
                             if(debeEjecutarEnFecha(fechaFormato, today)){
                                 log.debug('hacer copia y transformsem')
 
-                               /*var idCopy = makeCopy(solicitante,idRequisitionPrincipal,campaña)
+                               var idCopy = makeCopy(solicitante,idRequisitionPrincipal,campaña)
                                 log.debug('idCopy periodos semana',idCopy)
 
                                 var idPO = transformPO(solicitante,idCopy,estimatedtotal)
-                                log.debug('idPO periodos semana',idPO)*/
+                                log.debug('idPO periodos semana',idPO)
                                 
                             }else{
                                 log.debug('n hay que ejecutar hoysem')
@@ -193,11 +193,11 @@ function(search,record,format,Utils) {
                             if(debeEjecutarEnFecha(fechaFormato, today)){
                                 log.debug('hacer copia y transform')
 
-                                /*var idCopy = makeCopy(solicitante,idRequisitionPrincipal,campaña)
+                                var idCopy = makeCopy(solicitante,idRequisitionPrincipal,campaña)
                                 log.debug('idCopy',idCopy)
 
                                 var idPO = transformPO(solicitante,idCopy,estimatedtotal)
-                                log.debug('idPO',idPO)*/
+                                log.debug('idPO',idPO)
                                 
                                 
                             }else{
@@ -234,11 +234,11 @@ function(search,record,format,Utils) {
                         if(debeEjecutarEnFecha(fechaFormato, today)){
                             log.debug('hacer copia y transform')
 
-                            /*var idCopy = makeCopy(solicitante,idRequisitionPrincipal,campaña)
+                            var idCopy = makeCopy(solicitante,idRequisitionPrincipal,campaña)
                             log.debug('idCopy periodos dias',idCopy)
 
                             var idPO = transformPO(solicitante,idCopy,estimatedtotal)
-                            log.debug('idPO periodos dias',idPO)*/
+                            log.debug('idPO periodos dias',idPO)
                             
                         }else{
                             log.debug('n hay que ejecutar hoy dias')
