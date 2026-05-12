@@ -254,11 +254,11 @@ function(search,record,format,Utils) {
         } 
         function makeCopy(solicitante,idRequisition,campaña){
             try{
-                var idCampaña 
-                if(campaña){
+                var idCampaña
+                if (campaña && String(campaña) !== '4') {
                     idCampaña = campaña
-                }else{
-                    idCampaña = 4
+                } else {
+                    idCampaña = 88
                 }
                 log.debug('idCampaña',idCampaña)
                 log.debug('entrando funcion makecopy',solicitante )
