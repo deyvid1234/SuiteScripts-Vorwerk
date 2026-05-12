@@ -3,9 +3,9 @@
  * @NScriptType ClientScript
  * @NModuleScope SameAccount
  */
-define(['N/currentRecord', 'N/url', 'N/ui/dialog','N/format', 'N/runtime', 'N/record', 'N/https'],
+define(['N/currentRecord', 'N/url', 'N/ui/dialog','N/format', 'N/runtime', 'N/record', 'N/https', 'N/log'],
 
-    function (currentRecord, url, dialog, format, runtime, record, https) {
+    function (currentRecord, url, dialog, format, runtime, record, https, log) {
                // Usuario ejecutando
                 var userObj = runtime.getCurrentUser();
                 var userId = parseInt(userObj.id);
@@ -904,9 +904,9 @@ define(['N/currentRecord', 'N/url', 'N/ui/dialog','N/format', 'N/runtime', 'N/re
                     return;
                 }
 
-                // NOTA: Token/API Key pendiente (se definirá después).
+                // NOTA: Token/API Key pendiente (se definirá después).  da568344e5000cf7c620fe7c21720b93
                 // Por ahora solo construimos e imprimimos el JSON para validación.
-                var apiKeyPendiente = 'da568344e5000cf7c620fe7c21720b93';
+                var apiKeyPendiente = '';
 
                 // Datos Opportunity
                 var opp = record.load({
@@ -1050,21 +1050,19 @@ define(['N/currentRecord', 'N/url', 'N/ui/dialog','N/format', 'N/runtime', 'N/re
                     return;
                 }
 
-                // Destinatario = ubicación destino final (Location internalid 40)
+                // Destinatario = dirección de Location 40 + contacto del Employee en custrecord_responsable
                 var locDestinoFinal = record.load({
                     type: record.Type.LOCATION,
                     id: DESTINO_FINAL_LOCATION_ID,
                     isDynamic: false
                 });
-                destinatario.nombre = locDestinoFinal.getValue('name') || '';
-                destinatario.empresa = destinatario.nombre || 'Vorwerk';
+                destinatario.empresa = locDestinoFinal.getValue('name') || 'Vorwerk';
                 try {
                     var mainAddrDestino = locDestinoFinal.getSubrecord({ fieldId: 'mainaddress' });
                     if (mainAddrDestino) {
                         destinatario.calle = mainAddrDestino.getValue({ fieldId: 'addr1' }) || '';
                         destinatario.colonia = mainAddrDestino.getValue({ fieldId: 'addr2' }) || '';
                         destinatario.cp = mainAddrDestino.getValue({ fieldId: 'zip' }) || '';
-                        destinatario.telefono = mainAddrDestino.getText({ fieldId: 'addrphone' }) || mainAddrDestino.getValue({ fieldId: 'addrphone' }) || '';
                     }
                 } catch (destAddrErr) {
                     console.log('mainaddress destino final', destAddrErr.message);
@@ -1072,8 +1070,141 @@ define(['N/currentRecord', 'N/url', 'N/ui/dialog','N/format', 'N/runtime', 'N/re
                 if (!destinatario.calle) {
                     destinatario.calle = locDestinoFinal.getValue('mainaddress_text') || '';
                 }
-                // Correo destinatario: si no hay campo estándar, mantener vacío o usar un correo fijo de logística.
-                destinatario.correo = '';
+
+                var rawResponsable = locDestinoFinal.getValue({ fieldId: 'custrecord_responsable' });
+                var idResponsable = rawResponsable;
+                if (rawResponsable !== null && rawResponsable !== undefined && rawResponsable !== '') {
+                    if (typeof rawResponsable === 'object' && rawResponsable.value !== undefined && rawResponsable.value !== null && rawResponsable.value !== '') {
+                        idResponsable = rawResponsable.value;
+                    } else if (Object.prototype.toString.call(rawResponsable) === '[object Array]' && rawResponsable.length > 0) {
+                        var r0 = rawResponsable[0];
+                        idResponsable = (typeof r0 === 'object' && r0 && r0.value !== undefined) ? r0.value : r0;
+                    }
+                }
+
+                try {
+                    log.debug({
+                        title: 'Guía OPP destinatario — Location 40',
+                        details:
+                            'locationId=' +
+                            DESTINO_FINAL_LOCATION_ID +
+                            ' | name=' +
+                            (locDestinoFinal.getValue({ fieldId: 'name' }) || '') +
+                            ' | custrecord_responsable raw=' +
+                            JSON.stringify(rawResponsable) +
+                            ' | idResponsable normalizado=' +
+                            idResponsable
+                    });
+                } catch (logLocErr) {}
+
+                console.log('[Guía OPP] Location destino final', {
+                    locationId: DESTINO_FINAL_LOCATION_ID,
+                    name: locDestinoFinal.getValue({ fieldId: 'name' }),
+                    custrecord_responsable_raw: rawResponsable,
+                    idResponsable_normalizado: idResponsable,
+                    direccion: {
+                        calle: destinatario.calle,
+                        colonia: destinatario.colonia,
+                        cp: destinatario.cp
+                    }
+                });
+
+                if (idResponsable) {
+                    try {
+                        var empDestino = record.load({
+                            type: record.Type.EMPLOYEE,
+                            id: idResponsable,
+                            isDynamic: false
+                        });
+                        var fn = empDestino.getValue({ fieldId: 'firstname' });
+                        var ln = empDestino.getValue({ fieldId: 'lastname' });
+                        var eid = empDestino.getValue({ fieldId: 'entityid' });
+                        var em = empDestino.getValue({ fieldId: 'email' });
+                        var ph = empDestino.getValue({ fieldId: 'phone' });
+                        var mob = empDestino.getValue({ fieldId: 'mobilephone' });
+
+                        try {
+                            log.debug({
+                                title: 'Guía OPP destinatario — Employee responsable',
+                                details:
+                                    'employeeId=' +
+                                    idResponsable +
+                                    ' | firstname=' +
+                                    (fn || '') +
+                                    ' | lastname=' +
+                                    (ln || '') +
+                                    ' | entityid=' +
+                                    (eid || '') +
+                                    ' | email=' +
+                                    (em || '') +
+                                    ' | phone=' +
+                                    (ph || '') +
+                                    ' | mobilephone=' +
+                                    (mob || '')
+                            });
+                        } catch (logEmpErr) {}
+
+                        console.log('[Guía OPP] Employee responsable (raw desde registro)', {
+                            employeeId: idResponsable,
+                            firstname: fn,
+                            lastname: ln,
+                            entityid: eid,
+                            email: em,
+                            phone: ph,
+                            mobilephone: mob
+                        });
+
+                        destinatario.nombre = ((fn || '') + ' ' + (ln || '')).trim() || eid || '';
+                        destinatario.correo = em || '';
+                        destinatario.telefono = ph || mob || '';
+                    } catch (empErr) {
+                        console.log('[Guía OPP] Error cargando employee responsable', empErr && empErr.message ? empErr.message : empErr, empErr && empErr.name ? empErr.name : '');
+                        try {
+                            log.error({
+                                title: 'Guía OPP destinatario — error Employee',
+                                details: (empErr && empErr.message ? empErr.message : String(empErr)) + ' | idResponsable=' + idResponsable
+                            });
+                        } catch (logErrEmp) {}
+                        destinatario.nombre = locDestinoFinal.getValue('name') || '';
+                        destinatario.correo = '';
+                        destinatario.telefono = '';
+                    }
+                } else {
+                    console.log('[Guía OPP] Location 40 sin custrecord_responsable (vacío o no legible).');
+                    try {
+                        log.audit({
+                            title: 'Guía OPP destinatario — sin responsable',
+                            details: 'custrecord_responsable vacío tras normalizar. raw=' + JSON.stringify(rawResponsable)
+                        });
+                    } catch (logSinResp) {}
+                    destinatario.nombre = locDestinoFinal.getValue('name') || '';
+                    destinatario.correo = '';
+                    destinatario.telefono = '';
+                }
+
+                console.log('[Guía OPP] Destinatario final armado para JSON', {
+                    nombre: destinatario.nombre,
+                    telefono: destinatario.telefono,
+                    correo: destinatario.correo,
+                    empresa: destinatario.empresa,
+                    calle: destinatario.calle,
+                    colonia: destinatario.colonia,
+                    cp: destinatario.cp
+                });
+                try {
+                    log.debug({
+                        title: 'Guía OPP destinatario — objeto final',
+                        details: JSON.stringify({
+                            nombre: destinatario.nombre,
+                            telefono: destinatario.telefono,
+                            correo: destinatario.correo,
+                            empresa: destinatario.empresa,
+                            calle: destinatario.calle,
+                            colonia: destinatario.colonia,
+                            cp: destinatario.cp
+                        })
+                    });
+                } catch (logFinErr) {}
 
                 var random_num = Math.floor(Math.random() * 100);
                 var referencia = (opp.getValue('tranid') || ('OPP-' + thisRecord.id)) + '-' + random_num;
