@@ -32,7 +32,19 @@ define(['N/email','N/record','N/render', 'N/file','N/search', 'N/https', 'N/runt
             }catch(e){}
             return null;
         }
-    
+
+        /** Prefijo de carpeta en S3 por cuenta (más fiable que comparar solo string 'PRODUCTION'). */
+        function getS3EnvFolder() {
+            var acct = String(runtime.accountId || '');
+            if (acct.indexOf('_SB') !== -1) return '3367613-sb1';
+            if (acct === '3367613') return '3367613';
+            try {
+                if (runtime.EnvType && runtime.envType === runtime.EnvType.PRODUCTION) return '3367613';
+            } catch (e0) { /* ignore */ }
+            if (String(runtime.envType || '') === 'PRODUCTION') return '3367613';
+            return '3367613-sb1';
+        }
+
         /** Decodificación Base64 manual (respaldo si no hay fromBase64). */
         function base64ToBinaryString(b64) {
             var clean = String(b64).replace(/\s/g, '');
@@ -267,7 +279,14 @@ define(['N/email','N/record','N/render', 'N/file','N/search', 'N/https', 'N/runt
     
                         var firstName = employee && employee.firstName ? employee.firstName : '';
                         var lastName = employee && employee.lastName ? employee.lastName : '';
+                        var envFolder = getS3EnvFolder();
+                        log.debug('S3 objectKey prefijo', {
+                            accountId: runtime.accountId,
+                            envType: String(runtime.envType),
+                            envFolder: envFolder
+                        });
                         var objectKey =
+                            envFolder + '/' +
                             'Reporte' + '_' +
                             String(idReg) + '_' +
                             safeNamePart(empIdVal) + '_' +
