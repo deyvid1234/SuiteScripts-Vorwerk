@@ -876,6 +876,61 @@ define(['N/currentRecord', 'N/url', 'N/ui/dialog','N/format', 'N/runtime', 'N/re
             return parts.join(',');
         }
 
+        /** Normaliza internal id de campos List/Record (p. ej. custrecord_responsable). */
+        function normalizeListRecordId(rawVal) {
+            var id = rawVal;
+            if (rawVal !== null && rawVal !== undefined && rawVal !== '') {
+                if (typeof rawVal === 'object' && rawVal.value !== undefined && rawVal.value !== null && rawVal.value !== '') {
+                    id = rawVal.value;
+                } else if (Object.prototype.toString.call(rawVal) === '[object Array]' && rawVal.length > 0) {
+                    var r0 = rawVal[0];
+                    id = (typeof r0 === 'object' && r0 && r0.value !== undefined) ? r0.value : r0;
+                }
+            }
+            return id;
+        }
+
+        /** Nombre y correo del encargado (Employee) de una ubicación. */
+        function getContactoEncargadoUbicacion(idEmployee) {
+            var contacto = { nombre: '', correo: '' };
+            if (!idEmployee) {
+                return contacto;
+            }
+            try {
+                var emp = record.load({
+                    type: record.Type.EMPLOYEE,
+                    id: idEmployee,
+                    isDynamic: false
+                });
+                var fn = emp.getValue({ fieldId: 'firstname' });
+                var ln = emp.getValue({ fieldId: 'lastname' });
+                var eid = emp.getValue({ fieldId: 'entityid' });
+                contacto.nombre = ((fn || '') + ' ' + (ln || '')).trim() || eid || '';
+                contacto.correo = emp.getValue({ fieldId: 'email' }) || '';
+            } catch (e) {
+                console.log('[Guía OPP] Error cargando encargado ubicación', e && e.message ? e.message : e);
+            }
+            return contacto;
+        }
+
+        /**
+         * CP mexicano (5 dígitos) dentro de un texto. No usa \\b (falla mal con Unicode tipo "México" antes del CP).
+         * Si hay varios bloques de 5 dígitos toma el último.
+         */
+        function extraerCodigoPostalMexicoDesdeTexto(text) {
+            if (!text) {
+                return '';
+            }
+            var normalized = String(text)
+                .replace(/[\u00A0\u202F\u2007\uFEFF]/g, ' ')
+                .replace(/\r/g, '\n');
+            var all = normalized.match(/\d{5}/g);
+            if (!all || all.length === 0) {
+                return '';
+            }
+            return all[all.length - 1];
+        }
+
         function printOppo(idOPO) {
             try {
    
@@ -906,7 +961,7 @@ define(['N/currentRecord', 'N/url', 'N/ui/dialog','N/format', 'N/runtime', 'N/re
 
                 // NOTA: Token/API Key pendiente (se definirá después).  da568344e5000cf7c620fe7c21720b93
                 // Por ahora solo construimos e imprimimos el JSON para validación.
-                var apiKeyPendiente = '';
+                var apiKeyPendiente = 'da568344e5000cf7c620fe7c21720b93';
 
                 // Datos Opportunity
                 var opp = record.load({
@@ -1028,12 +1083,20 @@ define(['N/currentRecord', 'N/url', 'N/ui/dialog','N/format', 'N/runtime', 'N/re
                     if (!addr1) {
                         addr1 = locRec.getValue('mainaddress_text') || '';
                     }
-                    // Remitente = ubicación seleccionada (Cooking Studio)
-                    remitente.nombre = nameCustomer;
+                    // Remitente = encargado de la ubicación + dirección/teléfono de la location
+                    var idEncargadoUbic = normalizeListRecordId(locRec.getValue({ fieldId: 'custrecord_responsable' }));
+                    var contactoEncargado = getContactoEncargadoUbicacion(idEncargadoUbic);
+                    remitente.nombre = contactoEncargado.nombre || nameCustomer;
                     remitente.telefono = addrphone;
-                    remitente.correo = ''; // Normalmente no existe en Location estándar
+                    remitente.correo = contactoEncargado.correo;
                     remitente.direccion = (addr1 || '') + (addr2 ? (' ' + addr2) : '') + (zip ? (' ' + zip) : '');
-                    remitente.empresa = companyCustomer || nameCustomer;
+                    remitente.empresa = 'Thermomix';
+                    console.log('[Guía OPP] Remitente Cooking Studio', {
+                        ubicacionId: idUbicacion,
+                        ubicacionName: nameCustomer,
+                        encargadoId: idEncargadoUbic,
+                        remitente: remitente
+                    });
                 } else {
                     dialog.alert({
                         title: 'Error',
@@ -1057,18 +1120,19 @@ define(['N/currentRecord', 'N/url', 'N/ui/dialog','N/format', 'N/runtime', 'N/re
                     isDynamic: false
                 });
                 destinatario.empresa = locDestinoFinal.getValue('name') || 'Vorwerk';
+                var mainAddressTextLoc = locDestinoFinal.getValue('mainaddress_text') || '';
                 try {
                     var mainAddrDestino = locDestinoFinal.getSubrecord({ fieldId: 'mainaddress' });
                     if (mainAddrDestino) {
                         destinatario.calle = mainAddrDestino.getValue({ fieldId: 'addr1' }) || '';
                         destinatario.colonia = mainAddrDestino.getValue({ fieldId: 'addr2' }) || '';
-                        destinatario.cp = mainAddrDestino.getValue({ fieldId: 'zip' }) || '';
+                        destinatario.cp = String(mainAddrDestino.getValue({ fieldId: 'zip' }) || '').trim();
                     }
                 } catch (destAddrErr) {
                     console.log('mainaddress destino final', destAddrErr.message);
                 }
                 if (!destinatario.calle) {
-                    destinatario.calle = locDestinoFinal.getValue('mainaddress_text') || '';
+                    destinatario.calle = mainAddressTextLoc || '';
                 }
 
                 var rawResponsable = locDestinoFinal.getValue({ fieldId: 'custrecord_responsable' });
@@ -1182,6 +1246,32 @@ define(['N/currentRecord', 'N/url', 'N/ui/dialog','N/format', 'N/runtime', 'N/re
                     destinatario.telefono = '';
                 }
 
+                if (!destinatario.cp && (destinatario.calle || mainAddressTextLoc)) {
+                    var textoParaCp = [destinatario.calle, mainAddressTextLoc].filter(function (t) {
+                        return t;
+                    }).join('\n');
+                    var cpDesdeTexto = extraerCodigoPostalMexicoDesdeTexto(textoParaCp);
+                    if (cpDesdeTexto) {
+                        destinatario.cp = cpDesdeTexto;
+                        try {
+                            log.debug({
+                                title: 'Guía OPP destinatario — CP desde texto dirección',
+                                details: 'cp=' + cpDesdeTexto + ' (textoParaCp length=' + textoParaCp.length + ')'
+                            });
+                        } catch (logCpTxt) {}
+                        console.log('[Guía OPP] CP destinatario inferido:', cpDesdeTexto);
+                    } else {
+                        console.log('[Guía OPP] Sin CP de 5 dígitos en texto (preview):', textoParaCp.replace(/\r?\n/g, ' | ').slice(0, 400));
+                    }
+                }
+
+                if (destinatario.calle) {
+                    destinatario.calle = String(destinatario.calle)
+                        .replace(/\r?\n/g, ', ')
+                        .replace(/\s+/g, ' ')
+                        .trim();
+                }
+
                 console.log('[Guía OPP] Destinatario final armado para JSON', {
                     nombre: destinatario.nombre,
                     telefono: destinatario.telefono,
@@ -1261,12 +1351,31 @@ define(['N/currentRecord', 'N/url', 'N/ui/dialog','N/format', 'N/runtime', 'N/re
                     return;
                 }
 
+                var smartshipUrl = 'https://www.smartship.mx/api/documentar/';
+                var smartshipHeaders = { 'Content-Type': 'application/json' };
+                var smartshipBody = JSON.stringify(objRequest);
+                var smartshipRequestLog = {
+                    method: 'POST',
+                    url: smartshipUrl,
+                    headers: smartshipHeaders,
+                    body: smartshipBody
+                };
+                try {
+                    log.audit({
+                        title: 'SmartShip documentar REQUEST (Opportunity)',
+                        details: JSON.stringify(smartshipRequestLog)
+                    });
+                } catch (reqLogErr) {
+                    try {
+                        log.debug('SmartShip request log OPP', reqLogErr && reqLogErr.message ? reqLogErr.message : reqLogErr);
+                    } catch (e2) {}
+                }
+                console.log('SmartShip documentar REQUEST (Opportunity)', smartshipRequestLog);
+
                 var responseService = https.post({
-                    url: 'https://www.smartship.mx/api/documentar/',
-                    body: JSON.stringify(objRequest),
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
+                    url: smartshipUrl,
+                    body: smartshipBody,
+                    headers: smartshipHeaders
                 }).body;
 
                 var acLogistic;
