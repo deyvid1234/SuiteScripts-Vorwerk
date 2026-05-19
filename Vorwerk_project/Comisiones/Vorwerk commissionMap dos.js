@@ -117,6 +117,33 @@ function(email,record, file, search, https, runtime,format,Dictionary) {
         return sorted;
     }
 
+    /**
+     * Marca Calificación JTL ($4,000, bono_jtl_nombramiento) como pagada en la JTL calificada.
+     * No aplica al bono LE del líder nombrador (bono_le_nombramiento_jtl): ese bono puede repetirse por otros nombrados.
+     */
+    function actualizarPeriodoPagoJtlCalificacion(empId, periodoId) {
+        if (!empId || !periodoId) {
+            return;
+        }
+        try {
+            record.submitFields({
+                type: 'employee',
+                id: empId,
+                values: { custentity_periodo_pago_jtl: periodoId }
+            });
+            log.debug('employee custentity_periodo_pago_jtl actualizado (Calificación JTL)', {
+                empleado: String(empId),
+                periodo: String(periodoId)
+            });
+        } catch (e) {
+            log.error('Error actualizando custentity_periodo_pago_jtl', {
+                empleado: String(empId),
+                periodo: String(periodoId),
+                error: String(e)
+            });
+        }
+    }
+
     /** Siguiente periodo comercial después de periodIdActual (orden por custrecord_inicio). */
     function siguientePeriodoComercialId(periodIdActual) {
         var sorted = getPeriodosComercialesOrdenados();
@@ -640,6 +667,10 @@ function(email,record, file, search, https, runtime,format,Dictionary) {
                             ' inicioMaestria=' +
                             (siguientePeriodoMaestria || '')
                     );
+                }
+
+                if (asNumber(comissionInfo.bono_jtl_nombramiento) > 0) {
+                    actualizarPeriodoPagoJtlCalificacion(comissionInfo.idEmp, config.period);
                 }
 
             }catch(errRE){
