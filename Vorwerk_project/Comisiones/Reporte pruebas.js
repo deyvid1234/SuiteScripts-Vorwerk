@@ -4177,9 +4177,9 @@ una rcluta de algun miembro del equipo*/
     }
 
     /**
-     * Promoción Maestría: ventana de 13 periodos comerciales contados desde el periodo de la fecha de calificación;
+     * Promoción Maestría JTL (2+1) únicamente: ventana de 13 periodos comerciales desde el periodo de la fecha de calificación;
      * en el periodo donde cae la fecha de calificación no se paga Maestría (primer mes).
-     * Fecha de calificación: custentity_fcha_inic_le_jr; si vacía, custentity_fecha_nombramiento.
+     * No aplica a Maestría LE (3+2). Fecha de calificación: custentity_fcha_inic_le_jr; si vacía, custentity_fecha_nombramiento.
      * @returns {{ ok: boolean, motivo?: string, codigo?: string, detalle?: Object }}
      */
     function maestriaValidarVentanaPromocion13Meses(dataEmp, sorted, cust_period, p0) {
@@ -4889,18 +4889,7 @@ una rcluta de algun miembro del equipo*/
             var p1 = sorted[idx - 1];
             var p0 = sorted[idx];
 
-            var ventPromoLe = maestriaValidarVentanaPromocion13Meses(dataEmp, sorted, cust_period, p0);
-            if (!ventPromoLe.ok) {
-                resumen.motivo = 'NO_GANA: ' + (ventPromoLe.motivo || ventPromoLe.codigo || 'ventana promoción');
-                resumen.detalle = {
-                    ventanaPromocion: ventPromoLe.detalle || {},
-                    codigo: ventPromoLe.codigo
-                };
-                leLogMaestria(liderId, 'resumen', resumen);
-                return false;
-            }
-
-            // Filtro nuevo: custentity_inicio_maestria almacena el PERIODO (ID) de inicio del bono maestría.
+            // Filtro: custentity_inicio_maestria almacena el PERIODO (ID) de inicio del bono maestría.
             // Debe haber al menos 3 periodos consecutivos disponibles: inicioMaestria <= periodoMes1(p2).
             // Equivalente: indicePeriodoActual - indiceInicio >= 2.
             var inicioMaestriaPid = dataEmp && dataEmp.inicioMaestria ? String(dataEmp.inicioMaestria) : '';
