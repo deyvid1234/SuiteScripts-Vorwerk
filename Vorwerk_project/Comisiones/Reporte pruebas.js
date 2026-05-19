@@ -563,6 +563,12 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                                 objBonoNombramientoJTL = bonoNombramientoJTL(dataEmp,historicoSO,thisPeriodSO,listaReclutas,allPresentadoras,todosPeriodos,inicioPeriodo,finPeriodo)
                                 objBonoJTL2mas1 = bonoJTLPrograma2mas1Estandar(dataEmp,historicoSO,thisPeriodSO,reclutas,listaReclutas,allPresentadoras,inicioPeriodo,finPeriodo)
                                 objBonoJTLMaestria = bonoJTLMaestria(dataEmp,historicoSO,thisPeriodSO,reclutas,listaReclutas,allPresentadoras,todosPeriodos,cust_period)
+
+                            var sinComisionPorCSF = embajadorPresentadorSinCSF_filaSinComision(dataEmp, empType);
+                            if (sinComisionPorCSF) {
+                                objVentasPropias = false;
+                                log.audit('embajadorSinCSF', 'Presentadora (empType 1) status CSF 1 o 2: sin bonos en su fila; ventas siguen en thisPeriodSO para bonos del líder. empleado ' + (dataEmp.internalid || '') + ' entityid ' + (dataEmp.entityid || '') + ' status ' + (dataEmp.custentity_status_csf || ''));
+                            }
                             
                             /*
                             montoComisionCK = bonoComCK()
@@ -612,6 +618,39 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
           log.debug('creditos 2',runtime.getCurrentScript().getRemainingUsage()); 
         }   
     }//Fin sublista
+
+    /** Normaliza custentity_status_csf (lista) a string de internal id. */
+    function normalizarStatusCsfValor(v) {
+        if (v == null || v === '') {
+            return null;
+        }
+        if (v === true || v === 'T') {
+            return '1';
+        }
+        if (typeof v === 'object' && v.value != null) {
+            return String(v.value).trim();
+        }
+        return String(v).trim();
+    }
+
+    /**
+     * custentity_status_csf lista: 1 o 2 = no comisiona en su fila; 3 = sí comisiona.
+     */
+    function embajadorSinCSF_es(dataEmp) {
+        if (!dataEmp) {
+            return false;
+        }
+        var status = normalizarStatusCsfValor(dataEmp.custentity_status_csf);
+        return status === '1' || status === '2';
+    }
+
+    /**
+     * Presentadora empType 1 con status CSF 1 o 2: sin comisión en su fila del reporte.
+     * Las ODVs siguen en thisPeriodSO para bonos del líder (venta equipo, etc.).
+     */
+    function embajadorPresentadorSinCSF_filaSinComision(dataEmp, empType) {
+        return String(empType) === '1' && embajadorSinCSF_es(dataEmp);
+    }
 
     function validateAmount(sublist,dataEmp,ventasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,reclutamiento,entrega,productividad,ventaEquipo,ventasEquipoNLE,garantia,xMasdos,xMasdosNLE,joya,cookKey,nuevoRecluta,actividad,productividadTMSB,programasData,bonoNombramientoJTL,bonoJTL2mas1,bonoJTLMaestria,bonoPoolTalent,bonoLEMaestria,bonoLENombramientoJTL){
         var subtotal=0
@@ -5404,6 +5443,7 @@ una rcluta de algun miembro del equipo*/
             const empSearch_so_ganotm7 = search.createColumn({ name: 'custentity_so_ganotm7'});
             const empSearch_ovs_ep7 = search.createColumn({ name: 'custentity_ovs_ep7'});
             const empSearch_ordenes_a_excluir = search.createColumn({ name: 'custentity_ordenes_a_excluir'});
+            const empSearch_status_csf = search.createColumn({ name: 'custentity_status_csf'});
             
             
             const mySearch = search.create({
@@ -5446,7 +5486,8 @@ una rcluta de algun miembro del equipo*/
                     empSearchfecha_tm7_ganada,
                     empSearch_so_ganotm7,
                     empSearch_ovs_ep7,
-                    empSearch_ordenes_a_excluir
+                    empSearch_ordenes_a_excluir,
+                    empSearch_status_csf
                 ],
             });
             
@@ -5501,7 +5542,7 @@ una rcluta de algun miembro del equipo*/
                     objEMP.so_ganotm7 = r.getValue('custentity_so_ganotm7')
                     objEMP.ovs_ep7 = r.getValue('custentity_ovs_ep7')
                     objEMP.custentity_ordenes_a_excluir = r.getValue('custentity_ordenes_a_excluir')
-                    
+                    objEMP.custentity_status_csf = r.getValue('custentity_status_csf')
 
                     allPresentadorData[objEMP.internalid] = objEMP
 
