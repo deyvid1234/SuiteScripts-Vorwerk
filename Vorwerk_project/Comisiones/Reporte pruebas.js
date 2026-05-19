@@ -517,7 +517,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
 
                     break;
                     case 2: //Reporte Presentadora
-                        if(empType == 1 && empPromo == 2 /*&& allPresentadoras[i].internalid == '21613'*/){
+                        if((empType == 1 && empPromo == 2 /*&& allPresentadoras[i].internalid == '21613'*/) || (dataEmp.tipoCalificacion == 3 && empType == 3 && empPromo == 2)){
                             
                             //Calcular reporte para la persona
                             var reclutas=listaReclutas[i]
@@ -4122,6 +4122,46 @@ una rcluta de algun miembro del equipo*/
         return true;
     }
 
+    /** Id interno de lista NetSuite (valor 3), no etiqueta de texto. */
+    var JTL_CALIFICACION_ID = 3;
+
+    /**
+     * Normaliza getValue de campo lista/select al internal id numérico.
+     * Si el valor no es un id numérico (p. ej. texto de getText), devuelve null.
+     */
+    function normalizarIdCampoLista(val) {
+        if (val == null || val === '' || val === false) {
+            return null;
+        }
+        if (Array.isArray(val)) {
+            val = val.length ? val[0] : null;
+            if (val == null) {
+                return null;
+            }
+        }
+        if (val && typeof val === 'object' && val.value != null) {
+            val = val.value;
+        }
+        var s = String(val).trim();
+        if (s === '' || !/^\d+$/.test(s)) {
+            return null;
+        }
+        return parseInt(s, 10);
+    }
+
+    /**
+     * Elegibilidad JTL para bonos 2+1, Maestría JTL, Calificación JTL y mapa nombradsPorJTL.
+     * Aplica si custentity_nombramiento_le o custentity_tipo_calificacion traen internal id = 3 (getValue).
+     */
+    function esCalificacionJtlParaBonos(dataEmp) {
+        if (!dataEmp) {
+            return false;
+        }
+        var idNom = normalizarIdCampoLista(dataEmp.tipoNombramento);
+        var idCal = normalizarIdCampoLista(dataEmp.tipoCalificacion);
+        return idNom === JTL_CALIFICACION_ID || idCal === JTL_CALIFICACION_ID;
+    }
+
     /** Lista de periodos comerciales ordenados por fecha de inicio (misma lógica que ventana JTL). */
     function periodosComercialesOrdenados(todosPeriodos) {
         var sorted = [];
@@ -4177,9 +4217,9 @@ una rcluta de algun miembro del equipo*/
     }
 
     /**
-     * Promoción Maestría JTL (2+1) únicamente: ventana de 13 periodos comerciales desde el periodo de la fecha de calificación;
+     * Maestría JTL (2+1) únicamente: ventana de 13 periodos comerciales desde el periodo de la fecha de calificación;
      * en el periodo donde cae la fecha de calificación no se paga Maestría (primer mes).
-     * No aplica a Maestría LE (3+2). Fecha de calificación: custentity_fcha_inic_le_jr; si vacía, custentity_fecha_nombramiento.
+     * No aplica a Maestría LE (3× 3+2). Fecha de calificación: custentity_fcha_inic_le_jr; si vacía, custentity_fecha_nombramiento.
      * @returns {{ ok: boolean, motivo?: string, codigo?: string, detalle?: Object }}
      */
     function maestriaValidarVentanaPromocion13Meses(dataEmp, sorted, cust_period, p0) {
@@ -4450,15 +4490,16 @@ una rcluta de algun miembro del equipo*/
         return resultado;
     }
 
-    /** Bono mensual $1,500: solo tipo nombramiento JTL (3); periodo del reporte. */
+    /** Bono mensual $1,500: calificación JTL (nombramiento_le o tipo_calificacion = 3); periodo del reporte. */
     function bonoJTLPrograma2mas1Estandar(dataEmp, historicoSO, thisPeriodSO, reclutasArray, listaReclutas, allPresentadoras, inicioPeriodo, finPeriodo) {
         try {
             var jtlId = dataEmp.internalid;
-            if (String(dataEmp.tipoNombramento) !== '3') {
+            if (!esCalificacionJtlParaBonos(dataEmp)) {
                 return false;
             }
             jtlLog2mas1(jtlId, 'inicio evaluación', {
                 tipoNombramento: dataEmp.tipoNombramento,
+                tipoCalificacion: dataEmp.tipoCalificacion,
                 periodoReporte: { inicio: inicioPeriodo, fin: finPeriodo }
             });
             var dIni = jtlNormalizarFechaPeriodo(inicioPeriodo);
@@ -4505,11 +4546,12 @@ una rcluta de algun miembro del equipo*/
     function bonoJTLMaestria(dataEmp, historicoSO, thisPeriodSO, reclutasArray, listaReclutas, allPresentadoras, todosPeriodos, cust_period) {
         try {
             var jtlId = dataEmp.internalid;
-            if (String(dataEmp.tipoNombramento) !== '3') {
+            if (!esCalificacionJtlParaBonos(dataEmp)) {
                 return false;
             }
             jtlLogMaestria(jtlId, 'inicio evaluación', {
                 tipoNombramento: dataEmp.tipoNombramento,
+                tipoCalificacion: dataEmp.tipoCalificacion,
                 cust_periodSeleccionado: cust_period,
                 inicioMaestriaPeriodo: dataEmp && dataEmp.inicioMaestria ? String(dataEmp.inicioMaestria) : ''
             });
@@ -4837,6 +4879,7 @@ una rcluta de algun miembro del equipo*/
     /**
      * Maestría Líder de Equipo: $15,000 si en 3 periodos comerciales Vorwerk consecutivos (incluye el del reporte como tercer mes)
      * la líder hubiera calificado por bono 3+2 (monto32) en cada uno. Requiere al menos una venta personal contable JTL en el periodo del reporte.
+     * Sin ventana de 13 periodos (esa regla solo aplica a Maestría JTL 2+1).
      */
     function bonoLEMaestriaTresMasDos(
         dataEmp,
@@ -4889,7 +4932,7 @@ una rcluta de algun miembro del equipo*/
             var p1 = sorted[idx - 1];
             var p0 = sorted[idx];
 
-            // Filtro: custentity_inicio_maestria almacena el PERIODO (ID) de inicio del bono maestría.
+            // Filtro nuevo: custentity_inicio_maestria almacena el PERIODO (ID) de inicio del bono maestría.
             // Debe haber al menos 3 periodos consecutivos disponibles: inicioMaestria <= periodoMes1(p2).
             // Equivalente: indicePeriodoActual - indiceInicio >= 2.
             var inicioMaestriaPid = dataEmp && dataEmp.inicioMaestria ? String(dataEmp.inicioMaestria) : '';
@@ -4994,24 +5037,28 @@ una rcluta de algun miembro del equipo*/
      * Requisitos en los 3 meses comerciales previos al periodo de la calificación: ≥6 ventas personales del candidato;
      * alta del candidato con más de 90 días a la fecha de inicio LE JR; ≥2 nuevas presentadoras reclutadas por él con alta en esa ventana
      * y al menos una venta personal contable en sus primeros 90 días naturales desde hiredate.
-     * Solo aplica si custentity_nombramiento_le = 3, **custentity_fcha_inic_le_jr** cae en el periodo del reporte, y **custentity_periodo_pago_jtl** está vacío (pago único).
+     * Solo aplica si custentity_nombramiento_le = 3 o custentity_tipo_calificacion = 3; **custentity_fcha_inic_le_jr** en el periodo del reporte; **custentity_periodo_pago_jtl** vacío (pago único).
      */
     function bonoNombramientoJTL(dataEmp, historicoSO, thisPeriodSO, listaReclutas, allPresentadoras, todosPeriodos, inicioPeriodo, finPeriodo) {
         try {
             var empId = dataEmp.internalid;
-            var JTL_NOMBRAMIENTO_ID = '3';
 
             jtlLogBono(empId, 'inicio evaluación', {
                 internalid: empId,
                 tipoNombramento: dataEmp.tipoNombramento,
+                tipoCalificacion: dataEmp.tipoCalificacion,
                 fechaInicioLeJr: dataEmp.fechaInicioLeJr,
                 periodoPagoJtl: dataEmp.periodoPagoJtl,
                 hiredate: dataEmp.hiredate,
                 periodoReporte: { inicio: inicioPeriodo, fin: finPeriodo }
             });
 
-            if (String(dataEmp.tipoNombramento) !== JTL_NOMBRAMIENTO_ID) {
-                jtlLogBono(empId, 'rechazo: tipo nombramiento', { esperado: JTL_NOMBRAMIENTO_ID, actual: dataEmp.tipoNombramento });
+            if (!esCalificacionJtlParaBonos(dataEmp)) {
+                jtlLogBono(empId, 'rechazo: no es calificación JTL', {
+                    esperadoNombramientoO_tipoCalificacion: JTL_CALIFICACION_ID,
+                    tipoNombramento: dataEmp.tipoNombramento,
+                    tipoCalificacion: dataEmp.tipoCalificacion
+                });
                 return false;
             }
             if (jtlPeriodoPagoCalificacionRegistrado(dataEmp.periodoPagoJtl)) {
@@ -5125,7 +5172,9 @@ una rcluta de algun miembro del equipo*/
                 monto: 4000,
                 data: {
                     obligatorios: {
-                        tipoNombramentoEsJTL: true,
+                        esCalificacionJtl: true,
+                        tipoNombramento: dataEmp.tipoNombramento,
+                        tipoCalificacion: dataEmp.tipoCalificacion,
                         fechaInicioLeJrEnPeriodoReporte: true,
                         periodoPagoJtlVacio: true
                     },
@@ -5155,7 +5204,7 @@ una rcluta de algun miembro del equipo*/
      * Bono LE Calificación JTL: $5,000 por cada miembro del equipo que califique como JTL en el periodo del reporte
      * y cumpla los requisitos del bonoNombramientoJTL en su ventana previa (6 ventas + 2 reclutas activas + >90 días desde alta).
      * La líder debe estar activa en el periodo del reporte (≥1 venta personal contable JTL). El candidato no debe tener custentity_periodo_pago_jtl poblado (pago único).
-     * **Solo aquí:** la fecha de inicio JTL del candidato para filtro de periodo y para reutilizar bonoNombramientoJTL es **custentity_fecha_comisionable_jtl**; si está vacía se usa custentity_fcha_inic_le_jr como respaldo.
+     * Fecha inicio JTL del candidato (filtro de periodo y bonoNombramientoJTL): **custentity_fcha_inic_le_jr**.
      */
     function bonoLENombramientoJTL(liderDataEmp, nombramientosJTLPorLider, allPresentadoras, historicoSO, thisPeriodSO, listaReclutas, todosPeriodos, inicioPeriodo, finPeriodo, ventasEmpLider) {
         try {
@@ -5212,8 +5261,7 @@ una rcluta de algun miembro del equipo*/
                     });
                     continue;
                 }
-                // Bono LE: fecha inicio JTL del candidato = custentity_fecha_comisionable_jtl (respaldo custentity_fcha_inic_le_jr).
-                var fechaIniJtlCandidatoLE = cand.fechaComisionableJtl || cand.fechaInicioLeJr;
+                var fechaIniJtlCandidatoLE = cand.fechaInicioLeJr;
                 var dNom = fechaIniJtlCandidatoLE ? jtlNormalizarFechaPeriodo(fechaIniJtlCandidatoLE) : null;
                 if (!dNom || dNom < dIniP || dNom > dFinP) {
                     log.audit({
@@ -5228,7 +5276,6 @@ una rcluta de algun miembro del equipo*/
                             liderId: String(liderId),
                             candidatoId: String(candId),
                             candidatoNombre: cand.entityid || '',
-                            candidatoFechaComisionableJtl: cand.fechaComisionableJtl ? String(cand.fechaComisionableJtl) : '',
                             candidatoFechaInicioLeJr: cand.fechaInicioLeJr ? String(cand.fechaInicioLeJr) : '',
                             fechaUsadaLE: fechaIniJtlCandidatoLE ? String(fechaIniJtlCandidatoLE) : '',
                             periodoReporte: { inicio: String(dIniP), fin: String(dFinP) }
@@ -5236,19 +5283,7 @@ una rcluta de algun miembro del equipo*/
                     });
                     continue;
                 }
-                // Reutiliza bonoNombramientoJTL con la misma fecha ancla que el LE (comisionable → fechaInicioLeJr en copia).
-                var candEvalNom = cand;
-                if (cand.fechaComisionableJtl) {
-                    candEvalNom = {};
-                    var kCop;
-                    for (kCop in cand) {
-                        if (Object.prototype.hasOwnProperty.call(cand, kCop)) {
-                            candEvalNom[kCop] = cand[kCop];
-                        }
-                    }
-                    candEvalNom.fechaInicioLeJr = cand.fechaComisionableJtl;
-                }
-                var ev = bonoNombramientoJTL(candEvalNom, historicoSO, thisPeriodSO, listaReclutas, allPresentadoras, todosPeriodos, inicioPeriodo, finPeriodo);
+                var ev = bonoNombramientoJTL(cand, historicoSO, thisPeriodSO, listaReclutas, allPresentadoras, todosPeriodos, inicioPeriodo, finPeriodo);
                 log.audit({
                     title:
                         '[Bono LE Calificación JTL] Líder ' +
@@ -5263,7 +5298,7 @@ una rcluta de algun miembro del equipo*/
                         candidatoNombre: cand.entityid || '',
                         candidatoHiredate: cand.hiredate ? String(cand.hiredate) : '',
                         candidatoTipoNombramiento: cand.tipoNombramento != null ? String(cand.tipoNombramento) : '',
-                        candidatoFechaComisionableJtl: cand.fechaComisionableJtl ? String(cand.fechaComisionableJtl) : '',
+                        candidatoTipoCalificacion: cand.tipoCalificacion != null ? String(cand.tipoCalificacion) : '',
                         candidatoFechaInicioLeJr: cand.fechaInicioLeJr ? String(cand.fechaInicioLeJr) : '',
                         cumpleBonoNombramientoJTL: !!ev,
                         detalleSiCumple: ev ? ev.data || {} : null,
@@ -5277,7 +5312,6 @@ una rcluta de algun miembro del equipo*/
                 detalle.push({
                     candidatoId: String(candId),
                     candidatoNombre: cand.entityid || '',
-                    fechaComisionableJtl: cand.fechaComisionableJtl ? String(cand.fechaComisionableJtl) : '',
                     fechaInicioLeJr: cand.fechaInicioLeJr ? String(cand.fechaInicioLeJr) : '',
                     evidenciaCandidato: ev.data || {}
                 });
@@ -5353,10 +5387,10 @@ una rcluta de algun miembro del equipo*/
             const empSearchunidad = search.createColumn({ name: 'custentity_nombre_unidad'});
             //const employeeSearchReclutadoraInternalId = search.createColumn({ name: 'internalid', join: 'custentity_reclutadora' });
             const empSearchtiponombramiento = search.createColumn({ name: 'custentity_nombramiento_le'});
+            const empSearchTipoCalificacion = search.createColumn({ name: 'custentity_tipo_calificacion'});
             const empSearchnombradopor = search.createColumn({ name: 'custentity_nombramiento'});
             const empSearchfechanombramiento = search.createColumn({ name: 'custentity_fecha_nombramiento'});
             const empSearchFchaInicLeJr = search.createColumn({ name: 'custentity_fcha_inic_le_jr'});
-            const empSearchFechaComisionableJtl = search.createColumn({ name: 'custentity_fecha_comisionable_jtl'});
             const empSearchInicioMaestria = search.createColumn({ name: 'custentity_inicio_maestria' });
             const empSearchPeriodoPagoJtl = search.createColumn({ name: 'custentity_periodo_pago_jtl'});
             const empSearchPeriodoPagoNLE = search.createColumn({ name: 'custentityperiodo_nle_pago'});
@@ -5396,10 +5430,10 @@ una rcluta de algun miembro del equipo*/
                     empSearchunidad,
                     //employeeSearchReclutadoraInternalId,
                     empSearchtiponombramiento,
+                    empSearchTipoCalificacion,
                     empSearchnombradopor,
                     empSearchfechanombramiento,
                     empSearchFchaInicLeJr,
-                    empSearchFechaComisionableJtl,
                     empSearchInicioMaestria,
                     empSearchPeriodoPagoJtl,
                     empSearchPeriodoPagoNLE,
@@ -5448,12 +5482,11 @@ una rcluta de algun miembro del equipo*/
                     objEMP.unidad = r.getValue('custentity_nombre_unidad')
                     //objEMP.reclutadoraID = r.getValue({ name: 'internalid', join: 'custentity_reclutadora' })
                     objEMP.tipoNombramento = r.getValue('custentity_nombramiento_le')
+                    objEMP.tipoCalificacion = normalizarIdCampoLista(r.getValue('custentity_tipo_calificacion'))
                     objEMP.nombramientoPor = r.getValue('custentity_nombramiento')
                     objEMP.fechaNombramiento = r.getValue('custentity_fecha_nombramiento')
                     /** Fecha efectiva de inicio nombramiento JTL (reemplaza a custentity_fecha_nombramiento para reglas JTL). */
                     objEMP.fechaInicioLeJr = r.getValue('custentity_fcha_inic_le_jr')
-                    /** Fecha inicio JTL comisionable (solo Bono LE Calificación JTL para la líder). */
-                    objEMP.fechaComisionableJtl = r.getValue('custentity_fecha_comisionable_jtl')
                     /** Fecha de inicio elegibilidad Maestría (para exigir 3 meses consecutivos disponibles). */
                     objEMP.inicioMaestria = r.getValue('custentity_inicio_maestria')
                     objEMP.periodoPagoJtl = r.getValue('custentity_periodo_pago_jtl')
@@ -5506,7 +5539,7 @@ una rcluta de algun miembro del equipo*/
                             log.error('Error validando fecha de nombramiento', e);
                         }
                     }
-                    if (objEMP.nombramientoPor != '' && objEMP.tipoNombramento == 3 && !jtlPeriodoPagoCalificacionRegistrado(objEMP.periodoPagoJtl)) {
+                    if (objEMP.nombramientoPor != '' && esCalificacionJtlParaBonos(objEMP) && !jtlPeriodoPagoCalificacionRegistrado(objEMP.periodoPagoJtl)) {
                         try {
                             var fechaNombramientoJtl = jtlNormalizarFechaPeriodo(objEMP.fechaInicioLeJr);
                             if (fechaNombramientoJtl && fechaNombramientoJtl >= inicioTresPeriodosAntes && fechaNombramientoJtl <= finPeriodo_sdp) {
