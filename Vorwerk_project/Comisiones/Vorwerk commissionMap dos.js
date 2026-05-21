@@ -56,11 +56,88 @@ function(email,record, file, search, https, runtime,format,Dictionary) {
         var i;
         for (i = 0; i < arguments.length; i++) {
             var v = arguments[i];
-            if (v !== null && v !== undefined && String(v) !== '') {
-                return v;
+            if (v === null || v === undefined) {
+                continue;
+            }
+            var s = String(v).trim();
+            if (s !== '') {
+                return s;
             }
         }
         return '';
+    }
+
+    /** Detalle maestría: en líder (3) prioriza LE; en presentadora (1) prioriza JTL. */
+    function detalleMaestriaParaGuardar(configType, comissionInfo) {
+        if (parseInt(configType, 10) === 3) {
+            return pickFirstText(comissionInfo.bono_le_maestria_det, comissionInfo.bono_jtl_maestria_det);
+        }
+        return pickFirstText(comissionInfo.bono_jtl_maestria_det, comissionInfo.bono_le_maestria_det);
+    }
+
+    /** Detalle calificación JTL: en líder (3) prioriza LE nombramiento. */
+    function detalleCalificacionJtlParaGuardar(configType, comissionInfo) {
+        if (parseInt(configType, 10) === 3) {
+            return pickFirstText(comissionInfo.bono_le_nombramiento_jtl_det, comissionInfo.bono_jtl_nombramiento_det);
+        }
+        return pickFirstText(comissionInfo.bono_jtl_nombramiento_det, comissionInfo.bono_le_nombramiento_jtl_det);
+    }
+
+    /**
+     * Extrae internal ids de transacción para customrecord_vorwerk_detail_comission.
+     * El reporte guarda ventas propias como JSON [{idSO:123,...}] en custentity_odv_jdg_ids;
+     * un split(',') sobre ese JSON produce fragmentos inválidos como {"idSO":8186339.
+     */
+    function extraerIdsTransaccionDesdeVentasPropiasIds(raw) {
+        if (raw === null || raw === undefined) {
+            return [];
+        }
+        var s = String(raw).trim();
+        if (s === '') {
+            return [];
+        }
+        var ids = [];
+        var seen = {};
+        var pushId = function (id) {
+            if (id === null || id === undefined) {
+                return;
+            }
+            var n = String(id).trim();
+            if (!/^\d+$/.test(n) || seen[n]) {
+                return;
+            }
+            seen[n] = true;
+            ids.push(n);
+        };
+        if (s.charAt(0) === '[' || s.charAt(0) === '{') {
+            try {
+                var parsed = JSON.parse(s);
+                var list = Array.isArray(parsed) ? parsed : [parsed];
+                var i;
+                for (i = 0; i < list.length; i++) {
+                    var item = list[i];
+                    if (item === null || item === undefined) {
+                        continue;
+                    }
+                    if (typeof item === 'object') {
+                        pushId(item.idSO);
+                        pushId(item.internalid);
+                        pushId(item.id);
+                    } else {
+                        pushId(item);
+                    }
+                }
+                return ids;
+            } catch (eJson) {
+                log.debug('extraerIdsTransaccion: JSON inválido, fallback split', String(eJson));
+            }
+        }
+        var parts = s.split(',');
+        var p;
+        for (p = 0; p < parts.length; p++) {
+            pushId(parts[p]);
+        }
+        return ids;
     }
 
     /** Cache en memoria del proceso: evita repetir la búsqueda de periodos en cada fila del map. */
@@ -384,20 +461,22 @@ function(email,record, file, search, https, runtime,format,Dictionary) {
                     fieldId: config_fields.monto_calificacion_jtl[config.type],
                     value: pickFirstNumber(comissionInfo.bono_jtl_nombramiento, comissionInfo.bono_le_nombramiento_jtl)
                 });
-                registerEmp.setValue({
-                    fieldId: config_fields.detalle_calificacion_jtl[config.type],
-                    value: asText(pickFirstText(comissionInfo.bono_jtl_nombramiento_det, comissionInfo.bono_le_nombramiento_jtl_det))
-                });
+                safeSetValue(
+                    registerEmp,
+                    config_fields.detalle_calificacion_jtl[config.type],
+                    detalleCalificacionJtlParaGuardar(config.type, comissionInfo)
+                );
 
                 // Maestría JTL
                 registerEmp.setValue({
                     fieldId: config_fields.monto_maestria[config.type],
                     value: pickFirstNumber(comissionInfo.bono_jtl_maestria, comissionInfo.bono_le_maestria)
                 });
-                registerEmp.setValue({
-                    fieldId: config_fields.detalle_maestria[config.type],
-                    value: asText(pickFirstText(comissionInfo.bono_jtl_maestria_det, comissionInfo.bono_le_maestria_det))
-                });
+                safeSetValue(
+                    registerEmp,
+                    config_fields.detalle_maestria[config.type],
+                    detalleMaestriaParaGuardar(config.type, comissionInfo)
+                );
 
                 // 3+2 líder (monto + detalle JSON unificado periodo; fallback a columnas legacy)
                 safeSetValue(registerEmp, config_fields.monto_tres_dos[config.type], comissionInfo.bono_tres_dos || 0);
@@ -479,12 +558,12 @@ function(email,record, file, search, https, runtime,format,Dictionary) {
                 });
 
                 // Bonos permanentes 6-9: usar para nuevos bonos (solo se imprimirán si el monto > 0 en PDF)
-                // bp6: Presentadora = 2+1 (318). Líder = 3+2 (301).
+                // bp6: Presentadora = 2+1 (318). Líder = 3+2 (310). No usar 301 aquí (301 = Pool Talent en bp7).
                 if (parseInt(config.type, 10) === 1) {
                     safeSetValue(registerEmp, config_fields.bp6[config.type], 318);
                     safeSetValue(registerEmp, config_fields.bp6_monto[config.type], asNumber(comissionInfo.bono_jtl_2mas1));
                 } else if (parseInt(config.type, 10) === 3) {
-                    safeSetValue(registerEmp, config_fields.bp6[config.type], 301);
+                    safeSetValue(registerEmp, config_fields.bp6[config.type], 310);
                     safeSetValue(registerEmp, config_fields.bp6_monto[config.type], asNumber(comissionInfo.bono_tres_dos));
                 }
 
@@ -679,20 +758,21 @@ function(email,record, file, search, https, runtime,format,Dictionary) {
 
             
             //proceso para crear y remplazar odv del detalle
-            var arrIdODV = comissionInfo.ventas_propias_ids.split(',');
-            log.debug('arrIdODV',arrIdODV);
-            if(arrIdODV.length > 0 ){
-                log.debug("inicia proceso de creacion de odv de detalle",arrIdODV);
-                deleteODVDetails(config.period,comissionInfo.idEmp);//elimina todas las odv del detalle 
-                for(var x in arrIdODV){
-                    try{
+            var arrIdODV = extraerIdsTransaccionDesdeVentasPropiasIds(comissionInfo.ventas_propias_ids);
+            log.debug('arrIdODV (ids transacción parseados)', arrIdODV);
+            if (arrIdODV.length > 0) {
+                log.debug('inicia proceso de creacion de odv de detalle', arrIdODV);
+                deleteODVDetails(config.period, comissionInfo.idEmp);//elimina todas las odv del detalle 
+                for (var x = 0; x < arrIdODV.length; x++) {
+                    try {
+                        var idTransaccion = arrIdODV[x];
                         var registerDetail = record.create({ // Crea objeto del detalle de odv por employee
                             type: 'customrecord_vorwerk_detail_comission',
                             isDynamic: true
                         });
                         registerDetail.setValue({
                             fieldId: 'custrecord_vorwertk_transaction',
-                            value: arrIdODV[x]
+                            value: idTransaccion
                         });
                         registerDetail.setValue({
                             fieldId: field_id[type_to_add][2],//selecciona el tipo de registro a relacionar de la configuracion

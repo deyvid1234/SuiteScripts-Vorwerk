@@ -82,7 +82,59 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
             log.error('error form',e);
         }
     }
-   
+    function busquedaGUTM() {
+        try {
+            log.audit('busquedaGUTM', 'Iniciando búsqueda de registros customrecord_gana_tm con status 7');
+            
+            // Crear la búsqueda de registros GUTM
+            var busquedaGUTM = search.create({
+                type: 'customrecord_gana_tm',
+                filters: [
+                    ['custrecord_status_program', 'anyof', '7']
+                ],
+                columns: [
+                    'custrecord_presentador_id',
+                    'custrecord_start_date',
+                    'custrecord_end_date',
+                    'custrecord_status_program',
+                    'custrecord_id_so_gaadora',
+                    'custrecord_fecha_tm_ganadora',
+                    'custrecord_list_ids_odv',
+                    'internalid',
+                    'custrecord_nombre_programa'
+                ]
+            });
+            
+            // Ejecutar la búsqueda y obtener todos los resultados
+            var resultados = {};
+            var contador = 0;
+            busquedaGUTM.run().each(function(resultado) {
+                var presentadorId = resultado.getValue('custrecord_presentador_id') || '';
+                var registro = {
+                    custrecord_start_date: resultado.getValue('custrecord_start_date') || '',
+                    custrecord_end_date: resultado.getValue('custrecord_end_date') || '',
+                    custrecord_status_program: resultado.getValue('custrecord_status_program') || '',
+                    custrecord_id_so_gaadora: resultado.getValue('custrecord_id_so_gaadora') || '',
+                    custrecord_fecha_tm_ganadora: resultado.getValue('custrecord_fecha_tm_ganadora') || '',
+                    custrecord_list_ids_odv: resultado.getValue('custrecord_list_ids_odv') || '',
+                    internalid: resultado.getValue('internalid') || '',
+                    custrecord_nombre_programa: resultado.getValue('custrecord_nombre_programa') || ''
+                };
+                
+                // Usar el presentador ID como clave principal
+                resultados[presentadorId] = registro;
+                contador++;
+                return true; // Continuar con el siguiente resultado
+            });
+            
+            log.audit('busquedaGUTM', 'Búsqueda completada. Registros encontrados: ' + contador);
+            return resultados;
+            
+        } catch (error) {
+            log.error('busquedaGUTM - Error', 'Error al realizar la búsqueda: ' + error.message);
+            return {};
+        }
+    }
     function createForm(){
         try{
            

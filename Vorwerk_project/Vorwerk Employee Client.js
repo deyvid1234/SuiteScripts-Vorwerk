@@ -175,6 +175,27 @@ define(['N/record','N/ui/dialog','N/http','N/https','N/search','N/runtime','N/lo
         function lineInit(scriptContext) {
     
         }
+
+        function normalizarValorListaCampo(val) {
+            if (val == null || val === '') {
+                return '';
+            }
+            if (typeof val === 'object' && val.length) {
+                val = val[0];
+            }
+            return String(val);
+        }
+
+        /**
+         * Exento de CSF al activar si el tipo aplicable es 16 (embajador sin CSF).
+         * Con reingreso lleno solo cuenta reingreso; si reingreso está vacío, solo tipo ingreso.
+         */
+        function esExentoActivacionCsfPorTipo16(tipoIngreso, tipoReingreso) {
+            var reingreso = normalizarValorListaCampo(tipoReingreso);
+            var ingreso = normalizarValorListaCampo(tipoIngreso);
+            var tipoAplicable = reingreso !== '' ? reingreso : ingreso;
+            return tipoAplicable === '16';
+        }
     
         /**
          * Validation function to be executed when field is changed.
@@ -195,15 +216,19 @@ define(['N/record','N/ui/dialog','N/http','N/https','N/search','N/runtime','N/lo
                 var isInactive = scriptContext.currentRecord.getValue('isinactive');
                 // Se ejecuta cuando se intenta desmarcar el campo (cambiar de true a false)
                 if(!isInactive) {
-                    var urlCsf = scriptContext.currentRecord.getValue('custentity_url_csf');
-                    var autorizadoFinanzas = scriptContext.currentRecord.getValue('custentity_autorizado_finanzas');
-                    
-                    if(!urlCsf || !autorizadoFinanzas) {
-                        dialog.alert({
-                            title: 'Error de Validación',
-                            message: 'El presentador no tiene CSF y/o no ha sido validada, no puede darse de alta'
-                        });
-                        return false; // Revierte el checkbox a marcado (true)
+                    var tipoIngreso = scriptContext.currentRecord.getValue('custentity_tipo_ingreso');
+                    var tipoReingreso = scriptContext.currentRecord.getValue('custentity_vorwerk_reentry');
+                    if (!esExentoActivacionCsfPorTipo16(tipoIngreso, tipoReingreso)) {
+                        var urlCsf = scriptContext.currentRecord.getValue('custentity_url_csf');
+                        var autorizadoFinanzas = scriptContext.currentRecord.getValue('custentity_autorizado_finanzas');
+
+                        if(!urlCsf || !autorizadoFinanzas) {
+                            dialog.alert({
+                                title: 'Error de Validación',
+                                message: 'El presentador no tiene CSF y/o no ha sido validada, no puede darse de alta'
+                            });
+                            return false; // Revierte el checkbox a marcado (true)
+                        }
                     }
                 }
             }

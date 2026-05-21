@@ -32,7 +32,7 @@ function(record,search,http,https,encode,runtime,serverWidget,error) {
 
             // Quitar botón Editar para rol 1061 cuando el entityid inicia con IDU
             var currentRole = String(runtime.getCurrentUser().role || '');
-            log.audit('customer beforeLoad - role', {
+            log.debug('customer beforeLoad - role', {
                 role: currentRole,
                 contextType: contextType,
                 recordId: rec.id,

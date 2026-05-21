@@ -67,6 +67,9 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                 case "getSalesRep":
                     res = getSalesRep(req_info)
                 break;
+                case "getDataEmployee":
+                    res = getStatusCSF(req_info)
+                break;
                 //eventos de creacion
                 case "createCustomer":
                     res = createUser(req_info,"customer")
@@ -515,6 +518,322 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
         }
         
     }
+
+    /**
+     * Embajadores / CSF: resuelve custentity_status_csf (val = status, url_csf).
+     * - status = 1 → 1 | status = 2 → 2
+     * - status vacío: url vacío → 1 | url con valor → 2
+     */
+    function payloadTieneStatusCsf(val, url_csf) {
+        var status = 1;
+        var valVacio = val === undefined || val === null || val === false ||
+            (typeof val === 'string' && val.trim() === '');
+        var urlVacio = url_csf === undefined || url_csf === null || url_csf === false ||
+            (typeof url_csf === 'string' && url_csf.trim() === '');
+
+        if (!valVacio) {
+            var valStr = String(val).trim();
+            if (valStr === '1' || val === 1) {
+                status = 1;
+                return status;
+            }
+            if (valStr === '2' || val === 2) {
+                status = 2;
+                return status;
+            }
+        }
+
+        if (urlVacio) {
+            status = 1;
+        } else {
+            status = 2;
+        }
+
+        return status;
+    }
+
+    /**
+     * Convierte valor de fecha NetSuite (Date o string) a Date; null si no es válido.
+     */
+    function parseEmployeeDateField(val) {
+        if (val == null || val === '') {
+            return null;
+        }
+        if (val instanceof Date && !isNaN(val.getTime())) {
+            return val;
+        }
+        try {
+            return format.parse({
+                value: val,
+                type: format.Type.DATE
+            });
+        } catch (ignoreParse) {
+            return parseDate(val);
+        }
+    }
+
+    /** Fecha a DD/MM/YYYY para respuesta getDataEmployee. */
+    function formatFechaDdMmYyyy(val) {
+        var d = parseEmployeeDateField(val);
+        if (!d || isNaN(d.getTime())) {
+            return '';
+        }
+        var day = d.getDate();
+        var month = d.getMonth() + 1;
+        var year = d.getFullYear();
+        var dd = day < 10 ? '0' + day : String(day);
+        var mm = month < 10 ? '0' + month : String(month);
+        return dd + '/' + mm + '/' + year;
+    }
+
+    function dateOnlyTimestamp(d) {
+        return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+    }
+
+    /**
+     * vencido false: hoy >= hiredate y hoy <= custentity_fin_objetivo_2; true si hoy > objetivo_2 (u otras fechas inválidas).
+     */
+    function calcularVencidoEmbajador(hiredateVal, objetivo2Val) {
+        var hoy = new Date();
+        var hoyTs = dateOnlyTimestamp(hoy);
+        var hire = parseEmployeeDateField(hiredateVal);
+        var objetivo2 = parseEmployeeDateField(objetivo2Val);
+        if (!hire || !objetivo2 || isNaN(hire.getTime()) || isNaN(objetivo2.getTime())) {
+            return true;
+        }
+        var hireTs = dateOnlyTimestamp(hire);
+        var obj2Ts = dateOnlyTimestamp(objetivo2);
+        if (hoyTs >= hireTs && hoyTs <= obj2Ts) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Cuenta órdenes de venta del empleado: salesrep = internal id, custbody_tipo_venta = 2, mainline.
+     * Registra en log el detalle; devuelve solo el total.
+     */
+    function contarVentasSalesOrderEmpleado(employeeInternalId) {
+        var numeroVentas = 0;
+        var ordenesDetalle = [];
+        if (employeeInternalId == null || String(employeeInternalId).trim() === '') {
+            log.audit('getDataEmployee - ventas sales order tipo 2', {
+                employeeInternalId: employeeInternalId,
+                numero_ventas: 0,
+                ordenes: [],
+                nota: 'Sin internal id de empleado'
+            });
+            return 0;
+        }
+        try {
+            var ventasSearch = search.create({
+                type: search.Type.SALES_ORDER,
+                filters: [
+                    ['salesrep', 'anyof', String(employeeInternalId)],
+                    'AND',
+                    ['custbody_tipo_venta', 'anyof', '2'],
+                    'AND',
+                    ['mainline', 'is', 'T']
+                ],
+                columns: [
+                    search.createColumn({ name: 'entity' }),
+                    search.createColumn({ name: 'salesrep' }),
+                    search.createColumn({ name: 'trandate' }),
+                    search.createColumn({ name: 'custbody_tipo_venta' }),
+                    search.createColumn({ name: 'tranid' }),
+                    search.createColumn({ name: 'internalid' })
+                ]
+            });
+            ventasSearch.run().each(function (r) {
+                numeroVentas++;
+                ordenesDetalle.push({
+                    id: r.getValue({ name: 'internalid' }),
+                    tranid: r.getValue({ name: 'tranid' }),
+                    entity: r.getValue({ name: 'entity' }),
+                    salesrep: r.getValue({ name: 'salesrep' }),
+                    date: r.getValue({ name: 'trandate' }),
+                    custbody_tipo_venta: r.getValue({ name: 'custbody_tipo_venta' })
+                });
+                return true;
+            });
+        } catch (e) {
+            log.error('contarVentasSalesOrderEmpleado', e);
+        }
+        log.audit('getDataEmployee - ventas sales order tipo 2', {
+            employeeInternalId: String(employeeInternalId),
+            numero_ventas: numeroVentas,
+            ordenes: ordenesDetalle
+        });
+        return numeroVentas;
+    }
+
+    /** Valor y texto de campo lista en employee (getDataEmployee). */
+    function readEmployeeListField(empRecord, fieldId) {
+        var val = '';
+        var txt = '';
+        try {
+            val = empRecord.getValue({ fieldId: fieldId });
+        } catch (ignoreVal) {
+            try {
+                val = empRecord.getValue(fieldId);
+            } catch (ignoreVal2) {}
+        }
+        try {
+            txt = empRecord.getText({ fieldId: fieldId }) || '';
+        } catch (ignoreTxt) {
+            try {
+                txt = empRecord.getText(fieldId) || '';
+            } catch (ignoreTxt2) {}
+        }
+        return { value: val, text: txt };
+    }
+
+    /**
+     * Arma la respuesta de getStatusCSF / getDataEmployee desde un registro employee cargado.
+     */
+    function buildEmployeeStatusCSFRow(empRecord) {
+        var csfField = readEmployeeListField(empRecord, 'custentity_status_csf');
+        var csfVal = csfField.value;
+        var csfText = csfField.text;
+        var tipoIngresoField = readEmployeeListField(empRecord, 'custentity_tipo_ingreso');
+        var tipoReingresoField = readEmployeeListField(empRecord, 'custentity_vorwerk_reentry');
+        var inact = empRecord.getValue({ fieldId: 'isinactive' });
+        var listaNegra;
+        var adeudoDc;
+        try {
+            listaNegra = empRecord.getValue({ fieldId: 'custentity_lista_negra' });
+        } catch (ignoreLn) {
+            try {
+                listaNegra = empRecord.getValue('custentity_lista_negra');
+            } catch (ignoreLn2) {}
+        }
+        try {
+            adeudoDc = empRecord.getValue({ fieldId: 'custentity_adeudo_dc' });
+        } catch (ignoreAd) {
+            try {
+                adeudoDc = empRecord.getValue('custentity_adeudo_dc');
+            } catch (ignoreAd2) {}
+        }
+        var hiredateVal = '';
+        var objetivo2Val = '';
+        try {
+            hiredateVal = empRecord.getValue({ fieldId: 'hiredate' });
+        } catch (ignoreHire) {
+            try {
+                hiredateVal = empRecord.getValue('hiredate');
+            } catch (ignoreHire2) {}
+        }
+        try {
+            objetivo2Val = empRecord.getValue({ fieldId: 'custentity_fin_objetivo_2' });
+        } catch (ignoreObj2) {
+            try {
+                objetivo2Val = empRecord.getValue('custentity_fin_objetivo_2');
+            } catch (ignoreObj22) {}
+        }
+        return {
+            internalid: String(empRecord.id),
+            idu: empRecord.getValue({ fieldId: 'entityid' }),
+            firstname: empRecord.getValue({ fieldId: 'firstname' }),
+            lastname: empRecord.getValue({ fieldId: 'lastname' }),
+            email: empRecord.getValue({ fieldId: 'email' }),
+            altname: empRecord.getValue({ fieldId: 'altname' }),
+            custentity_ce_rfc: empRecord.getValue({ fieldId: 'custentity_ce_rfc' }),
+            custentity_status_csf: csfVal,
+            custentity_status_csf_text: csfText,
+            //custentity_tipo_ingreso: tipoIngresoField.value,
+            //custentity_vorwerk_reentry: tipoReingresoField.value,
+            custentity_lista_negra: listaNegra,
+            custentity_adeudo_dc: adeudoDc,
+            isinactive: inact === true || inact === 'T',
+            fecha_objetivo2: formatFechaDdMmYyyy(objetivo2Val),
+            vencido: calcularVencidoEmbajador(hiredateVal, objetivo2Val),
+            //numero_ventas: contarVentasSalesOrderEmpleado(empRecord.id)
+        };
+    }
+
+    /**
+     * idu = Employee ID en pantalla = campo entityid en búsqueda (no es el internal id de record.load).
+     * Incluye inactivos. Coincidencia exacta del entityid, sin variantes con prefijos.
+     */
+    function findEmployeeInternalIdByEntityId(entityIdStr) {
+        var trimmed = String(entityIdStr).trim();
+        if (!trimmed) {
+            return null;
+        }
+        var busqueda = search.create({
+            type: search.Type.EMPLOYEE,
+            filters: [['entityid', 'is', trimmed]],
+            columns: [search.createColumn({ name: 'internalid' })]
+        });
+        var found = null;
+        busqueda.run().each(function (r) {
+            found = r.getValue({ name: 'internalid' });
+            return false;
+        });
+        return found;
+    }
+
+    /**
+     * type getStatusCSF — correo y/o idu (entityid) y/o internalid/id (internal id NetSuite).
+     * idu nunca se pasa a record.load directo: primero se resuelve internal id por búsqueda entityid.
+     */
+    function getStatusCSF(req_info) {
+        try {
+            var emailVal = req_info.email;
+            var hasEmail = emailVal !== undefined && emailVal !== null && String(emailVal).trim() !== '';
+            var hasIdu = req_info.idu !== undefined && req_info.idu !== null && String(req_info.idu).trim() !== '';
+            var hasInternalid = req_info.internalid !== undefined && req_info.internalid !== null && String(req_info.internalid).trim() !== '';
+            var hasId = req_info.id !== undefined && req_info.id !== null && String(req_info.id).trim() !== '';
+
+            if (!hasEmail && !hasIdu && !hasInternalid && !hasId) {
+                return { success: false, error: 'Indique email, idu (Employee ID / entityid), internalid o id (internal id NetSuite).' };
+            }
+
+            var internalIdToLoad = null;
+
+            if (hasIdu) {
+                internalIdToLoad = findEmployeeInternalIdByEntityId(req_info.idu);
+                if (!internalIdToLoad) {
+                    return { success: false, error: 'No se encontró empleado con el idu (entityid) indicado.' };
+                }
+            } else if (hasInternalid) {
+                internalIdToLoad = String(req_info.internalid).trim();
+            } else if (hasId) {
+                internalIdToLoad = String(req_info.id).trim();
+            } else if (hasEmail) {
+                var busquedaMail = search.create({
+                    type: search.Type.EMPLOYEE,
+                    filters: [['email', 'is', String(emailVal).trim()]],
+                    columns: [search.createColumn({ name: 'internalid' })]
+                });
+                busquedaMail.run().each(function (r) {
+                    internalIdToLoad = r.getValue({ name: 'internalid' });
+                    return false;
+                });
+                if (!internalIdToLoad) {
+                    return { success: false, error: 'No se encontró un empleado con el correo indicado.' };
+                }
+            }
+
+            var empRec = record.load({
+                type: record.Type.EMPLOYEE,
+                id: internalIdToLoad,
+                isDynamic: false
+            });
+
+            if (hasEmail) {
+                var mailEmp = empRec.getValue({ fieldId: 'email' }) || empRec.getValue('email') || '';
+                if (String(mailEmp).trim().toLowerCase() !== String(emailVal).trim().toLowerCase()) {
+                    return { success: false, error: 'Los datos no coinciden: el correo no pertenece al empleado encontrado.' };
+                }
+            }
+
+            return { success: true, employee: buildEmployeeStatusCSFRow(empRec) };
+        } catch (err) {
+            log.error('getStatusCSF', err);
+            return { success: false, error: err.message || String(err) };
+        }
+    }
     
     
     /*************Fin de funciones de lectura************************/
@@ -594,6 +913,15 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                      
                 }
             }
+            if (type_user === 'employee' && (
+                Object.prototype.hasOwnProperty.call(req_info, 'custentity_status_csf') ||
+                Object.prototype.hasOwnProperty.call(req_info, 'url_csf')
+            )) {
+                obj_user.setValue({
+                    fieldId: 'custentity_status_csf',
+                    value: payloadTieneStatusCsf(req_info['custentity_status_csf'], req_info['url_csf'])
+                });
+            }
             obj_user.setValue({fieldId:'language',value:"es_AR"});
             if('address' in req_info){
                 //setter information address
@@ -656,7 +984,7 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
     //fincion para crear ODV
     function createSalesOrder(req_info){
         try{
-            
+            log.debug('tipo de venta create sales order', req_info.custbody_tipo_venta);
             var valid = searchODV(req_info.tranid)
             if(!valid){
                 return {error:"Sales Order previously created"}
@@ -1184,6 +1512,7 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
      */
     function createSalesOrderWithItemDiscounts(req_info){
         try{
+            log.debug('tipo de venta create sales order with item discounts', req_info.custbody_tipo_venta);
             var valid = searchODV(req_info.tranid);
             if(!valid){
                 return {error:"Sales Order previously created"};
@@ -1893,6 +2222,7 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
     //funcion para crear ODV v2 - separa items en dos ordenes: una con item TM7 y otra con items GETM7 y KIT DESGASTE
     function createSalesOrderManager(req_info){
         try{
+            log.debug('tipo de venta', req_info.custbody_tipo_venta);
             // Si no hay items o no es caso TM7/GETM7 (sin \"0000\"), delegar a la lógica estándar
             if (!req_info || !req_info.items || !req_info.items.length) {
                 return createSalesOrderWithConfigDiscounts(req_info);
@@ -2770,6 +3100,15 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                         }
                          
                     }
+                }
+                if (type_user === 'employee' && (
+                    Object.prototype.hasOwnProperty.call(req_info, 'custentity_status_csf') ||
+                    Object.prototype.hasOwnProperty.call(req_info, 'url_csf')
+                )) {
+                    obj_user.setValue({
+                        fieldId: 'custentity_status_csf',
+                        value: payloadTieneStatusCsf(req_info['custentity_status_csf'], req_info['url_csf'])
+                    });
                 }
                 if('address' in req_info){
                     if(req_info['address'].length > 0){// en caso de existir direcciones 

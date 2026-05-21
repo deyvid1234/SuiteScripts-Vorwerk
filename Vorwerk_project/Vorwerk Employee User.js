@@ -78,6 +78,119 @@ define(['N/record','N/search','N/http','N/https','N/encode','N/runtime','N/ui/se
 			}
 			
 		}
+
+		/** Normaliza valor de lista (internal id) a string. */
+		function normalizarValorListaCampo(val) {
+			if (val == null || val === '') {
+				return '';
+			}
+			if (typeof val === 'object' && val.length) {
+				val = val[0];
+			}
+			return String(val);
+		}
+
+		function textoCampoNoVacio(val) {
+			return val != null && String(val).replace(/^\s+|\s+$/g, '') !== '';
+		}
+
+		function esAutorizadoFinanzas(val) {
+			return val === true || val === 'T';
+		}
+
+		/**
+		 * custentity_status_csf: 1 sin CSF, 2 URL cargada (pendiente finanzas), 3 validada (comisiona).
+		 */
+		function resolverStatusCsfEmbajador(urlCsf, autorizadoFinanzas) {
+			var tieneUrl = textoCampoNoVacio(urlCsf);
+			var autorizado = esAutorizadoFinanzas(autorizadoFinanzas);
+			if (tieneUrl && autorizado) {
+				return 3;
+			}
+			if (tieneUrl) {
+				return 2;
+			}
+			return 1;
+		}
+
+		function obtenerValorCampoEmployee(rec, oldRec, fieldId) {
+			var valor = rec.getValue({ fieldId: fieldId });
+			if (valor !== '' && valor != null) {
+				return valor;
+			}
+			if (oldRec && oldRec.getValue) {
+				return oldRec.getValue({ fieldId: fieldId });
+			}
+			return valor;
+		}
+
+		/** Calcula custentity_status_csf para cualquier empleado según URL y autorización finanzas. */
+		function calcularStatusCsfEmbajador(empRecord, oldRecord) {
+			var urlCsf = obtenerValorCampoEmployee(empRecord, oldRecord, 'custentity_url_csf');
+			var autorizadoFinanzas = obtenerValorCampoEmployee(empRecord, oldRecord, 'custentity_autorizado_finanzas');
+			return resolverStatusCsfEmbajador(urlCsf, autorizadoFinanzas);
+		}
+
+		function aplicarStatusCsfEmbajadorBeforeSubmit(scriptContext) {
+			if (scriptContext.type !== 'create' && scriptContext.type !== 'edit' && scriptContext.type !== 'xedit') {
+				return;
+			}
+			var nuevoStatus = calcularStatusCsfEmbajador(scriptContext.newRecord, scriptContext.oldRecord);
+			var actual = scriptContext.newRecord.getValue({ fieldId: 'custentity_status_csf' });
+			if (normalizarValorListaCampo(actual) === String(nuevoStatus)) {
+				return;
+			}
+			scriptContext.newRecord.setValue({
+				fieldId: 'custentity_status_csf',
+				value: nuevoStatus
+			});
+			log.debug('aplicarStatusCsfEmbajadorBeforeSubmit', {
+				employeeId: scriptContext.newRecord.id,
+				anterior: actual,
+				nuevo: nuevoStatus,
+				tipo: scriptContext.type
+			});
+		}
+
+		function sincronizarStatusCsfEmbajadorAfterSubmit(scriptContext) {
+			if (scriptContext.type !== 'create' && scriptContext.type !== 'edit' && scriptContext.type !== 'xedit') {
+				return;
+			}
+			var employeeId = scriptContext.newRecord.id;
+			if (!employeeId) {
+				return;
+			}
+			try {
+				var empRecord = record.load({
+					type: record.Type.EMPLOYEE,
+					id: employeeId,
+					isDynamic: false
+				});
+				var nuevoStatus = calcularStatusCsfEmbajador(empRecord, null);
+				var actual = empRecord.getValue({ fieldId: 'custentity_status_csf' });
+				if (normalizarValorListaCampo(actual) === String(nuevoStatus)) {
+					return;
+				}
+				record.submitFields({
+					type: record.Type.EMPLOYEE,
+					id: employeeId,
+					values: {
+						custentity_status_csf: nuevoStatus
+					},
+					options: {
+						enableSourcing: false,
+						ignoreMandatoryFields: true
+					}
+				});
+				log.audit('sincronizarStatusCsfEmbajadorAfterSubmit', {
+					employeeId: employeeId,
+					anterior: actual,
+					nuevo: nuevoStatus
+				});
+			} catch (e) {
+				log.error('sincronizarStatusCsfEmbajadorAfterSubmit', e);
+			}
+		}
 	
 		/**
 		 * Function definition to be triggered before record is loaded.
@@ -93,8 +206,9 @@ define(['N/record','N/search','N/http','N/https','N/encode','N/runtime','N/ui/se
 				if (scriptContext.type === 'edit' || scriptContext.type === 'xedit') {
 					syncClienteRelacionadoConPresentador(scriptContext.newRecord, scriptContext.oldRecord);
 				}
+				aplicarStatusCsfEmbajadorBeforeSubmit(scriptContext);
 			} catch (e) {
-				log.error('beforeSubmit - syncClienteRelacionadoConPresentador', e);
+				log.error('beforeSubmit', e);
 			}
 		}
 
@@ -343,6 +457,11 @@ define(['N/record','N/search','N/http','N/https','N/encode','N/runtime','N/ui/se
 			}*/
 			if(scriptContext.type == 'edit'){
 				gutm(scriptContext)
+			}
+			try {
+				sincronizarStatusCsfEmbajadorAfterSubmit(scriptContext);
+			} catch (e) {
+				log.error('afterSubmit - sincronizarStatusCsfEmbajador', e);
 			}
 			try{
 				
