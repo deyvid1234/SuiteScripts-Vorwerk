@@ -463,7 +463,8 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                             objXmasdosNLE=bonoXmasdosNLE(listaNombramientos,dataEmp,thisPeriodSO,listaGrupos,allPresentadoras,listaEquipoRecluta,historicoSO,dHistorico,namePeriodo,cust_period,listaReclutas)
                             objJoya = bonoJoya(conf,ventasEmp,compConfigDetails)
                             objCook = bonoCk(dataEmp,ckSO)
-                            objNuevoRecluta = bonoNuevoRecluta(empID,dataEmp,reclutas,thisPeriodSO,historicoSO,allPresentadoras,dHistorico,integrantesEquipo)
+                            // BONO INACTIVADO (UI + cálculo): Bono Nuevo Recluta
+                            // objNuevoRecluta = bonoNuevoRecluta(empID,dataEmp,reclutas,thisPeriodSO,historicoSO,allPresentadoras,dHistorico,integrantesEquipo)
                             //log.debug('objNuevoRecluta',objNuevoRecluta)
                             objBonoPoolTalent = bonoPoolTalentLE(
                                 dataEmp,
@@ -714,10 +715,11 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
         //   v = xMasdosNLE.monto32>0?xMasdosNLE.monto32:0
         //   subtotal+=parseInt(v,10)
         // }
-        if(nuevoRecluta){
-            v = nuevoRecluta.monto>0?nuevoRecluta.monto:0
-            subtotal+=parseInt(v,10)  
-        }
+        // BONO INACTIVADO (UI + cálculo): Bono Nuevo Recluta
+        // if(nuevoRecluta){
+        //     v = nuevoRecluta.monto>0?nuevoRecluta.monto:0
+        //     subtotal+=parseInt(v,10)
+        // }
         // BONO INACTIVADO (UI + cálculo): Bono Actividad
         // if(actividad){
         //     v = actividad.monto>0?actividad.monto:0
@@ -1164,28 +1166,29 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
         //     });
         //   
         // }
-        if(nuevoRecluta){
-        
-            v = JSON.stringify(nuevoRecluta.data)
-            sublist.setSublistValue({
-                id : 'custentity_nuevo_recluta_activos',
-                line : linea,
-                value : v!=''?v:''
-            });
-            v = nuevoRecluta.noActivos
-            sublist.setSublistValue({
-                id : 'custentity_no_activos_rec',
-                line : linea,
-                value : v!=''?v:''
-            });
-            v = nuevoRecluta.monto>0?nuevoRecluta.monto:0
-            subtotal+=parseInt(v,10)
-            sublist.setSublistValue({
-                id : 'custentity_monto_nuevo_recluta',
-                line : linea,
-                 value : v
-            });
-        }
+        // BONO INACTIVADO (UI): Bono Nuevo Recluta
+        // if(nuevoRecluta){
+        //
+        //     v = JSON.stringify(nuevoRecluta.data)
+        //     sublist.setSublistValue({
+        //         id : 'custentity_nuevo_recluta_activos',
+        //         line : linea,
+        //         value : v!=''?v:''
+        //     });
+        //     v = nuevoRecluta.noActivos
+        //     sublist.setSublistValue({
+        //         id : 'custentity_no_activos_rec',
+        //         line : linea,
+        //         value : v!=''?v:''
+        //     });
+        //     v = nuevoRecluta.monto>0?nuevoRecluta.monto:0
+        //     subtotal+=parseInt(v,10)
+        //     sublist.setSublistValue({
+        //         id : 'custentity_monto_nuevo_recluta',
+        //         line : linea,
+        //          value : v
+        //     });
+        // }
         // BONO INACTIVADO (UI): Bono Actividad
         // if(actividad){
         // 
@@ -6247,24 +6250,24 @@ una rcluta de algun miembro del equipo*/
                     label : 'NLE'
                 }).updateDisplayType({displayType : serverWidget.FieldDisplayType.READONLY});
                 arrayFields.push({idfield : thidField.id, namefield : thidField.label})
-                //Bono Nuevo Recluta
-                thidField = sublist.addField({
-                    id : 'custentity_monto_nuevo_recluta',
-                    type : serverWidget.FieldType.CURRENCY,
-                    label : 'Bono Nuevo Recluta'
-                }).updateDisplayType({displayType : serverWidget.FieldDisplayType.READONLY});
-                arrayFields.push({idfield : thidField.id, namefield : thidField.label})
-                thidField = sublist.addField({
-                    id : 'custentity_no_activos_rec',
-                    type : serverWidget.FieldType.TEXT,
-                    label : 'Numero de Reclutas Activos'
-                }).updateDisplayType({displayType : serverWidget.FieldDisplayType.READONLY});
-                thidField = sublist.addField({
-                    id : 'custentity_nuevo_recluta_activos',
-                    type : serverWidget.FieldType.TEXTAREA,
-                    label : 'Reclutas Activos'
-                }).updateDisplayType({displayType : serverWidget.FieldDisplayType.READONLY});
-                arrayFields.push({idfield : thidField.id, namefield : thidField.label})
+                // BONO INACTIVADO (UI): Bono Nuevo Recluta
+                // thidField = sublist.addField({
+                //     id : 'custentity_monto_nuevo_recluta',
+                //     type : serverWidget.FieldType.CURRENCY,
+                //     label : 'Bono Nuevo Recluta'
+                // }).updateDisplayType({displayType : serverWidget.FieldDisplayType.READONLY});
+                // arrayFields.push({idfield : thidField.id, namefield : thidField.label})
+                // thidField = sublist.addField({
+                //     id : 'custentity_no_activos_rec',
+                //     type : serverWidget.FieldType.TEXT,
+                //     label : 'Numero de Reclutas Activos'
+                // }).updateDisplayType({displayType : serverWidget.FieldDisplayType.READONLY});
+                // thidField = sublist.addField({
+                //     id : 'custentity_nuevo_recluta_activos',
+                //     type : serverWidget.FieldType.TEXTAREA,
+                //     label : 'Reclutas Activos'
+                // }).updateDisplayType({displayType : serverWidget.FieldDisplayType.READONLY});
+                // arrayFields.push({idfield : thidField.id, namefield : thidField.label})
                 // BONO INACTIVADO (UI): Bono Actividad
                 // thidField = sublist.addField({
                 //     id : 'custentity_monto_actividad',

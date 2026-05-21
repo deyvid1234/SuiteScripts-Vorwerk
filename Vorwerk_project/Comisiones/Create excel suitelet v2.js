@@ -101,12 +101,13 @@
                             + '<Cell><Data ss:Type="String">BONO NLE</Data></Cell>'
                            // + '<Cell><Data ss:Type="String">ODV DEL PERIODO MISMO EQUIPO</Data></Cell>'
                             //+ '<Cell><Data ss:Type="String">RECLUTAS Y ODV POR RECLUTA DEL LE DEL PERIODO</Data></Cell>'
-                            + '<Cell><Data ss:Type="String">BONO NUEVO RECLUTA</Data></Cell>'
-                            + '<Cell><Data ss:Type="String">No.RECLUTAS ACTIVOS</Data></Cell>'
-                            + '<Cell><Data ss:Type="String">RECLUTAS ACTIVOS</Data></Cell>'
-                            + '<Cell><Data ss:Type="String">BONO ACTIVIDAD</Data></Cell>'
-                            + '<Cell><Data ss:Type="String">No. INTGRANTES ACTIVOS</Data></Cell>'
-                            + '<Cell><Data ss:Type="String">INTEGRANTES ACTIVOS</Data></Cell>'
+                            // BONO INACTIVADO (Excel): Bono Nuevo Recluta / Bono Actividad
+                            // + '<Cell><Data ss:Type="String">BONO NUEVO RECLUTA</Data></Cell>'
+                            // + '<Cell><Data ss:Type="String">No.RECLUTAS ACTIVOS</Data></Cell>'
+                            // + '<Cell><Data ss:Type="String">RECLUTAS ACTIVOS</Data></Cell>'
+                            // + '<Cell><Data ss:Type="String">BONO ACTIVIDAD</Data></Cell>'
+                            // + '<Cell><Data ss:Type="String">No. INTGRANTES ACTIVOS</Data></Cell>'
+                            // + '<Cell><Data ss:Type="String">INTEGRANTES ACTIVOS</Data></Cell>'
                             + '<Cell><Data ss:Type="String">BONO POOL TALENT</Data></Cell>'
                             + '<Cell><Data ss:Type="String">DETALLE POOL TALENT</Data></Cell>'
                             + '<Cell><Data ss:Type="String">BONO CALIFICACIÓN JTL</Data></Cell>'
@@ -151,6 +152,12 @@
                          //var odv_rec_id = typeof data[x].odv_rec_id === 'undefined'?"0":data[x].odv_rec_id;
                          var odv_entrega = typeof data[x].odv_entrega === 'undefined'?"0":data[x].odv_entrega;
                          var total = typeof data[x].total === 'undefined'?"0":data[x].total;
+                         var totalExcel = parseInt(total, 10) || 0;
+                         totalExcel -= (parseInt(data[x].montoNR, 10) || 0) + (parseInt(data[x].montoActividad, 10) || 0);
+                         if (totalExcel < 0) {
+                             totalExcel = 0;
+                         }
+                         total = String(totalExcel);
                          //var tm_pagada = typeof data[x].tm_pagada === 'undefined'?"0":data[x].tm_pagada;
                          //var total_venta_propia = typeof data[x].total_venta_propia === 'undefined'?"0":data[x].total_venta_propia;
                          //var tm_pagadas_equipo = typeof data[x].tm_pagadas_equipo === 'undefined'?"0":data[x].tm_pagadas_equipo;
@@ -172,16 +179,17 @@
                          var nle = typeof data[x].nle === 'undefined'?"0":data[x].nle;
                          var bono_nle = typeof data[x].bono_nle === 'undefined'?"0":data[x].bono_nle;
                          // var xdos_nle = typeof data[x].xdos_nle === 'undefined'?"0":data[x].xdos_nle;
-                         var montoNR = typeof data[x].montoNR === 'undefined'?"0":data[x].montoNR;
-                         var noNR = typeof data[x].noNR === 'undefined'?"0":data[x].noNR;
-                         var dataNR = typeof data[x].dataNR === 'undefined'?"0":data[x].dataNR;
-                         var montoActividad = typeof data[x].montoActividad === 'undefined'?"0":data[x].montoActividad;
-                         var noActividad = typeof data[x].noActividad === 'undefined'?"0":data[x].noActividad;
+                         // BONO INACTIVADO (Excel): Bono Nuevo Recluta / Bono Actividad
+                         // var montoNR = typeof data[x].montoNR === 'undefined'?"0":data[x].montoNR;
+                         // var noNR = typeof data[x].noNR === 'undefined'?"0":data[x].noNR;
+                         // var dataNR = typeof data[x].dataNR === 'undefined'?"0":data[x].dataNR;
+                         // var montoActividad = typeof data[x].montoActividad === 'undefined'?"0":data[x].montoActividad;
+                         // var noActividad = typeof data[x].noActividad === 'undefined'?"0":data[x].noActividad;
                          var ventaPropiaTMSB = typeof data[x].ventaPropia_tmsb === 'undefined'?"0":data[x].ventaPropia_tmsb;
                          var ventaPropiaTMSB_monto = typeof data[x].ventaPropia_monto_tmsb === 'undefined'?"0":data[x].ventaPropia_monto_tmsb;
                          var productividadTMSB = typeof data[x].productividad_tmsb === 'undefined'?"0":data[x].productividad_tmsb;
                          var productividadTMSB_monto = typeof data[x].productividad_monto_tmsb === 'undefined'?"0":data[x].productividad_monto_tmsb;
-                         var dataActividad = typeof data[x].dataActividad === 'undefined'?"0":data[x].dataActividad; 
+                         // var dataActividad = typeof data[x].dataActividad === 'undefined'?"0":data[x].dataActividad;
                          var dataGUTM = typeof data[x].ordenes_extaordinarias === 'undefined'?"0":data[x].ordenes_extaordinarias;
                          var ventaPropiaGUTM = typeof data[x].monto_ventapropia_extra === 'undefined'?"0":data[x].monto_ventapropia_extra;
                          var productividadGUTM = typeof data[x].monto_prod_extra === 'undefined'?"0":data[x].monto_prod_extra;
@@ -243,12 +251,13 @@
                                + '<Cell><Data ss:Type="String">'+nle+'</Data></Cell>'
                                + '<Cell><Data ss:Type="String">'+bono_nle+'</Data></Cell>'
                                //+ '<Cell><Data ss:Type="String">'+rec_period_le+'</Data></Cell>'
-                               + '<Cell><Data ss:Type="String">'+montoNR+'</Data></Cell>'
-                               + '<Cell><Data ss:Type="String">'+noNR+'</Data></Cell>'
-                               + '<Cell><Data ss:Type="String">'+dataNR+'</Data></Cell>'
-                               + '<Cell><Data ss:Type="String">'+montoActividad+'</Data></Cell>'
-                               + '<Cell><Data ss:Type="String">'+noActividad+'</Data></Cell>'
-                               + '<Cell><Data ss:Type="String">'+dataActividad+'</Data></Cell>'
+                               // BONO INACTIVADO (Excel): Bono Nuevo Recluta / Bono Actividad
+                               // + '<Cell><Data ss:Type="String">'+montoNR+'</Data></Cell>'
+                               // + '<Cell><Data ss:Type="String">'+noNR+'</Data></Cell>'
+                               // + '<Cell><Data ss:Type="String">'+dataNR+'</Data></Cell>'
+                               // + '<Cell><Data ss:Type="String">'+montoActividad+'</Data></Cell>'
+                               // + '<Cell><Data ss:Type="String">'+noActividad+'</Data></Cell>'
+                               // + '<Cell><Data ss:Type="String">'+dataActividad+'</Data></Cell>'
                                + '<Cell><Data ss:Type="String">'+bonoPoolTalent+'</Data></Cell>'
                                + '<Cell><Data ss:Type="String">'+bonoPoolTalentDet+'</Data></Cell>'
                                + '<Cell><Data ss:Type="String">'+bonoJtlNom+'</Data></Cell>'

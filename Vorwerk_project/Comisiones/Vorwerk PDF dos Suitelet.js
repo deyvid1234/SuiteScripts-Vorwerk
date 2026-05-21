@@ -1321,12 +1321,14 @@ function createTable(data,CompConfigDetails,type_emp_text,period_name,type_emp,c
 		if (data.b_rec > 0){
 			strTable += table_v_rec(data,dataSO,CompConfigDetails)
 		}
-		if (type_emp == 3 && data.montoNR > 0){
-			strTable += table_nuevo_recluta(data,dataSO,CompConfigDetails)
-		}
-		if (type_emp == 3 && data.montoActividad > 0){
-			strTable += table_actividad(data,dataSO,CompConfigDetails)
-		}
+		// BONO INACTIVADO (PDF): Bono Nuevo Recluta
+		// if (type_emp == 3 && data.montoNR > 0){
+		// 	strTable += table_nuevo_recluta(data,dataSO,CompConfigDetails)
+		// }
+		// BONO INACTIVADO (PDF): Bono Actividad
+		// if (type_emp == 3 && data.montoActividad > 0){
+		// 	strTable += table_actividad(data,dataSO,CompConfigDetails)
+		// }
 		if((type_emp == 1 || type_emp == 3) && promocion == 2 && data.ids_garantia != ''){
 			strTable +=createtablewarranty(data,dataSO)
 		}
@@ -1371,14 +1373,16 @@ function createTable(data,CompConfigDetails,type_emp_text,period_name,type_emp,c
 			strTable += "<td border='0.5' border-style='dotted-narrow'>Ventas Equipo</td>";
         	strTable += "<td border='0.5' border-style='dotted-narrow' align='right'>"+ currencyFormat('$',(data.comision_equipo > 0 ? data.comision_equipo+'.00':'0.00')) +"</td>";
         	strTable += "</tr>"
-        	strTable += "<tr>";
-			strTable += "<td border='0.5' border-style='dotted-narrow'>Bono Nuevo Recluta</td>";
-        	strTable += "<td border='0.5' border-style='dotted-narrow' align='right'>"+ currencyFormat('$',(data.montoNR > 0 ? data.montoNR+'.00':'0.00')) +"</td>";
-        	strTable += "</tr>"
-        	strTable += "<tr>";
-			strTable += "<td border='0.5' border-style='dotted-narrow'>Bono Actividad</td>";
-        	strTable += "<td border='0.5' border-style='dotted-narrow' align='right'>"+ currencyFormat('$',(data.montoActividad > 0 ? data.montoActividad+'.00':'0.00')) +"</td>";
-        	strTable += "</tr>"
+        	// BONO INACTIVADO (PDF): Bono Nuevo Recluta
+        	// strTable += "<tr>";
+			// strTable += "<td border='0.5' border-style='dotted-narrow'>Bono Nuevo Recluta</td>";
+        	// strTable += "<td border='0.5' border-style='dotted-narrow' align='right'>"+ currencyFormat('$',(data.montoNR > 0 ? data.montoNR+'.00':'0.00')) +"</td>";
+        	// strTable += "</tr>"
+        	// BONO INACTIVADO (PDF): Bono Actividad
+        	// strTable += "<tr>";
+			// strTable += "<td border='0.5' border-style='dotted-narrow'>Bono Actividad</td>";
+        	// strTable += "<td border='0.5' border-style='dotted-narrow' align='right'>"+ currencyFormat('$',(data.montoActividad > 0 ? data.montoActividad+'.00':'0.00')) +"</td>";
+        	// strTable += "</tr>"
         }
         strTable += "<tr>";
         strTable += "<td border='0.5' border-style='dotted-narrow'>Bono Productividad</td>";
@@ -1393,17 +1397,27 @@ function createTable(data,CompConfigDetails,type_emp_text,period_name,type_emp,c
         strTable += "<td border='0.5' border-style='dotted-narrow' align='right'>"+ currencyFormat('$',(data.garantia >0 ? data.garantia+'.00':'0.00'))+"</td>";
         strTable += "</tr>"
 
+        // Bonos inactivos: restar del total guardado (registros anteriores pueden incluirlos en custrecord total)
+        var totalPdf = parseInt(data.total, 10) || 0;
+        var retencionPdf = parseInt(data.retencion, 10) || 0;
+        if (type_emp == 3) {
+            totalPdf -= (parseInt(data.montoNR, 10) || 0) + (parseInt(data.montoActividad, 10) || 0);
+        }
+        if (totalPdf < 0) {
+            totalPdf = 0;
+        }
+
         strTable += "<tr>";
         strTable += "<td border='0.5' border-style='none' align='right'><b>TOTAL DE COMISIONES</b></td>";
-        strTable += "<td border='0.5' border-style='dotted-narrow' align='right'><b>"+ currencyFormat('$',(data.total >0 ? data.total+'.00':'0.00')) +"</b></td>";
+        strTable += "<td border='0.5' border-style='dotted-narrow' align='right'><b>"+ currencyFormat('$',(totalPdf > 0 ? totalPdf + '.00' : '0.00')) +"</b></td>";
         strTable += "</tr>";
         strTable += "<tr>";
         strTable += "<td border='0.5' border-style='none' align='right'><b>ISR*</b></td>";
-        strTable += "<td border='0.5' border-style='dotted-narrow' align='right'><b>"+ currencyFormat('-$',(data.retencion != ''? data.retencion:0)+'.00') +"</b></td>";
+        strTable += "<td border='0.5' border-style='dotted-narrow' align='right'><b>"+ currencyFormat('-$',(retencionPdf > 0 ? retencionPdf : 0) + '.00') +"</b></td>";
         strTable += "</tr>";
         strTable += "<tr>";
         strTable += "<td border='0.5' border-style='none' align='right'><b>TOTAL A DEPOSITAR</b></td>";
-        strTable += "<td border='0.5' border-style='dotted-narrow' align='right'><b>"+ currencyFormat('$',((data.total-(data.retencion >0? data.retencion:0)).toFixed(2))) +"</b></td>";
+        strTable += "<td border='0.5' border-style='dotted-narrow' align='right'><b>"+ currencyFormat('$',((totalPdf - (retencionPdf > 0 ? retencionPdf : 0)).toFixed(2))) +"</b></td>";
         strTable += "</tr>";
         strTable += "</table>";
         //fin resumen
