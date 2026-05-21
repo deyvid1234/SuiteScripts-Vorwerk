@@ -3,15 +3,15 @@
  * @NScriptType MapReduceScript
  * @NModuleScope SameAccount
  */
-define(['N/search','N/record','N/format','SuiteScripts/Vorwerk_project/Vorwerk Utils V2.js'],
+define(['N/search','N/record','N/format','N/currency','SuiteScripts/Vorwerk_project/Vorwerk Utils V2.js'],
 
-function(search,record,format,Utils) {
+function(search,record,format,currency,Utils) {
 
     /**
      * Recuperación: fechas en las que sí crear copia + PO (mismo formato que Utils.dateToString: d/m/yyyy).
      * Dejar [] para el comportamiento normal: solo el día de ejecución del MR (fecha == hoy).
      */
-    var FECHAS_RECUPERACION_CREAR = [];
+    var FECHAS_RECUPERACION_CREAR = ["13/5/2026","14/5/2026","14/5/2026","15/5/2026","16/5/2026","17/5/2026","18/5/2026","19/5/2026","20/5/2026"];
 
     function normalizarFechaDMY(s) {
         if (s == null || s === '') {
@@ -37,7 +37,7 @@ function(search,record,format,Utils) {
         }
         return fNorm === normalizarFechaDMY(todayStr);
     }
-   
+
     /**
      * Marks the beginning of the Map/Reduce process and generates input data.
      *
@@ -261,34 +261,151 @@ function(search,record,format,Utils) {
         }catch(err){
             log.error("err map",err);
         }
+
+        function obtenerVendorIdDeRequisicion(rec) {
+            var sublists = ['expense', 'item'];
+            for (var s = 0; s < sublists.length; s++) {
+                var n = rec.getLineCount({ sublistId: sublists[s] });
+                for (var line = 0; line < n; line++) {
+                    var vid = rec.getSublistValue({
+                        sublistId: sublists[s],
+                        fieldId: 'vendor',
+                        line: line
+                    });
+                    if (vid) {
+                        return vid;
+                    }
+                }
+            }
+            return null;
+        }
+
+        function obtenerMonedaProveedor(vendorId) {
+            var vendorRec = record.load({
+                type: record.Type.VENDOR,
+                id: vendorId,
+                isDynamic: false
+            });
+            var monedaId = vendorRec.getValue({ fieldId: 'currency' });
+            var sym = null;
+            if (monedaId) {
+                var datos = search.lookupFields({
+                    type: search.Type.CURRENCY,
+                    id: monedaId,
+                    columns: ['symbol']
+                });
+                sym = datos.symbol;
+                if (sym && sym[0]) {
+                    sym = sym[0].value;
+                }
+            }
+            return { monedaId: monedaId, sym: sym };
+        }
+
+        function asignarTipoCambioSiFalta(poRec) {
+            var tc = poRec.getValue({ fieldId: 'exchangerate' });
+            if (tc != null && tc !== '' && Number(tc) !== 0) {
+                return;
+            }
+            var cur = poRec.getValue({ fieldId: 'currency' });
+            if (!cur) {
+                return;
+            }
+            var datos = search.lookupFields({
+                type: search.Type.CURRENCY,
+                id: cur,
+                columns: ['symbol']
+            });
+            var sym = datos.symbol;
+            if (sym && sym[0]) {
+                sym = sym[0].value;
+            }
+            if (sym === 'MXN') {
+                poRec.setValue({ fieldId: 'exchangerate', value: 1 });
+            } else if (sym) {
+                poRec.setValue({
+                    fieldId: 'exchangerate',
+                    value: currency.exchangeRate({ source: sym, target: 'MXN' })
+                });
+            }
+        }
+
         function transformPO(solicitante,idCopy,estimatedtotal){
             try{
+                var req = record.load({
+                    type: 'purchaserequisition',
+                    id: idCopy,
+                    isDynamic: false
+                });
+                var vendorId = obtenerVendorIdDeRequisicion(req);
+
                 var transformToSO = record.transform({
                     fromType: 'purchaserequisition',
                     fromId: idCopy,
                     toType: 'purchaseorder',
                     isDynamic: true,
                 });
+
+                if (!vendorId) {
+                    vendorId = transformToSO.getValue({ fieldId: 'entity' });
+                }
+                if (!vendorId && transformToSO.getLineCount({ sublistId: 'expense' }) > 0) {
+                    vendorId = transformToSO.getSublistValue({
+                        sublistId: 'expense',
+                        fieldId: 'vendor',
+                        line: 0
+                    });
+                }
+
+                var monedaVendor = null;
+                var symVendor = null;
+                if (vendorId) {
+                    transformToSO.setValue({ fieldId: 'entity', value: vendorId });
+                    var datosMoneda = obtenerMonedaProveedor(vendorId);
+                    monedaVendor = datosMoneda.monedaId;
+                    symVendor = datosMoneda.sym;
+                    if (monedaVendor) {
+                        transformToSO.setValue({ fieldId: 'currency', value: monedaVendor });
+                    }
+                }
+
+                if (symVendor === 'MXN') {
+                    transformToSO.setValue({ fieldId: 'exchangerate', value: 1 });
+                } else if (symVendor) {
+                    transformToSO.setValue({
+                        fieldId: 'exchangerate',
+                        value: currency.exchangeRate({ source: symVendor, target: 'MXN' })
+                    });
+                }
+
                 transformToSO.setValue({
                     fieldId: 'employee',
                     value: solicitante
                 });
-                /*transformToSO.setValue({
-                    fieldId: 'total',
-                    value: parseInt(estimatedtotal)
-                });*/
-                var idPO = transformToSO.save()
+
+                asignarTipoCambioSiFalta(transformToSO);
+
+                log.debug('transformPO pre-save', {
+                    vendorId: vendorId,
+                    monedaVendor: monedaVendor,
+                    symVendor: symVendor,
+                    entity: transformToSO.getValue({ fieldId: 'entity' }),
+                    currency: transformToSO.getValue({ fieldId: 'currency' }),
+                    exchangerate: transformToSO.getValue({ fieldId: 'exchangerate' })
+                });
+
+                var idPO = transformToSO.save();
                 return idPO;
             }catch(e){
-                log.error('error al transformar la requisicion a po',e)
+                log.error('error al transformar la requisicion a po',e);
             }
-        } 
+        }
         function makeCopy(solicitante,idRequisition,campaña){
             try{
-                var idCampaña
-                if (campaña && String(campaña) !== '4') {
+                var idCampaña 
+                if(campaña && String(campaña) !== '4'){
                     idCampaña = campaña
-                } else {
+                }else{
                     idCampaña = 88
                 }
                 log.debug('idCampaña',idCampaña)
@@ -406,9 +523,6 @@ function(search,record,format,Utils) {
                 log.error('error al hacer la copia de la requisicion',e)
             }
         }
-        
-
-        
     }
 
     /**
