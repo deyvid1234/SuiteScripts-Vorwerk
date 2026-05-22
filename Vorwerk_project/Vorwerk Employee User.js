@@ -203,6 +203,9 @@ define(['N/record','N/search','N/http','N/https','N/encode','N/runtime','N/ui/se
 		 */
 		function beforeSubmit(scriptContext) {
 			try {
+				if (scriptContext.type === 'create' || scriptContext.type === 'edit' || scriptContext.type === 'xedit') {
+					setNuevaDireccionComoPredeterminada(scriptContext.newRecord, scriptContext.oldRecord, scriptContext.type);
+				}
 				if (scriptContext.type === 'edit' || scriptContext.type === 'xedit') {
 					syncClienteRelacionadoConPresentador(scriptContext.newRecord, scriptContext.oldRecord);
 				}
@@ -304,7 +307,140 @@ define(['N/record','N/search','N/http','N/https','N/encode','N/runtime','N/ui/se
 				(a.zip || '') === (b.zip || '') &&
 				(a.country || '') === (b.country || '');
 		}
+		function getSublistValueSafe(rec, sublistId, fieldId, line) {
+			try {
+				return rec.getSublistValue({
+					sublistId: sublistId,
+					fieldId: fieldId,
+					line: line
+				});
+			} catch (e) {
+				return '';
+			}
+		}
 
+		function getAddressLineId(rec, line) {
+			return getSublistValueSafe(rec, 'addressbook', 'internalid', line) ||
+				getSublistValueSafe(rec, 'addressbook', 'id', line) ||
+				getSublistValueSafe(rec, 'addressbook', 'lineuniquekey', line) ||
+				'';
+		}
+
+		function getAddressLineSignature(rec, line) {
+			var label = getSublistValueSafe(rec, 'addressbook', 'label', line) || '';
+			var addr = {};
+			try {
+				var subrec = rec.getSublistSubrecord({
+					sublistId: 'addressbook',
+					fieldId: 'addressbookaddress',
+					line: line
+				});
+				if (subrec) {
+					addr = {
+						attention: subrec.getValue({ fieldId: 'attention' }) || '',
+						addressee: subrec.getValue({ fieldId: 'addressee' }) || '',
+						addr1: subrec.getValue({ fieldId: 'addr1' }) || '',
+						addr2: subrec.getValue({ fieldId: 'addr2' }) || '',
+						addr3: subrec.getValue({ fieldId: 'addr3' }) || '',
+						city: subrec.getValue({ fieldId: 'city' }) || '',
+						state: subrec.getValue({ fieldId: 'state' }) || '',
+						zip: subrec.getValue({ fieldId: 'zip' }) || '',
+						country: subrec.getValue({ fieldId: 'country' }) || '',
+						addrphone: subrec.getValue({ fieldId: 'addrphone' }) || ''
+					};
+				}
+			} catch (e) {
+				log.debug('getAddressLineSignature', e.message || e);
+			}
+			return [
+				label,
+				addr.attention || '',
+				addr.addressee || '',
+				addr.addr1 || '',
+				addr.addr2 || '',
+				addr.addr3 || '',
+				addr.city || '',
+				addr.state || '',
+				addr.zip || '',
+				addr.country || '',
+				addr.addrphone || ''
+			].join('|');
+		}
+
+		function isTruthyCheckbox(val) {
+			return val === true || val === 'T' || val === 'true' || val === 1 || val === '1';
+		}
+
+		/** true si el usuario ya marcó facturación o envío predeterminado en esa línea */
+		function lineaTieneDefaultMarcadoPorUsuario(rec, line) {
+			var defaultBilling = getSublistValueSafe(rec, 'addressbook', 'defaultbilling', line);
+			var defaultShipping = getSublistValueSafe(rec, 'addressbook', 'defaultshipping', line);
+			return isTruthyCheckbox(defaultBilling) || isTruthyCheckbox(defaultShipping);
+		}
+
+		/** Marca solo envío predeterminado; no modifica defaultbilling */
+		function setAddressbookDefaultShippingLine(rec, targetLine) {
+			var lineCount = rec.getLineCount({ sublistId: 'addressbook' });
+			for (var i = 0; i < lineCount; i++) {
+				rec.setSublistValue({
+					sublistId: 'addressbook',
+					fieldId: 'defaultshipping',
+					line: i,
+					value: i === targetLine
+				});
+			}
+		}
+
+		function setNuevaDireccionComoPredeterminada(newRecord, oldRecord, contextType) {
+			try {
+				if (!newRecord || !newRecord.getLineCount) return;
+				var newLineCount = newRecord.getLineCount({ sublistId: 'addressbook' });
+				if (!newLineCount || newLineCount <= 0) return;
+
+				var targetLine = -1;
+				if (contextType === 'create' || !oldRecord || !oldRecord.getLineCount) {
+					targetLine = newLineCount - 1;
+				} else {
+					var oldLineCount = oldRecord.getLineCount({ sublistId: 'addressbook' });
+					if (newLineCount <= oldLineCount) return;
+
+					var oldIds = {};
+					var oldSignatures = {};
+					for (var o = 0; o < oldLineCount; o++) {
+						var oldId = getAddressLineId(oldRecord, o);
+						if (oldId) oldIds[oldId] = true;
+						oldSignatures[getAddressLineSignature(oldRecord, o)] = true;
+					}
+
+					for (var n = newLineCount - 1; n >= 0; n--) {
+						var newId = getAddressLineId(newRecord, n);
+						var newSignature = getAddressLineSignature(newRecord, n);
+						if ((newId && !oldIds[newId]) || (!newId && !oldSignatures[newSignature])) {
+							targetLine = n;
+							break;
+						}
+					}
+					if (targetLine < 0) targetLine = newLineCount - 1;
+				}
+
+				// Solo auto-marcar si el usuario no indicó facturación ni envío predeterminado en la línea nueva
+				if (lineaTieneDefaultMarcadoPorUsuario(newRecord, targetLine)) {
+					log.debug('setNuevaDireccionComoPredeterminada - omitido (defaultbilling o defaultshipping ya marcados)', {
+						contextType: contextType,
+						line: targetLine
+					});
+					return;
+				}
+
+				setAddressbookDefaultShippingLine(newRecord, targetLine);
+				log.audit('setNuevaDireccionComoPredeterminada - defaultshipping predeterminado', {
+					contextType: contextType,
+					line: targetLine
+				});
+			} catch (e) {
+				log.error('setNuevaDireccionComoPredeterminada', e);
+			}
+		}
 		/**
 		 * Si el presentador (employee) tiene un cliente relacionado (custentity_cliente_relacionado),
 		 * y se editaron email, phone o la dirección por defecto, actualiza el registro del cliente
