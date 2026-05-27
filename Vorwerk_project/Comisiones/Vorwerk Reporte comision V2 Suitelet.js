@@ -499,7 +499,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
 
                     break;
                     case 2: //Reporte Presentadora
-                        if((empType == 1 && empPromo == 2 /*&& allPresentadoras[i].internalid == '21613'*/) || (dataEmp.tipoCalificacion == 3 && empType == 3 && empPromo == 2)){
+                        if((empType == 1 && empPromo == 2 /*&& allPresentadoras[i].internalid == '21613'*/) ){
                             
                             //Calcular reporte para la persona
                             var reclutas=listaReclutas[i]
