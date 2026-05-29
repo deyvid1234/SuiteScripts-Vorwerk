@@ -740,14 +740,14 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
             custentity_ce_rfc: empRecord.getValue({ fieldId: 'custentity_ce_rfc' }),
             custentity_status_csf: csfVal,
             custentity_status_csf_text: csfText,
-            //custentity_tipo_ingreso: tipoIngresoField.value,
-            //custentity_vorwerk_reentry: tipoReingresoField.value,
+            custentity_tipo_ingreso: tipoIngresoField.value,
+            custentity_vorwerk_reentry: tipoReingresoField.value,
             custentity_lista_negra: listaNegra,
             custentity_adeudo_dc: adeudoDc,
             isinactive: inact === true || inact === 'T',
             fecha_objetivo2: formatFechaDdMmYyyy(objetivo2Val),
             vencido: calcularVencidoEmbajador(hiredateVal, objetivo2Val),
-            //numero_ventas: contarVentasSalesOrderEmpleado(empRecord.id)
+            numero_ventas: contarVentasSalesOrderEmpleado(empRecord.id)
         };
     }
 

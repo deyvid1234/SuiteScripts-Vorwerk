@@ -211,7 +211,7 @@ define(['N/record','N/search','N/http','N/https','N/encode','N/runtime','N/ui/se
 				}
 				aplicarStatusCsfEmbajadorBeforeSubmit(scriptContext);
 			} catch (e) {
-				log.error('beforeSubmit', e);
+				log.error('beforeSubmit - direcciones/syncClienteRelacionadoConPresentador', e);
 			}
 		}
 
