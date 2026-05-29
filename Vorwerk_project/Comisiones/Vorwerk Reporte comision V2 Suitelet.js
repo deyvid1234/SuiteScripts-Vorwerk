@@ -2128,11 +2128,10 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 return rows;
             };
 
-            /** Fin inclusive del tercer mes natural desde el día de alta (alta + 3 meses calendario − 1 día). */
+            /** Fin inclusive: mismo día de alta + 3 meses calendario (p. ej. 25/feb → 25/may 23:59:59). */
             var limiteTresMesesNaturales = function (dAlta) {
                 var fin = new Date(dAlta.getFullYear(), dAlta.getMonth(), dAlta.getDate());
                 fin.setMonth(fin.getMonth() + 3);
-                fin.setDate(fin.getDate() - 1);
                 fin.setHours(23, 59, 59, 999);
                 return fin;
             };
@@ -5631,7 +5630,7 @@ una rcluta de algun miembro del equipo*/
                 var objTmGanada = {}
                 var objTmPagada = {}
                 const salesOrderFilters = [
-                    ['item', 'anyof', '2671','1126','1757','2001','2170','2490','2571','2035','2638','2280'],
+                    ['item', 'anyof', '2671','1126','1757','2001','2170','2490','2571','2035','2638','2280','2763'],//actualizar id de tm's
                     'AND',
                     ['salesrep.custentity_estructura_virtual', 'is', 'F'],
                     'AND',
