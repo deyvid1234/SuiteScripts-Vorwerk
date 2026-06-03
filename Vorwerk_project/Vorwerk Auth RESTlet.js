@@ -610,7 +610,8 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
     }
 
     /**
-     * Cuenta órdenes de venta del empleado: salesrep = internal id, custbody_tipo_venta = 2, mainline.
+     * Cuenta órdenes de venta del empleado: salesrep = internal id, custbody_tipo_venta = 2, mainline,
+     * excluyendo cancelaciones (custbody_otro_financiamiento != 4).
      * Registra en log el detalle; devuelve solo el total.
      */
     function contarVentasSalesOrderEmpleado(employeeInternalId) {
@@ -633,7 +634,9 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                     'AND',
                     ['custbody_tipo_venta', 'anyof', '2'],
                     'AND',
-                    ['mainline', 'is', 'T']
+                    ['mainline', 'is', 'T'],
+                    'AND',
+                    ['custbody_otro_financiamiento', 'noneof', '4']
                 ],
                 columns: [
                     search.createColumn({ name: 'entity' }),
@@ -738,6 +741,7 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
             email: empRecord.getValue({ fieldId: 'email' }),
             altname: empRecord.getValue({ fieldId: 'altname' }),
             custentity_ce_rfc: empRecord.getValue({ fieldId: 'custentity_ce_rfc' }),
+            //custentity_curp: empRecord.getValue({ fieldId: 'custentity_curp' }),
             custentity_status_csf: csfVal,
             custentity_status_csf_text: csfText,
             custentity_tipo_ingreso: tipoIngresoField.value,
