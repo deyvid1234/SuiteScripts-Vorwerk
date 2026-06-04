@@ -2009,12 +2009,12 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
 
                 var item_tax = parseFloat(item_mine.amount) / 1.16;
                 if(item_tax == 0) item_tax = 0.01;
-                var rate_from_config = false;
                 if(config && config.accion === 2 && (config.montoEspecifico || 0) > 0){
                     item_tax = (config.montoEspecifico || 0) / 1.16;
                     if(item_tax == 0) item_tax = 0.01;
-                    rate_from_config = true;
                 }
+                // Mismo neto en rate y amount (6 dec.) para que NS no recalcule bruto distinto al request
+                var net_unit = parseFloat(item_tax.toFixed(6));
 
                 obj_sales_order.selectNewLine({ sublistId: 'item' });
                 obj_sales_order.setCurrentSublistValue({ sublistId: 'item', fieldId: 'item', value: item_mine.item_id });
@@ -2022,8 +2022,8 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                 if(item_mine.item_id == '1441'){
                     obj_sales_order.setCurrentSublistValue({ sublistId: 'item', fieldId: 'price', value: '-1' });
                 }
-                obj_sales_order.setCurrentSublistValue({ sublistId: 'item', fieldId: 'amount', value: item_tax });
-                obj_sales_order.setCurrentSublistValue({ sublistId: 'item', fieldId: 'rate', value: rate_from_config ? item_tax.toFixed(6) : item_tax.toFixed(2) });
+                obj_sales_order.setCurrentSublistValue({ sublistId: 'item', fieldId: 'amount', value: net_unit });
+                obj_sales_order.setCurrentSublistValue({ sublistId: 'item', fieldId: 'rate', value: net_unit });
                 obj_sales_order.setCurrentSublistValue({ sublistId: 'item', fieldId: 'location', value: locationValidado });
                 obj_sales_order.commitLine({ sublistId: 'item' });
 
@@ -2083,8 +2083,19 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                     var id_descuento = discount_item_id;
                     if(id_descuento == null || id_descuento === '' || (typeof id_descuento === 'object' && !Array.isArray(id_descuento))) id_descuento = 1876;
                     if(typeof id_descuento === 'string'){ var n = parseInt(id_descuento, 10); id_descuento = isNaN(n) ? 1876 : n; }
-                    var solo_descuento_config = (global_part_net === 0 && config && (config.accion === 2 || config.accion === 3));
-                    if(solo_descuento_config){
+                    if(config && config.accion === 3){
+                        var net_disc = discount_item_gross / 1.16;
+                        // NS recalcula amount desde rate al commit: rate y amount deben ser el mismo neto a 2 dec. (floor)
+                        var net_line_disc = Math.floor(net_disc * 100) / 100;
+                        var line_disc = net_line_disc * -1;
+                        obj_sales_order.selectNewLine({ sublistId: 'item' });
+                        obj_sales_order.setCurrentSublistValue({ sublistId: 'item', fieldId: 'item', value: id_descuento });
+                        obj_sales_order.setCurrentSublistValue({ sublistId: 'item', fieldId: 'quantity', value: 1 });
+                        obj_sales_order.setCurrentSublistValue({ sublistId: 'item', fieldId: 'price', value: -1 });
+                        obj_sales_order.setCurrentSublistValue({ sublistId: 'item', fieldId: 'amount', value: line_disc });
+                        obj_sales_order.setCurrentSublistValue({ sublistId: 'item', fieldId: 'rate', value: line_disc });
+                        obj_sales_order.commitLine({ sublistId: 'item' });
+                    }else if(global_part_net === 0 && config && config.accion === 2){
                         var rate_sin_iva = (discount_item_gross / 1.16).toFixed(6);
                         var gross_neg = -discount_item_gross;
                         obj_sales_order.selectNewLine({ sublistId: 'item' });
