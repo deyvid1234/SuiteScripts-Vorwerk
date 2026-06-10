@@ -13,9 +13,12 @@ define(['N/currentRecord', 'N/url', 'N/ui/dialog','N/format', 'N/runtime', 'N/re
                 // Variable para guardar los valores anteriores de custcol_aplica_descuento por línea
                 var valoresAnteriores = {};
 
-                /** Opción "Cooking Studio" en custbody83 (recolección) */
+                /** Opción "Cooking Studio" en tipo de recolección (internal id 2) */
                 var COOKING_STUDIO_RECOLECCION_ID = '2';
-                var FIELD_RECOLECCION_TIPO = 'custbody83';
+                /** Sandbox: custbody83 | Producción: custbody_lugar_recoleccion */
+                var FIELD_RECOLECCION_TIPO = runtime.envType === 'PRODUCTION'
+                    ? 'custbody_lugar_recoleccion'
+                    : 'custbody83';
                 var FIELD_UBICACION_RECOLECCION = 'custbody_ubicacion_recoleccion';
 
         /**
@@ -970,7 +973,7 @@ define(['N/currentRecord', 'N/url', 'N/ui/dialog','N/format', 'N/runtime', 'N/re
                     isDynamic: false
                 });
 
-                var pickupOption = opp.getValue('custbody83'); // Campo de recolección
+                var pickupOption = opp.getValue(FIELD_RECOLECCION_TIPO);
                 var customerId = opp.getValue('entity');
 
                 if (!customerId) {
