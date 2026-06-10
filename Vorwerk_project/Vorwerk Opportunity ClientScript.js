@@ -992,6 +992,8 @@ define(['N/currentRecord', 'N/url', 'N/ui/dialog','N/format', 'N/runtime', 'N/re
 
                 var email_customer = objCustomer.getValue('email') || '';
                 var companyCustomer = objCustomer.getValue('custentity_razon_social') || '';
+                var altNameCustomer = objCustomer.getValue('altname') || '';
+                var mobilePhoneCustomer = objCustomer.getValue('mobilephone') || '';
 
                 var nameCustomer = '';
                 var addrphone = '';
@@ -1040,8 +1042,6 @@ define(['N/currentRecord', 'N/url', 'N/ui/dialog','N/format', 'N/runtime', 'N/re
                             });
 
                             if (subRecord) {
-                                nameCustomer = subRecord.getValue({ fieldId: 'addressee' }) || '';
-                                addrphone = subRecord.getText({ fieldId: 'addrphone' }) || '';
                                 addr1 = subRecord.getValue({ fieldId: 'addr1' }) || '';
                                 addr2 = subRecord.getValue({ fieldId: 'addr2' }) || '';
                                 zip = subRecord.getValue({ fieldId: 'zip' }) || '';
@@ -1049,12 +1049,12 @@ define(['N/currentRecord', 'N/url', 'N/ui/dialog','N/format', 'N/runtime', 'N/re
                             break;
                         }
                     }
-                    // Remitente = cliente
-                    remitente.nombre = nameCustomer;
-                    remitente.telefono = addrphone;
+                    // Remitente = cliente (nombre y teléfono desde el registro Customer)
+                    remitente.nombre = altNameCustomer;
+                    remitente.telefono = mobilePhoneCustomer;
                     remitente.correo = email_customer;
                     remitente.direccion = (addr1 || '') + (addr2 ? (' ' + addr2) : '') + (zip ? (' ' + zip) : '');
-                    remitente.empresa = companyCustomer || nameCustomer;
+                    remitente.empresa = companyCustomer || altNameCustomer;
                 } else if (pickupStr === COOKING_STUDIO_RECOLECCION_ID) {
                     // Cooking Studio: dirección según ubicación seleccionada
                     var idUbicacion = opp.getValue({ fieldId: FIELD_UBICACION_RECOLECCION });
