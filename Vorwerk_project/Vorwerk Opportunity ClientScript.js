@@ -1335,24 +1335,8 @@ define(['N/currentRecord', 'N/url', 'N/ui/dialog','N/format', 'N/runtime', 'N/re
 
                 console.log('Endpoint SmartShip: https://www.smartship.mx/api/documentar/');
                 console.log('Payload guía Oportunidad', JSON.stringify(objRequest));
-                try {
-                    dialog.alert({
-                        title: 'Payload guía (pruebas)',
-                        message:
-                            'Endpoint: https://www.smartship.mx/api/documentar/\n\n' +
-                            JSON.stringify(objRequest, null, 2)
-                    });
-                } catch (alertErr) {
-                    console.log('No se pudo mostrar payload en alerta', alertErr && alertErr.message ? alertErr.message : alertErr);
-                }
 
-                if (!apiKeyPendiente) {
-                    dialog.alert({
-                        title: 'Modo validación',
-                        message: 'El JSON se imprimió en consola. Sin API key no se envía a SmartShip ni se crea el registro de guía (el registro se crea solo tras respuesta Exitoso).'
-                    });
-                    return;
-                }
+               
 
                 var smartshipUrl = 'https://www.smartship.mx/api/documentar/';
                 var smartshipHeaders = { 'Content-Type': 'application/json' };
