@@ -52,20 +52,19 @@
  *      gana el de fecha inicio más reciente. Si existe, se aplica
  *      Nota Crédito Proveedor = Tipo de Cambio × Cantidad × Factor Descuento; si no, 0.
  * 
- * 4. Campos Custom en Employee: "Comisiones de Gerentes"
- *    - Ubicación: Registro Employee (Representante de Ventas)
- *    - Campos requeridos (tipo Percent):
- *      * custentity_comision_rosario - Porcentaje de comisión para ROSARIO (ej. 0.18 = 18%)
- *      * custentity_comision_alhely - Porcentaje de comisión para ALHELY
- *      * custentity_comision_gabriela - Porcentaje de comisión para GABRIELA
- *      * custentity_comision_mineria - Porcentaje de comisión para MINERIA
- *      * custentity_comision_agro - Porcentaje de comisión para AGRO
- *      * custentity_comision_prieto - Porcentaje de comisión para PRIETO
- *      * custentity_comision_otros - NO se usa para % Otros; ver punto 5.
- *      * custentity_comision_total - Suma de todos los porcentajes (para validación, debe ser 100%)
- *    - Lógica: Por cada línea del reporte se obtiene el Representante de Ventas (salesrep) y se
- *      leen los porcentajes de comisión de ese Employee. Se calcula: Comisión Gerente = Comisión Total × Porcentaje del Gerente.
- *      Las comisiones se muestran en columnas separadas por cada gerente en el reporte.
+ * 4. Custom Record Type: "Comisiones por Empleado" (customrecord_comisiones_empleado)
+ *    - Campos: custrecord_nombre_empleado (Employee), custrecord_cliente_com_emp (Customer, opcional),
+ *      custrecord_fecha_inicio, custrecord_fecha_fin, custrecord_comision_rosario/alhely/gabriela/mineria/agro/prieto,
+ *      custrecord_porcentaje_comfijo (checkbox), custrecord_porcentaje_numero (Percent),
+ *      custrecord_porcentaje_globalfijo (checkbox), custrecord_porcentaje_global_numero (Percent)
+ *    - Lógica por línea: (1) Representante de Ventas + Cliente de la línea; (2) si no hay match con cliente,
+ *      Representante de Ventas sin cliente (registro base). Vigencia: fecha_inicio <= periodo hasta Y
+ *      (sin fecha_fin O fecha_fin >= periodo desde). Si hay varios válidos, gana fecha_inicio más reciente.
+ *    - Si custrecord_porcentaje_comfijo = true: Comisión Total % = custrecord_porcentaje_numero y Comisión Total
+ *      compensación = (% fijo / 100) × Ingreso Casa (no suma de gerentes). Si no, suma de % por gerente + Otros.
+ *    - Si hay match empleado+cliente y custrecord_porcentaje_globalfijo = true: % Comisión (sección morada) =
+ *      custrecord_porcentaje_global_numero y Comisión = (% global / 100) × Ingreso Casa (sin lookup por margen).
+ *    - Monto por gerente = (% gerente / 100) × Ingreso Casa. % Otros no viene de este record; ver punto 5.
  *
  * 5. Custom Record Type: "Compensación Cliente-Artículo" (determina % Otros por línea)
  *    - ID interno: customrecord_compensacion_cliente_articulo (ajustar RECORD_TYPE_OTROS si en tu cuenta es otro, ej. customrecord_comisiones_otros)
@@ -1353,7 +1352,7 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
                         // Obtener porcentajes de comisión de gerentes del Employee desde el cache
                         // Convertir el ID a string para asegurar que coincida con las claves del cache
                         var employeeIdStr = String(row.representanteVentaId || '');
-                        var comisionesGerentes = getComisionesGerentes(employeeIdStr);
+                        var comisionesGerentes = getComisionesGerentes(employeeIdStr, row.clienteId);
                         if (comisionesGerentes) {
                             // Asignar valores TAL CUAL del registro Employee (rosario, alhely, ..., prieto)
                             row.porcentajeComisionRosario = comisionesGerentes.rosario || 0;
@@ -1365,7 +1364,8 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
                             var otrosResult = getPorcentajeOtrosCompensacionClienteArticulo(row);
                             row.porcentajeComisionOtros = (otrosResult.tipo === 'porcentaje') ? otrosResult.valor : 0;
                             row.otrosCostoFijoTon = (otrosResult.tipo === 'costo_fijo') ? otrosResult.valor : null;
-                            row.porcentajeComisionTotal = (row.porcentajeComisionRosario || 0) + (row.porcentajeComisionAlhely || 0) + (row.porcentajeComisionGabriela || 0) + (row.porcentajeComisionMineria || 0) + (row.porcentajeComisionAgro || 0) + (row.porcentajeComisionPrieto || 0) + (row.porcentajeComisionOtros || 0);
+                            setPorcentajeComisionTotalOnRow(row, comisionesGerentes);
+                            setComisionGlobalFijoOnRow(row, comisionesGerentes, employeeIdStr);
                         } else {
                             row.porcentajeComisionRosario = 0;
                             row.porcentajeComisionAlhely = 0;
@@ -1376,7 +1376,8 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
                             var otrosResultElse = getPorcentajeOtrosCompensacionClienteArticulo(row);
                             row.porcentajeComisionOtros = (otrosResultElse.tipo === 'porcentaje') ? otrosResultElse.valor : 0;
                             row.otrosCostoFijoTon = (otrosResultElse.tipo === 'costo_fijo') ? otrosResultElse.valor : null;
-                            row.porcentajeComisionTotal = row.porcentajeComisionOtros || 0;
+                            setPorcentajeComisionTotalOnRow(row, null);
+                            setComisionGlobalFijoOnRow(row, null, employeeIdStr);
                         }
                         // Nota Crédito Proveedor = Tipo de Cambio × Cantidad × Factor Descuento
                         row.notaCreditoProveedor = (row.tipoCambio || 0) * (row.cantidad || 0) * (row.factorDescuento || 0);
@@ -1543,7 +1544,7 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
                         var factorNc = getFactorDescuentoProveedor(rowNc);
                         rowNc.factorDescuento = factorNc != null ? factorNc : 0;
                         var empIdStrNc = String(rowNc.representanteVentaId || '');
-                        var comGerNc = getComisionesGerentes(empIdStrNc);
+                        var comGerNc = getComisionesGerentes(empIdStrNc, rowNc.clienteId);
                         if (comGerNc) {
                             rowNc.porcentajeComisionRosario = comGerNc.rosario || 0;
                             rowNc.porcentajeComisionAlhely = comGerNc.alhely || 0;
@@ -1553,7 +1554,8 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
                             var otrosResultNc = getPorcentajeOtrosCompensacionClienteArticulo(rowNc);
                             rowNc.porcentajeComisionOtros = (otrosResultNc.tipo === 'porcentaje') ? otrosResultNc.valor : 0;
                             rowNc.otrosCostoFijoTon = (otrosResultNc.tipo === 'costo_fijo') ? otrosResultNc.valor : null;
-                            rowNc.porcentajeComisionTotal = (rowNc.porcentajeComisionRosario || 0) + (rowNc.porcentajeComisionAlhely || 0) + (rowNc.porcentajeComisionGabriela || 0) + (rowNc.porcentajeComisionMineria || 0) + (rowNc.porcentajeComisionAgro || 0) + (rowNc.porcentajeComisionPrieto || 0) + (rowNc.porcentajeComisionOtros || 0);
+                            setPorcentajeComisionTotalOnRow(rowNc, comGerNc);
+                            setComisionGlobalFijoOnRow(rowNc, comGerNc, empIdStrNc);
                         } else {
                             rowNc.porcentajeComisionRosario = 0;
                             rowNc.porcentajeComisionAlhely = 0;
@@ -1564,7 +1566,8 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
                             var otrosResultNcElse = getPorcentajeOtrosCompensacionClienteArticulo(rowNc);
                             rowNc.porcentajeComisionOtros = (otrosResultNcElse.tipo === 'porcentaje') ? otrosResultNcElse.valor : 0;
                             rowNc.otrosCostoFijoTon = (otrosResultNcElse.tipo === 'costo_fijo') ? otrosResultNcElse.valor : null;
-                            rowNc.porcentajeComisionTotal = rowNc.porcentajeComisionOtros || 0;
+                            setPorcentajeComisionTotalOnRow(rowNc, null);
+                            setComisionGlobalFijoOnRow(rowNc, null, empIdStrNc);
                         }
                         rowNc.notaCreditoProveedor = (rowNc.tipoCambio || 0) * (rowNc.cantidad || 0) * (rowNc.factorDescuento || 0);
                         rowNc.transporte = (rowNc.cantidad || 0) * (rowNc.costoTransporteCreated || 0);
@@ -2519,8 +2522,12 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
             var margen = row.montoBase > 0 ? row.utilidadBruta / row.montoBase : 0;
             row.margen = margen;
             
-            // BI = LOOKUP(BH, PARAMETROS) - porcentaje de comisión según margen
-            row.porcentajeComision = getComisionPorMargen(margen);
+            // BI = LOOKUP(BH, PARAMETROS) - porcentaje de comisión según margen, salvo % global fijo (empleado+cliente)
+            if (row.porcentajeComisionGlobalEsFijo) {
+                row.porcentajeComision = row.porcentajeComisionGlobalFijoValor || 0;
+            } else {
+                row.porcentajeComision = getComisionPorMargen(margen);
+            }
             
             // Comisión = % Comisión × Ingreso Casa (porcentaje en decimal: 0.75% → 0.0075)
             var pctComisionDec = (row.porcentajeComision || 0) > 0.02 ? (row.porcentajeComision / 100) : (row.porcentajeComision || 0);
@@ -2587,8 +2594,12 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
                 if (!ingresoFacturaLinea && row.montoBase != null) ingresoFacturaLinea = Number(row.montoBase) || 0;
                 row.comisionOtros = (pct(row.porcentajeComisionOtros) / 100) * ingresoFacturaLinea;
             }
-            // Total compensación = suma de las 7 comisiones (cuando Otros es costo fijo no está en porcentajeComisionTotal)
-            row.comisionTotalGerentes = (row.comisionRosario || 0) + (row.comisionAlhely || 0) + (row.comisionGabriela || 0) + (row.comisionMineria || 0) + (row.comisionAgro || 0) + (row.comisionPrieto || 0) + (row.comisionOtros || 0);
+            // Comisión Total compensación: % fijo del registro empleado o suma de compensaciones por gerente
+            if (row.porcentajeComisionTotalEsFijo) {
+                row.comisionTotalGerentes = (pct(row.porcentajeComisionTotal) / 100) * ingresoCasa;
+            } else {
+                row.comisionTotalGerentes = (row.comisionRosario || 0) + (row.comisionAlhely || 0) + (row.comisionGabriela || 0) + (row.comisionMineria || 0) + (row.comisionAgro || 0) + (row.comisionPrieto || 0) + (row.comisionOtros || 0);
+            }
             
             // Utilidad después de comisiones de gerencia = Utilidad Bruta - Comisión Total compensación
             row.utilidadDespuesComisionesGerencia = (row.utilidadBruta || 0) - (row.comisionTotalGerentes || 0);
@@ -2724,9 +2735,9 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
         }
         
         /**
-         * Cache global de comisiones de gerentes por Employee (Representante de Ventas).
-         * Estructura: { employeeId: { rosario: 0.18, alhely: 0.25, ... } }
-         * Se carga una vez al generar el reporte.
+         * Cache global de comisiones de gerentes por Employee (y opcionalmente Cliente).
+         * Claves: employeeId (sin cliente) o employeeId|clienteId (excepción por cliente).
+         * Valor: { rosario, alhely, gabriela, mineria, agro, prieto, otros, total }.
          */
         var comisionesGerentesCache = null;
         /** Periodo (fechaDesde|fechaHasta) con el que se construyó el cache; si cambia, se reconstruye. */
@@ -2876,7 +2887,7 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
          * Carga comisiones desde el custom record customrecord_comisiones_empleado.
          * Solo se incluyen registros cuya vigencia se solapa con el periodo del reporte:
          * fecha_inicio <= fechaHasta del reporte Y (sin fecha_fin O fecha_fin >= fechaDesde del reporte).
-         * Para cada empleado se toma el registro con fecha_inicio más reciente entre los que cumplen vigencia.
+         * Para cada empleado (o empleado+cliente) se toma el registro con fecha_inicio más reciente entre los que cumplen vigencia.
          * @param {string} [fechaDesde] - Inicio periodo reporte (YYYY-MM-DD)
          * @param {string} [fechaHasta] - Fin periodo reporte (YYYY-MM-DD)
          */
@@ -2898,6 +2909,7 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
                     filters: searchFilters,
                     columns: [
                         search.createColumn({ name: 'custrecord_nombre_empleado' }),
+                        search.createColumn({ name: 'custrecord_cliente_com_emp' }),
                         search.createColumn({ name: 'custrecord_fecha_inicio', sort: search.Sort.DESC }),
                         search.createColumn({ name: 'custrecord_fecha_fin' }),
                         search.createColumn({ name: 'custrecord_comision_rosario' }),
@@ -2906,7 +2918,11 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
                         search.createColumn({ name: 'custrecord_comision_mineria' }),
                         search.createColumn({ name: 'custrecord_comision_agro' }),
                         search.createColumn({ name: 'custrecord_comision_prieto' }),
-                        search.createColumn({ name: 'custrecord_comision_total' })
+                        search.createColumn({ name: 'custrecord_comision_total' }),
+                        search.createColumn({ name: 'custrecord_porcentaje_comfijo' }),
+                        search.createColumn({ name: 'custrecord_porcentaje_numero' }),
+                        search.createColumn({ name: 'custrecord_porcentaje_globalfijo' }),
+                        search.createColumn({ name: 'custrecord_porcentaje_global_numero' })
                     ]
                 });
                 var desdeMs = fechaDesde ? toDateOnlyMs(fechaDesde) : null;
@@ -2915,6 +2931,8 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
                 employeeSearch.run().each(function(result) {
                     var employeeId = String(result.getValue('custrecord_nombre_empleado') || '');
                     if (!employeeId) return true;
+                    var clienteId = String(result.getValue('custrecord_cliente_com_emp') || '').trim();
+                    var cacheKey = clienteId ? (employeeId + '|' + clienteId) : employeeId;
                     var fechaFinVal = result.getValue('custrecord_fecha_fin');
                     var fechaFinMs = fechaFinVal ? toDateOnlyMs(fechaFinVal) : null;
                     if (desdeMs != null && fechaFinMs != null && fechaFinMs < desdeMs) return true;
@@ -2924,9 +2942,13 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
                         var num = parseFloat(value);
                         return isNaN(num) ? 0 : num;
                     }
+                    function getCheckboxValue(columnName) {
+                        var value = result.getValue(columnName);
+                        return value === true || value === 'T' || String(value).toLowerCase() === 'true';
+                    }
                     var fechaInicioVal = result.getValue('custrecord_fecha_inicio');
                     var fechaInicioMs = toDateOnlyMs(fechaInicioVal);
-                    if (!rawByEmployee[employeeId] || (fechaInicioMs != null && (rawByEmployee[employeeId].fechaInicioMs == null || fechaInicioMs > rawByEmployee[employeeId].fechaInicioMs))) {
+                    if (!rawByEmployee[cacheKey] || (fechaInicioMs != null && (rawByEmployee[cacheKey].fechaInicioMs == null || fechaInicioMs > rawByEmployee[cacheKey].fechaInicioMs))) {
                         var rosario = getPercentValue('custrecord_comision_rosario');
                         var alhely = getPercentValue('custrecord_comision_alhely');
                         var gabriela = getPercentValue('custrecord_comision_gabriela');
@@ -2935,7 +2957,7 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
                         var prieto = getPercentValue('custrecord_comision_prieto');
                         var totalVal = getPercentValue('custrecord_comision_total');
                         var total = totalVal > 0 ? totalVal : (rosario + alhely + gabriela + mineria + agro + prieto);
-                        rawByEmployee[employeeId] = {
+                        rawByEmployee[cacheKey] = {
                             fechaInicioMs: fechaInicioMs,
                             rosario: rosario,
                             alhely: alhely,
@@ -2944,14 +2966,18 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
                             agro: agro,
                             prieto: prieto,
                             otros: 0,
-                            total: total
+                            total: total,
+                            porcentajeComFijo: getCheckboxValue('custrecord_porcentaje_comfijo'),
+                            porcentajeNumero: getPercentValue('custrecord_porcentaje_numero'),
+                            porcentajeGlobalFijo: getCheckboxValue('custrecord_porcentaje_globalfijo'),
+                            porcentajeGlobalNumero: getPercentValue('custrecord_porcentaje_global_numero')
                         };
                     }
                     return true;
                 });
-                Object.keys(rawByEmployee).forEach(function(employeeId) {
-                    var r = rawByEmployee[employeeId];
-                    comisionesGerentesCache[employeeId] = {
+                Object.keys(rawByEmployee).forEach(function(cacheKey) {
+                    var r = rawByEmployee[cacheKey];
+                    comisionesGerentesCache[cacheKey] = {
                         rosario: r.rosario,
                         alhely: r.alhely,
                         gabriela: r.gabriela,
@@ -2959,13 +2985,17 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
                         agro: r.agro,
                         prieto: r.prieto,
                         otros: r.otros,
-                        total: r.total
+                        total: r.total,
+                        porcentajeComFijo: r.porcentajeComFijo,
+                        porcentajeNumero: r.porcentajeNumero,
+                        porcentajeGlobalFijo: r.porcentajeGlobalFijo,
+                        porcentajeGlobalNumero: r.porcentajeGlobalNumero
                     };
                 });
                 var count = Object.keys(comisionesGerentesCache).length;
                 log.audit('ReporteRentabilidad', 'ComisionesGerentes: registros cargados=' + count + ' (periodo ' + (fechaDesde || '') + ' a ' + (fechaHasta || '') + ')');
                 if (count === 0) {
-                    log.audit('ReporteRentabilidad', 'ComisionesGerentes: cache vacío. Revise customrecord_comisiones_empleado, custrecord_nombre_empleado y vigencia custrecord_fecha_inicio/fin.');
+                    log.audit('ReporteRentabilidad', 'ComisionesGerentes: cache vacío. Revise customrecord_comisiones_empleado, custrecord_nombre_empleado, custrecord_cliente_com_emp y vigencia custrecord_fecha_inicio/fin.');
                 } else {
                     var keys = Object.keys(comisionesGerentesCache);
                     for (var k = 0; k < Math.min(keys.length, 15); k++) {
@@ -2984,20 +3014,62 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
         }
         
         /**
-         * Obtiene los porcentajes de comisión de gerentes para un Employee específico.
+         * Obtiene los porcentajes de comisión de gerentes para un Employee y, si aplica, un Cliente.
+         * Prioridad: (1) empleado + cliente; (2) empleado sin cliente (registro base).
          * @param {string} employeeId - ID del Employee (Representante de Ventas)
-         * @returns {Object} Objeto con los porcentajes: { rosario: 0.18, alhely: 0.25, ... } o null si no existe
+         * @param {string} [clienteId] - ID del Customer de la línea
+         * @returns {Object|null} { rosario, alhely, gabriela, mineria, agro, prieto, otros, total }
          */
-        function getComisionesGerentes(employeeId) {
+        function getComisionesGerentes(employeeId, clienteId) {
             if (!employeeId) {
                 return null;
             }
-            // Usar el cache ya cargado para el periodo del reporte.
-            // No volver a llamar loadComisionesGerentesCache sin fechas, para no perder el filtro por vigencia.
             if (!comisionesGerentesCache) {
                 return null;
             }
-            return comisionesGerentesCache[employeeId] || null;
+            var emp = String(employeeId);
+            var cli = String(clienteId || '').trim();
+            if (cli && comisionesGerentesCache[emp + '|' + cli]) {
+                return comisionesGerentesCache[emp + '|' + cli];
+            }
+            return comisionesGerentesCache[emp] || null;
+        }
+
+        /**
+         * Asigna Comisión Total % en la fila. Si el registro empleado tiene % fijo activo, usa custrecord_porcentaje_numero.
+         * @param {Object} row
+         * @param {Object|null} comisionesGerentes
+         */
+        function setPorcentajeComisionTotalOnRow(row, comisionesGerentes) {
+            if (comisionesGerentes && comisionesGerentes.porcentajeComFijo) {
+                row.porcentajeComisionTotal = comisionesGerentes.porcentajeNumero || 0;
+                row.porcentajeComisionTotalEsFijo = true;
+            } else if (comisionesGerentes) {
+                row.porcentajeComisionTotal = (row.porcentajeComisionRosario || 0) + (row.porcentajeComisionAlhely || 0) + (row.porcentajeComisionGabriela || 0) + (row.porcentajeComisionMineria || 0) + (row.porcentajeComisionAgro || 0) + (row.porcentajeComisionPrieto || 0) + (row.porcentajeComisionOtros || 0);
+                row.porcentajeComisionTotalEsFijo = false;
+            } else {
+                row.porcentajeComisionTotal = row.porcentajeComisionOtros || 0;
+                row.porcentajeComisionTotalEsFijo = false;
+            }
+        }
+
+        /**
+         * % Comisión global fijo (sección morada): solo si hay registro empleado+cliente y custrecord_porcentaje_globalfijo.
+         * @param {Object} row
+         * @param {Object|null} comisionesGerentes
+         * @param {string} employeeIdStr
+         */
+        function setComisionGlobalFijoOnRow(row, comisionesGerentes, employeeIdStr) {
+            var clienteIdStr = String(row.clienteId || '').trim();
+            var emp = String(employeeIdStr || '');
+            var matchConCliente = !!(clienteIdStr && emp && comisionesGerentesCache && comisionesGerentesCache[emp + '|' + clienteIdStr]);
+            if (matchConCliente && comisionesGerentes && comisionesGerentes.porcentajeGlobalFijo) {
+                row.porcentajeComisionGlobalEsFijo = true;
+                row.porcentajeComisionGlobalFijoValor = comisionesGerentes.porcentajeGlobalNumero || 0;
+            } else {
+                row.porcentajeComisionGlobalEsFijo = false;
+                row.porcentajeComisionGlobalFijoValor = 0;
+            }
         }
 
         /**
@@ -3464,7 +3536,7 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
 
         function applyGerenteComisionesToRow(row) {
             var employeeIdStr = String(row.representanteVentaId || '');
-            var comisionesGerentes = getComisionesGerentes(employeeIdStr);
+            var comisionesGerentes = getComisionesGerentes(employeeIdStr, row.clienteId);
             if (comisionesGerentes) {
                 row.porcentajeComisionRosario = comisionesGerentes.rosario || 0;
                 row.porcentajeComisionAlhely = comisionesGerentes.alhely || 0;
@@ -3475,7 +3547,8 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
                 var otrosResult = getPorcentajeOtrosCompensacionClienteArticulo(row);
                 row.porcentajeComisionOtros = (otrosResult.tipo === 'porcentaje') ? otrosResult.valor : 0;
                 row.otrosCostoFijoTon = (otrosResult.tipo === 'costo_fijo') ? otrosResult.valor : null;
-                row.porcentajeComisionTotal = (row.porcentajeComisionRosario || 0) + (row.porcentajeComisionAlhely || 0) + (row.porcentajeComisionGabriela || 0) + (row.porcentajeComisionMineria || 0) + (row.porcentajeComisionAgro || 0) + (row.porcentajeComisionPrieto || 0) + (row.porcentajeComisionOtros || 0);
+                setPorcentajeComisionTotalOnRow(row, comisionesGerentes);
+                setComisionGlobalFijoOnRow(row, comisionesGerentes, employeeIdStr);
             } else {
                 row.porcentajeComisionRosario = 0;
                 row.porcentajeComisionAlhely = 0;
@@ -3486,7 +3559,8 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/log', 'N/recor
                 var otrosResultElse = getPorcentajeOtrosCompensacionClienteArticulo(row);
                 row.porcentajeComisionOtros = (otrosResultElse.tipo === 'porcentaje') ? otrosResultElse.valor : 0;
                 row.otrosCostoFijoTon = (otrosResultElse.tipo === 'costo_fijo') ? otrosResultElse.valor : null;
-                row.porcentajeComisionTotal = row.porcentajeComisionOtros || 0;
+                setPorcentajeComisionTotalOnRow(row, null);
+                setComisionGlobalFijoOnRow(row, null, employeeIdStr);
             }
         }
 
