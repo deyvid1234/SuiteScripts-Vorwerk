@@ -77,6 +77,9 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                 case "createSalesRep":
                     res  = createUser(req_info,"employee")
                 break;
+                case "altaTMlite":
+                    res = createUserTMlite(req_info)
+                break;
                 case "createSalesOrder":
                     res  = createSalesOrder(req_info)
                 break;
@@ -741,7 +744,7 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
             email: empRecord.getValue({ fieldId: 'email' }),
             altname: empRecord.getValue({ fieldId: 'altname' }),
             custentity_ce_rfc: empRecord.getValue({ fieldId: 'custentity_ce_rfc' }),
-            //custentity_curp: empRecord.getValue({ fieldId: 'custentity_curp' }),
+            custentity_curp: empRecord.getValue({ fieldId: 'custentity_curp' }),
             custentity_status_csf: csfVal,
             custentity_status_csf_text: csfText,
             custentity_tipo_ingreso: tipoIngresoField.value,
@@ -983,6 +986,250 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
             return {error:err}
         }
       
+    }
+
+    function esValidacionManualTMlite(val) {
+        return val === true || val === 'true' || val === 'T' || val === 1 || val === '1';
+    }
+
+    function esFirmoContratoTMlite(val) {
+        return val === true || val === 'true' || val === 'T' || val === 1 || val === '1';
+    }
+
+    function urlCsfTieneValor(url) {
+        return url !== undefined && url !== null && String(url).trim() !== '';
+    }
+
+    /**
+     * Status 1: sin url_csf.
+     * Status 3: con url_csf, validacion_manual false y custentity_firmo_contrato true.
+     * Status 2: con url_csf y cualquier otro caso.
+     */
+    function resolveStatusCsfTMlite(validacionManualVal, firmoContratoVal, urlCsf) {
+        if (!urlCsfTieneValor(urlCsf)) {
+            return 1;
+        }
+        var validacionManual = esValidacionManualTMlite(validacionManualVal);
+        var firmoContrato = esFirmoContratoTMlite(firmoContratoVal);
+
+        if (!validacionManual && firmoContrato) {
+            return 3;
+        }
+        return 2;
+    }
+
+    function enviarEmailCsfPendienteValidacion(nombre, correo) {
+        try {
+            var emailTemplate = record.load({
+                type: record.Type.EMAIL_TEMPLATE,
+                id: 289
+            });
+            var emailSubject = emailTemplate.getValue('subject') || 'Embajador con CSF pendiente de validación';
+            var emailBody = emailTemplate.getValue('content') || '';
+            var nombreVal = nombre || 'N/D';
+            var correoVal = correo || 'N/D';
+
+            emailBody = emailBody.replace(/@name_pre/g, nombreVal);
+            emailBody = emailBody.replace(/@email_pre/g, correoVal);
+
+            email.send({
+                author: '344096',
+                recipients: 'griselrdz@gmail.com',//'cae@thermomix.mx',
+                subject: emailSubject,
+                body: emailBody,
+                isHtml: true
+            });
+        } catch (emailErr) {
+            log.error('enviarEmailCsfPendienteValidacion', emailErr);
+        }
+    }
+
+    function appendEmployeeAddressLines(obj_user, address_info_arr, req_info, esFacturacion) {
+        for (var x in address_info_arr) {
+            var address_info = address_info_arr[x];
+            var addressLabel = address_info.id;
+            if (!addressLabel) {
+                addressLabel = (esFacturacion ? 'facturacion_' : 'domicilio_') + x;
+            }
+            var addresseeVal = address_info.addressee;
+            if (!addresseeVal) {
+                addresseeVal = ((req_info.firstname || '') + ' ' + (req_info.lastname || '')).replace(/^\s+|\s+$/g, '');
+            }
+            obj_user.selectNewLine({
+                sublistId: 'addressbook'
+            });
+            obj_user.setCurrentSublistValue({
+                sublistId: 'addressbook',
+                fieldId: 'label',
+                value: addressLabel
+            });
+            if (esFacturacion) {
+                obj_user.setCurrentSublistValue({
+                    sublistId: 'addressbook',
+                    fieldId: 'defaultbilling',
+                    value: address_info.defaultbilling !== undefined ? address_info.defaultbilling : true
+                });
+            }
+            var addRec = obj_user.getCurrentSublistSubrecord({
+                sublistId: 'addressbook',
+                fieldId: 'addressbookaddress'
+            });
+            addRec.setValue({ fieldId: 'country', value: address_info.country });
+            addRec.setValue({ fieldId: 'addressee', value: addresseeVal });
+            addRec.setValue({ fieldId: 'addrphone', value: address_info.addrphone });
+            addRec.setValue({ fieldId: 'addr1', value: address_info.addr1 });
+            addRec.setValue({ fieldId: 'addr2', value: address_info.addr2 });
+            addRec.setValue({ fieldId: 'city', value: address_info.city });
+            addRec.setValue({ fieldId: 'state', value: address_info.state });
+            addRec.setValue({ fieldId: 'zip', value: address_info.zip });
+            obj_user.commitLine({ sublistId: 'addressbook' });
+        }
+    }
+
+    function obtenerValidacionManualTMlite(req_info, datosFiscales) {
+        if (Object.prototype.hasOwnProperty.call(req_info, 'validacion_manual')) {
+            return req_info.validacion_manual;
+        }
+        if (datosFiscales && Object.prototype.hasOwnProperty.call(datosFiscales, 'validacion_manual')) {
+            return datosFiscales.validacion_manual;
+        }
+        return false;
+    }
+
+    function obtenerUrlCsfTMlite(req_info, datosFiscales) {
+        var url = req_info.url_csf;
+        if ((url === undefined || url === null || String(url).trim() === '') && datosFiscales && datosFiscales.url_csf) {
+            url = datosFiscales.url_csf;
+        }
+        return url;
+    }
+
+    function obtenerFirmoContratoTMlite(req_info, datosFiscales) {
+        if (Object.prototype.hasOwnProperty.call(req_info, 'custentity_firmo_contrato')) {
+            return req_info.custentity_firmo_contrato;
+        }
+        if (datosFiscales && Object.prototype.hasOwnProperty.call(datosFiscales, 'custentity_firmo_contrato')) {
+            return datosFiscales.custentity_firmo_contrato;
+        }
+        return false;
+    }
+
+    /**
+     * Alta TM lite: crea employee con bloque datos_fiscales (RFC, dirección facturación).
+     * custentity_status_csf: 1 sin url_csf; 3 con url_csf + validacion_manual false + firmo_contrato;
+     * 2 en cualquier otro caso con url_csf. Email CAE si validacion_manual true.
+     */
+    function createUserTMlite(req_info) {
+        try {
+            if (!req_info.datos_fiscales || typeof req_info.datos_fiscales !== 'object') {
+                return { error: 'datos_fiscales es necesario' };
+            }
+
+            var datosFiscales = req_info.datos_fiscales;
+            var validacionManualVal = obtenerValidacionManualTMlite(req_info, datosFiscales);
+            var validacionManual = esValidacionManualTMlite(validacionManualVal);
+            var firmoContratoVal = obtenerFirmoContratoTMlite(req_info, datosFiscales);
+            var firmoContrato = esFirmoContratoTMlite(firmoContratoVal);
+            var urlCsf = obtenerUrlCsfTMlite(req_info, datosFiscales);
+            var statusCsf = resolveStatusCsfTMlite(validacionManualVal, firmoContratoVal, urlCsf);
+            var valid_to_create = getInformationUser(req_info.email, false);
+            log.debug('valid_to_create altaTMlite', valid_to_create);
+            if (Object.keys(valid_to_create).length >= 1 && 'sales_rep_information' in valid_to_create) {
+                return { error: 'El correo del presentador ya existe' };
+            }
+
+            var obj_user = record.create({
+                type: 'employee',
+                isDynamic: true
+            });
+            var rfcRef = req_info.custentity_ce_rfc || datosFiscales.custentity_ce_rfc || '';
+
+            obj_user.setValue('customform', -10);
+            obj_user.setValue('issalesrep', true);
+            obj_user.setValue('custentity_fecha_preregistro', formatdate);
+
+            if (urlCsf && String(urlCsf).trim() !== '') {
+                obj_user.setValue('custentity_url_csf', urlCsf);
+            }
+
+            if (req_info.custentity_foto) {
+                req_info.custentity_foto = saveItemImage(req_info.custentity_foto, 30745, rfcRef + '_presentador');
+            }
+            if (req_info.custentity_foto_ine_anverso) {
+                req_info.custentity_foto_ine_anverso = saveItemImage(req_info.custentity_foto_ine_anverso, 30745, rfcRef + '_presentador_identicicacion_anv');
+            }
+            if (req_info.custentity_foto_ine_reverso) {
+                req_info.custentity_foto_ine_reverso = saveItemImage(req_info.custentity_foto_ine_reverso, 30745, rfcRef + '_presentador_identicicacion_rev');
+            }
+            if (req_info.custentity_foto_comprobante_dom) {
+                req_info.custentity_foto_comprobante_dom = saveItemImage(req_info.custentity_foto_comprobante_dom, 30745, rfcRef + '_presentador_domicilio');
+            }
+            if (req_info.custentity_foto_comprobante_banco) {
+                req_info.custentity_foto_comprobante_banco = saveItemImage(req_info.custentity_foto_comprobante_banco, 30745, rfcRef + '_presentador_banco');
+            }
+
+            var skipTopLevel = {
+                type: true,
+                address: true,
+                datos_fiscales: true,
+                url_csf: true,
+                validacion_manual: true,
+                custentity_status_csf: true
+            };
+            for (var x in req_info) {
+                if (skipTopLevel[x]) {
+                    continue;
+                }
+                if (x in date_fields) {
+                    obj_user.setValue(x, parseDate(req_info[x]));
+                } else {
+                    obj_user.setValue(x, req_info[x]);
+                }
+            }
+
+            var skipFiscal = { address: true, validacion_manual: true, url_csf: true };
+            for (var f in datosFiscales) {
+                if (skipFiscal[f]) {
+                    continue;
+                }
+                obj_user.setValue(f, datosFiscales[f]);
+            }
+
+            obj_user.setValue({
+                fieldId: 'custentity_status_csf',
+                value: statusCsf
+            });
+            if (firmoContrato) {
+                obj_user.setValue({ fieldId: 'custentity_firmo_contrato', value: true });
+            }
+            if (statusCsf === 3) {
+                obj_user.setValue({ fieldId: 'custentity_autorizado_finanzas', value: true });
+            }
+
+            obj_user.setValue({ fieldId: 'language', value: 'es_AR' });
+
+            if ('address' in req_info && req_info.address && req_info.address.length > 0) {
+                appendEmployeeAddressLines(obj_user, req_info.address, req_info, false);
+            } else {
+                return { error: 'address is necesary' };
+            }
+
+            if ('address' in datosFiscales && datosFiscales.address && datosFiscales.address.length > 0) {
+                appendEmployeeAddressLines(obj_user, datosFiscales.address, req_info, true);
+            }
+
+            var user_id = obj_user.save();
+
+            if (validacionManual) {
+                var nombrePresentador = ((req_info.firstname || '') + ' ' + (req_info.lastname || '')).replace(/^\s+|\s+$/g, '');
+                enviarEmailCsfPendienteValidacion(nombrePresentador, req_info.email);
+            }
+
+            return { success: user_id, type: 'employee' };
+        } catch (err) {
+            log.error('Error create altaTMlite', err);
+            return { error: err };
+        }
     }
     
     //fincion para crear ODV
