@@ -77,8 +77,9 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                 case "createSalesRep":
                     res  = createUser(req_info,"employee")
                 break;
+                case "updateTMlite":
                 case "altaTMlite":
-                    res = createUserTMlite(req_info)
+                    res = updateUserTMlite(req_info)
                 break;
                 case "createSalesOrder":
                     res  = createSalesOrder(req_info)
@@ -1044,7 +1045,8 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
         }
     }
 
-    function appendEmployeeAddressLines(obj_user, address_info_arr, req_info, esFacturacion) {
+    function upsertEmployeeAddressLinesTMlite(obj_user, address_info_arr, req_info, esFacturacion) {
+        var num = obj_user.getLineCount({ sublistId: 'addressbook' });
         for (var x in address_info_arr) {
             var address_info = address_info_arr[x];
             var addressLabel = address_info.id;
@@ -1055,24 +1057,41 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
             if (!addresseeVal) {
                 addresseeVal = ((req_info.firstname || '') + ' ' + (req_info.lastname || '')).replace(/^\s+|\s+$/g, '');
             }
-            obj_user.selectNewLine({
-                sublistId: 'addressbook'
-            });
-            obj_user.setCurrentSublistValue({
-                sublistId: 'addressbook',
-                fieldId: 'label',
-                value: addressLabel
-            });
+            var lineIndex = -1;
+            for (var i = 0; i < num; i++) {
+                var existingLabel = obj_user.getSublistValue({
+                    sublistId: 'addressbook',
+                    fieldId: 'label',
+                    line: i
+                });
+                if (String(existingLabel) === String(addressLabel)) {
+                    lineIndex = i;
+                    break;
+                }
+            }
+            if (lineIndex === -1) {
+                lineIndex = num;
+                obj_user.insertLine({ sublistId: 'addressbook', line: lineIndex });
+                obj_user.setSublistValue({
+                    sublistId: 'addressbook',
+                    fieldId: 'label',
+                    value: addressLabel,
+                    line: lineIndex
+                });
+                num++;
+            }
             if (esFacturacion) {
-                obj_user.setCurrentSublistValue({
+                obj_user.setSublistValue({
                     sublistId: 'addressbook',
                     fieldId: 'defaultbilling',
-                    value: address_info.defaultbilling !== undefined ? address_info.defaultbilling : true
+                    value: address_info.defaultbilling !== undefined ? address_info.defaultbilling : true,
+                    line: lineIndex
                 });
             }
-            var addRec = obj_user.getCurrentSublistSubrecord({
+            var addRec = obj_user.getSublistSubrecord({
                 sublistId: 'addressbook',
-                fieldId: 'addressbookaddress'
+                fieldId: 'addressbookaddress',
+                line: lineIndex
             });
             addRec.setValue({ fieldId: 'country', value: address_info.country });
             addRec.setValue({ fieldId: 'addressee', value: addresseeVal });
@@ -1082,7 +1101,6 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
             addRec.setValue({ fieldId: 'city', value: address_info.city });
             addRec.setValue({ fieldId: 'state', value: address_info.state });
             addRec.setValue({ fieldId: 'zip', value: address_info.zip });
-            obj_user.commitLine({ sublistId: 'addressbook' });
         }
     }
 
@@ -1096,59 +1114,68 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
         return false;
     }
 
-    function obtenerUrlCsfTMlite(req_info, datosFiscales) {
+    function obtenerUrlCsfTMlite(req_info, datosFiscales, obj_user) {
         var url = req_info.url_csf;
         if ((url === undefined || url === null || String(url).trim() === '') && datosFiscales && datosFiscales.url_csf) {
             url = datosFiscales.url_csf;
         }
+        if (!urlCsfTieneValor(url) && obj_user) {
+            try {
+                url = obj_user.getValue({ fieldId: 'custentity_url_csf' });
+            } catch (ignoreUrl) {}
+        }
         return url;
     }
 
-    function obtenerFirmoContratoTMlite(req_info, datosFiscales) {
+    function obtenerFirmoContratoTMlite(req_info, datosFiscales, obj_user) {
         if (Object.prototype.hasOwnProperty.call(req_info, 'custentity_firmo_contrato')) {
             return req_info.custentity_firmo_contrato;
         }
         if (datosFiscales && Object.prototype.hasOwnProperty.call(datosFiscales, 'custentity_firmo_contrato')) {
             return datosFiscales.custentity_firmo_contrato;
         }
+        if (obj_user) {
+            try {
+                var val = obj_user.getValue({ fieldId: 'custentity_firmo_contrato' });
+                if (val !== '' && val != null) {
+                    return val;
+                }
+            } catch (ignoreFc) {}
+        }
         return false;
     }
 
     /**
-     * Alta TM lite: crea employee con bloque datos_fiscales (RFC, dirección facturación).
+     * updateTMlite: actualiza employee por internalid con bloque datos_fiscales.
      * custentity_status_csf: 1 sin url_csf; 3 con url_csf + validacion_manual false + firmo_contrato;
      * 2 en cualquier otro caso con url_csf. Email CAE si validacion_manual true.
      */
-    function createUserTMlite(req_info) {
+    function updateUserTMlite(req_info) {
         try {
+            if (!req_info.internalid || String(req_info.internalid).trim() === '') {
+                return { error: 'internalid es necesario' };
+            }
             if (!req_info.datos_fiscales || typeof req_info.datos_fiscales !== 'object') {
                 return { error: 'datos_fiscales es necesario' };
             }
 
             var datosFiscales = req_info.datos_fiscales;
+            var obj_user = record.load({
+                type: 'employee',
+                id: req_info.internalid,
+                isDynamic: false
+            });
+
+            var firmoContratoVal = obtenerFirmoContratoTMlite(req_info, datosFiscales, obj_user);
+            var firmoContrato = esFirmoContratoTMlite(firmoContratoVal);
+            var urlCsf = obtenerUrlCsfTMlite(req_info, datosFiscales, obj_user);
             var validacionManualVal = obtenerValidacionManualTMlite(req_info, datosFiscales);
             var validacionManual = esValidacionManualTMlite(validacionManualVal);
-            var firmoContratoVal = obtenerFirmoContratoTMlite(req_info, datosFiscales);
-            var firmoContrato = esFirmoContratoTMlite(firmoContratoVal);
-            var urlCsf = obtenerUrlCsfTMlite(req_info, datosFiscales);
             var statusCsf = resolveStatusCsfTMlite(validacionManualVal, firmoContratoVal, urlCsf);
-            var valid_to_create = getInformationUser(req_info.email, false);
-            log.debug('valid_to_create altaTMlite', valid_to_create);
-            if (Object.keys(valid_to_create).length >= 1 && 'sales_rep_information' in valid_to_create) {
-                return { error: 'El correo del presentador ya existe' };
-            }
+            var rfcRef = req_info.custentity_ce_rfc || datosFiscales.custentity_ce_rfc ||
+                obj_user.getValue({ fieldId: 'custentity_ce_rfc' }) || '';
 
-            var obj_user = record.create({
-                type: 'employee',
-                isDynamic: true
-            });
-            var rfcRef = req_info.custentity_ce_rfc || datosFiscales.custentity_ce_rfc || '';
-
-            obj_user.setValue('customform', -10);
-            obj_user.setValue('issalesrep', true);
-            obj_user.setValue('custentity_fecha_preregistro', formatdate);
-
-            if (urlCsf && String(urlCsf).trim() !== '') {
+            if (urlCsfTieneValor(urlCsf)) {
                 obj_user.setValue('custentity_url_csf', urlCsf);
             }
 
@@ -1170,6 +1197,7 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
 
             var skipTopLevel = {
                 type: true,
+                internalid: true,
                 address: true,
                 datos_fiscales: true,
                 url_csf: true,
@@ -1206,28 +1234,31 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                 obj_user.setValue({ fieldId: 'custentity_autorizado_finanzas', value: true });
             }
 
-            obj_user.setValue({ fieldId: 'language', value: 'es_AR' });
-
             if ('address' in req_info && req_info.address && req_info.address.length > 0) {
-                appendEmployeeAddressLines(obj_user, req_info.address, req_info, false);
-            } else {
-                return { error: 'address is necesary' };
+                upsertEmployeeAddressLinesTMlite(obj_user, req_info.address, req_info, false);
             }
 
             if ('address' in datosFiscales && datosFiscales.address && datosFiscales.address.length > 0) {
-                appendEmployeeAddressLines(obj_user, datosFiscales.address, req_info, true);
+                upsertEmployeeAddressLinesTMlite(obj_user, datosFiscales.address, req_info, true);
             }
 
-            var user_id = obj_user.save();
+            var user_id = obj_user.save({
+                enableSourcing: true,
+                ignoreMandatoryFields: true
+            });
 
             if (validacionManual) {
-                var nombrePresentador = ((req_info.firstname || '') + ' ' + (req_info.lastname || '')).replace(/^\s+|\s+$/g, '');
-                enviarEmailCsfPendienteValidacion(nombrePresentador, req_info.email);
+                var nombrePresentador = (
+                    (req_info.firstname || obj_user.getValue({ fieldId: 'firstname' }) || '') + ' ' +
+                    (req_info.lastname || obj_user.getValue({ fieldId: 'lastname' }) || '')
+                ).replace(/^\s+|\s+$/g, '');
+                var emailPresentador = req_info.email || obj_user.getValue({ fieldId: 'email' });
+                enviarEmailCsfPendienteValidacion(nombrePresentador, emailPresentador);
             }
 
             return { success: user_id, type: 'employee' };
         } catch (err) {
-            log.error('Error create altaTMlite', err);
+            log.error('Error updateTMlite', err);
             return { error: err };
         }
     }
