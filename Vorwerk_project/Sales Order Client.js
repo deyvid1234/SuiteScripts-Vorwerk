@@ -449,7 +449,7 @@ define(['N/record','N/search','N/https','N/runtime','N/currentRecord','N/ui/dial
                 console.log('objCustomer',objCustomer);
                 var email_customer = objCustomer.getValue('email');
                 var nameCustomer = objCustomer.getValue('altname');
-                var addrphone = "";
+                var mobilePhoneCustomer = objCustomer.getValue('mobilephone') || '';
                 var addr1 = "";
                 var addr2 = "";
                 var zip ="";
@@ -473,10 +473,7 @@ define(['N/record','N/search','N/https','N/runtime','N/currentRecord','N/ui/dial
                            line      : i
                         });
                         console.log('subrec',subRecord)
-                        
-                        addrphone = subRecord.getText({
-                            fieldId: 'addrphone'
-                        });
+
                         addr1 = subRecord.getValue({
                             fieldId: 'addr1'
                         });
@@ -503,7 +500,7 @@ define(['N/record','N/search','N/https','N/runtime','N/currentRecord','N/ui/dial
                          "direccion_remitente": address,
                          "empresa_remitente": legalname,
                          "nombre_destinatario": nameCustomer,
-                         "telefono_destinatario": addrphone,
+                         "telefono_destinatario": mobilePhoneCustomer,
                          "correo_destinatario": email_customer,
                          "calle_destinatario": addr1,
                          "num_exterior_destinatario": "0",
