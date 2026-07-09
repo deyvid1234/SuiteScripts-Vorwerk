@@ -1,0 +1,4128 @@
+/**
+ * @NApiVersion 2.x
+ * @NScriptType Restlet
+ * @NModuleScope SameAccount
+ */
+define(['N/record','N/search','N/https','N/file', 'N/http','N/format','N/encode','N/email','N/runtime','N/config',
+    './DDS-VW API Auth/DDS - VW - Auth API Log (LIB)'],
+
+function(record,search,https,file,http,format,encode,email,runtime,config, authApiLog) {
+   var date = new Date();
+    var formatdate = format.parse({
+        value: date,
+        type: format.Type.DATE
+    });
+    /**
+     * Function called upon sending a GET request to the RESTlet.
+     *
+     * @param {Object} requestParams - Parameters from HTTP request URL; parameters will be passed into function as an Object (for all supported content types)
+     * @returns {string | Object} HTTP response body; return string when request Content-Type is 'text/plain'; return Object when request Content-Type is 'application/json'
+     * @since 2015.1
+     */
+    function doGet(requestParams) {
+        var res;
+        var caughtError = null;
+        try{
+            log.debug("entre",requestParams);
+            res = "login was done via server script eShop";
+        }catch(err){
+            caughtError = err;
+            log.error("error to get",err);
+        }
+        try {
+            authApiLog.logApiCall({
+                method: 'GET',
+                requestBody: requestParams,
+                response: res,
+                error: caughtError
+            });
+        } catch (logErr) { /* log no bloqueante */ }
+        return res;
+    }
+
+    /**
+     * Function called upon sending a PUT request to the RESTlet.
+     *
+     * @param {string | Object} requestBody - The HTTP request body; request body will be passed into function as a string when request Content-Type is 'text/plain'
+     * or parsed into an Object when request Content-Type is 'application/json' (in which case the body must be a valid JSON)
+     * @returns {string | Object} HTTP response body; return string when request Content-Type is 'text/plain'; return Object when request Content-Type is 'application/json'
+     * @since 2015.2
+     */
+    function doPut(requestBody) {
+
+    }
+
+    /**
+     * Function called upon sending a POST request to the RESTlet.
+     *
+     * @param {string | Object} requestBody - The HTTP request body; request body will be passed into function as a string when request Content-Type is 'text/plain'
+     * or parsed into an Object when request Content-Type is 'application/json' (in which case the body must be a valid JSON)
+     * @returns {string | Object} HTTP response body; return string when request Content-Type is 'text/plain'; return Object when request Content-Type is 'application/json'
+     * @since 2015.2
+     */
+    function doPost(requestBody) {
+//      var ret = processInformation(requestBody);
+//      return ret;
+        var res = {};
+        var caughtError = null;
+        try{
+            log.audit("requestBody",requestBody);
+            var req_info= requestBody;
+            switch(req_info.type){
+                case "login":
+                    res = getInformationUser(req_info,true)
+                break;
+                case "getItems":
+                    res = searchItems()
+                break;
+                case "getSalesRep":
+                    res = getSalesRep(req_info)
+                break;
+                case "getDataEmployee":
+                    res = getStatusCSF(req_info)
+                break;
+                //eventos de creacion
+                case "createCustomer":
+                    res = createUser(req_info,"customer")
+                break;
+                case "createSalesRep":
+                    res  = createUser(req_info,"employee")
+                break;
+                case "updateTMlite":
+                case "altaTMlite":
+                    res = updateUserTMlite(req_info)
+                break;
+                case "createSalesOrder":
+                    res  = createSalesOrder(req_info)
+                break;
+                case "createSalesOrderWithItemDiscounts":
+                    res  = createSalesOrderWithItemDiscounts(req_info)
+                break;
+                case "createSalesOrderV2":
+                    res  = createSalesOrderManager(req_info)
+                break;
+                //eventos de modificacion
+                case "updateCustomer":
+                    res  = updateUser(req_info,"customer")
+                break;
+                case "updateSalesRep":
+                    res  = updateUser(req_info,"employee")
+                break;
+                case "updateSalesOrder":
+                    res  = updateSalesOrder(req_info)
+                break;
+                case "getSalesOrderSerialNumber":
+                    res = getSalesOrderSerialNumber(req_info);
+                break;
+                case "getOrderRepair":
+                    res = getOrderRepair(req_info);
+                break;
+                
+            }
+        }catch(err){
+            caughtError = err;
+            log.error("error request",err);
+            res = {'error':err};
+        }
+        try {
+            authApiLog.logApiCall({
+                method: 'POST',
+                requestBody: requestBody,
+                response: res,
+                error: caughtError
+            });
+        } catch (logErr) { /* log no bloqueante */ }
+        log.debug("proceso funcional",res);
+        return res;
+    }
+
+    /**
+     * Function called upon sending a DELETE request to the RESTlet.
+     *
+     * @param {Object} requestParams - Parameters from HTTP request URL; parameters will be passed into function as an Object (for all supported content types)
+     * @returns {string | Object} HTTP response body; return string when request Content-Type is 'text/plain'; return Object when request Content-Type is 'application/json'
+     * @since 2015.2
+     */
+    function doDelete(requestParams) {
+
+    }
+    
+    var date_fields = {custentity_fcha_solicitud:true,custbody_fcha_entrega_tm5_cliente:true, custbody_fcha_entrega_tm5_cliente:true}
+    
+   
+ 
+    /*************Inicio de funciones de lectura************************/
+    //funcion para extraer informacion de usuario
+    function getInformationUser(req_info,valid){
+        var cust = false,emp = {}, obj_ret = {};
+        var valid_rfc= false;
+        try{
+            var filters = [];
+            
+            if(valid){
+                for(var x in req_info){
+                    if(x != "type" && x != "rfc"){
+                        filters.push({
+                            name: x,
+                            operator: 'is',
+                            values: req_info[x]
+                        });
+                    }
+                    if(x == "rfc"){
+                        valid_rfc = true;
+                    }
+                }
+            }else{
+                log.debug('req_info user',req_info);
+                filters.push({
+                    name: 'email',
+                    operator: 'is',
+                    values: req_info
+                });
+            }
+            if(valid_rfc){
+                filters.push({
+                    name: 'custentity_rfc',
+                    operator: 'is',
+                    values: req_info['rfc']
+                });
+            }
+            
+            soColumns = [
+                { name: 'internalid' },
+                { name: 'companyname' },
+                { name: 'email'},
+                { name: 'custentity_rfc'},
+                { name: 'custentity_curp'},
+                { name: 'isinactive'},
+                { name: 'custentity_presentadora_referido'},
+                { name: 'custentity_creado_desde_presentador'}
+
+            ];
+
+            var busqueda = search.create({
+                type: "customer",
+                columns: soColumns,
+                filters: filters
+            });
+
+            var presentadorReferidoAnterior = ''
+
+            var pagedResults = busqueda.runPaged();
+            pagedResults.pageRanges.forEach(function (pageRange){
+                var currentPage = pagedResults.fetch({index: pageRange.index});
+                currentPage.data.forEach(function (r) {
+                    // Si el customer fue creado desde presentador, se ignora para permitir crear uno nuevo
+                    var creadoDesdePresentador = r.getValue('custentity_creado_desde_presentador');
+                    // Normalizar valores posibles (checkbox puede venir como boolean o string)
+                    var creadoDesdePresentadorNorm = (creadoDesdePresentador === true) ||
+                        (creadoDesdePresentador === 'T') ||
+                        (creadoDesdePresentador === 'true') ||
+                        (creadoDesdePresentador === 1) ||
+                        (creadoDesdePresentador === '1');
+                    log.debug('getInformationUser - customer encontrado', {
+                        internalid: r.getValue('internalid'),
+                        email: r.getValue('email'),
+                        creadoDesdePresentador: creadoDesdePresentador
+                    });
+                    if (creadoDesdePresentadorNorm) {
+                        return true;
+                    }
+                    if( (r.getValue("custentity_presentadora_referido") || presentadorReferidoAnterior == '') && cust != false ){
+                        cust.user_id= r.getValue("internalid");
+                        cust.name= r.getValue("companyname");
+                        cust.email= r.getValue("email");
+                        cust.rfc= r.getValue("custentity_rfc");
+                        cust.curp= r.getValue("custentity_curp");
+                        cust.inactive= r.getValue("isinactive");
+                        presentadorReferidoAnterior = r.getValue("custentity_presentadora_referido");
+                    }else if( cust == false){
+                        cust = {}
+                        cust.user_id= r.getValue("internalid");
+                        cust.name= r.getValue("companyname");
+                        cust.email= r.getValue("email");
+                        cust.rfc= r.getValue("custentity_rfc");
+                        cust.curp= r.getValue("custentity_curp");
+                        cust.inactive= r.getValue("isinactive"); 
+
+                        presentadorReferidoAnterior = r.getValue("custentity_presentadora_referido");
+                    }
+                    return true;
+                });
+            });
+            
+            // Crear filtros separados para employee (sin el campo custentity_creado_desde_presentador que solo existe en customer)
+            var filters_employee = [];
+            
+            if(valid_rfc){
+                filters.pop();
+                filters.push({
+                    name: 'custentity_ce_rfc',
+                    operator: 'is',
+                    values: req_info['rfc']
+                });
+            }
+            var busqueda = search.create({
+                type: "employee",
+                columns: ['internalid','altname','email','custentity_ce_rfc','custentity_curp','isinactive'],
+                filters: filters
+            });
+
+            var pagedResults = busqueda.runPaged();
+            pagedResults.pageRanges.forEach(function (pageRange){
+                var currentPage = pagedResults.fetch({index: pageRange.index});
+                currentPage.data.forEach(function (r) {
+                    emp.user_id= r.getValue("internalid");
+                    emp.name= r.getValue("altname");
+                    emp.email= r.getValue("email");
+                    emp.rfc = r.getValue("custentity_ce_rfc");
+                    emp.curp = r.getValue("custentity_curp");
+                    emp.inactive = r.getValue("isinactive");
+                    return true;
+                    
+                    
+                });
+            });
+            if(cust != false){
+                if(Object.keys(cust).length){
+                    obj_ret.customer_information = cust;
+                }
+            }
+            
+            if(Object.keys(emp).length){
+                obj_ret.sales_rep_information = emp;
+            }
+            return obj_ret
+        }catch(err){
+            log.error("error post",err)
+            return obj_ret;
+        }
+    }
+    
+    
+    
+    
+    //funcion para extraer los items 
+    function searchItems(){
+        try {
+            var result = []
+            var vendorBills = search.load({
+                id: 'customsearch_item_location_available'
+            });
+            
+            var pagedResults = vendorBills.runPaged();
+            pagedResults.pageRanges.forEach(function (pageRange){
+                var currentPage = pagedResults.fetch({index: pageRange.index});
+                currentPage.data.forEach(function (r) {
+                    
+                    var values = r.getAllValues();
+                    log.debug('values',values)
+                    
+                    var stock = 0
+                    //Parche solo Septiebre/hasta liberar 100 Ermita -> Regresar a parseInt(values['custitem_disponible_eshop'])||0
+                    if(parseInt(values['custitem_disponible_eshop'],10) > 0){
+                        stock = parseInt(values['custitem_disponible_eshop'],10)
+                    }else{
+                        stock = parseInt(values['locationquantityavailable'],10)||0
+                    }
+
+                    var obj_aux = {
+                            internalid: r.getValue('internalid'),
+                            stock: stock,
+                            sku: values['itemid'],
+                            name: values['displayname']
+                    }
+                    
+                    //sandbox 58 //production 53
+                    result.push(obj_aux);
+                    
+                })
+            });
+            
+            email.send({
+                author: '344096',
+                recipients: 'pilar.torres@thermomix.mx',//'pilar.torres@vorwerk.de',
+                subject: 'Información de Items',
+                body: JSON.stringify(result)
+            });
+            
+            return result;
+        }catch(err){
+            return {error:err}
+            log.error('error searchItems', err);
+        }
+        
+    }
+    
+    //funcion para extraer la informacion del representante de ventas
+    
+    function getSalesRep(req_info){
+        try{
+            var objRecord = record.load({
+                type:  'employee',
+                id: req_info['id'],
+                isDynamic: false
+            });
+            var fields = [
+                            "firstname",
+                            "lastname" ,
+                            "mobilephone",
+                            "email",
+                            "custentity_curp",
+                            "custentity_ce_rfc",
+                            "custentity60",
+                            "custentity_numcta",
+                            "custentity_num_serie_tm",
+                            "custentity_ban_prov"
+                         ]
+            var obj_return ={}
+            for(var x in fields){
+                obj_return[fields[x]]= objRecord.getValue(fields[x]);
+            }
+            var totalLines = objRecord.getLineCount({
+                sublistId  : 'addressbook'
+            });
+            var address_arr = [];
+            for(var i=0; i < totalLines; i++){
+
+                try {
+                        var internalid = objRecord.getSublistValue({
+                            sublistId: 'addressbook',
+                            fieldId: 'id',
+                            line: i
+                        });
+                        var id = objRecord.getSublistValue({
+                            sublistId: 'addressbook',
+                            fieldId: 'label',
+                            line: i
+                        });
+                        
+                        // Verificar si existe el subrecord de dirección antes de acceder a él
+                        var subRecord = null;
+                        try {
+                            subRecord = objRecord.getSublistSubrecord({
+                               sublistId : 'addressbook',
+                               fieldId   : 'addressbookaddress',
+                               line      : i
+                            });
+                        } catch (subRecordError) {
+                            // Si no se puede obtener el subrecord, continuar con datos básicos
+                            log.debug('No se pudo obtener subrecord de dirección para línea ' + i, subRecordError);
+                            address_arr.push({
+                                internalid : internalid,
+                                id : id,
+                                country : null,
+                                addressee : null,
+                                addrphone : null,
+                                addr1 : null,
+                                addr2 : null,
+                                city : null,
+                                state : null,
+                                zip : null
+                            });
+                            continue;
+                        }
+                        
+                        // Si el subrecord existe, intentar obtener los datos de dirección
+                        var country = null;
+                        var addressee = null;
+                        var addrphone = null;
+                        var addr1 = null;
+                        var addr2 = null;
+                        var city = null;
+                        var state = null;
+                        var zip = null;
+                        
+                        try {
+                            country = subRecord.getText({
+                                fieldId: 'country'
+                            });
+                        } catch (e) {
+                            log.error('Error obteniendo country para línea ' + i, e);
+                        }
+                        
+                        try {
+                            addressee = subRecord.getValue({
+                                fieldId: 'addressee'
+                            });
+                        } catch (e) {
+                            log.error('Error obteniendo addressee para línea ' + i, e);
+                        }
+                        
+                        try {
+                            addrphone = subRecord.getText({
+                                fieldId: 'addrphone'
+                            });
+                        } catch (e) {
+                            log.error('Error obteniendo addrphone para línea ' + i, e);
+                        }
+                        
+                        try {
+                            addr1 = subRecord.getValue({
+                                fieldId: 'addr1'
+                            });
+                        } catch (e) {
+                            log.error('Error obteniendo addr1 para línea ' + i, e);
+                        }
+                        
+                        try {
+                            addr2 = subRecord.getValue({
+                                fieldId: 'addr2'
+                            });
+                        } catch (e) {
+                            log.error('Error obteniendo addr2 para línea ' + i, e);
+                        }
+                        
+                        try {
+                            city = subRecord.getValue({
+                                fieldId: 'city'
+                            });
+                        } catch (e) {
+                            log.error('Error obteniendo city para línea ' + i, e);
+                        }
+                        
+                        try {
+                            state = subRecord.getValue({
+                                fieldId: 'state'
+                            });
+                        } catch (e) {
+                            log.error('Error obteniendo state para línea ' + i, e);
+                        }
+                        
+                        try {
+                            zip = subRecord.getValue({
+                                fieldId: 'zip'
+                            });
+                        } catch (e) {
+                            log.error('Error obteniendo zip para línea ' + i, e);
+                        }
+                        
+                        address_arr.push({
+                            internalid : internalid,
+                            id : id,
+                            country : country,
+                            addressee : addressee,
+                            addrphone : addrphone,
+                            addr1 : addr1,
+                            addr2 : addr2,
+                            city : city,
+                            state : state,
+                            zip : zip
+                        });
+                        
+                    } catch (lineError) {
+                        // Si hay error en una línea específica, continuar con la siguiente
+                        log.error('Error procesando línea de dirección ' + i, lineError);
+                        continue;
+                    }
+
+                
+                
+            }
+            
+            obj_return['address']= address_arr;
+            return obj_return;
+            
+            
+        }catch(err){
+            log.error("error get sales rep",err);
+            return {error:"id no encontrado"}
+        }
+        
+    }
+    
+    
+    /*************Fin de funciones de lectura************************/
+    
+    
+    
+    /**
+     * Embajadores / CSF: resuelve custentity_status_csf (val = status, url_csf).
+     * - status = 1 → 1 | status = 2 → 2
+     * - status vacío: url vacío → 1 | url con valor → 2
+     */
+    function payloadTieneStatusCsf(val, url_csf) {
+        var status = 1;
+        var valVacio = val === undefined || val === null || val === false ||
+            (typeof val === 'string' && val.trim() === '');
+        var urlVacio = url_csf === undefined || url_csf === null || url_csf === false ||
+            (typeof url_csf === 'string' && url_csf.trim() === '');
+
+        if (!valVacio) {
+            var valStr = String(val).trim();
+            if (valStr === '1' || val === 1) {
+                status = 1;
+                return status;
+            }
+            if (valStr === '2' || val === 2) {
+                status = 2;
+                return status;
+            }
+        }
+
+        if (urlVacio) {
+            status = 1;
+        } else {
+            status = 2;
+        }
+
+        return status;
+    }
+
+    /**
+     * Convierte valor de fecha NetSuite (Date o string) a Date; null si no es válido.
+     */
+    function parseEmployeeDateField(val) {
+        if (val == null || val === '') {
+            return null;
+        }
+        if (val instanceof Date && !isNaN(val.getTime())) {
+            return val;
+        }
+        try {
+            return format.parse({
+                value: val,
+                type: format.Type.DATE
+            });
+        } catch (ignoreParse) {
+            return parseDate(val);
+        }
+    }
+
+    /** Fecha a DD/MM/YYYY para respuesta getDataEmployee. */
+    function formatFechaDdMmYyyy(val) {
+        var d = parseEmployeeDateField(val);
+        if (!d || isNaN(d.getTime())) {
+            return '';
+        }
+        var day = d.getDate();
+        var month = d.getMonth() + 1;
+        var year = d.getFullYear();
+        var dd = day < 10 ? '0' + day : String(day);
+        var mm = month < 10 ? '0' + month : String(month);
+        return dd + '/' + mm + '/' + year;
+    }
+
+    function dateOnlyTimestamp(d) {
+        return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+    }
+
+    /**
+     * vencido false: hoy >= hiredate y hoy <= custentity_fin_objetivo_2; true si hoy > objetivo_2 (u otras fechas inválidas).
+     */
+    function calcularVencidoEmbajador(hiredateVal, objetivo2Val) {
+        var hoy = new Date();
+        var hoyTs = dateOnlyTimestamp(hoy);
+        var hire = parseEmployeeDateField(hiredateVal);
+        var objetivo2 = parseEmployeeDateField(objetivo2Val);
+        if (!hire || !objetivo2 || isNaN(hire.getTime()) || isNaN(objetivo2.getTime())) {
+            return true;
+        }
+        var hireTs = dateOnlyTimestamp(hire);
+        var obj2Ts = dateOnlyTimestamp(objetivo2);
+        if (hoyTs >= hireTs && hoyTs <= obj2Ts) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Cuenta órdenes de venta del empleado: salesrep = internal id, custbody_tipo_venta = 2, mainline,
+     * excluyendo cancelaciones (custbody_otro_financiamiento != 4).
+     * Registra en log el detalle; devuelve solo el total.
+     */
+    function contarVentasSalesOrderEmpleado(employeeInternalId) {
+        var numeroVentas = 0;
+        var ordenesDetalle = [];
+        if (employeeInternalId == null || String(employeeInternalId).trim() === '') {
+            log.audit('getDataEmployee - ventas sales order tipo 2', {
+                employeeInternalId: employeeInternalId,
+                numero_ventas: 0,
+                ordenes: [],
+                nota: 'Sin internal id de empleado'
+            });
+            return 0;
+        }
+        try {
+            var ventasSearch = search.create({
+                type: search.Type.SALES_ORDER,
+                filters: [
+                    ['salesrep', 'anyof', String(employeeInternalId)],
+                    'AND',
+                    ['custbody_tipo_venta', 'anyof', '2'],
+                    'AND',
+                    ['mainline', 'is', 'T'],
+                    'AND',
+                    ['custbody_otro_financiamiento', 'noneof', '4']
+                ],
+                columns: [
+                    search.createColumn({ name: 'entity' }),
+                    search.createColumn({ name: 'salesrep' }),
+                    search.createColumn({ name: 'trandate' }),
+                    search.createColumn({ name: 'custbody_tipo_venta' }),
+                    search.createColumn({ name: 'tranid' }),
+                    search.createColumn({ name: 'internalid' })
+                ]
+            });
+            ventasSearch.run().each(function (r) {
+                numeroVentas++;
+                ordenesDetalle.push({
+                    id: r.getValue({ name: 'internalid' }),
+                    tranid: r.getValue({ name: 'tranid' }),
+                    entity: r.getValue({ name: 'entity' }),
+                    salesrep: r.getValue({ name: 'salesrep' }),
+                    date: r.getValue({ name: 'trandate' }),
+                    custbody_tipo_venta: r.getValue({ name: 'custbody_tipo_venta' })
+                });
+                return true;
+            });
+        } catch (e) {
+            log.error('contarVentasSalesOrderEmpleado', e);
+        }
+        log.audit('getDataEmployee - ventas sales order tipo 2', {
+            employeeInternalId: String(employeeInternalId),
+            numero_ventas: numeroVentas,
+            ordenes: ordenesDetalle
+        });
+        return numeroVentas;
+    }
+
+    /** Valor y texto de campo lista en employee (getDataEmployee). */
+    function readEmployeeListField(empRecord, fieldId) {
+        var val = '';
+        var txt = '';
+        try {
+            val = empRecord.getValue({ fieldId: fieldId });
+        } catch (ignoreVal) {
+            try {
+                val = empRecord.getValue(fieldId);
+            } catch (ignoreVal2) {}
+        }
+        try {
+            txt = empRecord.getText({ fieldId: fieldId }) || '';
+        } catch (ignoreTxt) {
+            try {
+                txt = empRecord.getText(fieldId) || '';
+            } catch (ignoreTxt2) {}
+        }
+        return { value: val, text: txt };
+    }
+
+    /**
+     * Arma la respuesta de getStatusCSF / getDataEmployee desde un registro employee cargado.
+     */
+    function buildEmployeeStatusCSFRow(empRecord) {
+        var csfField = readEmployeeListField(empRecord, 'custentity_status_csf');
+        var csfVal = csfField.value;
+        var csfText = csfField.text;
+        var tipoIngresoField = readEmployeeListField(empRecord, 'custentity_tipo_ingreso');
+        var tipoReingresoField = readEmployeeListField(empRecord, 'custentity_vorwerk_reentry');
+        var inact = empRecord.getValue({ fieldId: 'isinactive' });
+        var listaNegra;
+        var adeudoDc;
+        try {
+            listaNegra = empRecord.getValue({ fieldId: 'custentity_lista_negra' });
+        } catch (ignoreLn) {
+            try {
+                listaNegra = empRecord.getValue('custentity_lista_negra');
+            } catch (ignoreLn2) {}
+        }
+        try {
+            adeudoDc = empRecord.getValue({ fieldId: 'custentity_adeudo_dc' });
+        } catch (ignoreAd) {
+            try {
+                adeudoDc = empRecord.getValue('custentity_adeudo_dc');
+            } catch (ignoreAd2) {}
+        }
+        var hiredateVal = '';
+        var objetivo2Val = '';
+        try {
+            hiredateVal = empRecord.getValue({ fieldId: 'hiredate' });
+        } catch (ignoreHire) {
+            try {
+                hiredateVal = empRecord.getValue('hiredate');
+            } catch (ignoreHire2) {}
+        }
+        try {
+            objetivo2Val = empRecord.getValue({ fieldId: 'custentity_fin_objetivo_2' });
+        } catch (ignoreObj2) {
+            try {
+                objetivo2Val = empRecord.getValue('custentity_fin_objetivo_2');
+            } catch (ignoreObj22) {}
+        }
+        return {
+            internalid: String(empRecord.id),
+            idu: empRecord.getValue({ fieldId: 'entityid' }),
+            firstname: empRecord.getValue({ fieldId: 'firstname' }),
+            lastname: empRecord.getValue({ fieldId: 'lastname' }),
+            email: empRecord.getValue({ fieldId: 'email' }),
+            altname: empRecord.getValue({ fieldId: 'altname' }),
+            custentity_ce_rfc: empRecord.getValue({ fieldId: 'custentity_ce_rfc' }),
+            custentity_curp: empRecord.getValue({ fieldId: 'custentity_curp' }),
+            custentity_status_csf: csfVal,
+            custentity_status_csf_text: csfText,
+            custentity_tipo_ingreso: tipoIngresoField.value,
+            custentity_vorwerk_reentry: tipoReingresoField.value,
+            custentity_lista_negra: listaNegra,
+            custentity_adeudo_dc: adeudoDc,
+            isinactive: inact === true || inact === 'T',
+            fecha_objetivo2: formatFechaDdMmYyyy(objetivo2Val),
+            vencido: calcularVencidoEmbajador(hiredateVal, objetivo2Val),
+            numero_ventas: contarVentasSalesOrderEmpleado(empRecord.id)
+        };
+    }
+
+    /**
+     * idu = Employee ID en pantalla = campo entityid en búsqueda (no es el internal id de record.load).
+     * Incluye inactivos. Coincidencia exacta del entityid, sin variantes con prefijos.
+     */
+    function findEmployeeInternalIdByEntityId(entityIdStr) {
+        var trimmed = String(entityIdStr).trim();
+        if (!trimmed) {
+            return null;
+        }
+        var busqueda = search.create({
+            type: search.Type.EMPLOYEE,
+            filters: [['entityid', 'is', trimmed]],
+            columns: [search.createColumn({ name: 'internalid' })]
+        });
+        var found = null;
+        busqueda.run().each(function (r) {
+            found = r.getValue({ name: 'internalid' });
+            return false;
+        });
+        return found;
+    }
+
+    /**
+     * type getStatusCSF — correo y/o idu (entityid) y/o internalid/id (internal id NetSuite).
+     * idu nunca se pasa a record.load directo: primero se resuelve internal id por búsqueda entityid.
+     */
+    function getStatusCSF(req_info) {
+        try {
+            var emailVal = req_info.email;
+            var hasEmail = emailVal !== undefined && emailVal !== null && String(emailVal).trim() !== '';
+            var hasIdu = req_info.idu !== undefined && req_info.idu !== null && String(req_info.idu).trim() !== '';
+            var hasInternalid = req_info.internalid !== undefined && req_info.internalid !== null && String(req_info.internalid).trim() !== '';
+            var hasId = req_info.id !== undefined && req_info.id !== null && String(req_info.id).trim() !== '';
+
+            if (!hasEmail && !hasIdu && !hasInternalid && !hasId) {
+                return { success: false, error: 'Indique email, idu (Employee ID / entityid), internalid o id (internal id NetSuite).' };
+            }
+
+            var internalIdToLoad = null;
+
+            if (hasIdu) {
+                internalIdToLoad = findEmployeeInternalIdByEntityId(req_info.idu);
+                if (!internalIdToLoad) {
+                    return { success: false, error: 'No se encontró empleado con el idu (entityid) indicado.' };
+                }
+            } else if (hasInternalid) {
+                internalIdToLoad = String(req_info.internalid).trim();
+            } else if (hasId) {
+                internalIdToLoad = String(req_info.id).trim();
+            } else if (hasEmail) {
+                var busquedaMail = search.create({
+                    type: search.Type.EMPLOYEE,
+                    filters: [['email', 'is', String(emailVal).trim()]],
+                    columns: [search.createColumn({ name: 'internalid' })]
+                });
+                busquedaMail.run().each(function (r) {
+                    internalIdToLoad = r.getValue({ name: 'internalid' });
+                    return false;
+                });
+                if (!internalIdToLoad) {
+                    return { success: false, error: 'No se encontró un empleado con el correo indicado.' };
+                }
+            }
+
+            var empRec = record.load({
+                type: record.Type.EMPLOYEE,
+                id: internalIdToLoad,
+                isDynamic: false
+            });
+
+            if (hasEmail) {
+                var mailEmp = empRec.getValue({ fieldId: 'email' }) || empRec.getValue('email') || '';
+                if (String(mailEmp).trim().toLowerCase() !== String(emailVal).trim().toLowerCase()) {
+                    return { success: false, error: 'Los datos no coinciden: el correo no pertenece al empleado encontrado.' };
+                }
+            }
+
+            return { success: true, employee: buildEmployeeStatusCSFRow(empRec) };
+        } catch (err) {
+            log.error('getStatusCSF', err);
+            return { success: false, error: err.message || String(err) };
+        }
+    }
+    
+    
+    /*************Fin de funciones de lectura************************/
+    /***************incio de funciones de creacion**********/
+    //funcion para crear Clientes y Empleados
+    function createUser(req_info,type_user){
+        try{
+            var valid_to_create =getInformationUser(req_info.email,false);
+            log.debug("valid_to_create",valid_to_create);
+            if(Object.keys(valid_to_create).length >= 1 ){
+                if("customer_information" in valid_to_create && type_user == "customer"){
+                    return {error:"El correo del cliente ya existe"}
+                }
+            
+                if("sales_rep_information" in  valid_to_create && type_user == "employee"){
+                    return {error:"El correo del presentador ya existe"}
+                }
+            }
+
+            var obj_user = record.create({
+              type: type_user,
+              isDynamic:true
+            });
+            var id_image ="", id_image_ide_anv= "", id_img_ide_rev="",id_img_domicilio="", id_img_banco="";
+            if(type_user == "employee"){
+                
+              obj_user.setValue('customform',-10);
+              obj_user.setValue('issalesrep',true);
+              obj_user.setValue('custentity_fecha_preregistro',formatdate);
+             
+                if(req_info["url_csf"]){
+                    
+                    obj_user.setValue('custentity_url_csf',req_info["url_csf"]);
+                }
+              //imagen de usuario
+              id_image = saveItemImage(req_info["custentity_foto"],30745,req_info["custentity_ce_rfc"]+"_presentador");
+              req_info["custentity_foto"] = id_image;
+              
+              
+              //imagen de identificacion anverso
+              id_image_ide_anv = saveItemImage(req_info["custentity_foto_ine_anverso"],30745,req_info["custentity_ce_rfc"]+"_presentador_identicicacion_anv");
+              req_info["custentity_foto_ine_anverso"] = id_image_ide_anv;
+              
+              
+              //imagen de identificacion reverso
+              id_img_ide_rev = saveItemImage(req_info["custentity_foto_ine_reverso"],30745,req_info["custentity_ce_rfc"]+"_presentador_identicicacion_rev");
+              req_info["custentity_foto_ine_reverso"] = id_img_ide_rev;
+              
+              
+              //imagen comprobante de domicilio 
+              if(req_info["custentity_foto_comprobante_dom"]){
+                id_img_domicilio = saveItemImage(req_info["custentity_foto_comprobante_dom"],30745,req_info["custentity_ce_rfc"]+"_presentador_domicilio");
+                req_info["custentity_foto_comprobante_dom"] = id_img_domicilio;
+            }
+              
+              
+              //imagen comprobante bancario
+              id_img_banco = saveItemImage(req_info["custentity_foto_comprobante_banco"],30745,req_info["custentity_ce_rfc"]+"_presentador_banco");
+              req_info["custentity_foto_comprobante_banco"] = id_img_banco;
+            }else{
+                
+                obj_user.setValue({fieldId:'custentity_rfc',value:req_info["vatregnumber"]});
+            }
+            
+            //seter information main
+            for(var x in req_info){
+                if(x != "address" ){
+                    if(x in date_fields){
+                        var fdate = parseDate(req_info[x]);
+                        obj_user.setValue(x,fdate); 
+                    }else{
+                        obj_user.setValue(x,req_info[x]); 
+                    }
+                     
+                }
+            }
+            if (type_user === 'employee' && (
+                Object.prototype.hasOwnProperty.call(req_info, 'custentity_status_csf') ||
+                Object.prototype.hasOwnProperty.call(req_info, 'url_csf')
+            )) {
+                obj_user.setValue({
+                    fieldId: 'custentity_status_csf',
+                    value: payloadTieneStatusCsf(req_info['custentity_status_csf'], req_info['url_csf'])
+                });
+            }
+            obj_user.setValue({fieldId:'language',value:"es_AR"});
+            if('address' in req_info){
+                //setter information address
+                var address_info_arr = req_info["address"];
+                for(var x in address_info_arr){
+                    var address_info = address_info_arr[x];
+                    obj_user.selectNewLine({
+                        sublistId:'addressbook'
+                    })
+                    obj_user.setCurrentSublistValue({
+                        sublistId:'addressbook',
+                        fieldId:'label',
+                        value:address_info.id
+                    })
+                    if(type_user != "employee"){
+                        obj_user.setCurrentSublistValue({
+                            sublistId:'addressbook',
+                            fieldId:'defaultbilling',
+                            value:address_info.defaultbilling
+                        })
+                        obj_user.setCurrentSublistValue({
+                            sublistId:'addressbook',
+                            fieldId:'defaultshipping',
+                            value:address_info.defaultshipping
+                        })
+                    }
+                    
+                    var addRec = obj_user.getCurrentSublistSubrecord({
+                        sublistId:'addressbook',
+                        fieldId:'addressbookaddress'
+                    })
+                    addRec.setValue({fieldId:'country',value:address_info.country})
+                    if(type_user == "employee"){
+                        addRec.setValue({fieldId:'addressee',value:req_info["firstname"]+" "+req_info["lastname"]}) 
+                    }
+                    else {
+                        addRec.setValue({fieldId:'addressee',value:req_info["custentity_razon_social"]})
+                    }
+                    addRec.setValue({fieldId:'addrphone',value:address_info.addrphone})
+                    addRec.setValue({fieldId:'addr1',value:address_info.addr1})
+                    addRec.setValue({fieldId:'addr2',value:address_info.addr2})
+                    addRec.setValue({fieldId:'city',value:address_info.city})
+                    addRec.setValue({fieldId:'state',value:address_info.state})
+                    addRec.setValue({fieldId:'zip',value:address_info.zip})
+                    obj_user.commitLine({sublistId:'addressbook'})
+                }
+            }else{
+                return {error:'address is necesary'}
+            }
+            
+            var user_id = obj_user.save();
+            return {success:user_id,type:type_user}
+        }catch(err){
+            log.error("Error create "+type_user,err)
+            return {error:err}
+        }
+      
+    }
+    
+    function esValidacionManualTMlite(val) {
+        return val === true || val === 'true' || val === 'T' || val === 1 || val === '1';
+    }
+
+    function esFirmoContratoTMlite(val) {
+        return val === true || val === 'true' || val === 'T' || val === 1 || val === '1';
+    }
+
+    function urlCsfTieneValor(url) {
+        return url !== undefined && url !== null && String(url).trim() !== '';
+    }
+
+    /**
+     * Status 1: sin url_csf.
+     * Status 3: con url_csf, validacion_manual false y custentity_firmo_contrato true.
+     * Status 2: con url_csf y cualquier otro caso.
+     */
+    function resolveStatusCsfTMlite(validacionManualVal, firmoContratoVal, urlCsf) {
+        if (!urlCsfTieneValor(urlCsf)) {
+            return 1;
+        }
+        var validacionManual = esValidacionManualTMlite(validacionManualVal);
+        var firmoContrato = esFirmoContratoTMlite(firmoContratoVal);
+
+        if (!validacionManual && firmoContrato) {
+            return 3;
+        }
+        return 2;
+    }
+
+    function obtenerPlantillaEmailCsfTMlite() {
+        return runtime.envType === 'PRODUCTION' ? 283 : 289;
+    }
+
+    function enviarEmailCsfPendienteValidacion(nombre, correo) {
+        try {
+            var templateId = obtenerPlantillaEmailCsfTMlite();
+            var emailTemplate = record.load({
+                type: record.Type.EMAIL_TEMPLATE,
+                id: templateId
+            });
+            var emailSubject = emailTemplate.getValue('subject') || 'Embajador con CSF pendiente de validación';
+            var emailBody = emailTemplate.getValue('content') || '';
+            var nombreVal = nombre || 'N/D';
+            var correoVal = correo || 'N/D';
+
+            emailBody = emailBody.replace(/@name_pre/g, nombreVal);
+            emailBody = emailBody.replace(/@email_pre/g, correoVal);
+
+            email.send({
+                author: '344096',
+                recipients: ['cae@thermomix.mx'],
+                subject: emailSubject,
+                body: emailBody,
+                isHtml: true
+            });
+        } catch (emailErr) {
+            log.error('enviarEmailCsfPendienteValidacion', emailErr);
+        }
+    }
+
+    function upsertEmployeeAddressLinesTMlite(obj_user, address_info_arr, req_info, esFacturacion) {
+        var num = obj_user.getLineCount({ sublistId: 'addressbook' });
+        for (var x in address_info_arr) {
+            var address_info = address_info_arr[x];
+            var addressLabel = address_info.id;
+            if (!addressLabel) {
+                addressLabel = (esFacturacion ? 'facturacion_' : 'domicilio_') + x;
+            }
+            var addresseeVal = address_info.addressee;
+            if (!addresseeVal) {
+                addresseeVal = ((req_info.firstname || '') + ' ' + (req_info.lastname || '')).replace(/^\s+|\s+$/g, '');
+            }
+            var lineIndex = -1;
+            for (var i = 0; i < num; i++) {
+                var existingLabel = obj_user.getSublistValue({
+                    sublistId: 'addressbook',
+                    fieldId: 'label',
+                    line: i
+                });
+                if (String(existingLabel) === String(addressLabel)) {
+                    lineIndex = i;
+                    break;
+                }
+            }
+            if (lineIndex === -1) {
+                lineIndex = num;
+                obj_user.insertLine({ sublistId: 'addressbook', line: lineIndex });
+                obj_user.setSublistValue({
+                    sublistId: 'addressbook',
+                    fieldId: 'label',
+                    value: addressLabel,
+                    line: lineIndex
+                });
+                num++;
+            }
+            if (esFacturacion) {
+                obj_user.setSublistValue({
+                    sublistId: 'addressbook',
+                    fieldId: 'defaultbilling',
+                    value: address_info.defaultbilling !== undefined ? address_info.defaultbilling : true,
+                    line: lineIndex
+                });
+            }
+            var addRec = obj_user.getSublistSubrecord({
+                sublistId: 'addressbook',
+                fieldId: 'addressbookaddress',
+                line: lineIndex
+            });
+            addRec.setValue({ fieldId: 'country', value: address_info.country });
+            addRec.setValue({ fieldId: 'addressee', value: addresseeVal });
+            addRec.setValue({ fieldId: 'addrphone', value: address_info.addrphone });
+            addRec.setValue({ fieldId: 'addr1', value: address_info.addr1 });
+            addRec.setValue({ fieldId: 'addr2', value: address_info.addr2 });
+            addRec.setValue({ fieldId: 'city', value: address_info.city });
+            addRec.setValue({ fieldId: 'state', value: address_info.state });
+            addRec.setValue({ fieldId: 'zip', value: address_info.zip });
+        }
+    }
+
+    function obtenerValidacionManualTMlite(req_info, datosFiscales) {
+        if (Object.prototype.hasOwnProperty.call(req_info, 'validacion_manual')) {
+            return req_info.validacion_manual;
+        }
+        if (datosFiscales && Object.prototype.hasOwnProperty.call(datosFiscales, 'validacion_manual')) {
+            return datosFiscales.validacion_manual;
+        }
+        return false;
+    }
+
+    function obtenerUrlCsfTMlite(req_info, datosFiscales, obj_user) {
+        var url = req_info.url_csf;
+        if ((url === undefined || url === null || String(url).trim() === '') && datosFiscales && datosFiscales.url_csf) {
+            url = datosFiscales.url_csf;
+        }
+        if (!urlCsfTieneValor(url) && obj_user) {
+            try {
+                url = obj_user.getValue({ fieldId: 'custentity_url_csf' });
+            } catch (ignoreUrl) {}
+        }
+        return url;
+    }
+
+    function obtenerFirmoContratoTMlite(req_info, datosFiscales, obj_user) {
+        if (Object.prototype.hasOwnProperty.call(req_info, 'custentity_firmo_contrato')) {
+            return req_info.custentity_firmo_contrato;
+        }
+        if (datosFiscales && Object.prototype.hasOwnProperty.call(datosFiscales, 'custentity_firmo_contrato')) {
+            return datosFiscales.custentity_firmo_contrato;
+        }
+        if (obj_user) {
+            try {
+                var val = obj_user.getValue({ fieldId: 'custentity_firmo_contrato' });
+                if (val !== '' && val != null) {
+                    return val;
+                }
+            } catch (ignoreFc) {}
+        }
+        return false;
+    }
+
+    function direccionTieneDatosTMlite(address_info) {
+        if (!address_info || typeof address_info !== 'object') {
+            return false;
+        }
+        var campos = ['addr1', 'addr2', 'city', 'state', 'zip', 'country', 'addrphone'];
+        for (var i = 0; i < campos.length; i++) {
+            if (campoTieneValorTMlite(address_info[campos[i]])) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function filtrarDireccionesConDatosTMlite(address_arr) {
+        var resultado = [];
+        if (!address_arr || !address_arr.length) {
+            return resultado;
+        }
+        for (var x in address_arr) {
+            if (direccionTieneDatosTMlite(address_arr[x])) {
+                resultado.push(address_arr[x]);
+            }
+        }
+        return resultado;
+    }
+
+    function campoTieneValorTMlite(val) {
+        return val !== undefined && val !== null && String(val).trim() !== '';
+    }
+
+    function aplicarRfcEmployeeTMlite(obj_user, req_info, datosFiscales) {
+        var rfcFiscal = datosFiscales && datosFiscales.custentity_ce_rfc;
+        var rfcRaiz = req_info.custentity_ce_rfc;
+        if (campoTieneValorTMlite(rfcFiscal)) {
+            obj_user.setValue({ fieldId: 'custentity_ce_rfc', value: String(rfcFiscal).trim() });
+        } else if (campoTieneValorTMlite(rfcRaiz)) {
+            obj_user.setValue({ fieldId: 'custentity_ce_rfc', value: String(rfcRaiz).trim() });
+        }
+    }
+
+    function obtenerRfcRefTMlite(req_info, datosFiscales, obj_user) {
+        var rfcFiscal = datosFiscales && datosFiscales.custentity_ce_rfc;
+        var rfcRaiz = req_info.custentity_ce_rfc;
+        if (campoTieneValorTMlite(rfcFiscal)) {
+            return String(rfcFiscal).trim();
+        }
+        if (campoTieneValorTMlite(rfcRaiz)) {
+            return String(rfcRaiz).trim();
+        }
+        return obj_user.getValue({ fieldId: 'custentity_ce_rfc' }) || '';
+    }
+
+    function aplicarCurpEmployeeTMlite(obj_user, req_info, datosFiscales) {
+        var tieneCurpFiscal = datosFiscales && Object.prototype.hasOwnProperty.call(datosFiscales, 'custentity_curp');
+        var tieneCurpRaiz = Object.prototype.hasOwnProperty.call(req_info, 'custentity_curp');
+        var curpFiscal = tieneCurpFiscal ? datosFiscales.custentity_curp : null;
+        var curpRaiz = tieneCurpRaiz ? req_info.custentity_curp : null;
+
+        if (tieneCurpFiscal && campoTieneValorTMlite(curpFiscal)) {
+            obj_user.setValue({ fieldId: 'custentity_curp', value: String(curpFiscal).trim() });
+        } else if (tieneCurpRaiz && campoTieneValorTMlite(curpRaiz)) {
+            obj_user.setValue({ fieldId: 'custentity_curp', value: String(curpRaiz).trim() });
+        }
+    }
+
+    function resolverEmployeeInternalIdTMlite(req_info) {
+        var hasInternalid = campoTieneValorTMlite(req_info.internalid);
+        var hasEmail = campoTieneValorTMlite(req_info.email);
+
+        if (!hasInternalid && !hasEmail) {
+            return { success: false, error: 'Indique internalid y/o email del presentador.' };
+        }
+
+        var internalIdFromEmail = null;
+        if (hasEmail) {
+            var busquedaMail = search.create({
+                type: search.Type.EMPLOYEE,
+                filters: [['email', 'is', String(req_info.email).trim()]],
+                columns: [search.createColumn({ name: 'internalid' })]
+            });
+            busquedaMail.run().each(function (r) {
+                internalIdFromEmail = r.getValue({ name: 'internalid' });
+                return false;
+            });
+            if (!internalIdFromEmail) {
+                return { success: false, error: 'No se encontró un empleado con el correo indicado.' };
+            }
+        }
+
+        if (hasInternalid && hasEmail) {
+            if (String(internalIdFromEmail) !== String(req_info.internalid).trim()) {
+                return { success: false, error: 'Los datos no coinciden: el correo no pertenece al internalid indicado.' };
+            }
+            return { success: true, internalid: String(req_info.internalid).trim() };
+        }
+
+        if (hasInternalid) {
+            return { success: true, internalid: String(req_info.internalid).trim() };
+        }
+
+        return { success: true, internalid: String(internalIdFromEmail) };
+    }
+
+    /**
+     * updateTMlite: actualiza employee por internalid y/o email. datos_fiscales es opcional.
+     * custentity_status_csf: 1 sin url_csf; 3 con url_csf + validacion_manual false + firmo_contrato;
+     * 2 en cualquier otro caso con url_csf. Email CAE si validacion_manual true.
+     */
+    function updateUserTMlite(req_info) {
+        var employeeInternalId = null;
+        try {
+            var resolucion = resolverEmployeeInternalIdTMlite(req_info);
+            if (!resolucion.success) {
+                return resolucion;
+            }
+            employeeInternalId = resolucion.internalid;
+
+            var datosFiscales = (req_info.datos_fiscales && typeof req_info.datos_fiscales === 'object')
+                ? req_info.datos_fiscales
+                : null;
+            var obj_user = record.load({
+                type: 'employee',
+                id: employeeInternalId,
+                isDynamic: false
+            });
+
+            var firmoContratoVal = obtenerFirmoContratoTMlite(req_info, datosFiscales, obj_user);
+            var firmoContrato = esFirmoContratoTMlite(firmoContratoVal);
+            var urlCsf = obtenerUrlCsfTMlite(req_info, datosFiscales, obj_user);
+            var validacionManualVal = obtenerValidacionManualTMlite(req_info, datosFiscales);
+            var validacionManual = esValidacionManualTMlite(validacionManualVal);
+            var statusCsf = resolveStatusCsfTMlite(validacionManualVal, firmoContratoVal, urlCsf);
+            var rfcRef = obtenerRfcRefTMlite(req_info, datosFiscales, obj_user);
+
+            if (urlCsfTieneValor(urlCsf)) {
+                obj_user.setValue('custentity_url_csf', urlCsf);
+            }
+
+            if (req_info.custentity_foto) {
+                req_info.custentity_foto = saveItemImage(req_info.custentity_foto, 30745, rfcRef + '_presentador');
+            }
+            if (req_info.custentity_foto_ine_anverso) {
+                req_info.custentity_foto_ine_anverso = saveItemImage(req_info.custentity_foto_ine_anverso, 30745, rfcRef + '_presentador_identicicacion_anv');
+            }
+            if (req_info.custentity_foto_ine_reverso) {
+                req_info.custentity_foto_ine_reverso = saveItemImage(req_info.custentity_foto_ine_reverso, 30745, rfcRef + '_presentador_identicicacion_rev');
+            }
+            if (req_info.custentity_foto_comprobante_dom) {
+                req_info.custentity_foto_comprobante_dom = saveItemImage(req_info.custentity_foto_comprobante_dom, 30745, rfcRef + '_presentador_domicilio');
+            }
+            if (req_info.custentity_foto_comprobante_banco) {
+                req_info.custentity_foto_comprobante_banco = saveItemImage(req_info.custentity_foto_comprobante_banco, 30745, rfcRef + '_presentador_banco');
+            }
+
+            var skipTopLevel = {
+                type: true,
+                internalid: true,
+                address: true,
+                datos_fiscales: true,
+                url_csf: true,
+                validacion_manual: true,
+                custentity_status_csf: true,
+                custentity_curp: true,
+                custentity_ce_rfc: true
+            };
+            for (var x in req_info) {
+                if (skipTopLevel[x]) {
+                    continue;
+                }
+                if (x in date_fields) {
+                    obj_user.setValue(x, parseDate(req_info[x]));
+                } else {
+                    obj_user.setValue(x, req_info[x]);
+                }
+            }
+
+            if (datosFiscales) {
+                var skipFiscal = {
+                    address: true,
+                    validacion_manual: true,
+                    url_csf: true,
+                    custentity_curp: true,
+                    custentity_ce_rfc: true,
+                    custentity_status_csf: true
+                };
+                for (var f in datosFiscales) {
+                    if (skipFiscal[f]) {
+                        continue;
+                    }
+                    obj_user.setValue(f, datosFiscales[f]);
+                }
+            }
+
+            aplicarRfcEmployeeTMlite(obj_user, req_info, datosFiscales);
+            aplicarCurpEmployeeTMlite(obj_user, req_info, datosFiscales);
+
+            obj_user.setValue({
+                fieldId: 'custentity_status_csf',
+                value: statusCsf
+            });
+            if (firmoContrato) {
+                obj_user.setValue({ fieldId: 'custentity_firmo_contrato', value: true });
+            }
+            if (statusCsf === 3) {
+                obj_user.setValue({ fieldId: 'custentity_autorizado_finanzas', value: true });
+            }
+
+            if ('address' in req_info && req_info.address && req_info.address.length > 0) {
+                var dirDomicilio = filtrarDireccionesConDatosTMlite(req_info.address);
+                if (dirDomicilio.length > 0) {
+                    upsertEmployeeAddressLinesTMlite(obj_user, dirDomicilio, req_info, false);
+                }
+            }
+
+            if (datosFiscales && datosFiscales.address && datosFiscales.address.length > 0) {
+                var dirFiscal = filtrarDireccionesConDatosTMlite(datosFiscales.address);
+                if (dirFiscal.length > 0) {
+                    upsertEmployeeAddressLinesTMlite(obj_user, dirFiscal, req_info, true);
+                }
+            }
+
+            var user_id = obj_user.save({
+                enableSourcing: true,
+                ignoreMandatoryFields: true
+            });
+
+            if (validacionManual) {
+                var nombrePresentador = (
+                    (req_info.firstname || obj_user.getValue({ fieldId: 'firstname' }) || '') + ' ' +
+                    (req_info.lastname || obj_user.getValue({ fieldId: 'lastname' }) || '')
+                ).replace(/^\s+|\s+$/g, '');
+                var emailPresentador = req_info.email || obj_user.getValue({ fieldId: 'email' });
+                enviarEmailCsfPendienteValidacion(nombrePresentador, emailPresentador);
+            }
+
+            return { success: true, internalid: user_id, type: 'employee' };
+        } catch (err) {
+            log.error('Error updateTMlite', err);
+            return {
+                success: false,
+                internalid: employeeInternalId || req_info.internalid || null,
+                type: 'employee',
+                error: err.message || String(err)
+            };
+        }
+    }
+    //fincion para crear ODV
+    function createSalesOrder(req_info){
+        try{
+            log.debug('tipo de venta create salles order', req_info.custbody_tipo_venta);
+            var valid = searchODV(req_info.tranid)
+            if(!valid){
+                return {error:"Sales Order previously created"}
+            }
+            var odv_serial = {};
+            
+            if('serial_number' in req_info ){
+                if(req_info.serial_number != "" && req_info.serial_number != null){
+                    odv_serial = searchODVbySerie(req_info.serial_number)
+                    log.debug('odv_serial',odv_serial);
+                    if('internalid' in odv_serial){
+                        req_info['custbody_vw_odv_related_warranty'] = odv_serial.internalid;
+                    }
+                }
+                if('extended_warranty_pdf_file' in req_info){
+                    if(req_info.extended_warranty_pdf_file != "" && req_info.extended_warranty_pdf_file != null){
+                        log.debug("viene con pdf","incicia proceso de transformacion");
+                        //sandbox 288816
+                        var id_pdf = savePDF(req_info.extended_warranty_pdf_file,326098,req_info.tranid);
+                        if(id_pdf){
+                            req_info['custbody_vw_pdf_warranty'] = id_pdf;
+                        }
+                    }
+                }
+            }
+            
+            
+            var discount_aux  = 0, total_amount_aux = 0,shipping_cost = {};
+            var obj_sales_order = record.create({
+                type : 'salesorder',
+                isDynamic: true
+            });
+//          obj_sales_order.setValue({fieldId: 'orderstatus', value: 'B'});
+            obj_sales_order.setValue("customform",105);
+            
+            // Determinar el item de descuento basado en los items recibidos
+            
+            var items_especiales = [];
+            var discont_base;
+            var discont_tm7;
+            var item_tm7;
+            var item_cutter;
+            if(runtime.envType == "SANDBOX"){
+                // Items que requieren item de descuento 2692 en sandbox
+                items_especiales = ["2685", "2686"];
+                discont_base = 1876;
+                discont_tm7 = 2692;
+                item_tm7 = "2680";
+                item_cutter = "2693";
+            }else{//produccion
+                items_especiales = ["2839", "2841"];//GETM,KIT DESGASTE TM7
+                discont_base = 1876;//descuento G0006
+                discont_tm7 = 2840;//descuento G0008
+                item_tm7 = "2763";
+                item_cutter = "2817";
+            }
+            var discount_item_id = discont_base; // Item de descuento por defecto
+            var tiene_item_2686 = false; // Flag para detectar si hay item 2686 (KIT DE DESGASTE TM7)
+            var tiene_tm7 = false;
+            var tiene_cutter = false;
+            
+            // Verificar si alguno de los items recibidos está en la lista de items especiales y detectar TM7 y cutter
+            for(var x in req_info.items){
+                var item_id_str = String(req_info.items[x].item_id);
+                if(items_especiales.indexOf(item_id_str) !== -1){
+                    discount_item_id = discont_tm7;
+                    if(item_id_str === items_especiales[1]){
+                        tiene_item_2686 = true;
+                    }
+                    break;
+                }
+                if(item_id_str === item_tm7) tiene_tm7 = true;
+                if(item_id_str === item_cutter) tiene_cutter = true;
+            }
+            // Si no se detectó TM7 o cutter en el loop anterior, hacer un segundo recorrido solo para ellos
+            if(!tiene_tm7 || !tiene_cutter){
+                for(var y in req_info.items){
+                    var id_y = String(req_info.items[y].item_id);
+                    if(id_y === item_tm7) tiene_tm7 = true;
+                    if(id_y === item_cutter) tiene_cutter = true;
+                }
+            }
+            var es_pedido_cutter = tiene_tm7 && tiene_cutter;
+            
+            // Calcular descuento solo si NO hay item 2686 (para item 2686 se aplica descuento único al final)
+            if("discountrate" in req_info && !tiene_item_2686){
+                if(parseFloat(req_info['discountrate']) > 0){
+                    for(var x in req_info.items){
+                        if(req_info.items[x].item_id != "859"){
+                            var item_to = req_info.items[x];
+                            total_amount_aux+= (parseFloat(item_to.amount)*parseInt(item_to.quantity,10));
+                        }else{
+                            shipping_cost = req_info.items[x];
+                        }
+                        
+                    }
+                    discount_aux = (parseFloat(req_info['discountrate'])/1.16)/total_amount_aux;
+                
+                }
+            }
+            
+            log.debug('Info SAT',req_info['custbody_cfdi_metododepago']);
+            var locationValidado 
+            for(var x in req_info){
+                if(x != "location" && x != "items" && x != "multipago" && x != "discountrate" && x != "discountitem" && x!= 'custbody_estatus_envio' && x != 'custbody46' && x != 'custbody_url_one_aclogistics' && x != 'custbody_url_two_aclogistics'){
+                    obj_sales_order.setValue(x,req_info[x]) 
+                }
+                log.debug(x,req_info[x])
+                if((x == "location" || x == "Location")&& req_info[x] == 53){//Se asigna Ermita si viene con location Eshop
+                    locationValidado = 53 // 82 Cambiar a 82 en prod
+                   
+                    obj_sales_order.setValue('location',locationValidado)
+                    obj_sales_order.setValue('custbody_so_eshop',true)
+                }
+                if(x == "location" || x == "Location"){//Si el location es diferente a Eshop asigna lo que manda tienda en linea
+                    locationValidado = req_info[x]
+                  
+                    obj_sales_order.setValue('location',locationValidado)
+                    obj_sales_order.setValue('custbody_so_eshop',true)
+                    if(req_info.custbody46 != ''|| req_info.custbody_estatus_envio != 7){
+                        obj_sales_order.setValue('ordertype',1)
+                    }
+                }
+            }
+            obj_sales_order.setValue('custbody_cfdi_metpago_sat',req_info.custbody_cfdi_metododepago)
+            
+            var  salesorder_items = req_info.items;
+            for(var x in salesorder_items){
+                var item_mine = salesorder_items[x];
+                var item_tax  = parseFloat(item_mine.amount)/1.16;
+                if(item_tax == 0 ){
+                    item_tax = 0.01
+                }
+                // Cutter: en request llega 2999 pero en la ODV debe quedar con amount 3999 (total línea con IVA)
+                
+                if(es_pedido_cutter && String(item_mine.item_id) === item_cutter){
+                    var cantidad_cutter = parseInt(item_mine.quantity, 10) || 1;
+                    item_tax = (3999 / 1.16) / cantidad_cutter;
+                }
+                
+                
+                obj_sales_order.selectNewLine({
+                        sublistId : 'item',
+                });
+                
+                obj_sales_order.setCurrentSublistValue({
+                    sublistId: 'item',
+                    fieldId: 'item',
+                    value: item_mine.item_id
+                });
+                obj_sales_order.setCurrentSublistValue({
+                    sublistId: 'item',
+                    fieldId: 'quantity',
+                    value: item_mine.quantity
+                });
+                if (item_mine.item_id == '1441'){
+                    obj_sales_order.setCurrentSublistValue({
+                        sublistId: 'item',
+                        fieldId: 'price',
+                        value: '-1'
+                    }); 
+                }
+                obj_sales_order.setCurrentSublistValue({
+                    sublistId: 'item',
+                    fieldId: 'amount',
+                    value: item_tax
+                });
+                obj_sales_order.setCurrentSublistValue({
+                    sublistId: 'item',
+                    fieldId: 'rate',
+                    value: item_tax.toFixed(2)
+                });
+                obj_sales_order.setCurrentSublistValue({
+                    sublistId: 'item',
+                    fieldId: 'location',
+                    value: locationValidado
+                });
+                obj_sales_order.commitLine({
+                    sublistId: 'item'
+                });
+                
+                
+                if(!tiene_item_2686 && total_amount_aux > 0 && item_mine.item_id != "859"){
+                    var discount_item = parseFloat(item_mine.amount)*discount_aux*parseInt(item_mine.quantity,10);
+                    
+                    discount_item = discount_item + 0.01;
+                   
+                    setItemDiscount(obj_sales_order, discount_item, discount_item_id);
+                }
+            }
+            
+            // Si hay item 2686, aplicar un solo descuento al final
+            if(tiene_item_2686 && "discountrate" in req_info && parseFloat(req_info['discountrate']) > 0){
+                
+                var descuento_unico = parseFloat(req_info['discountrate']) - 0.04;
+                
+                setItemDiscount(obj_sales_order, descuento_unico, discont_tm7, true);
+            }
+
+            // Pedido cutter: TM7 + cutter → agregar descuento fijo de 1000 pesos (item 1876)
+            if(es_pedido_cutter){
+                setItemDiscount(obj_sales_order, 1000, 1876, true);
+            }
+
+            var  salesorder_payment = req_info.multipago;
+            
+            try{
+                var id_sales_order = obj_sales_order.save();
+                if('internalid' in odv_serial){
+                    try{
+                        log.debug('odv_serial'+odv_serial.internalid,'id_sales_order'+id_sales_order);
+                        record.submitFields({
+                            type: 'salesorder',
+                            id: odv_serial.internalid,
+                            values: {
+                                'custbody_vw_odv_warranty' : id_sales_order
+                            }
+                        });
+                    }catch(err_serires){
+                        log.error('err_serires',err_serires);
+                    }
+                }
+                
+                try{
+                    
+                    var description = getDescription(id_sales_order);
+                    var acLogistic =  {
+                            tracking        :req_info.custbody46,
+                            tracking_link   :req_info.custbody_url_one_aclogistics,
+                            guia            :req_info.custbody_url_two_aclogistics,
+                            status          :req_info.custbody_estatus_envio
+                    }
+                    var tipoVenta = req_info.custbody_tipo_venta
+                    var statusEnvio = req_info.custbody_estatus_envio
+                    var id_traking = createTraking(description,id_sales_order,acLogistic,tipoVenta,statusEnvio)
+                    log.debug("traking_id",id_traking);
+//segunda guia
+                    try{
+                        var urlOne = req_info.custbody_url_one_aclogistics
+                        var urlTwo = req_info.custbody_url_two_aclogistics
+                         
+                        if(tipoVenta == 2 && statusEnvio != 7 && urlOne && urlTwo){//status de envio 7 es Entrega en sucursal
+                            
+                            var apiKey = "", description = [], description_txt = "", segundaGuia = false;
+                            if(runtime.envType  == "SANDBOX"){
+                                apiKey = "c9df5be32d150aaae2c5f3a2cddacb44" //Apikey Logistica 
+                            }else{
+                                apiKey = "c9df5be32d150aaae2c5f3a2cddacb44"//cde44ce43ffd04403bf3c734e5dbbef6
+                            }
+                            
+                            var objSO = record.load({
+                                type: record.Type.SALES_ORDER,
+                                id: id_sales_order,
+                                isDynamic: false,
+                            });
+                                                        
+
+                            var itemLines = objSO.getLineCount({
+                                sublistId  : 'item'
+                            });
+                                                        
+                            for(var i=0; i < itemLines; i++){
+                                var itemId = objSO.getSublistValue({
+                                    sublistId : 'item',
+                                    fieldId   : 'item',
+                                    line      : i
+                                });
+                                
+                                if(itemId != 1441 && itemId != 859 && itemId != 2001 && itemId != 2170 && itemId != 2490 && itemId != 2571 && itemId != 2638 && itemId != 2671 && itemId != 2763){//que no sea kit, bundle, tms, costo por financiamiento 
+                                    segundaGuia = true
+                                    description.push(objSO.getSublistValue({
+                                        sublistId : 'item',
+                                        fieldId   : 'description',
+                                        line      : i
+                                    }));
+                                }
+                            }   
+                            description_txt = description.join(',');
+                            
+                            var objTracking = search.lookupFields({
+                                type: 'customrecord_vk_traking_information',
+                                id: 3,
+                                columns: ['custrecord_alto_cm','custrecord_ancho_cm','custrecord_largo_cm','name','custrecord_contenido']
+                            });
+                            log.debug('objTracking',objTracking);
+                                                        
+                            var objCustomer = record.load({
+                                type: record.Type.CUSTOMER,
+                                id: objSO.getValue('entity'),
+                                isDynamic: false,
+                            });
+                            //extrae la información del cliente
+                            
+                            var email_customer = objCustomer.getValue('email');
+                            var nameCustomer = objCustomer.getValue('altname');
+                            var addrphone = "";
+                            var addr1 = "";
+                            var addr2 = "";
+                            var zip ="";
+                            var companyCustomer = objCustomer.getValue('custentity_razon_social');
+                            
+                            var totalLines = objCustomer.getLineCount({
+                                sublistId  : 'addressbook'
+                            });
+                           
+                            for(var i=0; i < totalLines; i++){
+                                var defaultshipping = objCustomer.getSublistValue({
+                                    sublistId : 'addressbook',
+                                    fieldId   : 'defaultshipping',
+                                    line      : i
+                                });
+                                
+                                if(defaultshipping == true){
+                                    var subRecord = objCustomer.getSublistSubrecord({
+                                       sublistId : 'addressbook',
+                                       fieldId   : 'addressbookaddress',
+                                       line      : i
+                                    });
+                                   
+
+                                    addrphone = subRecord.getText({
+                                        fieldId: 'addrphone'
+                                    });
+                                    addr1 = subRecord.getValue({
+                                        fieldId: 'addr1'
+                                    });
+                                    addr2 = subRecord.getValue({
+                                        fieldId: 'addr2'
+                                    });
+                                    zip = subRecord.getValue({
+                                        fieldId: 'zip'
+                                    });
+                                    break;
+                                }
+                                
+                            }
+                            var random_num = Math.floor(Math.random() * 100);
+                            //crea el objeto que se envia a ac logistic
+                            var weight = objTracking.name.split(" ")[0];
+                            if (itemLines > 1 && segundaGuia == true){
+                               var objRequest = {
+                                     "api_key": apiKey,
+                                     "referencia": objSO.getValue('tranid')+'-'+random_num,
+                                     "id_courier": "fedex_eco",
+                                     "nombre_remitente": 'VORWERK',
+                                     "telefono_remitente": '01 800 200 11 21',
+                                     "correo_remitente": 'contacto@thermomixmexico.com.mx',
+                                     "direccion_remitente": 'VITO ALESSIO ROBLES 38 COLONIA FLORIDA ÁLVARO OBREGÓN Ciudad de México 01030',
+                                     "empresa_remitente": 'VORWERK MEXICO, S. DE R.L. DE C.V.',
+                                     "nombre_destinatario": nameCustomer,
+                                     "telefono_destinatario": addrphone,
+                                     "correo_destinatario": email_customer,
+                                     "calle_destinatario": addr1,
+                                     "num_exterior_destinatario": "0",
+                                     "num_interior_destinatario": "0",
+                                     "cp_destinatario": zip,
+                                     "colonia_destinatario": addr2,
+                                     "empresa_destinatario": companyCustomer,
+                                     "alto_cm": objTracking.custrecord_alto_cm,
+                                     "ancho_cm": objTracking.custrecord_ancho_cm,
+                                     "largo_cm": objTracking.custrecord_largo_cm,
+                                     "peso_kg": weight,
+                                     "contenido": objTracking.custrecord_contenido,
+                                     "valor":objSO.getValue('total'),
+                                     "seguro": "false"
+                                } 
+                            
+                            log.audit("Datos a enviar",objRequest);
+                            
+        
+                            var responseService = https.post({
+                                url: 'https://www.smartship.mx/api/documentar/',
+                                body : JSON.stringify(objRequest),
+                                headers: {
+                                    "Content-Type": "application/json"
+                                }
+                            }).body;
+                            try{
+                                log.audit("responseService",responseService);
+                            
+                                if(JSON.parse(responseService).mensaje == 'Exitoso'){
+                                    log.debug("if true",JSON.parse(responseService).mensaje);
+                                }else{
+                                    log.debug("if false",JSON.parse(responseService).mensaje);
+                                }
+                              
+                            }catch(e){
+                                log.debug("error log",e);
+                              
+                            }
+                            
+                            //si la respuesta es correcta crea un nuevo registro de traking
+                            if( JSON.parse(responseService).mensaje == 'Exitoso' ){
+                                var acLogistic = JSON.parse(responseService)
+                                var obj_traking= record.create({
+                                    type: 'customrecord_guia_envio',
+                                    isDynamic: false,
+                                });
+                                
+                                obj_traking.setValue({
+                                    fieldId: 'custrecord_id_sales_order',
+                                    value: id_sales_order
+                                });
+                                obj_traking.setValue({
+                                    fieldId: 'custrecord_no_guia',
+                                    value: acLogistic.tracking
+                                });
+                                obj_traking.setValue({
+                                    fieldId: 'custrecord_url_resp_aclogistics',
+                                    value: acLogistic.tracking_link
+                                });
+                                obj_traking.setValue({
+                                    fieldId: 'custrecord_url_pdf_aclogistics',
+                                    value: acLogistic.guia
+                                });
+                                obj_traking.setValue({
+                                    fieldId: 'custrecord_estatus_envio',
+                                    value: 1
+                                });
+                                obj_traking.setValue({
+                                    fieldId: 'custrecord_id_envio',
+                                    value: acLogistic.id_envio
+                                });
+                                obj_traking.setValue({
+                                    fieldId: 'custrecord_vw_description',
+                                    value: description_txt
+                                });
+                                obj_traking.setValue({
+                                    fieldId: 'custrecord_peso',
+                                    value: weight + ' kg'
+                                });
+                                var id_trakingDos = obj_traking.save();
+                                log.debug('id_trakingDos',id_trakingDos);
+                                
+                            }else{
+                                log.error('Error al generar guia')
+                                alert("Error al generar guia "+acLogistic.mensaje);
+                            } 
+                            }
+                            
+
+                        }
+                    }catch(e){
+                        log.error('error segunda guia',e)
+                    }
+                    //fin segunda guia
+                }catch(err_tracking){
+                    log.error('error create traking',err_tracking)
+                }
+                
+            }catch(err_so){
+                log.error("error err_so",err_so);
+                return {error_order:err_so};
+            }
+            
+            // Extraer fecha del último pago si existe multipago y hay más de 1 pago
+            // Si solo hay 1 pago, tomar ese; si hay más de 1, tomar el último
+            var fecha_pago = null;
+            if(salesorder_payment && salesorder_payment.length > 0){
+                var pago_a_usar;
+                if(salesorder_payment.length > 1){
+                    pago_a_usar = salesorder_payment[salesorder_payment.length - 1];
+                    
+                }else{                    
+                    pago_a_usar = salesorder_payment[0];
+                    
+                }
+                
+                // Verificar si tiene transdate o trandate
+                if(pago_a_usar.transdate){
+                    fecha_pago = parseDate(pago_a_usar.transdate);
+                    
+                }else if(pago_a_usar.trandate){
+                    fecha_pago = parseDate(pago_a_usar.trandate);
+                    
+                }
+            }
+            
+            var id_payment = setPaymentMethod(id_sales_order, salesorder_payment, req_info.entity)
+            try{
+                
+                var values_to_update = {
+                    'orderstatus':'B',
+                    'custbody_vorwerk_contratos':id_payment.contract,
+                    'custbody_total_pagado':id_payment.total_payment
+                };
+                
+                
+                if(fecha_pago){
+                    values_to_update['trandate'] = fecha_pago;
+                   
+                }
+                
+                var submitFields = record.submitFields({
+                    type: record.Type.SALES_ORDER,
+                    id: id_sales_order,
+                    values: values_to_update
+                });
+                
+                if(id_payment.contract && id_payment.contract != ''){
+
+                    var submitFields = record.submitFields({
+                        type: record.Type.SALES_ORDER,
+                        id: id_sales_order,
+                        values: {'custbody_cfdi_formadepago':3}
+                    });
+                }
+            }catch(e){
+                log.error("error general","send info");
+                return {error_payment:e};
+            }
+            
+            return {success:id_sales_order,id_payment:id_payment} 
+        }catch(err){
+            log.error("error createSalesOrder",err);
+            return {error:err}
+        }
+    }
+
+    /**
+     * Crea una orden de venta recibiendo en el detalle de cada ítem el descuento que le corresponde (campo discount por línea).
+     * Sigue aplicando el descuento global (discountrate) de forma proporcional sobre los ítems que NO traen descuento por ítem.
+     * Request: mismo que createSalesOrder, con items[].discount (opcional) = monto de descuento para esa línea.
+     * No modifica createSalesOrder; toda la lógica está contenida aquí para no afectar flujos existentes.
+     */
+    function createSalesOrderWithItemDiscounts(req_info){
+        try{
+          log.debug('tipo de venta with discounts', req_info.custbody_tipo_venta);
+            var valid = searchODV(req_info.tranid);
+            if(!valid){
+                return {error:"Sales Order previously created"};
+            }
+            var odv_serial = {};
+            if('serial_number' in req_info){
+                if(req_info.serial_number != "" && req_info.serial_number != null){
+                    odv_serial = searchODVbySerie(req_info.serial_number);
+                    log.debug('odv_serial',odv_serial);
+                    if('internalid' in odv_serial){
+                        req_info['custbody_vw_odv_related_warranty'] = odv_serial.internalid;
+                    }
+                }
+                if('extended_warranty_pdf_file' in req_info){
+                    if(req_info.extended_warranty_pdf_file != "" && req_info.extended_warranty_pdf_file != null){
+                        log.debug("viene con pdf","incicia proceso de transformacion");
+                        var id_pdf = savePDF(req_info.extended_warranty_pdf_file,326098,req_info.tranid);
+                        if(id_pdf){
+                            req_info['custbody_vw_pdf_warranty'] = id_pdf;
+                        }
+                    }
+                }
+            }
+            var discount_aux = 0, total_amount_aux = 0, shipping_cost = {};
+            var obj_sales_order = record.create({
+                type : 'salesorder',
+                isDynamic: true
+            });
+            obj_sales_order.setValue("customform",105);
+            // Mismas reglas que createSalesOrder para el ítem de descuento: si hay GETM7 o KIT DESGASTE (items especiales), usar discont_tm7 (G0008)
+            var items_especiales = [];
+            var discont_base;
+            var discont_tm7;
+            var item_tm7;
+            var item_cutter;
+            if(runtime.envType == "SANDBOX"){
+                items_especiales = ["2685", "2686"];
+                discont_base = 1876;
+                discont_tm7 = 2692;
+                item_tm7 = "2680";
+                item_cutter = "2693";
+            }else{
+                items_especiales = ["2839", "2841"];
+                discont_base = 1876;
+                discont_tm7 = 2840;
+                item_tm7 = "2763";
+                item_cutter = "2817";
+            }
+            var discount_item_id = discont_base;
+            var tiene_tm7 = false;
+            var tiene_cutter = false;
+            // Solo se cambia a G0008 (discont_tm7) si existe kit de desgaste (items_especiales[1]: 2686/2841)
+            var item_kit_desgaste = items_especiales[1];
+            for(var x in req_info.items){
+                var item_id_str = String(req_info.items[x].item_id);
+                if(item_id_str === item_kit_desgaste){
+                    discount_item_id = discont_tm7;
+                    break;
+                }
+                if(item_id_str === item_tm7) tiene_tm7 = true;
+                if(item_id_str === item_cutter) tiene_cutter = true;
+            }
+            if(!tiene_tm7 || !tiene_cutter){
+                for(var y in req_info.items){
+                    var id_y = String(req_info.items[y].item_id);
+                    if(id_y === item_tm7) tiene_tm7 = true;
+                    if(id_y === item_cutter) tiene_cutter = true;
+                }
+            }
+            var es_pedido_cutter = tiene_tm7 && tiene_cutter;
+            // Descuento global: se reparte entre todos los ítems (excepto envío) para aplicar primero; luego se suma el descuento de línea por artículo
+            if("discountrate" in req_info && parseFloat(req_info['discountrate']) > 0){
+                for(var x in req_info.items){
+                    if(req_info.items[x].item_id != "859"){
+                        total_amount_aux += (parseFloat(req_info.items[x].amount) * parseInt(req_info.items[x].quantity, 10));
+                    }else{
+                        shipping_cost = req_info.items[x];
+                    }
+                }
+                if(total_amount_aux > 0){
+                    discount_aux = (parseFloat(req_info['discountrate'])/1.16)/total_amount_aux;
+                }
+            }
+            log.debug('Info SAT',req_info['custbody_cfdi_metododepago']);
+            var locationValidado;
+            for(var x in req_info){
+                if(x != "location" && x != "items" && x != "multipago" && x != "discountrate" && x != "discountitem" && x!= 'custbody_estatus_envio' && x != 'custbody46' && x != 'custbody_url_one_aclogistics' && x != 'custbody_url_two_aclogistics'){
+                    obj_sales_order.setValue(x,req_info[x]);
+                }
+                log.debug(x,req_info[x]);
+                if((x == "location" || x == "Location")&& req_info[x] == 53){
+                    locationValidado = 53;
+                    obj_sales_order.setValue('location',locationValidado);
+                    obj_sales_order.setValue('custbody_so_eshop',true);
+                }
+                if(x == "location" || x == "Location"){
+                    locationValidado = req_info[x];
+                    obj_sales_order.setValue('location',locationValidado);
+                    obj_sales_order.setValue('custbody_so_eshop',true);
+                    if(req_info.custbody46 != ''|| req_info.custbody_estatus_envio != 7){
+                        obj_sales_order.setValue('ordertype',1);
+                    }
+                }
+            }
+            obj_sales_order.setValue('custbody_cfdi_metpago_sat',req_info.custbody_cfdi_metododepago);
+            var salesorder_items = req_info.items;
+            for(var x in salesorder_items){
+                var item_mine = salesorder_items[x];
+                var item_tax  = parseFloat(item_mine.amount)/1.16;
+                if(item_tax == 0 ){
+                    item_tax = 0.01;
+                }
+                if(es_pedido_cutter && String(item_mine.item_id) === item_cutter){
+                    var cantidad_cutter = parseInt(item_mine.quantity, 10) || 1;
+                    item_tax = (3999 / 1.16) / cantidad_cutter;
+                }
+                obj_sales_order.selectNewLine({ sublistId : 'item' });
+                obj_sales_order.setCurrentSublistValue({ sublistId: 'item', fieldId: 'item', value: item_mine.item_id });
+                obj_sales_order.setCurrentSublistValue({ sublistId: 'item', fieldId: 'quantity', value: item_mine.quantity });
+                if (item_mine.item_id == '1441'){
+                    obj_sales_order.setCurrentSublistValue({ sublistId: 'item', fieldId: 'price', value: '-1' });
+                }
+                obj_sales_order.setCurrentSublistValue({ sublistId: 'item', fieldId: 'amount', value: item_tax });
+                obj_sales_order.setCurrentSublistValue({ sublistId: 'item', fieldId: 'rate', value: item_tax.toFixed(2) });
+                obj_sales_order.setCurrentSublistValue({ sublistId: 'item', fieldId: 'location', value: locationValidado });
+                obj_sales_order.commitLine({ sublistId: 'item' });
+                // Descuento: primero global (proporcional), después se suma descuento de línea; un solo ítem de descuento por artículo.
+                // Global se reparte en base neta (discount_aux); item_discountrate es monto final con IVA. Unificar en bruto (con IVA) y luego pasar sin IVA a setItemDiscount.
+                if(item_mine.item_id != "859"){
+                    var global_part_net = 0;
+                    var descuento_linea_gross = 0;
+                    // 1) Parte proporcional del descuento global para esta línea (en neto, porque discount_aux = (discountrate/1.16)/total)
+                    if(total_amount_aux > 0 && discount_aux > 0){
+                        global_part_net = parseFloat(item_mine.amount) * discount_aux * parseInt(item_mine.quantity, 10);
+                    }
+                    // 2) Descuento de línea si existe (monto con IVA)
+                    var descuento_linea = null;
+                    if(item_mine.item_discountrate != null && item_mine.item_discountrate !== '') descuento_linea = item_mine.item_discountrate;
+                    else if(item_mine.discount != null && item_mine.discount !== '') descuento_linea = item_mine.discount;
+                    else if(item_mine.Discount != null && item_mine.Discount !== '') descuento_linea = item_mine.Discount;
+                    else if(item_mine.item_discount != null && item_mine.item_discount !== '') descuento_linea = item_mine.item_discount;
+                    else if(item_mine.line_discount != null && item_mine.line_discount !== '') descuento_linea = item_mine.line_discount;
+                    else if(item_mine.descuento != null && item_mine.descuento !== '') descuento_linea = item_mine.descuento;
+                    if(descuento_linea != null && descuento_linea !== '' && !isNaN(parseFloat(descuento_linea)) && parseFloat(descuento_linea) > 0){
+                        descuento_linea_gross = parseFloat(descuento_linea);
+                    }
+                    // Total bruto (con IVA) = parte global en bruto + descuento de línea (ya bruto)
+                    var discount_item_gross = (global_part_net * 1.16) + descuento_linea_gross;
+                    if(discount_item_gross > 0){
+                        var discount_item_sin_iva = discount_item_gross / 1.16;
+                        setItemDiscount(obj_sales_order, discount_item_sin_iva, discount_item_id);
+                    }
+                }
+            }
+            var salesorder_payment = req_info.multipago;
+            try{
+                var id_sales_order = obj_sales_order.save();
+                if('internalid' in odv_serial){
+                    try{
+                        log.debug('odv_serial'+odv_serial.internalid,'id_sales_order'+id_sales_order);
+                        record.submitFields({
+                            type: 'salesorder',
+                            id: odv_serial.internalid,
+                            values: { 'custbody_vw_odv_warranty' : id_sales_order }
+                        });
+                    }catch(err_serires){
+                        log.error('err_serires',err_serires);
+                    }
+                }
+                try{
+                    var description = getDescription(id_sales_order);
+                    var acLogistic = {
+                        tracking: req_info.custbody46,
+                        tracking_link: req_info.custbody_url_one_aclogistics,
+                        guia: req_info.custbody_url_two_aclogistics,
+                        status: req_info.custbody_estatus_envio
+                    };
+                    var tipoVenta = req_info.custbody_tipo_venta;
+                    var statusEnvio = req_info.custbody_estatus_envio;
+                    var id_traking = createTraking(description,id_sales_order,acLogistic,tipoVenta,statusEnvio);
+                    log.debug("traking_id",id_traking);
+                    try{
+                        var urlOne = req_info.custbody_url_one_aclogistics;
+                        var urlTwo = req_info.custbody_url_two_aclogistics;
+                        if(tipoVenta == 2 && statusEnvio != 7 && urlOne && urlTwo){
+                            var apiKey = "", description_arr = [], description_txt = "", segundaGuia = false;
+                            if(runtime.envType  == "SANDBOX"){
+                                apiKey = "c9df5be32d150aaae2c5f3a2cddacb44";
+                            }else{
+                                apiKey = "c9df5be32d150aaae2c5f3a2cddacb44";
+                            }
+                            var objSO = record.load({
+                                type: record.Type.SALES_ORDER,
+                                id: id_sales_order,
+                                isDynamic: false,
+                            });
+                            var itemLines = objSO.getLineCount({ sublistId : 'item' });
+                            for(var i=0; i < itemLines; i++){
+                                var itemId = objSO.getSublistValue({ sublistId : 'item', fieldId   : 'item', line : i });
+                                if(itemId != 1441 && itemId != 859 && itemId != 2001 && itemId != 2170 && itemId != 2490 && itemId != 2571 && itemId != 2638 && itemId != 2671 && itemId != 2763){
+                                    segundaGuia = true;
+                                    description_arr.push(objSO.getSublistValue({ sublistId : 'item', fieldId : 'description', line : i }));
+                                }
+                            }
+                            description_txt = description_arr.join(',');
+                            var objTracking = search.lookupFields({
+                                type: 'customrecord_vk_traking_information',
+                                id: 3,
+                                columns: ['custrecord_alto_cm','custrecord_ancho_cm','custrecord_largo_cm','name','custrecord_contenido']
+                            });
+                            log.debug('objTracking',objTracking);
+                            var objCustomer = record.load({
+                                type: record.Type.CUSTOMER,
+                                id: objSO.getValue('entity'),
+                                isDynamic: false,
+                            });
+                            var email_customer = objCustomer.getValue('email');
+                            var nameCustomer = objCustomer.getValue('altname');
+                            var addrphone = "", addr1 = "", addr2 = "", zip = "";
+                            var companyCustomer = objCustomer.getValue('custentity_razon_social');
+                            var totalLines = objCustomer.getLineCount({ sublistId  : 'addressbook' });
+                            for(var i=0; i < totalLines; i++){
+                                var defaultshipping = objCustomer.getSublistValue({ sublistId : 'addressbook', fieldId   : 'defaultshipping', line : i });
+                                if(defaultshipping == true){
+                                    var subRecord = objCustomer.getSublistSubrecord({ sublistId : 'addressbook', fieldId   : 'addressbookaddress', line : i });
+                                    addrphone = subRecord.getText({ fieldId: 'addrphone' });
+                                    addr1 = subRecord.getValue({ fieldId: 'addr1' });
+                                    addr2 = subRecord.getValue({ fieldId: 'addr2' });
+                                    zip = subRecord.getValue({ fieldId: 'zip' });
+                                    break;
+                                }
+                            }
+                            var random_num = Math.floor(Math.random() * 100);
+                            var weight = objTracking.name.split(" ")[0];
+                            if (itemLines > 1 && segundaGuia == true){
+                                var objRequest = {
+                                    "api_key": apiKey,
+                                    "referencia": objSO.getValue('tranid')+'-'+random_num,
+                                    "id_courier": "fedex_eco",
+                                    "nombre_remitente": 'VORWERK',
+                                    "telefono_remitente": '01 800 200 11 21',
+                                    "correo_remitente": 'contacto@thermomixmexico.com.mx',
+                                    "direccion_remitente": 'VITO ALESSIO ROBLES 38 COLONIA FLORIDA ÁLVARO OBREGÓN Ciudad de México 01030',
+                                    "empresa_remitente": 'VORWERK MEXICO, S. DE R.L. DE C.V.',
+                                    "nombre_destinatario": nameCustomer,
+                                    "telefono_destinatario": addrphone,
+                                    "correo_destinatario": email_customer,
+                                    "calle_destinatario": addr1,
+                                    "num_exterior_destinatario": "0",
+                                    "num_interior_destinatario": "0",
+                                    "cp_destinatario": zip,
+                                    "colonia_destinatario": addr2,
+                                    "empresa_destinatario": companyCustomer,
+                                    "alto_cm": objTracking.custrecord_alto_cm,
+                                    "ancho_cm": objTracking.custrecord_ancho_cm,
+                                    "largo_cm": objTracking.custrecord_largo_cm,
+                                    "peso_kg": weight,
+                                    "contenido": objTracking.custrecord_contenido,
+                                    "valor":objSO.getValue('total'),
+                                    "seguro": "false"
+                                };
+                                log.audit("Datos a enviar",objRequest);
+                                var responseService = https.post({
+                                    url: 'https://www.smartship.mx/api/documentar/',
+                                    body : JSON.stringify(objRequest),
+                                    headers: { "Content-Type": "application/json" }
+                                }).body;
+                                try{
+                                    log.audit("responseService",responseService);
+                                    if(JSON.parse(responseService).mensaje == 'Exitoso'){
+                                        log.debug("if true",JSON.parse(responseService).mensaje);
+                                    }else{
+                                        log.debug("if false",JSON.parse(responseService).mensaje);
+                                    }
+                                }catch(e){
+                                    log.debug("error log",e);
+                                }
+                                if( JSON.parse(responseService).mensaje == 'Exitoso' ){
+                                    var acLogisticRes = JSON.parse(responseService);
+                                    var obj_traking= record.create({
+                                        type: 'customrecord_guia_envio',
+                                        isDynamic: false,
+                                    });
+                                    obj_traking.setValue({ fieldId: 'custrecord_id_sales_order', value: id_sales_order });
+                                    obj_traking.setValue({ fieldId: 'custrecord_no_guia', value: acLogisticRes.tracking });
+                                    obj_traking.setValue({ fieldId: 'custrecord_url_resp_aclogistics', value: acLogisticRes.tracking_link });
+                                    obj_traking.setValue({ fieldId: 'custrecord_url_pdf_aclogistics', value: acLogisticRes.guia });
+                                    obj_traking.setValue({ fieldId: 'custrecord_estatus_envio', value: 1 });
+                                    obj_traking.setValue({ fieldId: 'custrecord_id_envio', value: acLogisticRes.id_envio });
+                                    obj_traking.setValue({ fieldId: 'custrecord_vw_description', value: description_txt });
+                                    obj_traking.setValue({ fieldId: 'custrecord_peso', value: weight + ' kg' });
+                                    var id_trakingDos = obj_traking.save();
+                                    log.debug('id_trakingDos',id_trakingDos);
+                                }else{
+                                    log.error('Error al generar guia');
+                                }
+                            }
+                        }
+                    }catch(e){
+                        log.error('error segunda guia',e);
+                    }
+                }catch(err_tracking){
+                    log.error('error create traking',err_tracking);
+                }
+            }catch(err_so){
+                log.error("error err_so",err_so);
+                return {error_order:err_so};
+            }
+            var fecha_pago = null;
+            if(salesorder_payment && salesorder_payment.length > 0){
+                var pago_a_usar;
+                if(salesorder_payment.length > 1){
+                    pago_a_usar = salesorder_payment[salesorder_payment.length - 1];
+                }else{
+                    pago_a_usar = salesorder_payment[0];
+                }
+                if(pago_a_usar.transdate){
+                    fecha_pago = parseDate(pago_a_usar.transdate);
+                }else if(pago_a_usar.trandate){
+                    fecha_pago = parseDate(pago_a_usar.trandate);
+                }
+            }
+            var id_payment = setPaymentMethod(id_sales_order, salesorder_payment, req_info.entity);
+            try{
+                var values_to_update = {
+                    'orderstatus':'B',
+                    'custbody_vorwerk_contratos':id_payment.contract,
+                    'custbody_total_pagado':id_payment.total_payment
+                };
+                if(fecha_pago){
+                    values_to_update['trandate'] = fecha_pago;
+                }
+                record.submitFields({
+                    type: record.Type.SALES_ORDER,
+                    id: id_sales_order,
+                    values: values_to_update
+                });
+                if(id_payment.contract && id_payment.contract != ''){
+                    record.submitFields({
+                        type: record.Type.SALES_ORDER,
+                        id: id_sales_order,
+                        values: {'custbody_cfdi_formadepago':3}
+                    });
+                }
+            }catch(e){
+                log.error("error general","send info");
+                return {error_payment:e};
+            }
+            return {success:id_sales_order,id_payment:id_payment};
+        }catch(err){
+            log.error("error createSalesOrderWithItemDiscounts",err);
+            return {error:err};
+        }
+    }
+
+    /**
+     * Busca en customrecord_conf_descuento_tl un registro cuyo SKU Relacionado (custrecord_sku_rel; en prod internal id) contenga el itemId.
+     * @param {string|number} itemId - Internal ID del ítem
+     * @returns {Object|null} { skuDescuento, accion, montoEspecifico, montoDescuento, centavos } o null si no hay configuración
+     */
+    function getConfigDescuentoTL(itemId){
+        try{
+            var itemIdStr = String(itemId);
+            var confSearch = search.create({
+                type: 'customrecord_conf_descuento_tl',
+                filters: [
+                    search.createFilter({ name: 'custrecord_sku_rel', operator: search.Operator.ANYOF, values: [itemIdStr] })
+                ],
+                columns: [
+                    search.createColumn({ name: 'custrecord_skudescuento' }),
+                    search.createColumn({ name: 'custrecord_accion' }),
+                    search.createColumn({ name: 'custrecord_monto_especifico' }),
+                    search.createColumn({ name: 'custrecord_monto_descuento' }),
+                    search.createColumn({ name: 'custrecord_cent' })
+                ]
+            });
+            function normItemId(val){
+                if(val == null || val === '') return 1876;
+                if(Array.isArray(val) && val.length > 0){ val = val[0]; }
+                if(typeof val === 'object' && val != null && (val.value != null || val.value === 0)) return val.value;
+                if(typeof val === 'number' && !isNaN(val)) return val;
+                if(typeof val === 'string'){ var n = parseInt(val, 10); return isNaN(n) ? 1876 : n; }
+                return 1876;
+            }
+            var result = confSearch.run().getRange({ start: 0, end: 1 });
+            if(result && result.length > 0){
+                var row = result[0];
+                var accionVal = row.getValue({ name: 'custrecord_accion' });
+                var accion = (accionVal != null && accionVal !== '') ? parseInt(accionVal, 10) : null;
+                return {
+                    skuDescuento: normItemId(row.getValue({ name: 'custrecord_skudescuento' })),
+                    accion: isNaN(accion) ? null : accion,
+                    montoEspecifico: parseFloat(row.getValue({ name: 'custrecord_monto_especifico' })) || 0,
+                    montoDescuento: parseFloat(row.getValue({ name: 'custrecord_monto_descuento' })) || 0,
+                    centavos: parseFloat(row.getValue({ name: 'custrecord_cent' })) || 0
+                };
+            }
+            // Configuración de descuento por defecto: sandbox = 2, producción = 1
+            var defaultId = (runtime.envType === 'SANDBOX') ? 2 : 1;
+            var defaultRec = search.lookupFields({
+                type: 'customrecord_conf_descuento_tl',
+                id: defaultId,
+                columns: ['custrecord_skudescuento', 'custrecord_accion', 'custrecord_monto_especifico', 'custrecord_monto_descuento', 'custrecord_cent']
+            });
+            if(defaultRec){
+                var accionVal = defaultRec.custrecord_accion;
+                if(accionVal != null && typeof accionVal === 'object' && accionVal.value != null) accionVal = accionVal.value;
+                if(Array.isArray(accionVal) && accionVal.length > 0 && accionVal[0].value != null) accionVal = accionVal[0].value;
+                var accion = (accionVal != null && accionVal !== '') ? parseInt(accionVal, 10) : null;
+                var getVal = function(f){ var v = defaultRec[f]; if(Array.isArray(v) && v.length > 0) v = v[0]; return (v != null && typeof v === 'object' && (v.value != null || v.value === 0)) ? v.value : v; };
+                return {
+                    skuDescuento: normItemId(getVal('custrecord_skudescuento')),
+                    accion: isNaN(accion) ? null : accion,
+                    montoEspecifico: parseFloat(getVal('custrecord_monto_especifico')) || 0,
+                    montoDescuento: parseFloat(getVal('custrecord_monto_descuento')) || 0,
+                    centavos: parseFloat(getVal('custrecord_cent')) || 0
+                };
+            }
+            return null;
+        }catch(e){
+            log.error('getConfigDescuentoTL', e);
+            return null;
+        }
+    }
+
+    /**
+     * Crea una orden de venta basada en el registro customrecord_conf_descuento_tl.
+     * Por cada ítem del request se busca una configuración cuyo SKU Relacionado lo contenga.
+     * custrecord_accion 1: datos del request (precio, descuento como vienen).
+     * custrecord_accion 2: precio del ítem = custrecord_monto_especifico; descuento = custrecord_monto_descuento.
+     * custrecord_accion 3: monto de descuento = custrecord_monto_descuento menos custrecord_cent.
+     * Función independiente; no modifica createSalesOrderWithItemDiscounts ni el resto del código.
+     */
+    function createSalesOrderWithConfigDiscounts(req_info){
+        try{
+            var valid = searchODV(req_info.tranid);
+            if(!valid){
+                return { error: 'Sales Order previously created' };
+            }
+            var odv_serial = {};
+            if('serial_number' in req_info && req_info.serial_number != '' && req_info.serial_number != null){
+                odv_serial = searchODVbySerie(req_info.serial_number);
+                if(odv_serial && odv_serial.internalid){
+                    req_info['custbody_vw_odv_related_warranty'] = odv_serial.internalid;
+                }
+            }
+            if('extended_warranty_pdf_file' in req_info && req_info.extended_warranty_pdf_file != '' && req_info.extended_warranty_pdf_file != null){
+                var id_pdf = savePDF(req_info.extended_warranty_pdf_file, 326098, req_info.tranid);
+                if(id_pdf) req_info['custbody_vw_pdf_warranty'] = id_pdf;
+            }
+            var discount_aux = 0, total_amount_aux = 0, shipping_cost = {};
+            var obj_sales_order = record.create({ type: 'salesorder', isDynamic: true });
+            obj_sales_order.setValue('customform', 105);
+
+            if('discountrate' in req_info && parseFloat(req_info['discountrate']) > 0){
+                for(var k in req_info.items){
+                    if(req_info.items[k].item_id != '859'){
+                        total_amount_aux += parseFloat(req_info.items[k].amount) * parseInt(req_info.items[k].quantity, 10);
+                    }else{
+                        shipping_cost = req_info.items[k];
+                    }
+                }
+                if(total_amount_aux > 0){
+                    discount_aux = (parseFloat(req_info['discountrate']) / 1.16) / total_amount_aux;
+                }
+            }
+
+            var campos_excluidos = ['location', 'items', 'multipago', 'discountrate', 'discountitem', 'custbody_estatus_envio', 'custbody46', 'custbody_url_one_aclogistics', 'custbody_url_two_aclogistics'];
+            var locationValidado;
+            for(var x in req_info){
+                if(campos_excluidos.indexOf(x) === -1){
+                    obj_sales_order.setValue(x, req_info[x]);
+                }
+                if((x === 'location' || x === 'Location') && req_info[x] != null){
+                    locationValidado = req_info[x];
+                    obj_sales_order.setValue('location', locationValidado);
+                    obj_sales_order.setValue('custbody_so_eshop', true);
+                    if(req_info.custbody46 != '' || (req_info.custbody_estatus_envio != null && req_info.custbody_estatus_envio != 7)){
+                        obj_sales_order.setValue('ordertype', 1);
+                    }
+                }
+            }
+            obj_sales_order.setValue('custbody_cfdi_metpago_sat', req_info.custbody_cfdi_metododepago);
+
+            var salesorder_items = req_info.items;
+            for(var x in salesorder_items){
+                var item_mine = salesorder_items[x];
+                var item_id_str = String(item_mine.item_id);
+                var config = getConfigDescuentoTL(item_id_str);
+
+                var item_tax = parseFloat(item_mine.amount) / 1.16;
+                if(item_tax == 0) item_tax = 0.01;
+                var rate_from_config = false;
+                if(config && config.accion === 2 && (config.montoEspecifico || 0) > 0){
+                    item_tax = (config.montoEspecifico || 0) / 1.16;
+                    if(item_tax == 0) item_tax = 0.01;
+                    rate_from_config = true;
+                }
+
+                obj_sales_order.selectNewLine({ sublistId: 'item' });
+                obj_sales_order.setCurrentSublistValue({ sublistId: 'item', fieldId: 'item', value: item_mine.item_id });
+                obj_sales_order.setCurrentSublistValue({ sublistId: 'item', fieldId: 'quantity', value: item_mine.quantity });
+                if(item_mine.item_id == '1441'){
+                    obj_sales_order.setCurrentSublistValue({ sublistId: 'item', fieldId: 'price', value: '-1' });
+                }
+                obj_sales_order.setCurrentSublistValue({ sublistId: 'item', fieldId: 'amount', value: item_tax });
+                obj_sales_order.setCurrentSublistValue({ sublistId: 'item', fieldId: 'rate', value: rate_from_config ? item_tax.toFixed(6) : item_tax.toFixed(2) });
+                obj_sales_order.setCurrentSublistValue({ sublistId: 'item', fieldId: 'location', value: locationValidado });
+                obj_sales_order.commitLine({ sublistId: 'item' });
+
+                if(item_mine.item_id == '859') continue;
+
+                var discount_item_id = 1876;
+                if(config && config.skuDescuento != null && config.skuDescuento !== ''){
+                    var sid = config.skuDescuento;
+                    if(typeof sid === 'object' && sid != null && (sid.value != null || sid.value === 0)) sid = sid.value;
+                    if(Array.isArray(sid) && sid.length > 0) sid = sid[0].value != null ? sid[0].value : sid[0];
+                    if(typeof sid === 'number' && !isNaN(sid)) discount_item_id = sid;
+                    else if(typeof sid === 'string'){ var n = parseInt(sid, 10); if(!isNaN(n)) discount_item_id = n; }
+                }
+                var global_part_net = 0;
+                var descuento_linea_gross = 0;
+
+                if(config && config.accion === 1){
+                    if(total_amount_aux > 0 && discount_aux > 0){
+                        global_part_net = parseFloat(item_mine.amount) * discount_aux * parseInt(item_mine.quantity, 10);
+                    }
+                    var dl = item_mine.item_discountrate != null && item_mine.item_discountrate !== '' ? item_mine.item_discountrate : (item_mine.discount != null && item_mine.discount !== '' ? item_mine.discount : (item_mine.item_discount != null ? item_mine.item_discount : item_mine.descuento));
+                    if(dl != null && dl !== '' && !isNaN(parseFloat(dl)) && parseFloat(dl) > 0){
+                        descuento_linea_gross = parseFloat(dl);
+                    }
+                }else if(config && config.accion === 2){
+                    // Acción 2: precio y monto de descuento fijos desde configuración
+                    if(total_amount_aux > 0 && discount_aux > 0){
+                        global_part_net = parseFloat(item_mine.amount) * discount_aux * parseInt(item_mine.quantity, 10);
+                    }
+                    descuento_linea_gross = config.montoDescuento || 0;
+                }else if(config && config.accion === 3){
+                    // Acción 3: \"Asignar valor del artículo (menos X centavos)\"
+                    // Para este caso:
+                    //  - No se usa el descuento global (global_part_net = 0)
+                    //  - El monto bruto del descuento es: (amount * quantity) - centavos
+                    global_part_net = 0;
+                    var qty3 = parseInt(item_mine.quantity, 10);
+                    if(isNaN(qty3) || qty3 <= 0) qty3 = 1;
+                    var grossItem = parseFloat(item_mine.amount) * qty3;
+                    if(isNaN(grossItem)) grossItem = 0;
+                    // El campo \"centavos\" se captura como número entero de centavos (4 = $0.04)
+                    // Por eso se divide entre 100 para obtener el monto en pesos.
+                    var cents = (config.centavos || 0) / 100;
+                    descuento_linea_gross = grossItem - cents;
+                }else{
+                    if(total_amount_aux > 0 && discount_aux > 0){
+                        global_part_net = parseFloat(item_mine.amount) * discount_aux * parseInt(item_mine.quantity, 10);
+                    }
+                    var dl = item_mine.item_discountrate != null && item_mine.item_discountrate !== '' ? item_mine.item_discountrate : (item_mine.discount != null && item_mine.discount !== '' ? item_mine.discount : (item_mine.item_discount != null ? item_mine.item_discount : item_mine.descuento));
+                    if(dl != null && dl !== '' && !isNaN(parseFloat(dl)) && parseFloat(dl) > 0){
+                        descuento_linea_gross = parseFloat(dl);
+                    }
+                }
+
+                var discount_item_gross = (global_part_net * 1.16) + descuento_linea_gross;
+                if(discount_item_gross > 0){
+                    var id_descuento = discount_item_id;
+                    if(id_descuento == null || id_descuento === '' || (typeof id_descuento === 'object' && !Array.isArray(id_descuento))) id_descuento = 1876;
+                    if(typeof id_descuento === 'string'){ var n = parseInt(id_descuento, 10); id_descuento = isNaN(n) ? 1876 : n; }
+                    var solo_descuento_config = (global_part_net === 0 && config && (config.accion === 2 || config.accion === 3));
+                    if(solo_descuento_config){
+                        var rate_sin_iva = (discount_item_gross / 1.16).toFixed(6);
+                        var gross_neg = -discount_item_gross;
+                        obj_sales_order.selectNewLine({ sublistId: 'item' });
+                        obj_sales_order.setCurrentSublistValue({ sublistId: 'item', fieldId: 'item', value: id_descuento });
+                        obj_sales_order.setCurrentSublistValue({ sublistId: 'item', fieldId: 'price', value: -1 });
+                        obj_sales_order.setCurrentSublistValue({ sublistId: 'item', fieldId: 'rate', value: parseFloat(rate_sin_iva) * -1 });
+                        obj_sales_order.setCurrentSublistValue({ sublistId: 'item', fieldId: 'amount', value: gross_neg });
+                        obj_sales_order.setCurrentSublistValue({ sublistId: 'item', fieldId: 'grossamt', value: gross_neg });
+                        obj_sales_order.commitLine({ sublistId: 'item' });
+                    }else{
+                        var discount_item_sin_iva = discount_item_gross / 1.16;
+                        setItemDiscount(obj_sales_order, discount_item_sin_iva, id_descuento);
+                    }
+                }
+            }
+
+            var salesorder_payment = req_info.multipago;
+            var id_sales_order;
+            try{
+                id_sales_order = obj_sales_order.save();
+                if(odv_serial && odv_serial.internalid){
+                    try{
+                        record.submitFields({ type: 'salesorder', id: odv_serial.internalid, values: { 'custbody_vw_odv_warranty': id_sales_order } });
+                    }catch(err_serires){
+                        log.error('err_serires', err_serires);
+                    }
+                }
+                var description = getDescription(id_sales_order);
+                var acLogistic = { tracking: req_info.custbody46, tracking_link: req_info.custbody_url_one_aclogistics, guia: req_info.custbody_url_two_aclogistics, status: req_info.custbody_estatus_envio };
+                var id_traking = createTraking(description, id_sales_order, acLogistic, req_info.custbody_tipo_venta, req_info.custbody_estatus_envio);
+                if(req_info.custbody_tipo_venta == 2 && req_info.custbody_estatus_envio != 7 && req_info.custbody_url_one_aclogistics && req_info.custbody_url_two_aclogistics){
+                    var objSO = record.load({ type: record.Type.SALES_ORDER, id: id_sales_order, isDynamic: false });
+                    var itemLines = objSO.getLineCount({ sublistId: 'item' });
+                    var description_arr = [], segundaGuia = false;
+                    for(var i = 0; i < itemLines; i++){
+                        var itemId = objSO.getSublistValue({ sublistId: 'item', fieldId: 'item', line: i });
+                        if(itemId != 1441 && itemId != 859 && itemId != 2001 && itemId != 2170 && itemId != 2490 && itemId != 2571 && itemId != 2638 && itemId != 2671 && itemId != 2763){
+                            segundaGuia = true;
+                            description_arr.push(objSO.getSublistValue({ sublistId: 'item', fieldId: 'description', line: i }));
+                        }
+                    }
+                    var description_txt = description_arr.join(',');
+                    var objTracking = search.lookupFields({ type: 'customrecord_vk_traking_information', id: 3, columns: ['custrecord_alto_cm', 'custrecord_ancho_cm', 'custrecord_largo_cm', 'name', 'custrecord_contenido'] });
+                    var objCustomer = record.load({ type: record.Type.CUSTOMER, id: objSO.getValue('entity'), isDynamic: false });
+                    var email_customer = objCustomer.getValue('email');
+                    var nameCustomer = objCustomer.getValue('altname');
+                    var addrphone = '', addr1 = '', addr2 = '', zip = '';
+                    var companyCustomer = objCustomer.getValue('custentity_razon_social');
+                    var totalLines = objCustomer.getLineCount({ sublistId: 'addressbook' });
+                    for(var i = 0; i < totalLines; i++){
+                        if(objCustomer.getSublistValue({ sublistId: 'addressbook', fieldId: 'defaultshipping', line: i }) == true){
+                            var subRecord = objCustomer.getSublistSubrecord({ sublistId: 'addressbook', fieldId: 'addressbookaddress', line: i });
+                            addrphone = subRecord.getText({ fieldId: 'addrphone' });
+                            addr1 = subRecord.getValue({ fieldId: 'addr1' });
+                            addr2 = subRecord.getValue({ fieldId: 'addr2' });
+                            zip = subRecord.getValue({ fieldId: 'zip' });
+                            break;
+                        }
+                    }
+                    var random_num = Math.floor(Math.random() * 100);
+                    var weight = objTracking.name ? String(objTracking.name).split(' ')[0] : '';
+                    if(itemLines > 1 && segundaGuia){
+                        var objRequest = {
+                            api_key: 'c9df5be32d150aaae2c5f3a2cddacb44',
+                            referencia: objSO.getValue('tranid') + '-' + random_num,
+                            id_courier: 'fedex_eco',
+                            nombre_remitente: 'VORWERK',
+                            telefono_remitente: '01 800 200 11 21',
+                            correo_remitente: 'contacto@thermomixmexico.com.mx',
+                            direccion_remitente: 'VITO ALESSIO ROBLES 38 COLONIA FLORIDA ÁLVARO OBREGÓN Ciudad de México 01030',
+                            empresa_remitente: 'VORWERK MEXICO, S. DE R.L. DE C.V.',
+                            nombre_destinatario: nameCustomer,
+                            telefono_destinatario: addrphone,
+                            correo_destinatario: email_customer,
+                            calle_destinatario: addr1,
+                            num_exterior_destinatario: '0',
+                            num_interior_destinatario: '0',
+                            cp_destinatario: zip,
+                            colonia_destinatario: addr2,
+                            empresa_destinatario: companyCustomer,
+                            alto_cm: objTracking.custrecord_alto_cm,
+                            ancho_cm: objTracking.custrecord_ancho_cm,
+                            largo_cm: objTracking.custrecord_largo_cm,
+                            peso_kg: weight,
+                            contenido: objTracking.custrecord_contenido,
+                            valor: objSO.getValue('total'),
+                            seguro: 'false'
+                        };
+                        var responseService = https.post({ url: 'https://www.smartship.mx/api/documentar/', body: JSON.stringify(objRequest), headers: { 'Content-Type': 'application/json' } }).body;
+                        if(responseService){
+                            try{
+                                var parsed = JSON.parse(responseService);
+                                if(parsed.mensaje == 'Exitoso'){
+                                    var obj_traking = record.create({ type: 'customrecord_guia_envio', isDynamic: false });
+                                    obj_traking.setValue({ fieldId: 'custrecord_id_sales_order', value: id_sales_order });
+                                    obj_traking.setValue({ fieldId: 'custrecord_no_guia', value: parsed.tracking });
+                                    obj_traking.setValue({ fieldId: 'custrecord_url_resp_aclogistics', value: parsed.tracking_link });
+                                    obj_traking.setValue({ fieldId: 'custrecord_url_pdf_aclogistics', value: parsed.guia });
+                                    obj_traking.setValue({ fieldId: 'custrecord_estatus_envio', value: 1 });
+                                    obj_traking.setValue({ fieldId: 'custrecord_id_envio', value: parsed.id_envio });
+                                    obj_traking.setValue({ fieldId: 'custrecord_vw_description', value: description_txt });
+                                    obj_traking.setValue({ fieldId: 'custrecord_peso', value: weight + ' kg' });
+                                    obj_traking.save();
+                                }
+                            }catch(e){ log.error('error segunda guia', e); }
+                        }
+                    }
+                }
+            }catch(err_so){
+                log.error('error createSalesOrderWithConfigDiscounts save', err_so);
+                return { error_order: err_so };
+            }
+
+            var fecha_pago = null;
+            if(salesorder_payment && salesorder_payment.length > 0){
+                var pago_a_usar = salesorder_payment.length > 1 ? salesorder_payment[salesorder_payment.length - 1] : salesorder_payment[0];
+                if(pago_a_usar.transdate) fecha_pago = parseDate(pago_a_usar.transdate);
+                else if(pago_a_usar.trandate) fecha_pago = parseDate(pago_a_usar.trandate);
+            }
+            var id_payment = setPaymentMethod(id_sales_order, salesorder_payment, req_info.entity);
+            try{
+                var values_to_update = { 'orderstatus': 'B', 'custbody_vorwerk_contratos': id_payment.contract, 'custbody_total_pagado': id_payment.total_payment };
+                if(fecha_pago) values_to_update['trandate'] = fecha_pago;
+                record.submitFields({ type: record.Type.SALES_ORDER, id: id_sales_order, values: values_to_update });
+                if(id_payment.contract && id_payment.contract != ''){
+                    record.submitFields({ type: record.Type.SALES_ORDER, id: id_sales_order, values: { 'custbody_cfdi_formadepago': 3 } });
+                }
+            }catch(e){
+                log.error('error general payment', e);
+                return { error_payment: e };
+            }
+            return { success: id_sales_order, id_payment: id_payment };
+        }catch(err){
+            log.error('error createSalesOrderWithConfigDiscounts', err);
+            return { error: err };
+        }
+    }
+
+    //funcion para crear ODV v2 - separa items en dos ordenes: una con item TM7 y otra con items GETM7 y KIT DESGASTE
+    function createSalesOrderManager(req_info){
+        try{
+          log.debug('tipo de venta sov2', req_info.custbody_tipo_venta);
+            // Si no hay items o no es caso TM7/GETM7 (sin \"0000\"), delegar a la lógica estándar
+            if (!req_info || !req_info.items || !req_info.items.length) {
+                return createSalesOrderWithConfigDiscounts(req_info);
+            }
+            var hasProvisionalGetm7 = false;
+            for (var iScan = 0; iScan < req_info.items.length; iScan++) {
+                if (String(req_info.items[iScan].item_id) === '0000') {
+                    hasProvisionalGetm7 = true;
+                    break;
+                }
+            }
+            if (!hasProvisionalGetm7) {
+                // No es pedido TM7 + GETM7: crear una sola orden con descuentos por configuración
+                return createSalesOrderWithConfigDiscounts(req_info);
+            }
+
+            // Determinar items según el ambiente (sandbox o producción)
+            var item_tm7_sandbox = "2680";
+            var item_tm7_prod = "2763";
+            var item_getm7_sandbox = "2685";
+            var item_getm7_prod = "2839";
+            var item_kit_sandbox = "2686";
+            var item_kit_prod = "2841";
+            
+            var item_cutter_sandbox = "2693";
+            var item_cutter_prod = "2817";
+            var item_tm7, item_getm7, item_kit, item_cutter;
+            if(runtime.envType == "SANDBOX"){
+                item_tm7 = item_tm7_sandbox;
+                item_getm7 = item_getm7_sandbox;
+                item_kit = item_kit_sandbox;
+                item_cutter = item_cutter_sandbox;
+            } else { //produccion
+                item_tm7 = item_tm7_prod;
+                item_getm7 = item_getm7_prod;
+                item_kit = item_kit_prod;
+                item_cutter = item_cutter_prod;
+            }
+            
+            log.debug('createSalesOrderManager', 'Ambiente: ' + runtime.envType + ', Item TM7: ' + item_tm7 + ', Item GETM7: ' + item_getm7 + ', Item KIT: ' + item_kit + ', Item Cutter: ' + item_cutter);
+            
+            // Separar items en dos grupos
+            var items_tm7 = []; // Items para la primera orden (incluye item TM7)
+            var items_getm7_kit = []; // Items para la segunda orden (incluye items GETM7 y KIT DESGASTE)
+            var otros_items = []; // Otros items que no son TM7, GETM7 o KIT
+            
+            var tiene_tm7 = false;
+            var tiene_getm7 = false;
+            var tiene_kit = false;
+            var tiene_cutter = false;
+            
+            // Recorrer todos los items del request
+            var item_financiamiento = "1441"; // Item costo por financiamiento
+            var item_provisional_getm7 = "0000"; // Internal ID provisional para identificar GETM7 en pedidos TM7-GETM7
+            for(var x in req_info.items){
+                var item_mine = req_info.items[x];
+                var item_id = String(item_mine.item_id);
+                
+                // Detectar si el item_id es "0000" (GETM7 provisional) y cambiarlo al item_id real
+                if(item_id === item_provisional_getm7){
+                    log.debug('createSalesOrderManager', 'Detectado internal ID provisional "0000" para GETM7, cambiando a item_id real: ' + item_getm7);
+                    item_mine.item_id = item_getm7; // Cambiar el item_id de "0000" al item_id real de GETM7
+                    item_id = String(item_getm7); // Actualizar item_id para el switch
+                    tiene_getm7 = true;
+                    items_getm7_kit.push(item_mine);
+                } else {
+                    switch(item_id){
+                        case item_tm7:
+                        tiene_tm7 = true;
+                        items_tm7.push(item_mine);
+                            break;
+                        case item_getm7:
+                        tiene_getm7 = true;
+                        items_getm7_kit.push(item_mine);
+                            break;
+                        case item_kit:
+                        tiene_kit = true;
+                        items_getm7_kit.push(item_mine);
+                            break;
+                        case item_financiamiento:
+                        // Item costo por financiamiento se agrega a la orden TM7
+                        items_tm7.push(item_mine);
+                            break;
+                        case item_cutter:
+                        tiene_cutter = true;
+                        otros_items.push(item_mine);
+                            break;
+                        default:
+                        // Otros items que se agregarán a ambas órdenes o según se defina
+                        otros_items.push(item_mine);
+                            break;
+                    }
+                }
+            }
+            
+            // Pedido cutter: TM7 + cutter → una sola orden con descuento de 1000 pesos (flujo estándar)
+            if(tiene_tm7 && tiene_cutter){
+                log.debug('createSalesOrderManager', 'Pedido cutter detectado (TM7 + Cutter), creando orden única con descuento cutter (config/descuentos estándar)');
+                return createSalesOrderWithConfigDiscounts(req_info);
+            }
+            
+            // Validar que tenga ambos artículos: TM7 y GETM7
+            // Si no tiene ambos, crear orden normal usando lógica estándar de configuración de descuentos
+            if(!tiene_tm7 || !tiene_getm7){
+                log.debug('createSalesOrderManager', 'No se tienen ambos items (TM7 y GETM7), creando orden normal con configuración de descuentos');
+                return createSalesOrderWithConfigDiscounts(req_info);
+            }
+            
+            log.debug('createSalesOrderManager', 'Items TM7: ' + items_tm7.length + ', Items GETM7/KIT: ' + items_getm7_kit.length + ', Otros items: ' + otros_items.length);
+            
+            // Calcular división del descuento si existe discountrate
+            var discountrate_total = 0;
+            var discountrate_getm7_kit = 0;
+            var discountrate_tm7 = 0;
+            var monto_kit_desgaste = 0;
+            
+            if("discountrate" in req_info && parseFloat(req_info['discountrate']) > 0){
+                discountrate_total = parseFloat(req_info['discountrate']);
+                
+                // Buscar el monto del kit de desgaste en los items
+                for(var x in items_getm7_kit){
+                    var item_kit_check = items_getm7_kit[x];
+                    var item_id_kit_check = String(item_kit_check.item_id);
+                    if(item_id_kit_check == item_kit){
+                        // Calcular monto total del kit (amount * quantity)
+                        monto_kit_desgaste = parseFloat(item_kit_check.amount) * parseInt(item_kit_check.quantity, 10);
+                        log.debug('createSalesOrderManager', 'Monto kit de desgaste encontrado: ' + monto_kit_desgaste);
+                        break;
+                    }
+                }
+                
+                // Si no se encontró en items_getm7_kit, buscar en todos los items del request original
+                if(monto_kit_desgaste == 0){
+                    for(var x in req_info.items){
+                        var item_check = req_info.items[x];
+                        var item_id_check = String(item_check.item_id);
+                        if(item_id_check == item_kit){
+                            monto_kit_desgaste = parseFloat(item_check.amount) * parseInt(item_check.quantity, 10);
+                            log.debug('createSalesOrderManager', 'Monto kit de desgaste encontrado en request original: ' + monto_kit_desgaste);
+                            break;
+                        }
+                    }
+                }
+                
+                // Calcular descuento para GETM7/KIT: el mínimo entre el descuento total y el monto del kit menos un centavo
+                if(monto_kit_desgaste > 0){
+                    var descuento_maximo_getm7 = monto_kit_desgaste;
+                    // Aplicar el mínimo entre el descuento total y el máximo permitido para GETM7/KIT
+                    discountrate_getm7_kit = Math.min(discountrate_total, descuento_maximo_getm7);
+                    // Calcular descuento para TM7: lo que sobra del descuento total
+                    discountrate_tm7 = discountrate_total - discountrate_getm7_kit;
+                    
+                    log.debug('createSalesOrderManager', 'Descuento total: ' + discountrate_total + ', Monto kit: ' + monto_kit_desgaste + ', Descuento máximo GETM7/KIT: ' + descuento_maximo_getm7 + ', Descuento GETM7/KIT aplicado: ' + discountrate_getm7_kit + ', Descuento TM7: ' + discountrate_tm7);
+                } else {
+                    // Si no hay kit, el descuento total va a TM7
+                    discountrate_tm7 = discountrate_total;
+                    log.debug('createSalesOrderManager', 'No se encontró kit de desgaste, todo el descuento va a TM7: ' + discountrate_tm7);
+                }
+            }
+            
+            var id_orden_tm7 = null;
+            var id_orden_getm7_kit = null;
+            var res_tm7 = null;
+            
+            // Guardar multipago antes de eliminarlo del req_info (para procesarlo después)
+            var multipago_original = req_info.multipago || [];
+            
+            // Crear PRIMERA orden de venta con item TM7
+            if(tiene_tm7 && items_tm7.length > 0){
+                var req_info_tm7 = JSON.parse(JSON.stringify(req_info)); // Copia profunda del objeto
+                req_info_tm7.items = items_tm7.concat(otros_items); // Agregar otros items a la primera orden
+                req_info_tm7.tranid = req_info.tranid; // Sin sufijo para la orden TM7
+                req_info_tm7.custbody_pedido_tm7_getm7 = true; // Marcar check como verdadero
+                delete req_info_tm7.multipago; // Eliminar multipago para que no se procese en createSalesOrder
+                delete req_info_tm7.discountrate; // Eliminar descuento original para evitar que se aplique incorrectamente
+                
+                // Asignar descuento a la orden TM7 (solo si hay descuento disponible)
+                if(discountrate_tm7 > 0){
+                    req_info_tm7.discountrate = discountrate_tm7;
+                    log.debug('createSalesOrderManager', 'Asignando descuento TM7: ' + discountrate_tm7);
+                } else {
+                    log.debug('createSalesOrderManager', 'No se asigna descuento a TM7 (discountrate_tm7 = 0)');
+                }
+                
+                log.debug('createSalesOrderManager', 'Creando orden con item TM7 (' + item_tm7 + '), tranid: ' + req_info_tm7.tranid);
+                res_tm7 = createSalesOrderWithConfigDiscounts(req_info_tm7);
+                
+                // Obtener el internal id de la orden TM7
+                if(res_tm7 && res_tm7.success){
+                    id_orden_tm7 = res_tm7.success;
+                    log.debug('createSalesOrderManager', 'Orden TM7 creada con ID: ' + id_orden_tm7);
+                } else {
+                    log.error('createSalesOrderManager', 'Error al crear orden TM7: ' + JSON.stringify(res_tm7));
+                    return res_tm7; // Retornar el error en el mismo formato
+                }
+            }
+            
+            // Crear SEGUNDA orden de venta con items GETM7 y KIT DESGASTE
+            if((tiene_getm7 || tiene_kit) && items_getm7_kit.length > 0){
+                var req_info_getm7_kit = JSON.parse(JSON.stringify(req_info)); // Copia profunda del objeto
+                req_info_getm7_kit.items = items_getm7_kit; // Solo items GETM7 y KIT DESGASTE
+                
+                // Extraer solo los números del tranid y agregar prefijo NS
+                var tranid_numerico = req_info.tranid.replace(/\D/g, ''); // Eliminar todos los caracteres no numéricos
+                req_info_getm7_kit.tranid = "EW" + tranid_numerico;
+                
+                log.debug('createSalesOrderManager', 'Tranid original: ' + req_info.tranid + ', Tranid GETM7/KIT: ' + req_info_getm7_kit.tranid);
+                
+                req_info_getm7_kit.custbody_pedido_tm7_getm7 = true; // Marcar check como verdadero
+                delete req_info_getm7_kit.multipago; // Eliminar multipago para que no se procese en createSalesOrder
+                delete req_info_getm7_kit.discountrate; // Eliminar descuento original para evitar que se aplique incorrectamente
+                
+                // Asignar descuento a la orden GETM7/KIT (monto del kit menos un centavo)
+                if(discountrate_getm7_kit > 0){
+                    req_info_getm7_kit.discountrate = discountrate_getm7_kit;
+                    log.debug('createSalesOrderManager', 'Asignando descuento GETM7/KIT: ' + discountrate_getm7_kit);
+                } else {
+                    log.debug('createSalesOrderManager', 'No se asigna descuento a GETM7/KIT (discountrate_getm7_kit = 0)');
+                }
+                
+                // Asignar el internal id de la orden TM7 en el campo custbody_odv_tm7_getm7
+                if(id_orden_tm7){
+                    req_info_getm7_kit.custbody_odv_tm7_getm7 = id_orden_tm7;
+                    log.debug('createSalesOrderManager', 'Asignando ID orden TM7 (' + id_orden_tm7 + ') a custbody_odv_tm7_getm7 de orden GETM7/KIT');
+                }
+                
+                log.debug('createSalesOrderManager', 'Creando orden con items GETM7/KIT, tranid: ' + req_info_getm7_kit.tranid);
+                var res_getm7_kit = createSalesOrderWithConfigDiscounts(req_info_getm7_kit);
+                
+                // Obtener el internal id de la orden GETM7/KIT
+                if(res_getm7_kit && res_getm7_kit.success){
+                    id_orden_getm7_kit = res_getm7_kit.success;
+                    log.debug('createSalesOrderManager', 'Orden GETM7/KIT creada con ID: ' + id_orden_getm7_kit);
+                    
+                    // Actualizar la orden TM7 con el internal id de la orden GETM7/KIT
+                    if(id_orden_tm7){
+                        try{
+                            // Usar load y save en lugar de submitFields para evitar disparar scripts de usuario problemáticos
+                            var salesOrderRec = record.load({
+                                type: 'salesorder',
+                                id: id_orden_tm7,
+                                isDynamic: false
+                            });
+                            
+                            salesOrderRec.setValue({
+                                fieldId: 'custbody_odv_tm7_getm7',
+                                value: id_orden_getm7_kit
+                            });
+                            
+                            salesOrderRec.save({
+                                enableSourcing: false,
+                                ignoreMandatoryFields: true
+                            });
+                            
+                            log.debug('createSalesOrderManager', 'Orden TM7 actualizada con ID orden GETM7/KIT (' + id_orden_getm7_kit + ') en custbody_odv_tm7_getm7');
+                        } catch(err_update){
+                            log.error('createSalesOrderManager', 'Error al actualizar orden TM7: ' + JSON.stringify(err_update));
+                            // Continuar el proceso aunque falle la actualización del campo
+                            log.debug('createSalesOrderManager', 'El proceso continúa a pesar del error en la actualización del campo custbody_odv_tm7_getm7');
+                        }
+                    }
+                } else {
+                    log.error('createSalesOrderManager', 'Error al crear orden GETM7/KIT: ' + JSON.stringify(res_getm7_kit));
+                    // Continuar y retornar la orden TM7 aunque falle la GETM7/KIT
+                }
+            }
+            
+            // Variables para almacenar información de pagos creados
+            var id_payment_tm7_final = null;
+            var id_payment_getm7_final = null;
+            
+            // Procesar pagos si existen y ambas órdenes fueron creadas exitosamente
+            if(multipago_original && multipago_original.length > 0 && id_orden_tm7 && id_orden_getm7_kit){
+                try{
+                    log.debug('createSalesOrderManager', 'Procesando distribución de pagos entre órdenes TM7 y GETM7/KIT');
+                    
+                    // Obtener totales de ambas órdenes
+                    var ordenTm7Rec = record.load({
+                        type: 'salesorder',
+                        id: id_orden_tm7,
+                        isDynamic: false
+                    });
+                    var total_tm7 = parseFloat(ordenTm7Rec.getValue('total'));
+                    
+                    var ordenGetm7Rec = record.load({
+                        type: 'salesorder',
+                        id: id_orden_getm7_kit,
+                        isDynamic: false
+                    });
+                    var total_getm7 = parseFloat(ordenGetm7Rec.getValue('total'));
+                    
+                    log.debug('createSalesOrderManager', 'Total orden TM7: ' + total_tm7 + ', Total orden GETM7/KIT: ' + total_getm7);
+                    
+                    // Ordenar pagos por fecha (el primero es el de fecha menor)
+                    var pagos_ordenados = JSON.parse(JSON.stringify(multipago_original));
+                    pagos_ordenados.sort(function(a, b){
+                        var fechaA = parseDate(a.trandate || a.transdate || '');
+                        var fechaB = parseDate(b.trandate || b.transdate || '');
+                        if(!fechaA) fechaA = new Date(0);
+                        if(!fechaB) fechaB = new Date(0);
+                        return fechaA.getTime() - fechaB.getTime();
+                    });
+                    
+                    // Distribuir pagos
+                    var pagos_getm7 = [];
+                    var pagos_tm7 = [];
+                    var saldo_getm7 = total_getm7;
+                    var saldo_tm7 = total_tm7;
+                    
+                    if(pagos_ordenados.length === 1){
+                        // Si solo hay un pago: primero cubrir GETM7, el resto a TM7
+                        var pago = pagos_ordenados[0];
+                        var monto_pago = parseFloat(pago.payment || 0);
+                        
+                        log.debug('createSalesOrderManager', 'Un solo pago detectado. Monto: ' + monto_pago + ', Saldo GETM7: ' + saldo_getm7 + ', Saldo TM7: ' + saldo_tm7);
+                        
+                        if(monto_pago > 0){
+                            if(monto_pago >= saldo_getm7){
+                                // El pago cubre todo GETM7 y sobra para TM7
+                                var pago_getm7 = JSON.parse(JSON.stringify(pago));
+                                pago_getm7.payment = saldo_getm7;
+                                pagos_getm7.push(pago_getm7);
+                                
+                                var resto = monto_pago - saldo_getm7;
+                                log.debug('createSalesOrderManager', 'Pago cubre GETM7 completo (' + saldo_getm7 + '), resto para TM7: ' + resto);
+                                if(resto > 0){
+                                    var pago_tm7 = JSON.parse(JSON.stringify(pago));
+                                    pago_tm7.payment = resto;
+                                    pagos_tm7.push(pago_tm7);
+                                }
+                            } else {
+                                // El pago solo cubre parte de GETM7
+                                var pago_getm7 = JSON.parse(JSON.stringify(pago));
+                                pago_getm7.payment = monto_pago;
+                                pagos_getm7.push(pago_getm7);
+                                log.debug('createSalesOrderManager', 'Pago solo cubre parte de GETM7: ' + monto_pago);
+                            }
+                        }
+                    } else {
+                        // Si hay múltiples pagos: el primer pago (fecha menor) cubre primero GETM7, si sobra va a TM7, y los demás pagos van a TM7
+                        for(var i = 0; i < pagos_ordenados.length; i++){
+                            var pago = pagos_ordenados[i];
+                            var monto_pago = parseFloat(pago.payment || 0);
+                            
+                            if(monto_pago > 0){
+                                if(i === 0){
+                                    // Primer pago: primero GETM7, luego TM7
+                                    if(monto_pago >= saldo_getm7){
+                                        // El pago cubre todo GETM7 y sobra para TM7
+                                        var pago_getm7 = JSON.parse(JSON.stringify(pago));
+                                        pago_getm7.payment = saldo_getm7;
+                                        pagos_getm7.push(pago_getm7);
+                                        
+                                        var resto = monto_pago - saldo_getm7;
+                                        if(resto > 0){
+                                            var pago_tm7 = JSON.parse(JSON.stringify(pago));
+                                            pago_tm7.payment = resto;
+                                            pagos_tm7.push(pago_tm7);
+                                        }
+                                    } else {
+                                        // El pago solo cubre parte de GETM7
+                                        var pago_getm7 = JSON.parse(JSON.stringify(pago));
+                                        pago_getm7.payment = monto_pago;
+                                        pagos_getm7.push(pago_getm7);
+                                    }
+                                } else {
+                                    // Resto de pagos: todos van a TM7
+                                    var pago_tm7 = JSON.parse(JSON.stringify(pago));
+                                    pago_tm7.payment = monto_pago;
+                                    pagos_tm7.push(pago_tm7);
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Crear payments para orden GETM7/KIT
+                    if(pagos_getm7.length > 0){
+                        var total_pago_getm7 = 0;
+                        for(var p in pagos_getm7){
+                            total_pago_getm7 += parseFloat(pagos_getm7[p].payment || 0);
+                        }
+                        log.debug('createSalesOrderManager', 'Creando ' + pagos_getm7.length + ' payment(s) para orden GETM7/KIT. Total: ' + total_pago_getm7);
+                        var id_payment_getm7 = setPaymentMethod(id_orden_getm7_kit, pagos_getm7, req_info.entity);
+                        id_payment_getm7_final = id_payment_getm7;
+                        
+                        if(id_payment_getm7 && typeof id_payment_getm7 === 'object' && id_payment_getm7.id_payment && !id_payment_getm7.error){
+                            try{
+                                record.submitFields({
+                                    type: record.Type.SALES_ORDER,
+                                    id: id_orden_getm7_kit,
+                                    values: {
+                                        'custbody_vorwerk_contratos': id_payment_getm7.contract || '',
+                                        'custbody_total_pagado': id_payment_getm7.total_payment || 0
+                                    }
+                                });
+                                log.debug('createSalesOrderManager', 'Payment GETM7/KIT creado y orden actualizada');
+                            } catch(e){
+                                log.error('createSalesOrderManager', 'Error al actualizar orden GETM7/KIT con payment: ' + JSON.stringify(e));
+                            }
+                        } else {
+                            log.error('createSalesOrderManager', 'Error al crear payment GETM7/KIT: ' + (typeof id_payment_getm7 === 'string' ? id_payment_getm7 : JSON.stringify(id_payment_getm7)));
+                        }
+                    }
+                    
+                    // Crear payments para orden TM7
+                    if(pagos_tm7.length > 0){
+                        var total_pago_tm7 = 0;
+                        for(var p in pagos_tm7){
+                            total_pago_tm7 += parseFloat(pagos_tm7[p].payment || 0);
+                        }
+                        log.debug('createSalesOrderManager', 'Creando ' + pagos_tm7.length + ' payment(s) para orden TM7. Total: ' + total_pago_tm7);
+                        var id_payment_tm7 = setPaymentMethod(id_orden_tm7, pagos_tm7, req_info.entity);
+                        id_payment_tm7_final = id_payment_tm7;
+                        
+                        if(id_payment_tm7 && typeof id_payment_tm7 === 'object' && id_payment_tm7.id_payment && !id_payment_tm7.error){
+                            try{
+                                // Obtener fecha del último pago para TM7
+                                var fecha_pago_tm7 = null;
+                                if(pagos_tm7.length > 0){
+                                    var ultimo_pago_tm7 = pagos_tm7[pagos_tm7.length - 1];
+                                    fecha_pago_tm7 = parseDate(ultimo_pago_tm7.trandate || ultimo_pago_tm7.transdate || '');
+                                }
+                                
+                                var values_to_update = {
+                                    'custbody_vorwerk_contratos': id_payment_tm7.contract || '',
+                                    'custbody_total_pagado': id_payment_tm7.total_payment || 0
+                                };
+                                
+                                if(fecha_pago_tm7){
+                                    values_to_update['trandate'] = fecha_pago_tm7;
+                                }
+                                
+                                record.submitFields({
+                                    type: record.Type.SALES_ORDER,
+                                    id: id_orden_tm7,
+                                    values: values_to_update
+                                });
+                                
+                                if(id_payment_tm7.contract && id_payment_tm7.contract != ''){
+                                    record.submitFields({
+                                        type: record.Type.SALES_ORDER,
+                                        id: id_orden_tm7,
+                                        values: {'custbody_cfdi_formadepago': 3}
+                                    });
+                                }
+                                
+                                log.debug('createSalesOrderManager', 'Payment TM7 creado y orden actualizada');
+                            } catch(e){
+                                log.error('createSalesOrderManager', 'Error al actualizar orden TM7 con payment: ' + JSON.stringify(e));
+                            }
+                        } else {
+                            log.error('createSalesOrderManager', 'Error al crear payment TM7: ' + (typeof id_payment_tm7 === 'string' ? id_payment_tm7 : JSON.stringify(id_payment_tm7)));
+                        }
+                    }
+                    
+                } catch(err_pagos){
+                    log.error('createSalesOrderManager', 'Error al procesar pagos: ' + err_pagos);
+                    // Continuar aunque falle el procesamiento de pagos
+                }
+            }
+            
+            // Construir el response con la información de pagos correcta
+            var response_final = {
+                success: res_tm7.success || id_orden_tm7
+            };
+            
+            // Combinar información de pagos de ambas órdenes
+            if(id_payment_tm7_final || id_payment_getm7_final){
+                var combined_id_payment = [];
+                var combined_contract = [];
+                var combined_total_payment = 0;
+                
+                if(id_payment_tm7_final && id_payment_tm7_final.id_payment && Array.isArray(id_payment_tm7_final.id_payment)){
+                    combined_id_payment = combined_id_payment.concat(id_payment_tm7_final.id_payment);
+                    if(id_payment_tm7_final.contract){
+                        combined_contract.push(id_payment_tm7_final.contract);
+                    }
+                    combined_total_payment += parseFloat(id_payment_tm7_final.total_payment || 0);
+                }
+                
+                if(id_payment_getm7_final && id_payment_getm7_final.id_payment && Array.isArray(id_payment_getm7_final.id_payment)){
+                    combined_id_payment = combined_id_payment.concat(id_payment_getm7_final.id_payment);
+                    if(id_payment_getm7_final.contract){
+                        combined_contract.push(id_payment_getm7_final.contract);
+                    }
+                    combined_total_payment += parseFloat(id_payment_getm7_final.total_payment || 0);
+                }
+                
+                // Redondear a 2 decimales para evitar problemas de precisión de punto flotante
+                combined_total_payment = Math.round(combined_total_payment * 100) / 100;
+                
+                response_final.id_payment = {
+                    id_payment: combined_id_payment,
+                    contract: combined_contract.join(','),
+                    total_payment: combined_total_payment
+                };
+                
+                // Si hay errores en alguno de los pagos, agregarlos
+                var errors = [];
+                if(id_payment_tm7_final && id_payment_tm7_final.error){
+                    errors.push('TM7: ' + id_payment_tm7_final.error);
+                }
+                if(id_payment_getm7_final && id_payment_getm7_final.error){
+                    errors.push('GETM7: ' + id_payment_getm7_final.error);
+                }
+                if(errors.length > 0){
+                    response_final.id_payment.error = errors.join('; ');
+                }
+            } else {
+                // Si no se procesaron pagos, usar el response original
+                response_final.id_payment = res_tm7.id_payment || {
+                    id_payment: [],
+                    contract: '',
+                    total_payment: 0
+                };
+            }
+            
+            return response_final;
+            
+        }catch(err){
+            log.error("error createSalesOrderManager",err);
+            return {error:err}
+        }
+    }
+
+    function setItemDiscount(obj_sales_order, discount_item, discount_item_id, es_descuento_unico_2686){
+        try{
+            // Si no se proporciona discount_item_id, usar el por defecto (1876)
+            if(!discount_item_id){
+                discount_item_id = 1876;
+            }
+            
+            
+            if(es_descuento_unico_2686){
+               
+                var rate_sin_iva = (discount_item * -1) / 1.16;
+                var gross_con_iva = discount_item * -1;
+                                
+                obj_sales_order.selectNewLine({
+                    sublistId : 'item',
+                });
+                obj_sales_order.setCurrentSublistValue({
+                    sublistId: 'item',
+                    fieldId: 'item',
+                    value: discount_item_id
+                });
+                obj_sales_order.setCurrentSublistValue({
+                    sublistId: 'item',
+                    fieldId: 'price',
+                    value: -1
+                });
+                obj_sales_order.setCurrentSublistValue({
+                    sublistId: 'item',
+                    fieldId: 'rate',
+                    value: rate_sin_iva.toFixed(2)
+                });
+                obj_sales_order.setCurrentSublistValue({
+                    sublistId: 'item',
+                    fieldId: 'amount',
+                    value: gross_con_iva
+                });
+                obj_sales_order.setCurrentSublistValue({
+                    sublistId: 'item',
+                    fieldId: 'grossamt',
+                    value: gross_con_iva
+                });
+                obj_sales_order.commitLine({
+                    sublistId: 'item'
+                });
+            }else{
+                // Lógica original para descuentos normales
+                var price_negative = discount_item*-1;
+                log.debug('price_negative',price_negative);
+                log.debug('discount_item_id usado', discount_item_id);
+                obj_sales_order.selectNewLine({
+                        sublistId : 'item',
+                });
+                obj_sales_order.setCurrentSublistValue({
+                    sublistId: 'item',
+                    fieldId: 'item',
+                    value: discount_item_id
+                });
+                obj_sales_order.setCurrentSublistValue({
+                    sublistId: 'item',
+                    fieldId: 'price',
+                    value: -1
+                });
+                obj_sales_order.setCurrentSublistValue({
+                    sublistId: 'item',
+                    fieldId: 'rate',
+                    value: price_negative.toFixed(2)
+                });
+                obj_sales_order.setCurrentSublistValue({
+                    sublistId: 'item',
+                    fieldId: 'amount',
+                    value: price_negative
+                });
+                obj_sales_order.commitLine({
+                    sublistId: 'item'
+                });
+            }
+        }catch(err){
+            log.error("error set Discount",err);
+        }
+        
+        
+    }
+    
+    
+    function setPaymentMethod(id_transaction, info_payment,customer){
+        // Inicializar variables al inicio para que estén disponibles en el catch
+        var id_payment = [];
+        var num_authorization = [];
+        var total_payment = 0;
+        var contract = '';
+        
+        try{
+            // Validar que info_payment existe y es un array
+            if(!info_payment || !Array.isArray(info_payment) || info_payment.length === 0){
+                log.debug('setPaymentMethod', 'No hay pagos válidos o info_payment no es un array');
+                return {
+                    id_payment: [],
+                    contract: '',
+                    total_payment: 0,
+                    error: "no existe pago"
+                };
+            }
+            for(var x in info_payment){
+                // Validar que el elemento del array existe
+                if(!info_payment[x] || typeof info_payment[x] !== 'object'){
+                    log.error('setPaymentMethod', 'Elemento de pago inválido en índice ' + x);
+                    continue;
+                }
+
+                    if(info_payment[x].custbody_forma_tipo_de_pago != 222){
+                        var obj_payment = record.create({
+                            type : 'customerpayment',
+                            isDynamic: true
+                        });
+
+                        obj_payment.setValue('customer',customer);
+                        obj_payment.setValue('custbody_mp_orden_venta_relacionada',id_transaction);
+                        for(var y in info_payment[x]){
+                            if(y == "custbody_forma_tipo_de_pago"){
+                                try{
+                                    var tmp_tipo_pago = search.lookupFields({
+                                        type: 'customrecord_forma_tipo_de_pago',
+                                        id: info_payment[x][y],
+                                        columns: ['custrecord_ref_pago_cuenta_bancaria']
+                                    });
+                                    
+                                    if(tmp_tipo_pago && tmp_tipo_pago.custrecord_ref_pago_cuenta_bancaria && tmp_tipo_pago.custrecord_ref_pago_cuenta_bancaria.length > 0){
+                                        var id_account = tmp_tipo_pago.custrecord_ref_pago_cuenta_bancaria[0].value;
+                                        obj_payment.setValue('account',id_account);
+                                    }
+                                    obj_payment.setValue('custbody_forma_tipo_de_pago',info_payment[x][y]);
+                                } catch(err_lookup){
+                                    log.error('setPaymentMethod', 'Error al buscar tipo de pago: ' + err_lookup);
+                                    // Continuar sin account si falla la búsqueda
+                                    obj_payment.setValue('custbody_forma_tipo_de_pago',info_payment[x][y]);
+                                }
+                            }else if(y == "trandate" || y == "transdate"){
+                                // Maneja tanto "trandate" como "transdate" del JSON, pero siempre setea "trandate" en NetSuite
+                                var fecha_pago = parseDate(info_payment[x][y]);
+                                if(fecha_pago){
+                                    obj_payment.setValue('trandate', fecha_pago);
+                                    log.debug('Fecha de pago seteada', fecha_pago);
+                                }else{
+                                    log.error('Error al parsear fecha de pago', info_payment[x][y]);
+                                }
+                            }else if(y=="ccexpiredate"){
+                                var ccexp = format.parse({value: info_payment[x][y], type: format.Type.CCEXPDATE})
+                                log.debug('-- ccexp'+y,ccexp);
+                                obj_payment.setValue(y,ccexp)
+                            }else{
+                                if (y == 'payment'){
+                                    total_payment = total_payment + parseFloat(info_payment[x][y] || 0);                              
+                                }
+                                log.debug(y,info_payment[x][y]);
+                                obj_payment.setValue(y,info_payment[x][y])
+                            }
+                        }
+                        try{
+                            var payment_id = obj_payment.save({ // Guarda el nuevo registro
+                                enableSourcing: true,
+                                ignoreMandatoryFields: true
+                            });
+                            id_payment.push(payment_id);
+                            log.debug('setPaymentMethod', 'Payment creado con ID: ' + payment_id);
+                        } catch(err_save){
+                            log.error('setPaymentMethod', 'Error al guardar payment: ' + err_save);
+                            // Continuar con el siguiente pago aunque falle uno
+                        }
+                    }else{
+                        // Solo agregar si existe el campo
+                        if(info_payment[x].custbody_numero_autorizacion){
+                            num_authorization.push(info_payment[x].custbody_numero_autorizacion);
+                        }
+                    }
+                
+                }
+                
+                // Asegurar que num_authorization es un array antes de hacer join
+                contract = (num_authorization && Array.isArray(num_authorization)) ? num_authorization.join(',') : '';
+                
+                log.debug('setPaymentMethod', 'Payments creados: ' + id_payment.length + ', Contract: ' + contract + ', Total: ' + total_payment);
+                
+                return {
+                    id_payment: id_payment,
+                    contract: contract,
+                    total_payment:total_payment
+                }
+
+        }catch(err){
+            log.error("error set Payment", JSON.stringify(err));
+            log.error("error set Payment stack", err.stack || 'No stack trace');
+            
+            // Si ya se crearon algunos payments, retornarlos aunque haya error
+            var error_message = 'Error desconocido';
+            try{
+                if(err && err.message){
+                    error_message = err.message;
+                } else if(err && err.toString){
+                    error_message = err.toString();
+                } else if(typeof err === 'string'){
+                    error_message = err;
+                }
+            } catch(e){
+                error_message = 'Error al procesar mensaje de error';
+            }
+            
+            return {
+                id_payment: id_payment || [],
+                contract: contract || '',
+                total_payment: total_payment || 0,
+                error: error_message
+            };
+        }
+            
+    }
+
+    function saveItemImage(url, folder,name) {
+        try{
+            
+            var credentials = 'thermomix:vorwerk2016';
+            credentials = encode.convert({
+                string: credentials,
+                inputEncoding: encode.Encoding.UTF_8,
+                outputEncoding: encode.Encoding.BASE_64
+            });
+            var headers = {
+                "Authorization": "Basic " + credentials
+            };
+            
+            log.debug("url",url);
+            log.debug("folder",folder);
+            log.debug("name",name);
+            //folder 30745
+            var fileTypes = {
+                bmp     : 'BMPIMAGE',
+                gif     : 'GIFIMAGE',
+                ico     : 'ICON',
+                jpg     : 'JPGIMAGE',
+                jpeg     : 'JPGIMAGE',
+                pjpeg   : 'PJPGIMAGE',
+                png     : 'PNGIMAGE',
+                tiff    : 'TIFFIMAGE'
+            };
+            if(!url){
+                var object_info = new Object();
+                return object_info;
+            }
+            
+            if(url.indexOf('https') != -1){
+                var data = https.get({
+                    url : url,
+                    headers: headers,
+                }).body;
+            }else{
+                var data = http.get({
+                    url : url,
+                    headers: headers,
+                }).body;
+            }
+            var fileType = "jpg";
+            
+            var my_file = file.create({
+                name: name,
+                fileType: 'JPGIMAGE',
+                contents: data,
+                folder: folder
+            });
+            var object_info = new Object();
+            object_info.id = my_file.save();
+            object_info.name = name;
+
+            var fileObj = file.load({
+                id: object_info.id
+            });
+
+            fileObj.isOnline = true;
+            fileObj.save();
+
+            log.debug('IMAGEN GUARDADA', object_info)
+            return object_info.id;
+            
+        }catch(err){
+            log.error('Error Utils Save Image', {url: url, error: err});
+           
+            return {};
+        }
+    }
+
+    /***************fin de funciones de creacion**********/
+
+    /***************incio de funciones de edicion**********/
+
+    function updateUser(req_info,type_user){
+
+        try{
+            if(req_info["internalid"] != ""){
+                var obj_user = record.load({
+                                type: type_user,
+                                id: req_info["internalid"],
+                                isDynamic: false
+                            });
+                var id_image ="", id_image_ide_anv= "", id_img_ide_rev="",id_img_domicilio="",id_img_banco="";
+                if(type_user == "employee"){
+                  obj_user.setValue('customform',-10);
+                  log.debug('custentity_fecha_preregistro',formatdate)
+                  obj_user.setValue('custentity_fecha_preregistro',formatdate);
+                  log.debug('csf',req_info["url_csf"])
+                    if(req_info["url_csf"]){
+                        log.debug('hay url csf nuevo if update')
+                        obj_user.setValue('custentity_url_csf',req_info["url_csf"]);
+                    }
+                  if("custentity_foto" in req_info){
+                        id_image = saveItemImage(req_info["custentity_foto"],30745,req_info["custentity_ce_rfc"]+"_presentador");
+                        req_info["custentity_foto"] = id_image;
+                  }
+                  if("custentity_foto_ine_anverso" in req_info){
+                        id_image_ide_anv = saveItemImage(req_info["custentity_foto_ine_anverso"],30745,req_info["custentity_ce_rfc"]+"_presentador_identicicacion_anv");
+                        req_info["custentity_foto_ine_anverso"] = id_image_ide_anv;
+                  }
+                  if("custentity_foto_ine_reverso" in req_info){
+                        id_img_ide_rev = saveItemImage(req_info["custentity_foto_ine_reverso"],30745,req_info["custentity_ce_rfc"]+"_presentador_identicicacion_rev");
+                        req_info["custentity_foto_ine_reverso"] = id_img_ide_rev;
+                  }
+                  if("custentity_foto_comprobante_dom" in req_info){
+                        id_img_domicilio = saveItemImage(req_info["custentity_foto_comprobante_dom"],30745,req_info["custentity_ce_rfc"]+"_presentador_domicilio");
+                        req_info["custentity_foto_comprobante_dom"] = id_img_domicilio;
+                  }
+                    
+                  if("custentity_foto_comprobante_banco" in req_info){
+                        id_img_banco = saveItemImage(req_info["custentity_foto_comprobante_banco"],30745,req_info["custentity_ce_rfc"]+"_presentador_banco");
+                        req_info["custentity_foto_comprobante_banco"] = id_img_banco;
+                  }
+                     
+                }else{
+                    
+                    obj_user.setValue({fieldId:'custentity_rfc',value:req_info["vatregnumber"]});
+                }
+                
+                //seter information main
+                for(var x in req_info){
+                    if(x != "address" ){
+                        if(x in date_fields){
+                            var fdate = parseDate(req_info[x]);
+                            obj_user.setValue(x,fdate); 
+                        }else{
+                            obj_user.setValue(x,req_info[x]); 
+                        }
+                         
+                    }
+                }
+                if (type_user === 'employee' && (
+                    Object.prototype.hasOwnProperty.call(req_info, 'custentity_status_csf') ||
+                    Object.prototype.hasOwnProperty.call(req_info, 'url_csf')
+                )) {
+                    obj_user.setValue({
+                        fieldId: 'custentity_status_csf',
+                        value: payloadTieneStatusCsf(req_info['custentity_status_csf'], req_info['url_csf'])
+                    });
+                }
+                if('address' in req_info){
+                    if(req_info['address'].length > 0){// en caso de existir direcciones 
+                        var num = obj_user.getLineCount({
+                            sublistId  : 'addressbook'
+                        });
+                        for(var x in req_info['address']){
+                            var valid_to_create = false;
+                            for(var i=0; i < num;i++){//compara las direcciones recibidas 
+                                var internalid = obj_user.getSublistValue({
+                                    sublistId : 'addressbook',
+                                    fieldId   : 'label',
+                                    line      : i
+                                });
+                                if('newID' in req_info['address'][x]){
+                                    obj_user.setSublistValue({
+                                        sublistId:'addressbook',
+                                        fieldId:'label',
+                                        value: req_info['address'][x]['newID'],
+                                        line: i
+                                    });
+                                    
+                                }
+                                
+                                //log.debug('internalids','tengo :'+internalid+" comparo con "+req_info['address'][x].id);
+                               
+                                if(internalid == req_info['address'][x].id ){//dirección encontrada
+                                    var address_info = req_info['address'][x];
+                                    var subrec = obj_user.getSublistSubrecord({
+                                        sublistId : 'addressbook',
+                                        fieldId   : 'addressbookaddress',
+                                        line      : i
+                                    }); 
+                                    if(type_user != "employee"){
+                                        obj_user.setSublistValue({
+                                            sublistId:'addressbook',
+                                            fieldId:'defaultbilling',
+                                            value:address_info.defaultbilling,
+                                            line: i
+                                        })
+                                        obj_user.setSublistValue({
+                                            sublistId:'addressbook',
+                                            fieldId:'defaultshipping',
+                                            value:address_info.defaultshipping,
+                                            line: i
+                                        })
+                                    }
+                                    
+                                    for(var y in address_info){
+                                        subrec.setValue({fieldId:y,value:address_info[y]})
+                                    }
+                                    valid_to_create = false;
+                                    break;
+                                }else{
+                                    valid_to_create = true; 
+                                }
+                            }
+                            //log.debug('valid_to_create creare ','status: '+valid_to_create+'   '+internalid +" momento "+req_info['address'][x].id);
+                            if(valid_to_create){//en caso de recibir un id no existente en Netsuite crea una nueva direccion
+                                
+                                var address_info = req_info['address'][x];
+                                obj_user.insertLine({
+                                    sublistId: 'addressbook',
+                                    line: num
+                                });
+                                obj_user.setSublistValue({
+                                    sublistId:'addressbook',
+                                    fieldId:'label',
+                                    value:address_info.id,
+                                    line: num
+                                });
+                                if(type_user != "employee"){
+                                    obj_user.setSublistValue({
+                                        sublistId:'addressbook',
+                                        fieldId:'defaultbilling',
+                                        value:address_info.defaultbilling,
+                                        line: num
+                                    });
+                                    obj_user.setSublistValue({
+                                        sublistId:'addressbook',
+                                        fieldId:'defaultshipping',
+                                        value:address_info.defaultshipping,
+                                        line: num
+                                    });
+                                }
+                                var addRec = obj_user.getSublistSubrecord({
+                                    sublistId:'addressbook',
+                                    fieldId:'addressbookaddress',
+                                    line: num
+                                })
+                                if(type_user == "employee"){
+                                    addRec.setValue({fieldId:'addressee',value:req_info["firstname"]+" "+req_info["lastname"]})
+                                }else {
+                                    addRec.setValue({fieldId:'addressee',value:req_info["custentity_razon_social"]})
+                                }
+                                var subrec = obj_user.getSublistSubrecord({
+                                        sublistId: 'addressbook',
+                                        fieldId: 'addressbookaddress',
+                                        line: num
+                                    });
+                                for(var y in address_info){
+                                    subrec.setValue({fieldId:y,value:address_info[y]})
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                
+                var id_user = obj_user.save({ // Guarda el nuevo registro
+                    enableSourcing: true,
+                    ignoreMandatoryFields: true
+                });
+
+                return {success:id_user} 
+            }
+        }catch(err){
+            log.error("Error updateUser",err);
+            return {error:err}
+        }
+
+    }
+    
+
+    function updateSalesOrder(req_info){
+        try{
+            
+            var obj_sales_order= record.load({
+                        type: 'salesorder',
+                        id: req_info.internalid,
+                        isDynamic: false,
+                    });
+            for(var x in req_info){
+                if(x in date_fields){
+                    var fdate = parseDate(req_info[x]);
+                    obj_sales_order.setValue({
+                        fieldId: x,
+                        value: fdate
+                    });
+                }else{
+                    obj_sales_order.setValue({
+                        fieldId: x,
+                        value: req_info[x]
+                    });
+                }
+                
+            }
+            var id_sales_order = obj_sales_order.save();
+            return {success:id_sales_order} 
+        }catch(err){
+            log.error("error updateSalesOrder",err);
+            return {error:err}
+        }
+
+    }
+    
+    
+    function parseDate(date_req){
+        try{
+            if(!date_req || date_req == ""){
+                log.debug("date_req vacío o null",date_req);
+                return null;
+            }
+            log.debug('date_req',date_req)
+            var fdate = format.parse({
+                value: date_req,
+                type: format.Type.DATE
+            });
+            return fdate;
+        }catch(err){
+            log.error("err parse Date",err);
+            return null;
+        }
+        
+    }
+    
+    function searchODV(tranid){
+        try{
+            var valid = true;
+            if(tranid != ""){
+                var busqueda = search.create({
+                   type: 'salesorder',
+                   columns: ['internalid'],
+                   filters: [
+                       ['tranid','is',tranid],'and',['mainline','is',true],
+                   ]
+                });
+                busqueda.run().each(function(r){
+                   valid = r.getValue('internalid');
+                   return true;
+                });
+            }
+            return valid == true?true:false;
+        }catch(err){
+            return false;
+            log.debug("err searchODV",err);
+        }
+    }
+    
+    function getDescription(idSO){
+        try{
+            var apiKey = "",cont_trak = [], description = [],valid_tm = false, description_txt = "";
+            var objSO = record.load({
+                type: record.Type.SALES_ORDER,
+                id: idSO,
+                isDynamic: false,
+            });
+            
+            var itemLines = objSO.getLineCount({
+                sublistId  : 'item'
+            });
+            var description_aux = []
+            for(var i=0; i < itemLines; i++){
+                var itemId = objSO.getSublistValue({
+                    sublistId : 'item',
+                    fieldId   : 'item',
+                    line      : i
+                });
+                if(itemId != 1441 && itemId != 859){
+                    //valida si es la primer guia creada
+                    if(cont_trak.length == 0){
+                        if(itemId == 2001 || itemId == 2170 || itemId == 2571){//en caso de ser la primera y tener tm6 toma su decripcion
+                            description.push(objSO.getSublistValue({
+                                sublistId : 'item',
+                                fieldId   : 'description',
+                                line      : i
+                            }));
+                            valid_tm = true;
+                            break;
+                        }else{//en caso de no encontrar tm6 y ser la primera guia debe tomar todas las descripciones
+                            description_aux.push(objSO.getSublistValue({
+                                sublistId : 'item',
+                                fieldId   : 'description',
+                                line      : i
+                            }));
+                        }
+                    }else{//en caso de tener más de una guia toma todas las descripciones de los demás items
+                        if(itemId != 2001 && itemId != 2170 && itemId != 2571){
+                            description.push(objSO.getSublistValue({
+                                sublistId : 'item',
+                                fieldId   : 'description',
+                                line      : i
+                            }));
+                        }
+                    }
+                }
+            }
+            
+            //si encontro tm6 y es la primer guía 
+            if(valid_tm && cont_trak.length == 0){
+                description_txt = description.join(',');
+            }
+            //si no encontro tm6 y es primer guia 
+            if(!valid_tm && cont_trak.length == 0){
+                description_txt = description_aux.join(',');
+            }
+            //si es una guia extra toma todos los items 
+            if(cont_trak.length > 0){
+                description_txt = description.join(',');
+            }
+            
+            return description_txt;
+        }catch(err){
+            log.error("error get Description",err)
+        }
+    }
+    function createTraking(description_txt,idSalesOrder,acLogistic,tipoVenta,statusEnvio){
+        try{
+            var obj_traking= record.create({
+                type: 'customrecord_guia_envio',
+                isDynamic: false,
+            });
+            
+            obj_traking.setValue({
+                fieldId: 'custrecord_id_sales_order',
+                value: idSalesOrder
+            });
+            obj_traking.setValue({
+                fieldId: 'custrecord_no_guia',
+                value: acLogistic.tracking
+            });
+            obj_traking.setValue({
+                fieldId: 'custrecord_url_resp_aclogistics',
+                value: acLogistic.tracking_link
+            });
+            obj_traking.setValue({
+                fieldId: 'custrecord_url_pdf_aclogistics',
+                value: acLogistic.guia
+            });
+            obj_traking.setValue({
+                fieldId: 'custrecord_estatus_envio',
+                value: acLogistic.status
+            });
+            obj_traking.setValue({
+                fieldId: 'custrecord_vw_description',
+                value: description_txt
+            });
+
+            var objSO = record.load({
+                type: record.Type.SALES_ORDER,
+                id: idSalesOrder,
+                isDynamic: false,
+            });
+            
+            var itemLines = objSO.getLineCount({
+                sublistId  : 'item'
+            });
+            
+            for(var i=0; i < itemLines; i++){
+                var itemId = objSO.getSublistValue({
+                    sublistId : 'item',
+                    fieldId   : 'item',
+                    line      : i
+                });
+
+                if( itemId == 2001 || itemId == 2170 || itemId == 2490 || itemId == 2571 || itemId == 2638 || itemId == 2280 || itemId == 1757 || itemId == 1126 || itemId == 2035 || itemId == 2671 || itemId ==2763){
+                    obj_traking.setValue({
+                        fieldId: 'custrecord_peso',
+                        value: '12.60 kg'
+                    });
+                    break;
+                }else{
+                    obj_traking.setValue({
+                        fieldId: 'custrecord_peso',
+                        value: '1 kg'
+                    }); 
+                }
+            }
+                        
+            var id_traking = obj_traking.save();
+            return id_traking;
+        }catch(err){
+            log.error("error create traking",err)
+        }
+    }
+    
+    function getSalesOrderSerialNumber(req_info){
+        try{
+            //test 20304223682601124
+            var allValues = {};
+            var date = new Date();
+            var is_valid = false;
+            var itemSearch = search.load({
+                id: 'customsearch_search_by_seria' // Item Search Service NS
+            });
+
+            itemSearch.filters.push(search.createFilter({
+                name: 'serialnumber',
+                operator: 'is',
+                values: req_info['serialnumber']
+            }));
+            itemSearch.filters.push(search.createFilter({
+                name: 'item',
+                operator: 'noneof',
+                values: '2763'
+            }));
+
+            itemSearch.run().each(function(result) {
+                info = result.getAllValues();
+                log.debug('info',info)
+                
+                var type=result.getText('type')
+                log.debug('type',type)
+                if(type == 'Item Fulfillment' ){//Es item fulfillment
+                                                        
+                    var fdate_add = format.parse({//fecha de ejecucion con 169 dias adicionales 
+                        value: info["formuladate_1"],
+                        type: format.Type.DATE
+                    }); 
+                    log.debug('fdate_add',fdate_add);
+                    if(date < fdate_add){
+                        is_valid = true;
+                    }
+                    allValues = {
+                            internalid:result.getValue('createdfrom'),
+                            ordernumber:info["createdFrom.tranid"],
+                            name:info["createdFrom.entity"][0]['text'],
+                            trandate:info["trandate"],
+                            datetovalid :info["formuladate_1"],
+                            valid: is_valid
+                    }
+
+                }else{ //Es Sales Order
+                    var fdate_add = format.parse({//fecha de ejecucion con 169 dias adicionales 
+                        value: result.getValue('formuladate'),
+                        type: format.Type.DATE
+                    }); 
+                    log.debug('fdate_add',fdate_add);
+                    if(date < fdate_add){
+                        is_valid = true;
+                    }
+                    allValues = {
+                            internalid:result.getValue('internalid'),
+                            ordernumber:result.getValue('tranid'),
+                            name:result.getText('entity'),
+                            trandate:info["fulfillingTransaction.trandate"],
+                            datetovalid :result.getValue('formuladate'),
+                            valid: is_valid
+                    }
+                }
+                //log.debug('allValues',allValues)
+                //log.debug('info ',info);
+                
+                
+                return true;
+                
+            });
+            return {success:true,data:allValues} ;
+            
+        }catch(err){
+            log.error("Error getSalesOrderSerialNumber",err);
+        }
+    }
+    function searchODVbySerie(num_serie){
+        var allValues = {};
+        try{
+            
+            var itemSearch = search.load({
+                id: 'customsearch_search_by_seria' // Item Search Service NS
+            });
+            itemSearch.filters.push(search.createFilter({
+                name: 'serialnumber',
+                operator: 'is',
+                values: num_serie
+            }));
+            itemSearch.run().each(function(result) {
+                info = result.getAllValues();
+                
+                allValues = {
+                        internalid:result.getValue('internalid'),
+                        ordernumber:result.getValue('tranid')
+                }
+                
+                return true;
+                
+            });
+            return allValues;
+        }catch(err){
+            log.error('Error searchODVbySerie',err);
+            return allValues
+        }
+    }
+    
+    function savePDF(data, folder,name) {
+        try{
+
+            var my_file = file.create({
+                name: name+'.pdf',
+                fileType: 'PDF',
+                contents: data,
+                folder: folder
+            });
+            
+            var object_info = new Object();
+            object_info.id = my_file.save();
+            object_info.name = name;
+
+            var fileObj = file.load({
+                id: object_info.id
+            });
+
+            fileObj.isOnline = true;
+            fileObj.save();
+
+            log.debug('PDF guardado', object_info)
+            return object_info.id;
+            
+        }catch(err){
+            log.error('Error savePDF', err);
+           
+            return false;
+        }
+    }
+    
+    function getOrderRepair(req_info){
+        try{
+            var allValues = {};
+            var email = "";
+            var serialnumber= "";
+            var orderID= "";
+            var opportunities = search.load({
+                id: 'customsearch_order_repair_status' // Item Search Service NS
+            });
+            if('ordeid' in req_info){
+                if(req_info['ordeid'] == ""){
+                    return {success:false, error:"El numero de orden es obligatorio"}
+                }else{
+                    orderID = req_info['ordeid'];
+                }
+                
+            }else{
+                 return {success:false, error:"Error al enviar la información"}
+            }
+            if('email' in req_info){
+                if(req_info['email'] != ""){
+                    email = req_info['email'];
+                }
+                
+            }
+           if('serialnumber' in req_info){
+                if(req_info['serialnumber'] != ""){
+                    serialnumber = req_info['serialnumber'];
+                }
+            }
+            if(serialnumber == "" && email == ""){
+                return {success:false, error:"Es necesario enviar el email o el número de serie"}
+            }
+            if(email != ""){
+                opportunities.filters.push(search.createFilter({
+                    name: 'email',
+                    join: 'customer',
+                    operator: 'is',
+                    values: email
+                }));
+            }
+            if(serialnumber != ""){
+                opportunities.filters.push(search.createFilter({
+                    name: 'custbody_numero_serie',
+                    operator: 'is',
+                    values: serialnumber
+                }));
+            }
+            if(orderID != ""){
+                opportunities.filters.push(search.createFilter({
+                    name: 'tranid',
+                    operator: 'is',
+                    values: orderID
+                }));
+            }
+            log.debug('opportunities.filters',opportunities.filters);
+            opportunities.run().each(function(r) {
+                info = r.getAllValues();
+                var arr_status= [];
+
+                if(r.getValue('custbody_rev')){//revision
+                    arr_status.push('revision');
+                }
+                if(r.getValue('custbody_presup')){//presupuestado
+                    arr_status.push('budgeted');
+                }
+                if(r.getValue('custbody39')){//autorizado
+                    arr_status.push('authorized');
+                }
+                if(r.getValue('custbody39')){//no autorizado
+                    arr_status.push('Not authorized');
+                }
+                if(r.getValue('custbody_repar')){//reparado
+                    arr_status.push('repaired');
+                }
+                if(r.getValue('custbody_entrega')){//entregado
+                    arr_status.push('delivered');
+                }
+                allValues = {
+                    date_start: r.getValue('custbody25'),
+                    quarantine: r.getValue('custbody_cuarentena'),
+                    date_authorized: r.getValue('custbody41'),
+                    delivery_date: r.getValue('custbody_entr'),
+                    repair_date: r.getValue('custbody_fcha_reparacion'),
+                    review_date: r.getValue('custbody_fcha_rev'),
+                    shipping_method: {id:r.getValue('custbody_met_envi'),name:r.getText('custbody_met_envi')},
+                    guide_number: r.getValue('custbody_num_guia_env'),
+                    serial_number: r.getValue('custbody_numero_serie'),
+                    url_aclogistic: r.getValue('custbody_url_one_aclogistics'),
+                    contact_name: r.getValue('custbodycontacto1'),
+                    customer_email: info['customer.email'],
+                    customer_name: r.getText('entity'),
+                    date: r.getValue('trandate'),
+                    order_id: r.getValue('tranid'),
+                    status: arr_status
+                    
+                };
+                return true;
+
+            }); 
+            //log.debug('allValues',allValues);
+            if(Object.keys(allValues).length > 0){//validamos si existe información de la busqueda
+                allValues.success = true;
+                allValues.error = "";
+                return allValues
+            }else{
+                return {success:false, error:"No se encontró información, verifique los datos ingresados"};
+            }
+            
+        }catch(err){
+            log.error("Error getOrderRepair",err);
+        }
+    }
+    return {
+        'get': doGet,
+        put: doPut,
+        post: doPost,
+        'delete': doDelete
+    };
+    
+});
