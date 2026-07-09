@@ -1051,6 +1051,11 @@ function(record,search,https,file,http,format,encode,email,runtime,config, authA
             email.send({
                 author: '344096',
                 recipients: ['cae@thermomix.mx'],
+                cc: [
+                    'desarrollo.netsuite@thermomix.mx',
+                    'abib.aguilar@thermomix.mx',
+                    'pilar.torres@thermomix.mx'
+                ],
                 subject: emailSubject,
                 body: emailBody,
                 isHtml: true
