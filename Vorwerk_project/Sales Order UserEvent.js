@@ -233,13 +233,22 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                 var salesrep = rec.getValue('salesrep')
                 var typeEvent = runtime.executionContext;
                 var type = scriptContext.type;
-                
+                var idrecord = rec.id;
+                log.debug('idrecord',idrecord)
+
+                if ((type === 'create' || type === 'edit') && salesrep) {
+                    try {
+                        marcarPedidoSinCsfPorSalesRep(idrecord, salesrep);
+                    } catch (ePedidoSinCsf) {
+                        log.error('error marcarPedidoSinCsfPorSalesRep', ePedidoSinCsf);
+                    }
+                }
                 var pedido_tm7_getm7 = rec.getValue('custbody_pedido_tm7_getm7')
                 //Garantia extendida tm7
                 try{
                     if(type == 'create'&& pedido_tm7_getm7 == false ){
                         //log.debug('entre garantia extendida tm7',typeEvent)
-                        //garantiaExtendidaTm7(rec)
+                        garantiaExtendidaTm7(rec)
                     }
                 }catch(e){
                     log.debug('error garantia extendida tm7',e)
@@ -274,7 +283,8 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                     //log.debug('salesrep',salesrep)
                     var fecha = rec.getValue('trandate')
                     var tipoventa = rec.getValue('custbody_tipo_venta')
-                    var idTpl="",idUSer="",email_send="";
+                    var idTpl=null
+                    var idUSer="",email_send="";
                     var valid_line = 0;
                     if(rec.getValue('custbody_vw_recruiter')== ""){
                         setRecruiter(rec);
@@ -485,26 +495,31 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                             var items  = rec.getLineCount({
                                 sublistId: 'item'
                             });
-                            
+                            log.debug("idTpl",idTpl);
                             for(var i = 0; i < items; i++) {
                                  var tmp_item = rec.getSublistValue({
                                         sublistId: 'item',
                                         fieldId: 'item',
                                         line: i
                                     });
+                                    log.debug("tmp_item",tmp_item);
                                  if(tmp_item == 2763 ){
+                                    log.debug("entre if tmp_item == 2763");
                                     idTpl = 278;
                                     email_bbc = ''
                                     break; 
                                  }else if(tmp_item == 2170){
+                                    log.debug("entre if tmp_item == 2170");
                                     idTpl = 264;
                                  }
                             } 
                             
                             idUSer = 344096;
-                            
-                            log.debug("process","email");
-                            var myMergeResult = render.mergeEmail({
+                            log.debug("process","email tmp_item: "+tmp_item);
+                            log.debug("idTpl",idTpl);
+                            if(idTpl != null && rec.getValue('custbody_tipo_venta') == 2 && rec.getValue('custbody_manual_sales_order') == false){
+                                log.debug("entre if idTpl != null");
+                                var myMergeResult = render.mergeEmail({
                                     templateId: idTpl,
                                     entity: {
                                             type: 'employee',
@@ -516,22 +531,19 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                                     },
                                     transactionId: recordid
                                 });
-                            var senderId = idUSer;
-                            var recipientEmail = entity
-                            var emailSubject = myMergeResult.subject; // Get the subject for the email
-                            var emailBody = myMergeResult.body // Get the body for the email
-                            //log.debug('emailBody',emailBody);
-                            
-                            emailBody = emailBody.replace(/@pedido/g,url_response);
-                            
-                            //log.debug('tipo de venta ',rec.getValue('custbody_tipo_venta') );
-                            if(rec.getValue('custbody_tipo_venta') == 2){
-                                if(rec.getValue('custbody_manual_sales_order') == false){
-                                    //log.debug("Orden de Venta Normal",rec.getValue('custbody_manual_sales_order'));
-                                    emailAndApprove(senderId,recipientEmail,emailSubject,emailBody,recordid,email_bbc)
-                                    
-                                }
+                                var senderId = idUSer;
+                                var recipientEmail = entity
+                                var emailSubject = myMergeResult.subject; // Get the subject for the email
+                                var emailBody = myMergeResult.body // Get the body for the email
+                                //log.debug('emailBody',emailBody);
+                                
+                                emailBody = emailBody.replace(/@pedido/g,url_response);
+                                
+                                emailAndApprove(senderId,recipientEmail,emailSubject,emailBody,recordid,email_bbc)
+                            }else{  
+                                log.debug("entre else idTpl == null");
                             }
+                            
                             
                             
                             //log.debug("manual ",rec.getValue('custbody_manual_sales_order'));
@@ -1262,7 +1274,7 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                         var idUSer = 344096;
                         
                         var myMergeResult = render.mergeEmail({
-                            templateId: 287,
+                            templateId: 281,//281
                             entity: {
                                 type: 'employee',
                                 id: idUSer
@@ -2385,6 +2397,67 @@ define(['N/ui/message','N/error','N/runtime','N/config','N/record','N/render','N
                 //log.debug('errortabla_Tm',err)
                 return  0;
             }
+        }
+
+        function normalizarStatusCsfValor(v) {
+            if (v == null || v === '') {
+                return null;
+            }
+            if (v === true || v === 'T') {
+                return '1';
+            }
+            if (typeof v === 'object' && v.value != null) {
+                return String(v.value).trim();
+            }
+            if (Array.isArray(v) && v.length && v[0] && v[0].value != null) {
+                return String(v[0].value).trim();
+            }
+            return String(v).trim();
+        }
+
+        function salesRepTieneCsfPendiente(statusCsfVal) {
+            var status = normalizarStatusCsfValor(statusCsfVal);
+            return status === '1' || status === '2';
+        }
+
+        /**
+         * Si el salesrep tiene custentity_status_csf 1 o 2, marca custbody_pedido_sin_csf en la SO.
+         * Si está vacío o en 3, deja el checkbox en false.
+         */
+        function marcarPedidoSinCsfPorSalesRep(recordId, salesrepId) {
+            if (!recordId || !salesrepId) {
+                return;
+            }
+
+            var empFields = search.lookupFields({
+                type: search.Type.EMPLOYEE,
+                id: salesrepId,
+                columns: ['custentity_status_csf']
+            });
+            var pedidoSinCsf = salesRepTieneCsfPendiente(empFields.custentity_status_csf);
+
+            var soFields = search.lookupFields({
+                type: record.Type.SALES_ORDER,
+                id: recordId,
+                columns: ['custbody_pedido_sin_csf']
+            });
+            var valorActual = soFields.custbody_pedido_sin_csf === true || soFields.custbody_pedido_sin_csf === 'T';
+            if (valorActual === pedidoSinCsf) {
+                return;
+            }
+
+            record.submitFields({
+                type: record.Type.SALES_ORDER,
+                id: recordId,
+                values: {
+                    custbody_pedido_sin_csf: pedidoSinCsf
+                },
+                options: {
+                    enableSourcing: false,
+                    ignoreMandatoryFields: true
+                }
+            });
+            log.audit('pedidoSinCsf', 'SO ' + recordId + ' salesrep ' + salesrepId + ' custbody_pedido_sin_csf=' + pedidoSinCsf);
         }
         
         
