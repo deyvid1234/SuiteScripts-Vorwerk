@@ -1019,11 +1019,16 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
         return 2;
     }
 
+    function obtenerPlantillaEmailCsfTMlite() {
+        return runtime.envType === 'PRODUCTION' ? 283 : 289;
+    }
+
     function enviarEmailCsfPendienteValidacion(nombre, correo) {
         try {
+            var templateId = obtenerPlantillaEmailCsfTMlite();
             var emailTemplate = record.load({
                 type: record.Type.EMAIL_TEMPLATE,
-                id: 289
+                id: templateId
             });
             var emailSubject = emailTemplate.getValue('subject') || 'Embajador con CSF pendiente de validación';
             var emailBody = emailTemplate.getValue('content') || '';
@@ -1035,7 +1040,7 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
 
             email.send({
                 author: '344096',
-                recipients: 'griselrdz@gmail.com',//'cae@thermomix.mx',
+                recipients: ['ptorresm@yahoo.com','griselrdz@gmail.com'],//'cae@thermomix.mx',
                 subject: emailSubject,
                 body: emailBody,
                 isHtml: true
@@ -1145,24 +1150,129 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
         return false;
     }
 
+    function direccionTieneDatosTMlite(address_info) {
+        if (!address_info || typeof address_info !== 'object') {
+            return false;
+        }
+        var campos = ['addr1', 'addr2', 'city', 'state', 'zip', 'country', 'addrphone'];
+        for (var i = 0; i < campos.length; i++) {
+            if (campoTieneValorTMlite(address_info[campos[i]])) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function filtrarDireccionesConDatosTMlite(address_arr) {
+        var resultado = [];
+        if (!address_arr || !address_arr.length) {
+            return resultado;
+        }
+        for (var x in address_arr) {
+            if (direccionTieneDatosTMlite(address_arr[x])) {
+                resultado.push(address_arr[x]);
+            }
+        }
+        return resultado;
+    }
+
+    function campoTieneValorTMlite(val) {
+        return val !== undefined && val !== null && String(val).trim() !== '';
+    }
+
+    function aplicarRfcEmployeeTMlite(obj_user, req_info, datosFiscales) {
+        var rfcFiscal = datosFiscales && datosFiscales.custentity_ce_rfc;
+        var rfcRaiz = req_info.custentity_ce_rfc;
+        if (campoTieneValorTMlite(rfcFiscal)) {
+            obj_user.setValue({ fieldId: 'custentity_ce_rfc', value: String(rfcFiscal).trim() });
+        } else if (campoTieneValorTMlite(rfcRaiz)) {
+            obj_user.setValue({ fieldId: 'custentity_ce_rfc', value: String(rfcRaiz).trim() });
+        }
+    }
+
+    function obtenerRfcRefTMlite(req_info, datosFiscales, obj_user) {
+        var rfcFiscal = datosFiscales && datosFiscales.custentity_ce_rfc;
+        var rfcRaiz = req_info.custentity_ce_rfc;
+        if (campoTieneValorTMlite(rfcFiscal)) {
+            return String(rfcFiscal).trim();
+        }
+        if (campoTieneValorTMlite(rfcRaiz)) {
+            return String(rfcRaiz).trim();
+        }
+        return obj_user.getValue({ fieldId: 'custentity_ce_rfc' }) || '';
+    }
+
+    function aplicarCurpEmployeeTMlite(obj_user, req_info, datosFiscales) {
+        var tieneCurpFiscal = datosFiscales && Object.prototype.hasOwnProperty.call(datosFiscales, 'custentity_curp');
+        var tieneCurpRaiz = Object.prototype.hasOwnProperty.call(req_info, 'custentity_curp');
+        var curpFiscal = tieneCurpFiscal ? datosFiscales.custentity_curp : null;
+        var curpRaiz = tieneCurpRaiz ? req_info.custentity_curp : null;
+
+        if (tieneCurpFiscal && campoTieneValorTMlite(curpFiscal)) {
+            obj_user.setValue({ fieldId: 'custentity_curp', value: String(curpFiscal).trim() });
+        } else if (tieneCurpRaiz && campoTieneValorTMlite(curpRaiz)) {
+            obj_user.setValue({ fieldId: 'custentity_curp', value: String(curpRaiz).trim() });
+        }
+    }
+
+    function resolverEmployeeInternalIdTMlite(req_info) {
+        var hasInternalid = campoTieneValorTMlite(req_info.internalid);
+        var hasEmail = campoTieneValorTMlite(req_info.email);
+
+        if (!hasInternalid && !hasEmail) {
+            return { success: false, error: 'Indique internalid y/o email del presentador.' };
+        }
+
+        var internalIdFromEmail = null;
+        if (hasEmail) {
+            var busquedaMail = search.create({
+                type: search.Type.EMPLOYEE,
+                filters: [['email', 'is', String(req_info.email).trim()]],
+                columns: [search.createColumn({ name: 'internalid' })]
+            });
+            busquedaMail.run().each(function (r) {
+                internalIdFromEmail = r.getValue({ name: 'internalid' });
+                return false;
+            });
+            if (!internalIdFromEmail) {
+                return { success: false, error: 'No se encontró un empleado con el correo indicado.' };
+            }
+        }
+
+        if (hasInternalid && hasEmail) {
+            if (String(internalIdFromEmail) !== String(req_info.internalid).trim()) {
+                return { success: false, error: 'Los datos no coinciden: el correo no pertenece al internalid indicado.' };
+            }
+            return { success: true, internalid: String(req_info.internalid).trim() };
+        }
+
+        if (hasInternalid) {
+            return { success: true, internalid: String(req_info.internalid).trim() };
+        }
+
+        return { success: true, internalid: String(internalIdFromEmail) };
+    }
+
     /**
-     * updateTMlite: actualiza employee por internalid con bloque datos_fiscales.
+     * updateTMlite: actualiza employee por internalid y/o email. datos_fiscales es opcional.
      * custentity_status_csf: 1 sin url_csf; 3 con url_csf + validacion_manual false + firmo_contrato;
      * 2 en cualquier otro caso con url_csf. Email CAE si validacion_manual true.
      */
     function updateUserTMlite(req_info) {
+        var employeeInternalId = null;
         try {
-            if (!req_info.internalid || String(req_info.internalid).trim() === '') {
-                return { error: 'internalid es necesario' };
+            var resolucion = resolverEmployeeInternalIdTMlite(req_info);
+            if (!resolucion.success) {
+                return resolucion;
             }
-            if (!req_info.datos_fiscales || typeof req_info.datos_fiscales !== 'object') {
-                return { error: 'datos_fiscales es necesario' };
-            }
+            employeeInternalId = resolucion.internalid;
 
-            var datosFiscales = req_info.datos_fiscales;
+            var datosFiscales = (req_info.datos_fiscales && typeof req_info.datos_fiscales === 'object')
+                ? req_info.datos_fiscales
+                : null;
             var obj_user = record.load({
                 type: 'employee',
-                id: req_info.internalid,
+                id: employeeInternalId,
                 isDynamic: false
             });
 
@@ -1172,8 +1282,7 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
             var validacionManualVal = obtenerValidacionManualTMlite(req_info, datosFiscales);
             var validacionManual = esValidacionManualTMlite(validacionManualVal);
             var statusCsf = resolveStatusCsfTMlite(validacionManualVal, firmoContratoVal, urlCsf);
-            var rfcRef = req_info.custentity_ce_rfc || datosFiscales.custentity_ce_rfc ||
-                obj_user.getValue({ fieldId: 'custentity_ce_rfc' }) || '';
+            var rfcRef = obtenerRfcRefTMlite(req_info, datosFiscales, obj_user);
 
             if (urlCsfTieneValor(urlCsf)) {
                 obj_user.setValue('custentity_url_csf', urlCsf);
@@ -1202,7 +1311,9 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                 datos_fiscales: true,
                 url_csf: true,
                 validacion_manual: true,
-                custentity_status_csf: true
+                custentity_status_csf: true,
+                custentity_curp: true,
+                custentity_ce_rfc: true
             };
             for (var x in req_info) {
                 if (skipTopLevel[x]) {
@@ -1215,13 +1326,25 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                 }
             }
 
-            var skipFiscal = { address: true, validacion_manual: true, url_csf: true };
-            for (var f in datosFiscales) {
-                if (skipFiscal[f]) {
-                    continue;
+            if (datosFiscales) {
+                var skipFiscal = {
+                    address: true,
+                    validacion_manual: true,
+                    url_csf: true,
+                    custentity_curp: true,
+                    custentity_ce_rfc: true,
+                    custentity_status_csf: true
+                };
+                for (var f in datosFiscales) {
+                    if (skipFiscal[f]) {
+                        continue;
+                    }
+                    obj_user.setValue(f, datosFiscales[f]);
                 }
-                obj_user.setValue(f, datosFiscales[f]);
             }
+
+            aplicarRfcEmployeeTMlite(obj_user, req_info, datosFiscales);
+            aplicarCurpEmployeeTMlite(obj_user, req_info, datosFiscales);
 
             obj_user.setValue({
                 fieldId: 'custentity_status_csf',
@@ -1235,11 +1358,17 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
             }
 
             if ('address' in req_info && req_info.address && req_info.address.length > 0) {
-                upsertEmployeeAddressLinesTMlite(obj_user, req_info.address, req_info, false);
+                var dirDomicilio = filtrarDireccionesConDatosTMlite(req_info.address);
+                if (dirDomicilio.length > 0) {
+                    upsertEmployeeAddressLinesTMlite(obj_user, dirDomicilio, req_info, false);
+                }
             }
 
-            if ('address' in datosFiscales && datosFiscales.address && datosFiscales.address.length > 0) {
-                upsertEmployeeAddressLinesTMlite(obj_user, datosFiscales.address, req_info, true);
+            if (datosFiscales && datosFiscales.address && datosFiscales.address.length > 0) {
+                var dirFiscal = filtrarDireccionesConDatosTMlite(datosFiscales.address);
+                if (dirFiscal.length > 0) {
+                    upsertEmployeeAddressLinesTMlite(obj_user, dirFiscal, req_info, true);
+                }
             }
 
             var user_id = obj_user.save({
@@ -1256,10 +1385,15 @@ function(record,search,https,file,http,format,encode,email,runtime,config) {
                 enviarEmailCsfPendienteValidacion(nombrePresentador, emailPresentador);
             }
 
-            return { success: user_id, type: 'employee' };
+            return { success: true, internalid: user_id, type: 'employee' };
         } catch (err) {
             log.error('Error updateTMlite', err);
-            return { error: err };
+            return {
+                success: false,
+                internalid: employeeInternalId || req_info.internalid || null,
+                type: 'employee',
+                error: err.message || String(err)
+            };
         }
     }
     
