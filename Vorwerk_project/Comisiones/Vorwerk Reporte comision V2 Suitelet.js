@@ -484,6 +484,15 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                                 finPeriodo,
                                 ventasEmp
                             )
+                             if (anularBonosPersonalesSiCsfInvalido(dataEmp)) {
+                                objVentasPropias = false;
+                                programasActivos = false;
+                                objEntrega = false;
+                                objProductividad = false;
+                                objGarantia = false;
+                                objJoya = false;
+                                objCook = false;
+                            }
                             // BONO INACTIVADO (UI + cálculo): Bono Actividad
                             // objActividad = bonoActividad(empID,dataEmp,integrantesEquipo,thisPeriodSO,historicoSO,allPresentadoras,dHistorico,inicioPeriodo,finPeriodo)
                             // log.debug('objActividad',objActividad)
@@ -499,7 +508,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
 
                     break;
                     case 2: //Reporte Presentadora
-                        if((empType == 1 && empPromo == 2 /*&& allPresentadoras[i].internalid == '21613'*/) ){
+                        if((empType == 1 && empPromo == 2 /*&& allPresentadoras[i].internalid == '21613'*/)){
                             
                             //Calcular reporte para la persona
                             var reclutas=listaReclutas[i]
@@ -546,10 +555,15 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                                 objBonoJTL2mas1 = bonoJTLPrograma2mas1Estandar(dataEmp,historicoSO,thisPeriodSO,reclutas,listaReclutas,allPresentadoras,inicioPeriodo,finPeriodo)
                                 objBonoJTLMaestria = bonoJTLMaestria(dataEmp,historicoSO,thisPeriodSO,reclutas,listaReclutas,allPresentadoras,todosPeriodos,cust_period)
 
-                            var sinComisionPorCSF = embajadorPresentadorSinCSF_filaSinComision(dataEmp, empType);
-                            if (sinComisionPorCSF) {
+                            if (anularBonosPersonalesSiCsfInvalido(dataEmp)) {
                                 objVentasPropias = false;
-                                log.audit('embajadorSinCSF', 'Presentadora (empType 1) status CSF 1 o 2: sin bonos en su fila; ventas siguen en thisPeriodSO para bonos del líder. empleado ' + (dataEmp.internalid || '') + ' entityid ' + (dataEmp.entityid || '') + ' status ' + (dataEmp.custentity_status_csf || ''));
+                                programasActivos = false;
+                                objEntrega = false;
+                                objProductividad = false;
+                                objProductividadTMSB = false;
+                                objGarantia = false;
+                                objJoya = false;
+                                objCook = false;
                             }
                             
                             /*
@@ -576,6 +590,9 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                             objReclutamiento = bonoReclutamiento(reclutas,historicoSO,thisPeriodSO,dataEmp,compConfigDetails,allPresentadoras,dHistorico)
                         
                             objCook = bonoCk(dataEmp,ckSO)
+                            if (anularBonosPersonalesSiCsfInvalido(dataEmp)) {
+                                objCook = false;
+                            }
                             
                             var amounTrue = validateAmount(sublist,dataEmp,objVentasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,objReclutamiento,objEntrega,objProductividad,objVentaEquipo,objVentasEquipoNLE,objGarantia,false,objXmasdosNLE,objJoya,objCook,objNuevoRecluta,objActividad,objProductividadTMSB,null,false,false,false,false,false,false)
         
@@ -616,22 +633,29 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
     }
 
     /**
-     * custentity_status_csf lista: 1 o 2 = no comisiona en su fila; 3 = sí comisiona.
+     * custentity_status_csf: 1 o 2 = no comisiona ventas propias; 3 o vacío = sí comisiona.
      */
-    function embajadorSinCSF_es(dataEmp) {
+    function embajadorPuedeComisionarVentasPropias(dataEmp) {
         if (!dataEmp) {
-            return false;
+            return true;
         }
         var status = normalizarStatusCsfValor(dataEmp.custentity_status_csf);
-        return status === '1' || status === '2';
+        if (status === null) {
+            return true;
+        }
+        return status !== '1' && status !== '2';
     }
 
     /**
-     * Presentadora empType 1 con status CSF 1 o 2: sin comisión en su fila del reporte.
-     * Las ODVs siguen en thisPeriodSO para bonos del líder (venta equipo, etc.).
+     * Registra en log y devuelve true si hay que anular bonos personales del empleado.
+     * Las ODVs siguen en thisPeriodSO para que líder y/o reclutador comisionen por esas ventas.
      */
-    function embajadorPresentadorSinCSF_filaSinComision(dataEmp, empType) {
-        return String(empType) === '1' && embajadorSinCSF_es(dataEmp);
+    function anularBonosPersonalesSiCsfInvalido(dataEmp) {
+        if (embajadorPuedeComisionarVentasPropias(dataEmp)) {
+            return false;
+        }
+        log.audit('embajadorSinCSF', 'status CSF 1 o 2: sin bonos por ventas propias; ventas permanecen para líder/reclutador. empleado ' + (dataEmp.internalid || '') + ' entityid ' + (dataEmp.entityid || '') + ' status ' + (dataEmp.custentity_status_csf || ''));
+        return true;
     }
 
     function validateAmount(sublist,dataEmp,ventasPropias,cont_line,reclutas,integrantesEquipo,reclutasEquipo,reclutamiento,entrega,productividad,ventaEquipo,ventasEquipoNLE,garantia,xMasdos,xMasdosNLE,joya,cookKey,nuevoRecluta,actividad,productividadTMSB,programasData,bonoNombramientoJTL,bonoJTL2mas1,bonoJTLMaestria,bonoPoolTalent,bonoLEMaestria,bonoLENombramientoJTL){
@@ -1782,21 +1806,21 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 }
             }
             var tmsbCampo = dataEmp.statusTMSB
-            //log.debug('empID',empID)
-            //log.debug('finObjetivo2 antes',finObjetivo2)
+            log.debug('empID',empID)
+            log.debug('finObjetivo2 antes',finObjetivo2)
             finObjetivo2 = Utils.stringToDate(finObjetivo2)
-            //log.debug('finObjetivo2',finObjetivo2)
+            log.debug('finObjetivo2',finObjetivo2)
             var inicioPeriodofecha = Utils.stringToDate(inicioPeriodo)
-            //log.debug('inicioPeriodofecha',inicioPeriodofecha)
+            log.debug('inicioPeriodofecha',inicioPeriodofecha)
             var finPeriodofecha = Utils.stringToDate(finPeriodo)
-            //log.debug('finPeriodofecha',finPeriodofecha)
-            //log.debug('tmGanada',tmGanada)
-            //log.debug('tmPagada',tmPagada)
-            //log.debug('empID',empID)
+            log.debug('finPeriodofecha',finPeriodofecha)
+            log.debug('tmGanada',tmGanada)
+            log.debug('tmPagada',tmPagada)
+            log.debug('empID',empID)
             
             if(empTipoIngreso == 14  && finObjetivo2 <= finPeriodofecha && finObjetivo2 >= inicioPeriodofecha && !tmGanada.hasOwnProperty(empID) && !tmPagada.hasOwnProperty(empID)){
                 var ventas = historicoSO[empID]
-                //log.debug('ventas',ventas)
+                log.debug('ventas',ventas)
                 var data = []
                 var ventasPorPeriodo = {}
                 var numeroVentasPorPeriodo = {};
@@ -1810,11 +1834,11 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                     var comStatus = ventas[i][ventasData]['comStatus']
                     var tipoVenta = ventas[i][ventasData]['tipoVenta']
                     var otroFin = ventas[i][ventasData]['otroFin']
-                    //log.debug('comStatus',comStatus)
-                    if (comStatus == 2 && !esVentaCancelacionValor(tipoVenta, otroFin)){
+                    log.debug('comStatus',comStatus)
+                    if (comStatus == 2 && !esVentaCancelacionValor(tipoVenta, otroFin) && odvCuentaComisionPersonal(ventas[i][ventasData])){
                         var periodoSO = Utils.encontrarPeriodo(fechaSO, todosPeriodos);                    
 
-                        //log.debug('periodoSO',periodoSO)
+                        log.debug('periodoSO',periodoSO)
                         
                         data.push(internalid)
 
@@ -1833,28 +1857,28 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                     
                     
                 }
-                //log.debug('data',data)
+                log.debug('data',data)
                 var ventasNo = data.length
                 var montoVentasPre= compConfigDetails[1]['esquemaVentasPresentadora'][ventasNo]['compensacion']
                 var totalVentasPorPeriodo = {};
                 for (var periodo in ventasPorPeriodo) {
                     totalVentasPorPeriodo[periodo] = ventasPorPeriodo[periodo].length;
                 }
-                //log.debug('Total de ventas por período ', totalVentasPorPeriodo);
+                log.debug('Total de ventas por período ', totalVentasPorPeriodo);
 
                 for (e in numeroVentasPorPeriodo){
                     var ventasEnPeriodo = numeroVentasPorPeriodo[e]; 
-                    //log.debug('Ventas en período '+ e, ventasEnPeriodo);
+                    log.debug('Ventas en período '+ e, ventasEnPeriodo);
                     var montoProductividadxPeriodo= compConfigDetails[1]['esquemaVentasPresentadora'][ventasEnPeriodo]['bonoProductividad']
                     montoProductividadxPeriodo = parseInt(montoProductividadxPeriodo);
-                    //log.debug('montoProductividadxPeriodo',montoProductividadxPeriodo)
+                    log.debug('montoProductividadxPeriodo',montoProductividadxPeriodo)
                     if(montoProductividadxPeriodo > 0){
                         montoTotalProductividad += parseInt(montoProductividadxPeriodo);
                     }
                 }
-               /* log.debug('Monto total productividad', montoTotalProductividad);
+                log.debug('Monto total productividad', montoTotalProductividad);
                 log.debug(' data ventasPorPeriodo', ventasPorPeriodo);
-                log.debug(' montoVentasPre', montoVentasPre);*/
+                log.debug(' montoVentasPre', montoVentasPre);
                 return {
                     monto: montoTotalProductividad, 
                     data: ventasPorPeriodo,
@@ -2128,7 +2152,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 return rows;
             };
 
-            /** Fin inclusive: mismo día de alta + 3 meses calendario (p. ej. 25/feb → 25/may 23:59:59). */
+            /** Fin inclusive del tercer mes natural desde el día de alta (alta + 3 meses calendario − 1 día). */
             var limiteTresMesesNaturales = function (dAlta) {
                 var fin = new Date(dAlta.getFullYear(), dAlta.getMonth(), dAlta.getDate());
                 fin.setMonth(fin.getMonth() + 3);
@@ -2474,7 +2498,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                     var comisionables = ventasP[i][ventasData]['custbody_vw_comission_status']
                     var tipoVenta = ventasP[i][ventasData]['custbody_tipo_venta']
                     //log.debug('comisionables',comisionables)
-                    if( tipoVenta != 'TM Ganada' && comisionables != 'No Comisionable' && !esVentaCancelacionValor(tipoVenta, ventasP[i][ventasData]['custbody_otro_financiamiento'])){
+                    if( tipoVenta != 'TM Ganada' && comisionables != 'No Comisionable' && !esVentaCancelacionValor(tipoVenta, ventasP[i][ventasData]['custbody_otro_financiamiento']) && odvCuentaComisionPersonal(ventasP[i][ventasData])){
                         data.push(ventasData)
                     }
                     
@@ -2663,7 +2687,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                 var comisionables = ventasP[i][ventasData]['custbody_vw_comission_status']
                 var tipoVenta = ventasP[i][ventasData]['custbody_tipo_venta']
                 //log.debug('comisionables',comisionables)
-                if( tipoVenta != 'TM Ganada' && comisionables != 'No Comisionable' && !esVentaCancelacionValor(tipoVenta, ventasP[i][ventasData]['custbody_otro_financiamiento'])){
+                if( tipoVenta != 'TM Ganada' && comisionables != 'No Comisionable' && !esVentaCancelacionValor(tipoVenta, ventasP[i][ventasData]['custbody_otro_financiamiento']) && odvCuentaComisionPersonal(ventasP[i][ventasData])){
                     data.push(ventasData)
                 }
                 
@@ -2770,7 +2794,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                     //log.debug('fechaSO',fechaSO)
                     //log.debug('comisionables',comisionables)
 
-                    if(comisionables != 'No Comisionable' && tipoVenta != 'TM Ganada' && !esVentaCancelacionValor(tipoVenta, ventas[i][ventasData]['custbody_otro_financiamiento'])){
+                    if(comisionables != 'No Comisionable' && tipoVenta != 'TM Ganada' && !esVentaCancelacionValor(tipoVenta, ventas[i][ventasData]['custbody_otro_financiamiento']) && odvCuentaComisionPersonal(ventas[i][ventasData])){
                                                
                                             
                         // Validar si el ID existe en ordenesEP7 o en ordenesAExcluir
@@ -2820,7 +2844,7 @@ define(['N/plugin','N/task','N/ui/serverWidget','N/search','N/runtime','N/file',
                     var tipoVenta = ventas[i][ventasData]['custbody_tipo_venta']
                     var id = ventas[i][ventasData]['internalid']
                     //log.debug('comisionables',comisionables)
-                    if(comisionables != 'No Comisionable' && tipoVenta != 'TM Ganada' && !esVentaCancelacionValor(tipoVenta, ventas[i][ventasData]['custbody_otro_financiamiento'])){
+                    if(comisionables != 'No Comisionable' && tipoVenta != 'TM Ganada' && !esVentaCancelacionValor(tipoVenta, ventas[i][ventasData]['custbody_otro_financiamiento']) && odvCuentaComisionPersonal(ventas[i][ventasData])){
                                                 
                         // Validar si el ID existe en ordenesEP7 o en ordenesAExcluir
                         var ordenesEP7 = dataEmp.ovs_ep7;
@@ -3506,7 +3530,7 @@ una rcluta de algun miembro del equipo*/
                     var ventasKeys= Object.keys(ventaEntrega[i])
                     //thisPeriodSO['id presentador'][indice]['id pedido']['etiqueta']
                     var comisionables = ventaEntrega[i][ventasKeys]['custbody_vw_comission_status']
-                    if(comisionables != 2){
+                    if(comisionables != 2 && odvCuentaComisionPersonal(ventaEntrega[i][ventasKeys])){
                         dataEnt.push(ventasKeys)
                     }
                 }
@@ -3565,7 +3589,7 @@ una rcluta de algun miembro del equipo*/
                         fechaSO = Utils.stringToDate(fechaSO)
                         log.debug('fechaSO',fechaSO)
                         //log.debug('comisionables',comisionables)
-                        if(comisionables != 'No Comisionable' && tipoVenta != 'TM Ganada' && !esVentaCancelacionValor(tipoVenta, ventas[i][ventasData]['custbody_otro_financiamiento'])){
+                        if(comisionables != 'No Comisionable' && tipoVenta != 'TM Ganada' && !esVentaCancelacionValor(tipoVenta, ventas[i][ventasData]['custbody_otro_financiamiento']) && odvCuentaComisionPersonal(ventas[i][ventasData])){
                                                         
                             // Validar si el ID existe en ordenesEP7 o en ordenesAExcluir
                             var ordenesEP7 = dataEmp.ovs_ep7;
@@ -3614,7 +3638,7 @@ una rcluta de algun miembro del equipo*/
                         var tipoVenta = ventas[i][ventasData]['custbody_tipo_venta']
                         var id = ventas[i][ventasData]['internalid']
                         //log.debug('comisionables',comisionables)
-                        if(comisionables != 'No Comisionable' && tipoVenta != 'TM Ganada' && !esVentaCancelacionValor(tipoVenta, ventas[i][ventasData]['custbody_otro_financiamiento'])){
+                        if(comisionables != 'No Comisionable' && tipoVenta != 'TM Ganada' && !esVentaCancelacionValor(tipoVenta, ventas[i][ventasData]['custbody_otro_financiamiento']) && odvCuentaComisionPersonal(ventas[i][ventasData])){
                                                         
                             // Validar si el ID existe en ordenesEP7 o en ordenesAExcluir
                             var ordenesEP7 = dataEmp.ovs_ep7;
@@ -3799,6 +3823,22 @@ una rcluta de algun miembro del equipo*/
         return comisionables === 'No Comisionable';
     }
 
+    /** Checkbox custbody_pedido_sin_csf marcado en la ODV. */
+    function esPedidoSinCsfMarcado(val) {
+        return val === true || val === 'T';
+    }
+
+    /**
+     * Bonos personales: solo ODVs con custbody_pedido_sin_csf = false (checkbox sin marcar).
+     * Vacío/null se trata como false (sí cuenta).
+     */
+    function odvCuentaComisionPersonal(row) {
+        if (!row) {
+            return false;
+        }
+        return !esPedidoSinCsfMarcado(row.custbody_pedido_sin_csf);
+    }
+
     /** Motivos por los que una ODV no es venta personal contable JTL (para logs Pool Talent / auditoría). */
     function motivosExclusionVentaContableJTL(dataEmp, row) {
         var m = [];
@@ -3814,6 +3854,9 @@ una rcluta de algun miembro del equipo*/
         }
         if (esVentaCancelacionValor(tipoVenta, otroFin)) {
             m.push('cancelacion');
+        }
+        if (!odvCuentaComisionPersonal(row)) {
+            m.push('pedidoSinCsf');
         }
         var ordenesAExcluir = dataEmp.custentity_ordenes_a_excluir;
         if (ordenesAExcluir && typeof ordenesAExcluir === 'string' && ordenesAExcluir.trim() !== '') {
@@ -5630,7 +5673,7 @@ una rcluta de algun miembro del equipo*/
                 var objTmGanada = {}
                 var objTmPagada = {}
                 const salesOrderFilters = [
-                    ['item', 'anyof', '2671','1126','1757','2001','2170','2490','2571','2035','2638','2280','2763'],//actualizar id de tm's
+                    ['item', 'anyof', '2671','1126','1757','2001','2170','2490','2571','2035','2638','2280','2763'],
                     'AND',
                     ['salesrep.custentity_estructura_virtual', 'is', 'F'],
                     'AND',
@@ -5751,6 +5794,7 @@ una rcluta de algun miembro del equipo*/
                 const salesOrderSearchColInternalId = search.createColumn({ name: 'internalid' });
                 const salesOrderSearchColTranDate = search.createColumn({ name: 'trandate' });
                 const salesOrderSearchColItem = search.createColumn({ name: 'item' });
+                const salesOrderSearchColPedidoSinCsf = search.createColumn({ name: 'custbody_pedido_sin_csf' });
 
                 const searchSalesGar = search.create({
                     type: 'salesorder',
@@ -5761,6 +5805,7 @@ una rcluta de algun miembro del equipo*/
                         salesOrderSearchColInternalId,
                         salesOrderSearchColTranDate,
                         salesOrderSearchColItem,
+                        salesOrderSearchColPedidoSinCsf,
                        
                     ],
                 });
@@ -5775,6 +5820,9 @@ una rcluta de algun miembro del equipo*/
                     currentPage.data.forEach(function (r) {
                         var salrep = r.getValue('salesrep')
                         var item = r.getValue('item')
+                        if (esPedidoSinCsfMarcado(r.getValue('custbody_pedido_sin_csf'))) {
+                            return;
+                        }
 
                         if(item == '2402'){
                             if(salrep in objGarantiaRep){
@@ -5827,6 +5875,7 @@ una rcluta de algun miembro del equipo*/
                     objSO.custbody_vw_comission_status = r.custbody_vw_comission_status
                     objSO.custbody_otro_financiamiento = r.custbody_otro_financiamiento
                     objSO.custbody_vw_recruiter = r.custbody_vw_recruiter
+                    objSO.custbody_pedido_sin_csf = r.custbody_pedido_sin_csf
                    
                     // Diagnóstico: ¿custbody_otro_financiamiento viene como ID o texto en custworkbook3?
                     try {
